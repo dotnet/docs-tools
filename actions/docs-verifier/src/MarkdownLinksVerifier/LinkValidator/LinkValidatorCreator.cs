@@ -10,7 +10,7 @@ namespace MarkdownLinksVerifier.LinkValidator
         private static readonly MailtoLinkValidator s_mailtoValidator = new();
         private static readonly Dictionary<string, LocalLinkValidator> s_localValidatorDictionary = new();
 
-        public static ILinkValidator Create(LinkClassification classification, string baseDirectory)
+        internal static ILinkValidator Create(LinkClassification classification, string baseDirectory)
             => classification switch
             {
                 LinkClassification.Online => s_onlineValidator,
