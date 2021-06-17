@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Build docs-verifier
 on:
   [push, pull_request]
 
