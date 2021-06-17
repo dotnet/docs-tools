@@ -10,7 +10,7 @@ jobs:
     - name: Checkout the repository
       uses: actions/checkout@v1
 
-    - name: Validate links
+    - name: Docs verifier
       env:
         GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
