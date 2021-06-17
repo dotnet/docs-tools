@@ -9,7 +9,7 @@ namespace GitHub.UnitTests
 {
     public class PullRequestFileExtensionsTests
     {
-        [Fact]
+        [Fact(Skip = "This can reach rate limit in CI without a GitHub token.")]
         public async Task TestExtensions()
         {
             var client = new GitHubClient(new ProductHeaderValue("my-cool-app"));
@@ -37,7 +37,7 @@ namespace GitHub.UnitTests
             Assert.NotNull(renamedFile.FileName);
         }
 
-        [Fact]
+        [Fact(Skip = "This can reach rate limit in CI without a GitHub token.")]
         public async Task TestRemovedFile()
         {
             var client = new GitHubClient(new ProductHeaderValue("my-cool-app"));
