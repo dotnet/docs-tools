@@ -6,16 +6,16 @@ namespace MarkdownLinksVerifier.LinkClassifier
     {
         internal static LinkClassification Classify(string link)
         {
-            if (link.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
-                link.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                link.StartsWith("ftp://", StringComparison.OrdinalIgnoreCase))
+            if (Uri.TryCreate(link, UriKind.Absolute, out Uri? uri))
             {
-                return LinkClassification.Online;
-            }
-
-            if (link.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase))
-            {
-                return LinkClassification.Mailto;
+                return uri.Scheme switch
+                {
+                    "http" => LinkClassification.Online,
+                    "https" => LinkClassification.Online,
+                    "ftp" => LinkClassification.Online,
+                    "mailto" => LinkClassification.Mailto,
+                    _ => LinkClassification.Local
+                };
             }
 
             return LinkClassification.Local;
