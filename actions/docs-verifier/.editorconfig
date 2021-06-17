@@ -1,0 +1,44 @@
+﻿root = true
+
+[*]
+indent_style = space
+insert_final_newline = true
+
+[*.{xml,csproj,props,targets}]
+indent_size = 2
+
+[*.cs]
+indent_size = 4
+tab_width = 4
+end_of_line = crlf
+
+dotnet_sort_system_directives_first = true
+
+# CA1801: Review unused parameters - already removed in NetAnalyzers 6 in favor of IDE0060
+dotnet_diagnostic.CA1801.severity = none
+
+# CA2007: Consider calling ConfigureAwait on the awaited task
+dotnet_diagnostic.CA2007.severity = none
+
+# IDE0044: Add readonly modifier
+dotnet_style_readonly_field = true
+
+# Default severity for analyzer diagnostics with category 'Style'
+dotnet_analyzer_diagnostic.category-Style.severity = warning
+
+# IDE0022: Use block body for methods
+dotnet_diagnostic.IDE0022.severity = silent
+csharp_style_expression_bodied_methods = when_on_single_line
+
+# IDE0021: Use block body for constructors
+dotnet_diagnostic.IDE0021.severity = silent
+csharp_style_expression_bodied_constructors = when_on_single_line
+
+# IDE0046: Convert to conditional expression
+dotnet_diagnostic.IDE0046.severity = silent
+
+# IDE0008: Use explicit type - Replaced with YAnalyzers.
+dotnet_diagnostic.IDE0008.severity = none
+
+# CA1014: Mark assemblies with CLSCompliant
+dotnet_diagnostic.CA1014.severity = none

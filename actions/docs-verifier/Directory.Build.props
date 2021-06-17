@@ -1,0 +1,17 @@
+<Project>
+  <Import Project="eng\Settings.props" />
+
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <LangVersion>9</LangVersion>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3" />
+    <PackageReference Include="YAnalyzers" Version="1.1.0" />
+  </ItemGroup>
+</Project>
