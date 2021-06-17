@@ -25,9 +25,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
       - name: Validate dependencies
-        run: dotnet restore --locked-mode --packages ${{ github.workspace }}/.nuget/packages
+        run: dotnet restore actions/docs-verifier --locked-mode --packages ${{ github.workspace }}/.nuget/packages
       - name: Build
-        run: dotnet msbuild -noLogo -m -p:Configuration=${{ matrix.configuration }} -warnaserror -bl:artifacts/log/build.binlog
+        run: dotnet msbuild dotnet restore -noLogo -m -p:Configuration=${{ matrix.configuration }} -warnaserror -bl:artifacts/log/build.binlog
       - name: Test
         run: dotnet test
       - name: Upload Results
