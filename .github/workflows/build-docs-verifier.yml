@@ -27,9 +27,9 @@ jobs:
       - name: Validate dependencies
         run: dotnet restore actions/docs-verifier --locked-mode --packages ${{ github.workspace }}/.nuget/packages
       - name: Build
-        run: dotnet msbuild dotnet restore -noLogo -m -p:Configuration=${{ matrix.configuration }} -warnaserror -bl:artifacts/log/build.binlog
+        run: dotnet msbuild actions/docs-verifier -noLogo -m -p:Configuration=${{ matrix.configuration }} -warnaserror -bl:artifacts/log/build.binlog
       - name: Test
-        run: dotnet test
+        run: dotnet test actions/docs-verifier
       - name: Upload Results
         uses: actions/upload-artifact@v2.2.2
         with:
