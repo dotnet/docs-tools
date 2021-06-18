@@ -1,0 +1,7 @@
+[text](File1.md)
+[text](./File1.md)
+[text](/valid-test-cases/MarkdownLinksVerifier/test1/File1.md)
+[text](folder/Name%20With%20Space.md)
+[text](folder)
+[text](./folder)
+[text]()

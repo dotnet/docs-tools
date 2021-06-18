@@ -1,0 +1,17 @@
+name: Dogfood docs-verifier
+on: pull_request
+
+jobs:
+  validate_links:
+    name: MSDocs verifier
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v1
+
+    - name: Docs verifier
+      env:
+        GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: ./actions/docs-verifier
