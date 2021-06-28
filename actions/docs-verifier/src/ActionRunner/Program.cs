@@ -23,19 +23,45 @@ List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(
 
 foreach (PullRequestFile file in files)
 {
-    if (file.IsRenamed() && file.PreviousFileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+    // Changing the extension from .yml to .md or the opposite doesn't require a redirection.
+    // In both cases, the URL in live docs site is the same.
+    if (file.IsRenamed() && !IsExtensionChangeOnly(file.PreviousFileName, file.FileName))
     {
         if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.PreviousFileName))
         {
             returnCode++;
         }
     }
-    else if (file.IsRemoved() && file.FileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+    else if (file.IsRemoved() && !files.Any(f => f.IsAdded() && IsExtensionChangeOnly(file.FileName, f.FileName)))
     {
         if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.FileName))
         {
             returnCode++;
         }
+    }
+
+    static bool IsExtensionChangeOnly(string file1, string file2)
+    {
+        return TryStripYmlOrMarkdownExtension(file1, out string strippedFile1) &&
+            TryStripYmlOrMarkdownExtension(file2, out string strippedFile2) &&
+            strippedFile1.Equals(strippedFile2, StringComparison.OrdinalIgnoreCase);
+    }
+
+    static bool TryStripYmlOrMarkdownExtension(string file, out string strippedFile)
+    {
+        if (file.EndsWith(".yml", StringComparison.OrdinalIgnoreCase))
+        {
+            strippedFile = file.Substring(0, file.Length - ".yml".Length);
+            return true;
+        }
+        else if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+        {
+            strippedFile = file.Substring(0, file.Length - ".md".Length);
+            return true;
+        }
+
+        strippedFile = file;
+        return false;
     }
 }
 
