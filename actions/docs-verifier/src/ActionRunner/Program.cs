@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using GitHub;
 using MarkdownLinksVerifier;
@@ -40,28 +41,22 @@ foreach (PullRequestFile file in files)
         }
     }
 
-    static bool IsExtensionChangeOnly(string file1, string file2)
-    {
-        return TryStripYmlOrMarkdownExtension(file1, out string strippedFile1) &&
-            TryStripYmlOrMarkdownExtension(file2, out string strippedFile2) &&
-            strippedFile1.Equals(strippedFile2, StringComparison.OrdinalIgnoreCase);
-    }
+    static bool IsExtensionChangeOnly(string file1, string file2) =>
+        TryStripYmlOrMarkdownExtension(file1, out string strippedFile1) &&
+        TryStripYmlOrMarkdownExtension(file2, out string strippedFile2) &&
+        strippedFile1.Equals(strippedFile2, StringComparison.OrdinalIgnoreCase);
 
     static bool TryStripYmlOrMarkdownExtension(string file, out string strippedFile)
     {
-        if (file.EndsWith(".yml", StringComparison.OrdinalIgnoreCase))
+        (string subFile, bool result) = Path.GetExtension(file) switch
         {
-            strippedFile = file.Substring(0, file.Length - ".yml".Length);
-            return true;
-        }
-        else if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-        {
-            strippedFile = file.Substring(0, file.Length - ".md".Length);
-            return true;
-        }
+            string ext when ext is ".yml" or ".md" =>
+                (file.Substring(0, file.Length - ext.Length), true),
+            _ => (file, false)
+        };
 
-        strippedFile = file;
-        return false;
+        strippedFile = subFile;
+        return result;
     }
 }
 
