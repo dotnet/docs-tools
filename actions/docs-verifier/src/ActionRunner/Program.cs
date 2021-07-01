@@ -30,7 +30,7 @@ static bool IsInWhatsNewDirectory(PullRequestFile file)
         // file.FileName:   docs/whats-new/2021-03.md
         // whatsNewPath:    docs/whats-new
 
-        return whatsNewPath.StartsWith(file.FileName, StringComparison.OrdinalIgnoreCase);
+        return file.FileName.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase);
     }
 
     return false;
