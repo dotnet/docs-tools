@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using GitHub;
 using MarkdownLinksVerifier;
@@ -23,19 +24,39 @@ List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(
 
 foreach (PullRequestFile file in files)
 {
-    if (file.IsRenamed() && file.PreviousFileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+    // Changing the extension from .yml to .md or the opposite doesn't require a redirection.
+    // In both cases, the URL in live docs site is the same.
+    if (file.IsRenamed() && !IsExtensionChangeOnly(file.PreviousFileName, file.FileName))
     {
         if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.PreviousFileName))
         {
             returnCode++;
         }
     }
-    else if (file.IsRemoved() && file.FileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+    else if (file.IsRemoved() && !files.Any(f => f.IsAdded() && IsExtensionChangeOnly(file.FileName, f.FileName)))
     {
         if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.FileName))
         {
             returnCode++;
         }
+    }
+
+    static bool IsExtensionChangeOnly(string file1, string file2) =>
+        TryStripYmlOrMarkdownExtension(file1, out string strippedFile1) &&
+        TryStripYmlOrMarkdownExtension(file2, out string strippedFile2) &&
+        strippedFile1.Equals(strippedFile2, StringComparison.OrdinalIgnoreCase);
+
+    static bool TryStripYmlOrMarkdownExtension(string file, out string strippedFile)
+    {
+        (string subFile, bool result) = Path.GetExtension(file) switch
+        {
+            string ext when ext is ".yml" or ".md" =>
+                (file.Substring(0, file.Length - ext.Length), true),
+            _ => (file, false)
+        };
+
+        strippedFile = subFile;
+        return result;
     }
 }
 

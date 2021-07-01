@@ -23,9 +23,6 @@ dotnet_diagnostic.CA2007.severity = none
 # IDE0044: Add readonly modifier
 dotnet_style_readonly_field = true
 
-# Default severity for analyzer diagnostics with category 'Style'
-dotnet_analyzer_diagnostic.category-Style.severity = warning
-
 # IDE0022: Use block body for methods
 dotnet_diagnostic.IDE0022.severity = silent
 csharp_style_expression_bodied_methods = when_on_single_line
