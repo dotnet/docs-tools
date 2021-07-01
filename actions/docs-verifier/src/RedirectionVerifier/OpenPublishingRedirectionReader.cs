@@ -8,6 +8,7 @@ namespace RedirectionVerifier
     internal static class OpenPublishingRedirectionReader
     {
         private static readonly JsonSerializerOptions s_options = new() { AllowTrailingCommas = true };
+        private static OpenPublishingRedirections s_cachedOpenPublishingRedirections = null!;
         private const string OpenPublishingRedirectionFileName = ".openpublishing.redirection.json";
 
         /// <summary>
@@ -16,6 +17,12 @@ namespace RedirectionVerifier
         /// <exception cref="InvalidOperationException">Failed to read <c>.openpublishing.redirection.json</c>.</exception>
         public static ImmutableArray<Redirection> GetRedirections()
         {
+            // If there are cached redirections that were previously read and parsed, use 'em.
+            if (s_cachedOpenPublishingRedirections is { Redirections: { Length: > 0 } })
+            {
+                return s_cachedOpenPublishingRedirections.Redirections;
+            }
+
             if (!File.Exists(OpenPublishingRedirectionFileName))
             {
                 throw new InvalidOperationException($"File '{OpenPublishingRedirectionFileName}' was not found.");
@@ -28,7 +35,8 @@ namespace RedirectionVerifier
                 throw new InvalidOperationException($"Failed to read '{OpenPublishingRedirectionFileName}'.");
             }
 
-            return redirections.Redirections;
+            s_cachedOpenPublishingRedirections = redirections;
+            return s_cachedOpenPublishingRedirections.Redirections;
         }
     }
 }

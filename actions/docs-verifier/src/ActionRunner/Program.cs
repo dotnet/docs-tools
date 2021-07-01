@@ -8,9 +8,8 @@ using MarkdownLinksVerifier.Configuration;
 using Octokit;
 using RedirectionVerifier;
 
-var returnCode = 0;
 MarkdownLinksVerifierConfiguration configuration = await ConfigurationReader.GetConfigurationAsync();
-returnCode += await MarkdownFilesAnalyzer.WriteResultsAsync(Console.Out, configuration);
+var returnCode = await MarkdownFilesAnalyzer.WriteResultsAsync(Console.Out, configuration);
 
 // on: pull_request
 // env:
@@ -20,9 +19,28 @@ if (!int.TryParse(Environment.GetEnvironmentVariable("GITHUB_PR_NUMBER"), out in
     throw new InvalidOperationException($"The value of GITHUB_PR_NUMBER environment variable is not valid.");
 }
 
+static bool IsYmlOrMarkdownFile(PullRequestFile file) => Path.GetExtension(file.FileName) is ".yml" or ".md";
+
+static bool IsInWhatsNewDirectory(PullRequestFile file)
+{
+    string? whatsNewPath = WhatsNewConfigurationReader.GetWhatsNewPath();
+    if (whatsNewPath is { Length: > 0 })
+    {
+        // Example:
+        // file.FileName:   docs/whats-new/2021-03.md
+        // whatsNewPath:    docs/whats-new
+
+        return file.FileName.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    return false;
+}
+
 List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber)).ToList();
 
-foreach (PullRequestFile file in files)
+// We should only ever fail on MD and YML files, no other files require redirection.
+// Also, filter out files that are part of the "What's new" directory - as they shouldn't require redirects.
+foreach (PullRequestFile file in files.Where(f => IsYmlOrMarkdownFile(f) && !IsInWhatsNewDirectory(f)))
 {
     // Changing the extension from .yml to .md or the opposite doesn't require a redirection.
     // In both cases, the URL in live docs site is the same.
