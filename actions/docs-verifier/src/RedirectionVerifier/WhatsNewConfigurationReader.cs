@@ -8,6 +8,8 @@ namespace RedirectionVerifier
     {
         private static readonly JsonSerializerOptions s_options = new() { AllowTrailingCommas = true };
         private static WhatsNewConfiguration s_cachedWhatsNewConfiguration = null!;
+        private static bool? s_fileExists = null!;
+
         private const string WhatsNewConfigurationFileName = ".whatsnew.json";
 
         /// <summary>
@@ -16,13 +18,19 @@ namespace RedirectionVerifier
         /// <exception cref="InvalidOperationException">Failed to read <c>.whatsnew.json</c>.</exception>
         public static string? GetWhatsNewPath()
         {
+            // Only check if the file exists one time.
+            if (s_fileExists is null)
+            {
+                s_fileExists = File.Exists(WhatsNewConfigurationFileName);
+            }
+
             // If there are cached configuration values for "What's new", use 'em.
-            if (s_cachedWhatsNewConfiguration?.NavigationOptions?.WhatsNewPath is not null)
+            if (s_cachedWhatsNewConfiguration?.NavigationOptions is not null)
             {
                 return s_cachedWhatsNewConfiguration.NavigationOptions.WhatsNewPath;
             }
 
-            if (File.Exists(WhatsNewConfigurationFileName))
+            if (s_fileExists.GetValueOrDefault())
             {
                 string json = File.ReadAllText(WhatsNewConfigurationFileName);
                 WhatsNewConfiguration? configuration = JsonSerializer.Deserialize<WhatsNewConfiguration>(json, s_options);
