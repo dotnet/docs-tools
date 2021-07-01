@@ -10,8 +10,12 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' != 'true'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3" />
-    <PackageReference Include="YAnalyzers" Version="1.1.0" />
+    <PackageReference Include="YAnalyzers" Version="1.2.0" />
   </ItemGroup>
 </Project>
