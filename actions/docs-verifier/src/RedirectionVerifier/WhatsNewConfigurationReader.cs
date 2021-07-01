@@ -7,8 +7,8 @@ namespace RedirectionVerifier
     public static class WhatsNewConfigurationReader
     {
         private static readonly JsonSerializerOptions s_options = new() { AllowTrailingCommas = true };
-        private static WhatsNewConfiguration s_cachedWhatsNewConfiguration = null!;
-        private static bool? s_fileExists = null!;
+        private static WhatsNewConfiguration? s_cachedWhatsNewConfiguration;
+        private static bool? s_fileExists;
 
         private const string WhatsNewConfigurationFileName = ".whatsnew.json";
 
@@ -30,7 +30,7 @@ namespace RedirectionVerifier
                 return s_cachedWhatsNewConfiguration.NavigationOptions.WhatsNewPath;
             }
 
-            if (s_fileExists.GetValueOrDefault())
+            if (s_fileExists.Value)
             {
                 string json = File.ReadAllText(WhatsNewConfigurationFileName);
                 WhatsNewConfiguration? configuration = JsonSerializer.Deserialize<WhatsNewConfiguration>(json, s_options);
