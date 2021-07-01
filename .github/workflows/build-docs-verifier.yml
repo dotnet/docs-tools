@@ -1,7 +1,6 @@
 name: Build docs-verifier
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  pull_request
 
 jobs:
   build:
