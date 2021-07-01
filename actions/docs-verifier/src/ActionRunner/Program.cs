@@ -19,11 +19,7 @@ if (!int.TryParse(Environment.GetEnvironmentVariable("GITHUB_PR_NUMBER"), out in
     throw new InvalidOperationException($"The value of GITHUB_PR_NUMBER environment variable is not valid.");
 }
 
-static bool IsYmlOrMarkdownFile(PullRequestFile file) => Path.GetExtension(file.FileName) switch
-{
-    ".yml" or ".md" => true,
-    _ => false
-};
+static bool IsYmlOrMarkdownFile(PullRequestFile file) => Path.GetExtension(file.FileName) is ".yml" or ".md";
 
 static bool IsInWhatsNewDirectory(PullRequestFile file)
 {
