@@ -5,6 +5,7 @@ using System.Linq;
 using GitHub;
 using MarkdownLinksVerifier;
 using MarkdownLinksVerifier.Configuration;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Octokit;
 using RedirectionVerifier;
 
@@ -42,16 +43,17 @@ List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(
 // Also, filter out files that are part of the "What's new" directory - as they shouldn't require redirects.
 foreach (PullRequestFile file in files.Where(f => IsYmlOrMarkdownFile(f) && !IsInWhatsNewDirectory(f)))
 {
+    Matcher? matcher = DocfxConfigurationReader.GetMatcher();
     // Changing the extension from .yml to .md or the opposite doesn't require a redirection.
     // In both cases, the URL in live docs site is the same.
-    if (file.IsRenamed() && !IsExtensionChangeOnly(file.PreviousFileName, file.FileName))
+    if (file.IsRenamed() && matcher?.Match(file.PreviousFileName)?.HasMatches == true && !IsExtensionChangeOnly(file.PreviousFileName, file.FileName))
     {
         if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.PreviousFileName))
         {
             returnCode++;
         }
     }
-    else if (file.IsRemoved() && !files.Any(f => f.IsAdded() && IsExtensionChangeOnly(file.FileName, f.FileName)))
+    else if (file.IsRemoved() && matcher?.Match(file.FileName)?.HasMatches == true  && !files.Any(f => f.IsAdded() && IsExtensionChangeOnly(file.FileName, f.FileName)))
     {
         if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.FileName))
         {
