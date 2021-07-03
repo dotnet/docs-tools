@@ -19,23 +19,6 @@ if (!int.TryParse(Environment.GetEnvironmentVariable("GITHUB_PR_NUMBER"), out in
     throw new InvalidOperationException($"The value of GITHUB_PR_NUMBER environment variable is not valid.");
 }
 
-static bool IsYmlOrMarkdownFile(PullRequestFile file) => Path.GetExtension(file.FileName) is ".yml" or ".md";
-
-static bool IsInWhatsNewDirectory(PullRequestFile file)
-{
-    string? whatsNewPath = WhatsNewConfigurationReader.GetWhatsNewPath();
-    if (whatsNewPath is { Length: > 0 })
-    {
-        // Example:
-        // file.FileName:   docs/whats-new/2021-03.md
-        // whatsNewPath:    docs/whats-new
-
-        return file.FileName.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase);
-    }
-
-    return false;
-}
-
 List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber)).Where(f => IsYmlOrMarkdownFile(f) && !IsInWhatsNewDirectory(f)).ToList();
 
 // We should only ever fail on MD and YML files, no other files require redirection.
@@ -58,12 +41,29 @@ foreach (PullRequestFile file in files)
             returnCode++;
         }
     }
-
-    static bool IsExtensionChangeOnly(string file1, string file2) =>
-        StripExtension(file1).Equals(StripExtension(file2), StringComparison.OrdinalIgnoreCase);
-
-    static string StripExtension(string file) =>
-        file.Substring(0, file.Length - Path.GetExtension(file).Length);
 }
 
 return returnCode;
+
+static bool IsExtensionChangeOnly(string file1, string file2) =>
+    StripExtension(file1).Equals(StripExtension(file2), StringComparison.OrdinalIgnoreCase);
+
+static string StripExtension(string file) =>
+    file.Substring(0, file.Length - Path.GetExtension(file).Length);
+
+static bool IsYmlOrMarkdownFile(PullRequestFile file) => Path.GetExtension(file.FileName) is ".yml" or ".md";
+
+static bool IsInWhatsNewDirectory(PullRequestFile file)
+{
+    string? whatsNewPath = WhatsNewConfigurationReader.GetWhatsNewPath();
+    if (whatsNewPath is { Length: > 0 })
+    {
+        // Example:
+        // file.FileName:   docs/whats-new/2021-03.md
+        // whatsNewPath:    docs/whats-new
+
+        return file.FileName.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    return false;
+}
