@@ -12,6 +12,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3" />
-    <PackageReference Include="YAnalyzers" Version="1.1.0" />
+    <PackageReference Include="YAnalyzers" Version="1.2.0" />
   </ItemGroup>
 </Project>
