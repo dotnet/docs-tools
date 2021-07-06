@@ -19,24 +19,7 @@ if (!int.TryParse(Environment.GetEnvironmentVariable("GITHUB_PR_NUMBER"), out in
     throw new InvalidOperationException($"The value of GITHUB_PR_NUMBER environment variable is not valid.");
 }
 
-static bool IsYmlOrMarkdownFile(PullRequestFile file) => Path.GetExtension(file.FileName) is ".yml" or ".md";
-
-static bool IsInWhatsNewDirectory(PullRequestFile file)
-{
-    string? whatsNewPath = WhatsNewConfigurationReader.GetWhatsNewPath();
-    if (whatsNewPath is { Length: > 0 })
-    {
-        // Example:
-        // file.FileName:   docs/whats-new/2021-03.md
-        // whatsNewPath:    docs/whats-new
-
-        return file.FileName.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase);
-    }
-
-    return false;
-}
-
-List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber)).Where(f => IsYmlOrMarkdownFile(f) && !IsInWhatsNewDirectory(f)).ToList();
+List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber)).Where(f => IsRedirectableFile(f)).ToList();
 
 // We should only ever fail on MD and YML files, no other files require redirection.
 // Also, filter out files that are part of the "What's new" directory - as they shouldn't require redirects.
@@ -58,12 +41,40 @@ foreach (PullRequestFile file in files)
             returnCode++;
         }
     }
-
-    static bool IsExtensionChangeOnly(string file1, string file2) =>
-        RemoveExtension(file1).Equals(RemoveExtension(file2), StringComparison.OrdinalIgnoreCase);
-
-    static string RemoveExtension(string file) =>
-        file.Substring(0, file.Length - Path.GetExtension(file).Length);
 }
 
 return returnCode;
+
+static bool IsRedirectableFile(PullRequestFile file)
+{
+    string? deletedFileName = file.IsRenamed()
+        ? file.PreviousFileName
+        : (file.IsRemoved() ? file.FileName : null);
+
+    bool isDeletedToc = deletedFileName is not null && deletedFileName.Equals("toc.yml", StringComparison.OrdinalIgnoreCase);
+    // A deleted toc.yml doesn't need redirection.
+    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName) && !IsInWhatsNewDirectory(deletedFileName);
+}
+
+static bool IsYmlOrMarkdownFile(string? fileName) => Path.GetExtension(fileName) is ".yml" or ".md";
+
+static bool IsInWhatsNewDirectory(string? fileName)
+{
+    string? whatsNewPath = WhatsNewConfigurationReader.GetWhatsNewPath();
+    if (whatsNewPath is { Length: > 0 })
+    {
+        // Example:
+        // file.FileName:   docs/whats-new/2021-03.md
+        // whatsNewPath:    docs/whats-new
+
+        return fileName?.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    return false;
+}
+
+static bool IsExtensionChangeOnly(string file1, string file2) =>
+    RemoveExtension(file1).Equals(RemoveExtension(file2), StringComparison.OrdinalIgnoreCase);
+
+static string RemoveExtension(string file) =>
+    file.Substring(0, file.Length - Path.GetExtension(file).Length);
