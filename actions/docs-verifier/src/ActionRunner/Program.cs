@@ -9,7 +9,7 @@ using Octokit;
 using RedirectionVerifier;
 
 MarkdownLinksVerifierConfiguration configuration = await ConfigurationReader.GetConfigurationAsync();
-var returnCode = await MarkdownFilesAnalyzer.WriteResultsAsync(Console.Out, configuration);
+int returnCode = await MarkdownFilesAnalyzer.WriteResultsAsync(Console.Out, configuration);
 
 // on: pull_request
 // env:
@@ -36,11 +36,11 @@ static bool IsInWhatsNewDirectory(PullRequestFile file)
     return false;
 }
 
-List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber)).ToList();
+List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber)).Where(f => IsYmlOrMarkdownFile(f) && !IsInWhatsNewDirectory(f)).ToList();
 
 // We should only ever fail on MD and YML files, no other files require redirection.
 // Also, filter out files that are part of the "What's new" directory - as they shouldn't require redirects.
-foreach (PullRequestFile file in files.Where(f => IsYmlOrMarkdownFile(f) && !IsInWhatsNewDirectory(f)))
+foreach (PullRequestFile file in files)
 {
     // Changing the extension from .yml to .md or the opposite doesn't require a redirection.
     // In both cases, the URL in live docs site is the same.
@@ -60,22 +60,10 @@ foreach (PullRequestFile file in files.Where(f => IsYmlOrMarkdownFile(f) && !IsI
     }
 
     static bool IsExtensionChangeOnly(string file1, string file2) =>
-        TryStripYmlOrMarkdownExtension(file1, out string strippedFile1) &&
-        TryStripYmlOrMarkdownExtension(file2, out string strippedFile2) &&
-        strippedFile1.Equals(strippedFile2, StringComparison.OrdinalIgnoreCase);
+        RemoveExtension(file1).Equals(RemoveExtension(file2), StringComparison.OrdinalIgnoreCase);
 
-    static bool TryStripYmlOrMarkdownExtension(string file, out string strippedFile)
-    {
-        (string subFile, bool result) = Path.GetExtension(file) switch
-        {
-            string ext when ext is ".yml" or ".md" =>
-                (file.Substring(0, file.Length - ext.Length), true),
-            _ => (file, false)
-        };
-
-        strippedFile = subFile;
-        return result;
-    }
+    static string RemoveExtension(string file) =>
+        file.Substring(0, file.Length - Path.GetExtension(file).Length);
 }
 
 return returnCode;
