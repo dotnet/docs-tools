@@ -45,12 +45,6 @@ foreach (PullRequestFile file in files)
 
 return returnCode;
 
-static bool IsExtensionChangeOnly(string file1, string file2) =>
-    StripExtension(file1).Equals(StripExtension(file2), StringComparison.OrdinalIgnoreCase);
-
-static string StripExtension(string file) =>
-    file.Substring(0, file.Length - Path.GetExtension(file).Length);
-
 static bool IsRedirectableFile(PullRequestFile file)
 {
     string? deletedFileName = file.IsRenamed()
@@ -76,5 +70,9 @@ static bool IsInWhatsNewDirectory(string? fileName)
         return fileName?.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase) == true;
     }
 
-    return false;
+    static bool IsExtensionChangeOnly(string file1, string file2) =>
+        RemoveExtension(file1).Equals(RemoveExtension(file2), StringComparison.OrdinalIgnoreCase);
+
+    static string RemoveExtension(string file) =>
+        file.Substring(0, file.Length - Path.GetExtension(file).Length);
 }
