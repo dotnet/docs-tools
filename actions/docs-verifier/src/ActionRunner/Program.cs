@@ -70,9 +70,11 @@ static bool IsInWhatsNewDirectory(string? fileName)
         return fileName?.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase) == true;
     }
 
-    static bool IsExtensionChangeOnly(string file1, string file2) =>
-        RemoveExtension(file1).Equals(RemoveExtension(file2), StringComparison.OrdinalIgnoreCase);
-
-    static string RemoveExtension(string file) =>
-        file.Substring(0, file.Length - Path.GetExtension(file).Length);
+    return false;
 }
+
+static bool IsExtensionChangeOnly(string file1, string file2) =>
+    RemoveExtension(file1).Equals(RemoveExtension(file2), StringComparison.OrdinalIgnoreCase);
+
+static string RemoveExtension(string file) =>
+    file.Substring(0, file.Length - Path.GetExtension(file).Length);
