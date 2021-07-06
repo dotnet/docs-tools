@@ -26,17 +26,16 @@ List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(
 // Also, filter out files that are part of the "What's new" directory - as they shouldn't require redirects.
 foreach (PullRequestFile file in files)
 {
-    Matcher? matcher = DocfxConfigurationReader.GetMatcher();
     // Changing the extension from .yml to .md or the opposite doesn't require a redirection.
     // In both cases, the URL in live docs site is the same.
-    if (file.IsRenamed() && matcher?.Match(file.PreviousFileName)?.HasMatches == true && !IsExtensionChangeOnly(file.PreviousFileName, file.FileName))
+    if (file.IsRenamed() && !IsExtensionChangeOnly(file.PreviousFileName, file.FileName))
     {
         if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.PreviousFileName))
         {
             returnCode++;
         }
     }
-    else if (file.IsRemoved() && matcher?.Match(file.FileName)?.HasMatches == true  && !files.Any(f => f.IsAdded() && IsExtensionChangeOnly(file.FileName, f.FileName)))
+    else if (file.IsRemoved() && !files.Any(f => f.IsAdded() && IsExtensionChangeOnly(file.FileName, f.FileName)))
     {
         if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.FileName))
         {
@@ -54,8 +53,11 @@ static bool IsRedirectableFile(PullRequestFile file)
         : (file.IsRemoved() ? file.FileName : null);
 
     bool isDeletedToc = deletedFileName is not null && deletedFileName.Equals("toc.yml", StringComparison.OrdinalIgnoreCase);
+
     // A deleted toc.yml doesn't need redirection.
-    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName) && !IsInWhatsNewDirectory(deletedFileName);
+    // Also, don't require a redirection for file patterns specified as "exclude"s in docfx config file.
+    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName) && !IsInWhatsNewDirectory(deletedFileName) &&
+        DocfxConfigurationReader.GetMatcher()?.Match(file.PreviousFileName)?.HasMatches == true;
 }
 
 static bool IsYmlOrMarkdownFile(string? fileName) => Path.GetExtension(fileName) is ".yml" or ".md";
