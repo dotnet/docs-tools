@@ -60,9 +60,9 @@ foreach (PullRequestFile file in files)
     }
 
     static bool IsExtensionChangeOnly(string file1, string file2) =>
-        StripExtension(file1).Equals(StripExtension(file2), StringComparison.OrdinalIgnoreCase);
+        RemoveExtension(file1).Equals(RemoveExtension(file2), StringComparison.OrdinalIgnoreCase);
 
-    static string StripExtension(string file) =>
+    static string RemoveExtension(string file) =>
         file.Substring(0, file.Length - Path.GetExtension(file).Length);
 }
 
