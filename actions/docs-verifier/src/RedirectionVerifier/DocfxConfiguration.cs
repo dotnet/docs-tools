@@ -43,6 +43,7 @@ namespace RedirectionVerifier
             ImmutableArray<Matcher>.Builder builder = ImmutableArray.CreateBuilder<Matcher>();
             foreach (DocfxContent content in Build.Contents)
             {
+                Console.WriteLine("Adding matcher:");
                 var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
                 // TODO: I'm not sure what "Exludes" and "Files" are relative to?
                 // Are these relative to "src"? Are these relative to the directory containing docfx.json?
@@ -51,6 +52,7 @@ namespace RedirectionVerifier
                 {
                     foreach (string exclude in content.Excludes)
                     {
+                        Console.WriteLine($"Excluding: {basePath}/{exclude}");
                         matcher.AddExclude($"{basePath}/{exclude}");
                     }
                 }
@@ -59,11 +61,13 @@ namespace RedirectionVerifier
                 {
                     foreach (string file in content.Files)
                     {
+                        Console.WriteLine($"Including: {basePath}/{file}");
                         matcher.AddInclude($"{basePath}/{file}");
                     }
                 }
 
                 string source = content.Source ?? "**";
+                Console.WriteLine($"Including: {basePath}/{source}");
                 matcher.AddInclude($"{basePath}/{source}");
                 builder.Add(matcher);
             }
