@@ -43,7 +43,7 @@ namespace RedirectionVerifier
             string leadingPath = basePath switch
             {
                 "." => "",
-                _ => basePath.StartsWith("./", StringComparison.Ordinal) ? basePath[2..] : throw new InvalidOperationException($"Expected {nameof(basePath)} to start in ./");
+                _ => basePath.StartsWith("./", StringComparison.Ordinal) ? basePath[2..] : throw new InvalidOperationException($"Expected {nameof(basePath)} to start in ./")
             };
 
             foreach (DocfxContent content in Build.Contents)
