@@ -23,10 +23,11 @@ namespace RedirectionVerifier
         /// <exception cref="InvalidOperationException">Failed to read <c>docfx.json</c>.</exception>
         public ImmutableArray<Matcher> GetMatchers()
         {
+            string docfxPathRelativeToWorkspace = Path.GetRelativePath(relativeTo: Directory.GetCurrentDirectory(), _docfxConfigurationFileName);
             // If there are cached configuration values for "docfx", use 'em.
             if (cachedDocfxConfiguration is not null)
             {
-                return cachedDocfxConfiguration.GetMatchers(_docfxConfigurationFileName);
+                return cachedDocfxConfiguration.GetMatchers(docfxPathRelativeToWorkspace);
             }
 
             // File should be existing. We first read open publishing configuration file, taking `build_source_folder`s, which should contain docfx.json.
@@ -38,7 +39,7 @@ namespace RedirectionVerifier
             }
 
             cachedDocfxConfiguration = configuration;
-            return cachedDocfxConfiguration.GetMatchers(_docfxConfigurationFileName);
+            return cachedDocfxConfiguration.GetMatchers(docfxPathRelativeToWorkspace);
         }
     }
 }
