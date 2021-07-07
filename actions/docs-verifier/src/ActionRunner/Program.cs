@@ -57,7 +57,7 @@ static bool IsRedirectableFile(PullRequestFile file)
     // A deleted toc.yml doesn't need redirection.
     // Also, don't require a redirection for file patterns specified as "exclude"s in docfx config file.
     return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName) && !IsInWhatsNewDirectory(deletedFileName) &&
-        DocfxConfigurationReader.GetMatcher()?.Match(file.PreviousFileName)?.HasMatches == true;
+        DocfxConfigurationReader.GetMatchers().Any(m => m.Match(deletedFileName).HasMatches);
 }
 
 static bool IsYmlOrMarkdownFile(string? fileName) => Path.GetExtension(fileName) is ".yml" or ".md";

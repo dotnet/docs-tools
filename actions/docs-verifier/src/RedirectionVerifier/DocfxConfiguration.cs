@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.FileSystemGlobbing;
@@ -9,40 +10,60 @@ namespace RedirectionVerifier
     internal sealed record DocfxConfiguration(
         [property: JsonPropertyName("build")] DocfxBuild? Build)
     {
-        private Matcher? _matcher;
-
-        private DocfxContent? GetDocfxContent()
-            // TODO: repo name, or do the hard work of reading open publishing build config file, determining **ALL** `docfx.json`, and read them.
-            => Build?.Contents?.FirstOrDefault(content => content.Source is null or "." or "docs");
-
-        public Matcher GetMatcher()
+        private IEnumerable<Matcher>? _matchers;
+        
+        private IEnumerable<DocfxContent> GetDocfxContents()
         {
-            if (_matcher is null)
+            if (Build is null)
             {
-                _matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
-                DocfxContent? content = GetDocfxContent();
-                if (content?.Files is not null)
-                {
-                    foreach (string includePattern in content.Files)
-                    {
-                        _matcher.AddInclude(includePattern);
-                    }
-                }
-                else
-                {
-                    _matcher.AddInclude("**");
-                }
-
-                if (content?.Excludes is not null)
-                {
-                    foreach (string excludePattern in content.Excludes)
-                    {
-                        _matcher.AddExclude(excludePattern);
-                    }
-                }
+                throw new InvalidOperationException("A root object 'build' was expected to exist in 'docfx.json'.");
             }
 
-            return _matcher;
+            if (Build.Contents is null)
+            {
+                throw new InvalidOperationException("An object array 'contents' was expected to exist under 'build' in 'docfx.json'.");
+            }
+
+            // TODO: repo name, or do the hard work of reading open publishing build config file, determining **ALL** `docfx.json`, and read them.
+            return Build.Contents.Where(content => content.Source is null or "." or "docs");
+        }
+
+        public IEnumerable<Matcher> GetMatchers()
+        {
+            if (_matchers is null)
+            {
+                var list = new List<Matcher>();
+                IEnumerable<DocfxContent> contents = GetDocfxContents();
+                foreach (DocfxContent content in contents)
+                {
+                    var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
+                    if (content.Files is not null)
+                    {
+                        foreach (string includePattern in content.Files)
+                        {
+                            matcher.AddInclude(includePattern);
+                        }
+                    }
+                    else
+                    {
+                        matcher.AddInclude("**");
+                    }
+
+                    if (content?.Excludes is not null)
+                    {
+                        foreach (string excludePattern in content.Excludes)
+                        {
+                            matcher.AddExclude(excludePattern);
+                        }
+                    }
+
+                    list.Add(matcher);
+                }
+
+                _matchers = list;
+            }
+
+            return _matchers;
         }
     }
 

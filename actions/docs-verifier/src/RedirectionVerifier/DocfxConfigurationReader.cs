@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.FileSystemGlobbing;
 
@@ -17,7 +19,7 @@ namespace RedirectionVerifier
         /// Retrieves the path patterns excluded from publishing, which don't require a redirection when deleted/moved/renamed.
         /// </summary>
         /// <exception cref="InvalidOperationException">Failed to read <c>docfx.json</c>.</exception>
-        public static Matcher GetMatcher()
+        public static IEnumerable<Matcher> GetMatchers()
         {
             // Only check if the file exists one time.
             if (s_fileExists is null)
@@ -28,7 +30,7 @@ namespace RedirectionVerifier
             // If there are cached configuration values for "docfx", use 'em.
             if (s_cachedDocfxConfiguration is not null)
             {
-                return s_cachedDocfxConfiguration.GetMatcher();
+                return AdjustMatchers(s_cachedDocfxConfiguration.GetMatchers());
             }
 
             if (s_fileExists.Value)
@@ -43,7 +45,12 @@ namespace RedirectionVerifier
                 s_cachedDocfxConfiguration = configuration;
             }
 
-            return s_cachedDocfxConfiguration?.GetMatcher() ?? s_matchAllMatcher;
+            return AdjustMatchers(s_cachedDocfxConfiguration?.GetMatchers());
         }
+
+        private static IEnumerable<Matcher> AdjustMatchers(IEnumerable<Matcher>? matchers)
+            => (matchers is null || !matchers.Any())
+                ? new[] { s_matchAllMatcher }
+                : matchers;
     }
 }
