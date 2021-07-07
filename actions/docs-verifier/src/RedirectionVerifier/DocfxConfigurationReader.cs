@@ -24,8 +24,8 @@ namespace RedirectionVerifier
         public ImmutableArray<Matcher> GetMatchers()
         {
             // Assume _docfxConfigurationFileName is "/github/workspace/path/to/docfx.json" or "/github/workspace/docfx.json"
-            // This will be "./path/to" or "."
-            string docfxPathRelativeToWorkspace = Path.GetRelativePath(relativeTo: Directory.GetCurrentDirectory(), Path.GetDirectoryName(_docfxConfigurationFileName)!);
+            // This will be "./path/to/" or "./"
+            string docfxPathRelativeToWorkspace = Path.GetRelativePath(relativeTo: Directory.GetCurrentDirectory(), Path.GetDirectoryName(_docfxConfigurationFileName)!) + "/";
 
             // If there are cached configuration values for "docfx", use 'em.
             if (cachedDocfxConfiguration is not null)

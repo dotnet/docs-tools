@@ -40,11 +40,7 @@ namespace RedirectionVerifier
             }
 
             ImmutableArray<Matcher>.Builder builder = ImmutableArray.CreateBuilder<Matcher>();
-            string leadingPath = basePath switch
-            {
-                "." => "",
-                _ => basePath.StartsWith("./", StringComparison.Ordinal) ? basePath[2..] : throw new InvalidOperationException($"Expected {nameof(basePath)} to start in ./")
-            };
+            basePath = basePath.StartsWith("./", StringComparison.Ordinal) ? basePath[2..] : throw new InvalidOperationException($"Expected {nameof(basePath)} to start in ./");
 
             foreach (DocfxContent content in Build.Contents)
             {
@@ -57,8 +53,8 @@ namespace RedirectionVerifier
                 {
                     foreach (string exclude in content.Excludes)
                     {
-                        Console.WriteLine($"Excluding: {basePath}/{exclude}");
-                        matcher.AddExclude($"{basePath}/{exclude}");
+                        Console.WriteLine($"Excluding: {basePath}{exclude}");
+                        matcher.AddExclude($"{basePath}{exclude}");
                     }
                 }
 
@@ -66,14 +62,14 @@ namespace RedirectionVerifier
                 {
                     foreach (string file in content.Files)
                     {
-                        Console.WriteLine($"Including: {basePath}/{file}");
-                        matcher.AddInclude($"{basePath}/{file}");
+                        Console.WriteLine($"Including: {basePath}{file}");
+                        matcher.AddInclude($"{basePath}{file}");
                     }
                 }
 
                 string source = content.Source ?? "**";
-                Console.WriteLine($"Including: {basePath}/{source}");
-                matcher.AddInclude($"{basePath}/{source}");
+                Console.WriteLine($"Including: {basePath}{source}");
+                matcher.AddInclude($"{basePath}{source}");
                 builder.Add(matcher);
             }
 
