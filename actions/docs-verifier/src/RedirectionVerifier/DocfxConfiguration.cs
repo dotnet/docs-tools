@@ -66,11 +66,13 @@ namespace RedirectionVerifier
                         matcher.AddInclude($"{basePath}{file}");
                     }
                 }
-
-                string source = content.Source ?? "**";
-                Console.WriteLine($"Including: {basePath}{source}");
-                matcher.AddInclude($"{basePath}{source}");
-                builder.Add(matcher);
+                else
+                {
+                    string source = content.Source ?? "**";
+                    Console.WriteLine($"Including: {basePath}{source}");
+                    matcher.AddInclude($"{basePath}{source}");
+                    builder.Add(matcher);
+                }
             }
 
             _matchers = builder.ToImmutableArray();
