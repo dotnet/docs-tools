@@ -49,7 +49,7 @@ namespace RedirectionVerifier
                         matcher.AddInclude("**");
                     }
 
-                    if (content?.Excludes is not null)
+                    if (content.Excludes is not null)
                     {
                         foreach (string excludePattern in content.Excludes)
                         {
