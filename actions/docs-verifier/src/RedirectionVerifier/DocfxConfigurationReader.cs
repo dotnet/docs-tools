@@ -23,7 +23,7 @@ namespace RedirectionVerifier
         /// <exception cref="InvalidOperationException">Failed to read <c>docfx.json</c>.</exception>
         public ImmutableArray<Matcher> GetMatchers()
         {
-            string docfxPathRelativeToWorkspace = Path.GetRelativePath(relativeTo: Directory.GetCurrentDirectory(), _docfxConfigurationFileName);
+            string docfxPathRelativeToWorkspace = Path.GetRelativePath(relativeTo: Directory.GetCurrentDirectory(), Path.GetDirectoryName(_docfxConfigurationFileName)!);
             // If there are cached configuration values for "docfx", use 'em.
             if (cachedDocfxConfiguration is not null)
             {
