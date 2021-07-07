@@ -39,8 +39,13 @@ namespace RedirectionVerifier
                 throw new InvalidOperationException("Docfx.json configuration contains an empty 'contents' array under 'build'.");
             }
 
-            basePath = basePath.TrimEnd('/');
             ImmutableArray<Matcher>.Builder builder = ImmutableArray.CreateBuilder<Matcher>();
+            string leadingPath = basePath switch
+            {
+                "." => "",
+                _ => basePath.StartsWith("./", StringComparison.Ordinal) ? basePath[2..] : throw new InvalidOperationException($"Expected {nameof(basePath)} to start in ./");
+            };
+
             foreach (DocfxContent content in Build.Contents)
             {
                 Console.WriteLine("Adding matcher:");
