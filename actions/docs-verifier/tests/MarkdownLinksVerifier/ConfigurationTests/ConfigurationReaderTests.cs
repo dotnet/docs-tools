@@ -44,7 +44,7 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
 
             MarkdownLinksVerifierConfiguration? configuration =
                 await new ConfigurationReader().ReadConfigurationAsync();
-            Assert.Equal(MarkdownLinksVerifierConfiguration.Empty, configuration);
+            Assert.Null(configuration);
         }
     }
 }
