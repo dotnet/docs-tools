@@ -9,7 +9,7 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
     public class LocalLinkValidatorTests
     {
         private static async Task<int> WriteResultsAndGetExitCodeAsync(StringWriter writer, MarkdownLinksVerifierConfiguration? config = null)
-            => await MarkdownFilesAnalyzer.WriteResultsAsync(writer, config ?? MarkdownLinksVerifierConfiguration.Empty, $".{Path.DirectorySeparatorChar}WorkspaceTests");
+            => await MarkdownFilesAnalyzer.WriteResultsAsync(writer, config, $".{Path.DirectorySeparatorChar}WorkspaceTests");
 
         private static void Verify(string[] actual, (string File, string Link, string RelativeTo)[] expected)
         {
