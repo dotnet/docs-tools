@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace RedirectionVerifier
 {
 #pragma warning disable CA1812 // Avoid uninstantiated internal classes → JSON
-    internal sealed class OpenPublishingRedirections
+    public sealed class OpenPublishingRedirections
 #pragma warning restore CA1812 // Avoid uninstantiated internal classes
     {
         [JsonPropertyName("redirections")]

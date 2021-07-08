@@ -1,48 +1,22 @@
-﻿using System;
-using System.IO;
-using System.Text.Json;
+﻿using System.Threading.Tasks;
+using BuildVerifier.IO.Abstractions;
 
 namespace RedirectionVerifier
 {
-    public static class WhatsNewConfigurationReader
+    public class WhatsNewConfigurationReader
+        : BaseMappedConfigurationReader<WhatsNewConfiguration, string?>
     {
-        private static readonly JsonSerializerOptions s_options = new() { AllowTrailingCommas = true };
-        private static WhatsNewConfiguration? s_cachedWhatsNewConfiguration;
-        private static bool? s_fileExists;
+        public override string ConfigurationFileName => ".whatsnew.json";
 
-        private const string WhatsNewConfigurationFileName = ".whatsnew.json";
-
-        /// <summary>
-        /// Retrieves the configured "What's new" directory from <c>.whatsnew.json</c>.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">Failed to read <c>.whatsnew.json</c>.</exception>
-        public static string? GetWhatsNewPath()
+        public override async ValueTask<string?> MapConfigurationAsync()
         {
-            // Only check if the file exists one time.
-            if (s_fileExists is null)
+            WhatsNewConfiguration? configuration = await ReadConfigurationAsync();
+            if (configuration?.NavigationOptions is not null)
             {
-                s_fileExists = File.Exists(WhatsNewConfigurationFileName);
+                return configuration.NavigationOptions.WhatsNewPath;
             }
 
-            // If there are cached configuration values for "What's new", use 'em.
-            if (s_cachedWhatsNewConfiguration?.NavigationOptions is not null)
-            {
-                return s_cachedWhatsNewConfiguration.NavigationOptions.WhatsNewPath;
-            }
-
-            if (s_fileExists.Value)
-            {
-                string json = File.ReadAllText(WhatsNewConfigurationFileName);
-                WhatsNewConfiguration? configuration = JsonSerializer.Deserialize<WhatsNewConfiguration>(json, s_options);
-                if (configuration is null)
-                {
-                    throw new InvalidOperationException($"Failed to read '{WhatsNewConfigurationFileName}'.");
-                }
-
-                s_cachedWhatsNewConfiguration = configuration;
-            }
-
-            return s_cachedWhatsNewConfiguration?.NavigationOptions?.WhatsNewPath;
+            return default;
         }
     }
 }

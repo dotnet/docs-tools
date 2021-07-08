@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\BuildVerifier.IO.Abstractions\BuildVerifier.IO.Abstractions.csproj" />
     <ProjectReference Include="..\GitHub\GitHub.csproj" />
   </ItemGroup>
 

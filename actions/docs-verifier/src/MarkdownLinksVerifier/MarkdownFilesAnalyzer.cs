@@ -12,7 +12,7 @@ namespace MarkdownLinksVerifier
 {
     public static class MarkdownFilesAnalyzer
     {
-        public static async Task<int> WriteResultsAsync(TextWriter writer, MarkdownLinksVerifierConfiguration config, string? rootDirectory = null)
+        public static async Task<int> WriteResultsAsync(TextWriter writer, MarkdownLinksVerifierConfiguration? config, string? rootDirectory = null)
         {
             if (writer is null)
             {
