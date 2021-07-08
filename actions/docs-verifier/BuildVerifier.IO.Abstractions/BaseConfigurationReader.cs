@@ -56,21 +56,5 @@ namespace BuildVerifier.IO.Abstractions
 
             return s_cachedConfiguration;
         }
-
-        /// <summary>
-        /// (Optionally) maps the configuration file into a custom result object.
-        /// If not overridden in a subclass, returns the cached <typeparamref name="TConfigurationFile"/> file.
-        /// </summary>
-        public virtual async ValueTask<TResult?> MapConfigurationAsync<TResult>()
-            where TResult : class
-        {
-            TConfigurationFile? configuration = await ReadConfigurationAsync();
-            if (configuration is not null)
-            {
-                return configuration as TResult;
-            }
-            
-            return default;
-        }
     }
 }
