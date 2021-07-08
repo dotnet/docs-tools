@@ -5,6 +5,7 @@ using System.Linq;
 using GitHub;
 using MarkdownLinksVerifier;
 using MarkdownLinksVerifier.Configuration;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Octokit;
 using RedirectionVerifier;
 
@@ -52,8 +53,11 @@ static bool IsRedirectableFile(PullRequestFile file)
         : (file.IsRemoved() ? file.FileName : null);
 
     bool isDeletedToc = deletedFileName is not null && deletedFileName.Equals("toc.yml", StringComparison.OrdinalIgnoreCase);
+
     // A deleted toc.yml doesn't need redirection.
-    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName) && !IsInWhatsNewDirectory(deletedFileName);
+    // Also, don't require a redirection for file patterns specified as "exclude"s in docfx config file.
+    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName) && !IsInWhatsNewDirectory(deletedFileName) &&
+        DocfxConfigurationReader.GetMatchers().Any(m => m.Match(deletedFileName).HasMatches);
 }
 
 static bool IsYmlOrMarkdownFile(string? fileName) => Path.GetExtension(fileName) is ".yml" or ".md";
