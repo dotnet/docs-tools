@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,14 +13,15 @@ namespace RedirectionVerifier
         /// Verifies a redirection for the given source path, and write logs (using GitHub-specific syntax) to a text writer.
         /// </summary>
         /// <returns>Returns <see langword="true"/> for a valid redirection; <see langword="false"/> otherwise.</returns>
-        public static async Task<bool> WriteResultsAsync(TextWriter writer, string sourcePath)
+        public static async Task<bool> WriteResultsAsync(
+            TextWriter writer, string sourcePath, ImmutableArray<Redirection> redirections)
         {
             if (writer is null)
             {
                 throw new ArgumentNullException(nameof(writer));
             }
 
-            List<Redirection> foundRedirections = OpenPublishingRedirectionReader.GetRedirections().Where(redirection => redirection.SourcePath == sourcePath).ToList();
+            List<Redirection> foundRedirections = redirections.Where(redirection => redirection.SourcePath == sourcePath).ToList();
             if (foundRedirections.Count == 0)
             {
                 await writer.WriteLineAsync($"::error::No redirection is found for '{sourcePath}'.");

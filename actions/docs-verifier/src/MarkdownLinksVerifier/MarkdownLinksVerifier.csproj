@@ -12,4 +12,8 @@
     <InternalsVisibleTo Include="MarkdownLinksVerifier.UnitTests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\BuildVerifier.IO.Abstractions\BuildVerifier.IO.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

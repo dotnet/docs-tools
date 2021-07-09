@@ -15,12 +15,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarkdownLinksVerifier.UnitT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarkdownLinksVerifier", "src\MarkdownLinksVerifier\MarkdownLinksVerifier.csproj", "{AB7C85DF-B59E-44D0-BC02-56353818C2EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitHub", "src\GitHub\GitHub.csproj", "{70FE70B7-E2D4-4C40-BD0B-D5ED8DBC69B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub", "src\GitHub\GitHub.csproj", "{70FE70B7-E2D4-4C40-BD0B-D5ED8DBC69B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedirectionVerifier", "src\RedirectionVerifier\RedirectionVerifier.csproj", "{4D897639-E46D-43DE-BB72-68D598F53EFB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedirectionVerifier", "src\RedirectionVerifier\RedirectionVerifier.csproj", "{4D897639-E46D-43DE-BB72-68D598F53EFB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitHub.UnitTests", "tests\GitHub.UnitTests\GitHub.UnitTests.csproj", "{1E5C7AB5-75A5-419A-97FC-6ED0CAB4CF90}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActionRunner", "src\ActionRunner\ActionRunner.csproj", "{097626C4-F50D-4183-AB2F-9EBAA49E960C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub.UnitTests", "tests\GitHub.UnitTests\GitHub.UnitTests.csproj", "{1E5C7AB5-75A5-419A-97FC-6ED0CAB4CF90}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ActionRunner", "src\ActionRunner\ActionRunner.csproj", "{097626C4-F50D-4183-AB2F-9EBAA49E960C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildVerifier.IO.Abstractions", "BuildVerifier.IO.Abstractions\BuildVerifier.IO.Abstractions.csproj", "{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -104,6 +107,18 @@ Global
 		{097626C4-F50D-4183-AB2F-9EBAA49E960C}.Release|x64.Build.0 = Release|Any CPU
 		{097626C4-F50D-4183-AB2F-9EBAA49E960C}.Release|x86.ActiveCfg = Release|Any CPU
 		{097626C4-F50D-4183-AB2F-9EBAA49E960C}.Release|x86.Build.0 = Release|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Debug|x64.Build.0 = Debug|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Debug|x86.Build.0 = Debug|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Release|x64.ActiveCfg = Release|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Release|x64.Build.0 = Release|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Release|x86.ActiveCfg = Release|Any CPU
+		{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

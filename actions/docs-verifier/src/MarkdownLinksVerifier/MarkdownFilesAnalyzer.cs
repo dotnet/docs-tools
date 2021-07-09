@@ -12,16 +12,12 @@ namespace MarkdownLinksVerifier
 {
     public static class MarkdownFilesAnalyzer
     {
-        public static async Task<int> WriteResultsAsync(TextWriter writer, MarkdownLinksVerifierConfiguration config, string? rootDirectory = null)
+        public static async Task<int> WriteResultsAsync(
+            TextWriter writer, MarkdownLinksVerifierConfiguration? config, string? rootDirectory = null)
         {
             if (writer is null)
             {
                 throw new ArgumentNullException(nameof(writer));
-            }
-
-            if (config is null)
-            {
-                throw new ArgumentNullException(nameof(config));
             }
 
             var returnCode = 0;
@@ -41,7 +37,7 @@ namespace MarkdownLinksVerifier
                 {
                     LinkClassification classification = Classifier.Classify(link.Url);
                     ILinkValidator validator = LinkValidatorCreator.Create(classification, directory);
-                    if (!config.IsLinkExcluded(link.Url) && !validator.IsValid(link.Url, file))
+                    if (!IsLinkExcluded(config, link.Url) && !validator.IsValid(link.Url, file))
                     {
                         await writer.WriteLineAsync($"::error::In file '{file}': Invalid link: '{link.Url}' relative to '{directory}'.");
                         returnCode = 1;
@@ -50,6 +46,16 @@ namespace MarkdownLinksVerifier
             }
 
             return returnCode;
+
+            static bool IsLinkExcluded(MarkdownLinksVerifierConfiguration? config, string url)
+            {
+                if (config is null)
+                {
+                    return false;
+                }
+
+                return config.IsLinkExcluded(url);
+            }
         }
     }
 }

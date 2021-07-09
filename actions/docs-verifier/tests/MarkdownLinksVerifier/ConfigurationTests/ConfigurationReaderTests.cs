@@ -8,7 +8,8 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
 {
     public class ConfigurationReaderTests
     {
-        private const string ConfigurationFileName = ConfigurationReader.ConfigurationFileName;
+        private static readonly string ConfigurationFileName =
+            new ConfigurationReader().ConfigurationFileName;
 
         [Theory]
         [InlineData(",")]
@@ -24,10 +25,11 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
     ""~/""{trailingComma}
   ]
 }}");
-                MarkdownLinksVerifierConfiguration configuration = await ConfigurationReader.GetConfigurationAsync();
-                Assert.Equal(2, configuration.ExcludeStartingWith.Length);
-                Assert.Contains(@"xref:", configuration.ExcludeStartingWith, StringComparer.Ordinal);
-                Assert.Contains("~/", configuration.ExcludeStartingWith, StringComparer.Ordinal);
+                MarkdownLinksVerifierConfiguration? configuration =
+                    await new ConfigurationReader().ReadConfigurationAsync();
+                Assert.Equal(2, configuration?.ExcludeStartingWith.Length);
+                Assert.Contains(@"xref:", configuration?.ExcludeStartingWith, StringComparer.Ordinal);
+                Assert.Contains("~/", configuration?.ExcludeStartingWith, StringComparer.Ordinal);
             }
             finally
             {
@@ -40,8 +42,9 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
         {
             Assert.False(File.Exists(ConfigurationFileName), $"Expected '{ConfigurationFileName}' to not exist.");
 
-            MarkdownLinksVerifierConfiguration configuration = await ConfigurationReader.GetConfigurationAsync();
-            Assert.Equal(MarkdownLinksVerifierConfiguration.Empty, configuration);
+            MarkdownLinksVerifierConfiguration? configuration =
+                await new ConfigurationReader().ReadConfigurationAsync();
+            Assert.Null(configuration);
         }
     }
 }

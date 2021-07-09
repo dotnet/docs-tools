@@ -6,8 +6,7 @@ using Microsoft.Extensions.FileSystemGlobbing;
 
 namespace RedirectionVerifier
 {
-#pragma warning disable CA1812 // Avoid uninstantiated internal classes → JSON
-    internal sealed record DocfxConfiguration(
+    public sealed record DocfxConfiguration(
         [property: JsonPropertyName("build")] DocfxBuild? Build)
     {
         private IEnumerable<Matcher>? _matchers;
@@ -67,11 +66,11 @@ namespace RedirectionVerifier
         }
     }
 
-    internal sealed record DocfxBuild(
-        [property: JsonPropertyName("content")] DocfxContent[]? Contents);
+    public sealed record DocfxBuild(
+        [property: JsonPropertyName("content")] IList<DocfxContent>? Contents);
 
-    internal sealed record DocfxContent(
+    public sealed record DocfxContent(
         [property: JsonPropertyName("src")] string? Source,
-        [property: JsonPropertyName("files")] string[]? Files,
-        [property: JsonPropertyName("exclude")] string[]? Excludes);
+        [property: JsonPropertyName("files")] IList<string>? Files,
+        [property: JsonPropertyName("exclude")] IList<string>? Excludes);
 }

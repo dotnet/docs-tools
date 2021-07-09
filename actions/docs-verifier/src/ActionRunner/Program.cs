@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using GitHub;
@@ -9,7 +11,8 @@ using Microsoft.Extensions.FileSystemGlobbing;
 using Octokit;
 using RedirectionVerifier;
 
-MarkdownLinksVerifierConfiguration configuration = await ConfigurationReader.GetConfigurationAsync();
+ConfigurationReader configurationReader = new();
+MarkdownLinksVerifierConfiguration? configuration = await configurationReader.ReadConfigurationAsync();
 int returnCode = await MarkdownFilesAnalyzer.WriteResultsAsync(Console.Out, configuration);
 
 // on: pull_request
@@ -20,7 +23,18 @@ if (!int.TryParse(Environment.GetEnvironmentVariable("GITHUB_PR_NUMBER"), out in
     throw new InvalidOperationException($"The value of GITHUB_PR_NUMBER environment variable is not valid.");
 }
 
-List<PullRequestFile> files = (await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber)).Where(f => IsRedirectableFile(f)).ToList();
+DocfxConfigurationReader docfxConfigurationReader = new();
+IEnumerable<Matcher> matchers = await docfxConfigurationReader.MapConfigurationAsync();
+IEnumerable<PullRequestFile> pullRequestFiles = await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber);
+
+WhatsNewConfigurationReader whatsNewConfigurationReader = new();
+string? whatsNewPath = await whatsNewConfigurationReader.MapConfigurationAsync();
+
+OpenPublishingRedirectionReader redirectionReader = new();
+ImmutableArray<Redirection> redirections = await redirectionReader.MapConfigurationAsync();
+
+List<PullRequestFile> files =
+    pullRequestFiles.Where(f => IsRedirectableFile(f, matchers, whatsNewPath)).ToList();
 
 // We should only ever fail on MD and YML files, no other files require redirection.
 // Also, filter out files that are part of the "What's new" directory - as they shouldn't require redirects.
@@ -30,14 +44,14 @@ foreach (PullRequestFile file in files)
     // In both cases, the URL in live docs site is the same.
     if (file.IsRenamed() && !IsExtensionChangeOnly(file.PreviousFileName, file.FileName))
     {
-        if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.PreviousFileName))
+        if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.PreviousFileName, redirections))
         {
             returnCode++;
         }
     }
     else if (file.IsRemoved() && !files.Any(f => f.IsAdded() && IsExtensionChangeOnly(file.FileName, f.FileName)))
     {
-        if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.FileName))
+        if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.FileName, redirections))
         {
             returnCode++;
         }
@@ -46,7 +60,8 @@ foreach (PullRequestFile file in files)
 
 return returnCode;
 
-static bool IsRedirectableFile(PullRequestFile file)
+static bool IsRedirectableFile(
+    PullRequestFile file, IEnumerable<Matcher> matchers, string? whatsNewPath)
 {
     string? deletedFileName = file.IsRenamed()
         ? file.PreviousFileName
@@ -56,22 +71,23 @@ static bool IsRedirectableFile(PullRequestFile file)
 
     // A deleted toc.yml doesn't need redirection.
     // Also, don't require a redirection for file patterns specified as "exclude"s in docfx config file.
-    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName) && !IsInWhatsNewDirectory(deletedFileName) &&
-        DocfxConfigurationReader.GetMatchers().Any(m => m.Match(deletedFileName).HasMatches);
+    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName)
+        && !IsInWhatsNewDirectory(deletedFileName, whatsNewPath) &&
+        matchers.Any(m => m.Match(deletedFileName).HasMatches);
 }
 
-static bool IsYmlOrMarkdownFile(string? fileName) => Path.GetExtension(fileName) is ".yml" or ".md";
+static bool IsYmlOrMarkdownFile([NotNullWhen(true)] string? fileName) =>
+    Path.GetExtension(fileName) is ".yml" or ".md";
 
-static bool IsInWhatsNewDirectory(string? fileName)
+static bool IsInWhatsNewDirectory(string fileName, string? whatsNewPath)
 {
-    string? whatsNewPath = WhatsNewConfigurationReader.GetWhatsNewPath();
     if (whatsNewPath is { Length: > 0 })
     {
         // Example:
         // file.FileName:   docs/whats-new/2021-03.md
         // whatsNewPath:    docs/whats-new
 
-        return fileName?.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase) == true;
+        return fileName.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase);
     }
 
     return false;
