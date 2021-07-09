@@ -6,7 +6,6 @@ using Microsoft.Extensions.FileSystemGlobbing;
 
 namespace RedirectionVerifier
 {
-#pragma warning disable CA1812 // Avoid uninstantiated internal classes → JSON
     public sealed record DocfxConfiguration(
         [property: JsonPropertyName("build")] DocfxBuild? Build)
     {

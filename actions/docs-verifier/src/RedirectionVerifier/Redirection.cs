@@ -2,9 +2,7 @@
 
 namespace RedirectionVerifier
 {
-#pragma warning disable CA1812 // Avoid uninstantiated internal classes → JSON
     public sealed class Redirection
-#pragma warning restore CA1812 // Avoid uninstantiated internal classes
     {
         [JsonPropertyName("source_path")]
         public string SourcePath { get; set; } = null!;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using GitHub;
@@ -70,13 +71,15 @@ static bool IsRedirectableFile(
 
     // A deleted toc.yml doesn't need redirection.
     // Also, don't require a redirection for file patterns specified as "exclude"s in docfx config file.
-    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName) && !IsInWhatsNewDirectory(deletedFileName, whatsNewPath) &&
+    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName)
+        && !IsInWhatsNewDirectory(deletedFileName, whatsNewPath) &&
         matchers.Any(m => m.Match(deletedFileName).HasMatches);
 }
 
-static bool IsYmlOrMarkdownFile(string? fileName) => Path.GetExtension(fileName) is ".yml" or ".md";
+static bool IsYmlOrMarkdownFile([NotNullWhen(true)] string? fileName) =>
+    Path.GetExtension(fileName) is ".yml" or ".md";
 
-static bool IsInWhatsNewDirectory(string? fileName, string? whatsNewPath)
+static bool IsInWhatsNewDirectory(string fileName, string? whatsNewPath)
 {
     if (whatsNewPath is { Length: > 0 })
     {
@@ -84,7 +87,7 @@ static bool IsInWhatsNewDirectory(string? fileName, string? whatsNewPath)
         // file.FileName:   docs/whats-new/2021-03.md
         // whatsNewPath:    docs/whats-new
 
-        return fileName?.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase) == true;
+        return fileName.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase);
     }
 
     return false;
