@@ -67,7 +67,8 @@ static bool IsRedirectableFile(
         ? file.PreviousFileName
         : (file.IsRemoved() ? file.FileName : null);
 
-    bool isDeletedToc = deletedFileName is not null && deletedFileName.Equals("toc.yml", StringComparison.OrdinalIgnoreCase);
+    bool isDeletedToc = deletedFileName is not null
+        && deletedFileName.EndsWith("toc.yml", StringComparison.OrdinalIgnoreCase);
 
     // A deleted toc.yml doesn't need redirection.
     // Also, don't require a redirection for file patterns specified as "exclude"s in docfx config file.
