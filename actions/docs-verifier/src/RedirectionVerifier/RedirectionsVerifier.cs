@@ -21,7 +21,7 @@ namespace RedirectionVerifier
                 throw new ArgumentNullException(nameof(writer));
             }
             
-            foreach (var r in redirections)
+            foreach (Redirection r in redirections)
             {
                 await writer.WriteLineAsync($"SourcePath: {r.SourcePath}, SourcePathFromRoot: {r.SourcePathFromRoot}");
             }
