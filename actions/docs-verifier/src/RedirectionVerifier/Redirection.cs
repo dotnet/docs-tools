@@ -5,7 +5,10 @@ namespace RedirectionVerifier
     public sealed class Redirection
     {
         [JsonPropertyName("source_path")]
-        public string SourcePath { get; set; } = null!;
+        public string? SourcePath { get; set; } = null;
+
+        [JsonPropertyName("source_path_from_root")]
+        public string? SourcePathFromRoot { get; set; } = null;
 
         [JsonPropertyName("redirect_url")]
 #pragma warning disable CA1056 // URI-like properties should not be strings → Could throw

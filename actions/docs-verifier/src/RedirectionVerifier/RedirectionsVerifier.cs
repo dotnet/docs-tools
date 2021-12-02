@@ -21,7 +21,11 @@ namespace RedirectionVerifier
                 throw new ArgumentNullException(nameof(writer));
             }
 
-            List<Redirection> foundRedirections = redirections.Where(redirection => redirection.SourcePath == sourcePath).ToList();
+            List<Redirection> foundRedirections =
+                redirections.Where(
+                    redirection =>
+                        redirection.SourcePath == sourcePath ||
+                        redirection.SourcePathFromRoot == $"/{sourcePath}").ToList();
             if (foundRedirections.Count == 0)
             {
                 await writer.WriteLineAsync($"::error::No redirection is found for '{sourcePath}'.");
