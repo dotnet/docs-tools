@@ -38,7 +38,8 @@ foreach (string redirectionFile in redirectionFiles)
 {
     OpenPublishingRedirectionReader redirectionReader = new(redirectionFile);
     ImmutableArray<Redirection> redirections = await redirectionReader.MapConfigurationAsync();
-    allRedirections.AddRange(redirections);
+    if (!redirections.IsDefault)
+        allRedirections.AddRange(redirections);
 }
 
 List<PullRequestFile> files =
