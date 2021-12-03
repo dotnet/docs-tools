@@ -14,7 +14,7 @@ namespace RedirectionVerifier
         /// </summary>
         /// <returns>Returns <see langword="true"/> for a valid redirection; <see langword="false"/> otherwise.</returns>
         public static async Task<bool> WriteResultsAsync(
-            TextWriter writer, string sourcePath, ImmutableArray<Redirection> redirections)
+            TextWriter writer, string sourcePath, List<Redirection> redirections)
         {
             if (writer is null)
             {
