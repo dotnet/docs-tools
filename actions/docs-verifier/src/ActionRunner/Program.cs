@@ -34,12 +34,15 @@ string? whatsNewPath = await whatsNewConfigurationReader.MapConfigurationAsync()
 ImmutableArray<string> redirectionFiles = RedirectionHelpers.GetRedirectionFileNames();
 
 var allRedirections = new List<Redirection>();
-foreach (string redirectionFile in redirectionFiles)
+if (!redirectionFiles.IsDefault)
 {
-    OpenPublishingRedirectionReader redirectionReader = new(redirectionFile);
-    ImmutableArray<Redirection> redirections = await redirectionReader.MapConfigurationAsync();
-    if (!redirections.IsDefault)
-        allRedirections.AddRange(redirections);
+    foreach (string redirectionFile in redirectionFiles)
+    {
+        OpenPublishingRedirectionReader redirectionReader = new(redirectionFile);
+        ImmutableArray<Redirection> redirections = await redirectionReader.MapConfigurationAsync();
+        if (!redirections.IsDefault)
+            allRedirections.AddRange(redirections);
+    }
 }
 
 List<PullRequestFile> files =
