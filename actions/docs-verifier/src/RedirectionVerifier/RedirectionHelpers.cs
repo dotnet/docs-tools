@@ -34,6 +34,12 @@ namespace RedirectionVerifier
             if (redirectionFileNames.Count == 0)
                 redirectionFileNames.Add(".openpublishing.redirection.json");
 
+            Console.WriteLine("The following redirection files are listed:");
+            foreach (string filename in redirectionFileNames)
+            {
+                Console.WriteLine(filename);
+            }
+
             return redirectionFileNames.ToImmutableArray<string>();
         }
     }
