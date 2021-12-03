@@ -19,6 +19,8 @@ namespace RedirectionVerifier
 
             var redirectionFileNames = new ImmutableArray<string>();
 
+            Console.WriteLine($"Found {docsets.Length} docsets.");
+
             if (docsets.Length == 0)
                 throw new InvalidOperationException("No docsets were found in the OPS config file.");
 
