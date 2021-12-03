@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Threading.Tasks;
 using BuildVerifier.IO.Abstractions;
 
@@ -23,7 +22,7 @@ namespace RedirectionVerifier
             if (configuration is { Redirections: { Length: > 0 } })
             {
                 return configuration.Redirections;
-            }            
+            }
 
             return default;
         }
