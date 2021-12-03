@@ -6,13 +6,13 @@ using BuildVerifier.IO.Abstractions;
 namespace RedirectionVerifier
 {
     public class OpenPublishingConfigReader
-        : BaseMappedConfigurationReader<OpenPublishingDocsets, ImmutableArray<Docset>>
+        : BaseMappedConfigurationReader<OpenPublishingConfig, ImmutableArray<Docset>>
     {
         public override string ConfigurationFileName => ".openpublishing.publish.config.json";
 
         public override async ValueTask<ImmutableArray<Docset>> MapConfigurationAsync()
         {
-            OpenPublishingDocsets? configuration = await ReadConfigurationAsync();
+            OpenPublishingConfig? configuration = await ReadConfigurationAsync();
             if (configuration is { Docsets: { Length: > 0 } })
             {
                 return configuration.Docsets;
