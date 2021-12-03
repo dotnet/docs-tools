@@ -53,6 +53,8 @@ namespace BuildVerifier.IO.Abstractions
 
                 s_cachedConfiguration = configuration;
             }
+            else
+                Console.WriteLine($"Configuration file {ConfigurationFileName} does not exist.");
 
             return s_cachedConfiguration;
         }

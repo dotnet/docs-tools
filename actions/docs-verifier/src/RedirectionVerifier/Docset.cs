@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
 namespace RedirectionVerifier
@@ -6,6 +6,6 @@ namespace RedirectionVerifier
     public sealed class Docset
     {
         [JsonPropertyName("redirection_files")]
-        public List<string>? RedirectionFiles { get; set; } = null;
+        public ImmutableArray<string>? RedirectionFiles { get; } = null;
     }
 }
