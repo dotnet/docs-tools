@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using MarkdownLinksVerifier.Configuration;
@@ -9,8 +8,8 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
 {
     public class ConfigurationReaderTests
     {
-        private static readonly List<string> ConfigurationFileNames =
-            new ConfigurationReader().ConfigurationFileNames;
+        private static readonly string ConfigurationFileName =
+            new ConfigurationReader().ConfigurationFileName;
 
         [Theory]
         [InlineData(",")]
@@ -19,7 +18,7 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
         {
             try
             {
-                await File.WriteAllTextAsync(ConfigurationFileNames[0],
+                await File.WriteAllTextAsync(ConfigurationFileName,
 @$"{{
   ""excludeStartingWith"": [
     ""xref:"",
@@ -34,14 +33,14 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
             }
             finally
             {
-                File.Delete(ConfigurationFileNames[0]);
+                File.Delete(ConfigurationFileName);
             }
         }
 
         [Fact]
         public async Task TestConfigurationFileDoesNotExist()
         {
-            Assert.False(File.Exists(ConfigurationFileNames[0]), $"Expected '{ConfigurationFileNames[0]}' to not exist.");
+            Assert.False(File.Exists(ConfigurationFileName), $"Expected '{ConfigurationFileName}' to not exist.");
 
             MarkdownLinksVerifierConfiguration? configuration =
                 await new ConfigurationReader().ReadConfigurationAsync();

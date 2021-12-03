@@ -11,7 +11,7 @@ namespace RedirectionVerifier
     {
         private static readonly Matcher s_matchAllMatcher = new Matcher().AddInclude("**");
 
-        public override List<string> ConfigurationFileNames => new List<string>(new string[] { "docfx.json" });
+        public override string ConfigurationFileName => "docfx.json";
 
         public override async ValueTask<IEnumerable<Matcher>> MapConfigurationAsync()
         {
