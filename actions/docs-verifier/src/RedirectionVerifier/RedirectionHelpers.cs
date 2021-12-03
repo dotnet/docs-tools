@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
@@ -17,9 +18,7 @@ namespace RedirectionVerifier
             Task<ImmutableArray<Docset>> task = Task.Run(async () => await GetDocsetsAsync());
             ImmutableArray<Docset> docsets = task.Result;
 
-            var redirectionFileNames = new ImmutableArray<string>();
-
-            Console.WriteLine($"Found {docsets.Length} docsets.");
+            var redirectionFileNames = new List<string>();
 
             if (docsets.Length == 0)
                 throw new InvalidOperationException("No docsets were found in the OPS config file.");
@@ -32,10 +31,10 @@ namespace RedirectionVerifier
             }
 
             // If no redirection files are found in the OPS config, just use the default name.
-            if (redirectionFileNames.Length == 0)
+            if (redirectionFileNames.Count == 0)
                 redirectionFileNames.Add(".openpublishing.redirection.json");
 
-            return redirectionFileNames;
+            return redirectionFileNames.ToImmutableArray<string>();
         }
     }
 }
