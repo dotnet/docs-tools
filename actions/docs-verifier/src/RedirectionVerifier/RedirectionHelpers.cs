@@ -18,10 +18,10 @@ namespace RedirectionVerifier
             Task<ImmutableArray<Docset>> task = Task.Run(async () => await GetDocsetsAsync());
             ImmutableArray<Docset> docsets = task.Result;
 
-            var redirectionFileNames = new List<string>();
+            if (docsets.IsDefault)
+                return default;
 
-            if (docsets.Length == 0)
-                throw new InvalidOperationException("No docsets were found in the OPS config file.");
+            var redirectionFileNames = new List<string>();
 
             // If there's more than one docset, combine all the redirection file names.
             foreach (Docset docset in docsets)
