@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using BuildVerifier.IO.Abstractions;
 
 namespace RedirectionVerifier
@@ -6,7 +7,7 @@ namespace RedirectionVerifier
     public class WhatsNewConfigurationReader
         : BaseMappedConfigurationReader<WhatsNewConfiguration, string?>
     {
-        public override string ConfigurationFileName => ".whatsnew.json";
+        public override List<string> ConfigurationFileNames => new List<string>(new string[] { ".whatsnew.json" });
 
         public override async ValueTask<string?> MapConfigurationAsync()
         {

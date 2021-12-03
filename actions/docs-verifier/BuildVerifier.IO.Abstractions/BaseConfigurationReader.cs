@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -14,23 +17,23 @@ namespace BuildVerifier.IO.Abstractions
         };
 
         private TConfigurationFile? s_cachedConfiguration;
-        private bool? s_fileExists;
+        private bool? s_filesExist;
 
         /// <summary>
-        /// The name of the configuration file on disk.
-        /// The name is used relatively with <see cref="File.Exists(string)"/>.
+        /// The name of the configuration file(s) on disk.
+        /// The names are used relatively with <see cref="File.Exists(string)"/>.
         /// </summary>
-        public abstract string ConfigurationFileName { get; }
+        public abstract List<string> ConfigurationFileNames { get; }
 
         /// <summary>
         /// Reads (or returns the cached) <typeparamref name="TConfigurationFile"/> file.
         /// </summary>
         public async ValueTask<TConfigurationFile?> ReadConfigurationAsync()
         {
-            // Only check if the file exists one time.
-            if (s_fileExists is null)
+            // Only check if the files exist one time.
+            if (s_filesExist is null)
             {
-                s_fileExists = File.Exists(ConfigurationFileName);
+                s_filesExist = ConfigurationFileNames.All(fn => File.Exists(fn));
             }
 
             // If there are cached configuration values, use 'em.
@@ -39,16 +42,23 @@ namespace BuildVerifier.IO.Abstractions
                 return s_cachedConfiguration;
             }
 
-            if (s_fileExists.Value)
+            if (s_filesExist.Value)
             {
-                string json = await File.ReadAllTextAsync(ConfigurationFileName);
+                // Read the first file.
+                string json = await File.ReadAllTextAsync(ConfigurationFileNames[0]);
+
+                // Read any additional files.
+                for (var i = 1; i < ConfigurationFileNames.Count; i++)
+                {
+                    json = String.Concat(json, await File.ReadAllTextAsync(ConfigurationFileNames[i]));
+                }
 
                 TConfigurationFile? configuration =
                     JsonSerializer.Deserialize<TConfigurationFile>(json, s_options);
 
                 if (configuration is null)
                 {
-                    throw new InvalidOperationException($"Failed to read '{ConfigurationFileName}'.");
+                    throw new InvalidOperationException($"Failed to read '{ConfigurationFileNames}'.");
                 }
 
                 s_cachedConfiguration = configuration;
