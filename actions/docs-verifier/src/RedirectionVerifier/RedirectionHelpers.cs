@@ -13,10 +13,9 @@ namespace RedirectionVerifier
             return await configReader.MapConfigurationAsync();
         }
 
-        public static ImmutableArray<string> GetRedirectionFileNames()
+        public static async Task<ImmutableArray<string>> GetRedirectionFileNames()
         {
-            Task<ImmutableArray<Docset>> task = Task.Run(async () => await GetDocsetsAsync());
-            ImmutableArray<Docset> docsets = task.Result;
+            ImmutableArray<Docset> docsets = await GetDocsetsAsync();
 
             if (docsets.IsDefault)
                 return default;

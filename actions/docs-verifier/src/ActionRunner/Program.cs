@@ -31,7 +31,7 @@ WhatsNewConfigurationReader whatsNewConfigurationReader = new();
 string? whatsNewPath = await whatsNewConfigurationReader.MapConfigurationAsync();
 
 // Get all redirection files.
-ImmutableArray<string> redirectionFiles = RedirectionHelpers.GetRedirectionFileNames();
+ImmutableArray<string> redirectionFiles = await RedirectionHelpers.GetRedirectionFileNames();
 
 var allRedirections = new List<Redirection>();
 if (!redirectionFiles.IsDefault)
