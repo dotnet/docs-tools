@@ -30,8 +30,20 @@ IEnumerable<PullRequestFile> pullRequestFiles = await GitHubPullRequest.GetPullR
 WhatsNewConfigurationReader whatsNewConfigurationReader = new();
 string? whatsNewPath = await whatsNewConfigurationReader.MapConfigurationAsync();
 
-OpenPublishingRedirectionReader redirectionReader = new();
-ImmutableArray<Redirection> redirections = await redirectionReader.MapConfigurationAsync();
+// Get all redirection files.
+ImmutableArray<string> redirectionFiles = await RedirectionHelpers.GetRedirectionFileNames();
+
+var allRedirections = new List<Redirection>();
+if (!redirectionFiles.IsDefault)
+{
+    foreach (string redirectionFile in redirectionFiles)
+    {
+        OpenPublishingRedirectionReader redirectionReader = new(redirectionFile);
+        ImmutableArray<Redirection> redirections = await redirectionReader.MapConfigurationAsync();
+        if (!redirections.IsDefault)
+            allRedirections.AddRange(redirections);
+    }
+}
 
 List<PullRequestFile> files =
     pullRequestFiles.Where(f => IsRedirectableFile(f, matchers, whatsNewPath)).ToList();
@@ -44,14 +56,14 @@ foreach (PullRequestFile file in files)
     // In both cases, the URL in live docs site is the same.
     if (file.IsRenamed() && !IsExtensionChangeOnly(file.PreviousFileName, file.FileName))
     {
-        if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.PreviousFileName, redirections))
+        if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.PreviousFileName, allRedirections))
         {
             returnCode++;
         }
     }
     else if (file.IsRemoved() && !files.Any(f => f.IsAdded() && IsExtensionChangeOnly(file.FileName, f.FileName)))
     {
-        if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.FileName, redirections))
+        if (!await RedirectionsVerifier.WriteResultsAsync(Console.Out, file.FileName, allRedirections))
         {
             returnCode++;
         }
