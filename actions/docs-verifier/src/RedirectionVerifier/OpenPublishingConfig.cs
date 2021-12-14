@@ -5,7 +5,7 @@ namespace RedirectionVerifier
 {
     public sealed class OpenPublishingConfig
     {
-        [JsonPropertyName("docsets_to_publish")]
-        public ImmutableArray<Docset> Docsets { get; set; }
+        [JsonPropertyName("redirection_files")]
+        public ImmutableArray<string>? RedirectionFiles { get; set; } = null;
     }
 }
