@@ -19,7 +19,7 @@ namespace RedirectionVerifier
 
             // If no redirection files are found in the OPS config, just use the default name.
             if (redirectionFileNames == null)
-                redirectionFileNames = new ImmutableArray<string>() { ".openpublishing.redirection.json" };
+                redirectionFileNames = ImmutableArray.Create(".openpublishing.redirection.json");
 
             Console.WriteLine($"The following {redirectionFileNames.Value.Length} redirection files are registered:");
             foreach (string filename in redirectionFileNames)
