@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
@@ -11,13 +13,25 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
         private bool _initialized;
         private bool _disposed;
         private readonly string _workspacePath;
+        private readonly string _testPath;
 
-        public Workspace()
+        public Workspace([CallerMemberName] string testName = null!)
         {
-            _workspacePath = Path.Join(Directory.GetCurrentDirectory(), WorkspaceTests);
-            if (Directory.Exists(_workspacePath))
+            if (string.IsNullOrWhiteSpace(testName))
             {
-                throw new InvalidOperationException($"Cannot create a workspace with existing directory '{_workspacePath}'.");
+                throw new ArgumentException("Invalid member name.");
+            }
+
+            _workspacePath = Path.Join(Directory.GetCurrentDirectory(), WorkspaceTests);
+            if (!Directory.Exists(_workspacePath))
+            {
+                Directory.CreateDirectory(_workspacePath);
+            }
+
+            _testPath = Path.Join(_workspacePath, testName);
+            if (Directory.Exists(_testPath))
+            {
+                throw new InvalidOperationException($"Cannot create a workspace with existing directory '{_testPath}'.");
             }
         }
 
@@ -36,11 +50,11 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
 
             foreach ((string path, string contents) in Files)
             {
-                string filePath = Path.Join(_workspacePath, path);
+                string filePath = Path.Join(_testPath, path);
                 string? containingDirectory = Path.GetDirectoryName(filePath);
                 if (containingDirectory is null)
                 {
-                    throw new InvalidOperationException($"Containing director for path '{filePath}' is null.");
+                    throw new InvalidOperationException($"Containing directory for path '{filePath}' is null.");
                 }
 
                 if (!Directory.Exists(containingDirectory))
@@ -52,6 +66,7 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
             }
 
             _initialized = true;
+            Directory.SetCurrentDirectory(_workspacePath);
             return _workspacePath;
 
         }
@@ -68,7 +83,7 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
                 throw new InvalidOperationException("The workspace isn't initialized.");
             }
 
-            Directory.Delete(_workspacePath, recursive: true);
+            Directory.Delete(_testPath, recursive: true);
             _disposed = true;
         }
     }

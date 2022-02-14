@@ -16,11 +16,66 @@ MarkdownLinksVerifierConfiguration? configuration = await configurationReader.Re
 
 Console.WriteLine($"Starting Markdown Links Verifier in '{Directory.GetCurrentDirectory()}'.");
 List<LinkError> result = await MarkdownFilesAnalyzer.GetResultsAsync(configuration);
-int returnCode = result.Count;
 
 foreach (LinkError linkError in result)
 {
-    Console.WriteLine($"::error::In file '{linkError.File}': Invalid link: '{linkError.Link}' relative to '{linkError.RelativeTo}'.");
+    Console.WriteLine($"::error::In file '{linkError.File}': Invalid link: '{linkError.Link}'.");
+}
+
+int returnCode = result.Count;
+
+// Get all redirection files.
+ImmutableArray<string> redirectionFiles = await RedirectionHelpers.GetRedirectionFileNames();
+
+var allRedirections = new List<Redirection>();
+if (!redirectionFiles.IsDefault)
+{
+    foreach (string redirectionFile in redirectionFiles)
+    {
+        OpenPublishingRedirectionReader redirectionReader = new(redirectionFile);
+        ImmutableArray<Redirection> redirections = await redirectionReader.MapConfigurationAsync();
+        if (!redirections.IsDefault)
+            allRedirections.AddRange(redirections);
+    }
+}
+
+if (Environment.GetEnvironmentVariable("IS_TRY_FIX") == "true")
+{
+    //await File.WriteAllTextAsync("Hello_from_actions.md", "Hello!");
+    foreach (LinkError linkError in result)
+    {
+        // For every reported invalid link, check if it already has a redirection so that it can be fixed automatically.
+        string sourcePath = Path.GetRelativePath(Directory.GetCurrentDirectory(), linkError.AbsolutePath);
+        Redirection? redirection = allRedirections.SingleOrDefault(redirection => redirection.MatchesSourcePath(sourcePath));
+        const string dotnetPrefix = "/dotnet/";
+        if (redirection is { RedirectUrl: string redirectUrl } && redirectUrl.StartsWith(dotnetPrefix, StringComparison.Ordinal))
+        {
+            string newAbsolutePath = "docs/" + redirectUrl[dotnetPrefix.Length..];
+            if (File.Exists(newAbsolutePath + ".md"))
+            {
+                newAbsolutePath += ".md";
+            }
+            else if (File.Exists(newAbsolutePath + ".yml"))
+            {
+                newAbsolutePath += ".yml";
+            }
+            else
+            {
+                continue;
+            }
+
+            string file = await File.ReadAllTextAsync(linkError.File);
+            file = file.Remove(linkError.UrlSpan.Start, linkError.UrlSpan.Length);
+
+            string newLink = Path.GetRelativePath(Path.GetDirectoryName(linkError.File)!, newAbsolutePath);
+
+            file = file.Insert(linkError.UrlSpan.Start, newLink);
+            await File.WriteAllTextAsync(linkError.File, file);
+            Console.WriteLine($"CAN FIX: '{sourcePath}' to '{newAbsolutePath}'");
+        }
+    }
+    return 0;
+
 }
 
 // on: pull_request
@@ -37,21 +92,6 @@ IEnumerable<PullRequestFile> pullRequestFiles = await GitHubPullRequest.GetPullR
 
 WhatsNewConfigurationReader whatsNewConfigurationReader = new();
 string? whatsNewPath = await whatsNewConfigurationReader.MapConfigurationAsync();
-
-// Get all redirection files.
-ImmutableArray<string> redirectionFiles = await RedirectionHelpers.GetRedirectionFileNames();
-
-var allRedirections = new List<Redirection>();
-if (!redirectionFiles.IsDefault)
-{
-    foreach (string redirectionFile in redirectionFiles)
-    {
-        OpenPublishingRedirectionReader redirectionReader = new(redirectionFile);
-        ImmutableArray<Redirection> redirections = await redirectionReader.MapConfigurationAsync();
-        if (!redirections.IsDefault)
-            allRedirections.AddRange(redirections);
-    }
-}
 
 List<PullRequestFile> files =
     pullRequestFiles.Where(f => IsRedirectableFile(f, matchers, whatsNewPath)).ToList();

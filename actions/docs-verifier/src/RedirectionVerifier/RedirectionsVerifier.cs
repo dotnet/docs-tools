@@ -22,10 +22,7 @@ namespace RedirectionVerifier
             }
 
             List<Redirection> foundRedirections =
-                redirections.Where(
-                    redirection =>
-                        redirection.SourcePath == sourcePath ||
-                        redirection.SourcePathFromRoot == $"/{sourcePath}").ToList();
+                redirections.Where(redirection => redirection.MatchesSourcePath(sourcePath)).ToList();
             if (foundRedirections.Count == 0)
             {
                 await writer.WriteLineAsync($"::error::No redirection is found for '{sourcePath}'.");

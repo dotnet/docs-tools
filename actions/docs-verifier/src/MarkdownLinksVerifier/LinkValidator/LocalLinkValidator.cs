@@ -14,6 +14,7 @@ namespace MarkdownLinksVerifier.LinkValidator
     internal class LocalLinkValidator : ILinkValidator
     {
         private readonly string _baseDirectory;
+        private static readonly MarkdownPipeline s_pipeline = new MarkdownPipelineBuilder().UseAutoIdentifiers(AutoIdentifierOptions.GitHub).Build(); // TODO: Is AutoIdentifierOptions.GitHub the correct value to use?
 
         // https://github.com/dotnet/docfx/blob/64fa7e4ed1c1f416e672f2aee2307fd98a21383e/src/Microsoft.DocAsCode.Dfm/Rules/DfmIncludeBlockRule.cs#L44
         // private static readonly Regex s_incRegex = new Regex(@"^\[!INCLUDE\+?\s*\[((?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*)\]\(\s*<?([^)]*?)>?(?:\s+(['""])([\s\S]*?)\3)?\s*\)\]\s*(\n|$)", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10));
@@ -24,17 +25,21 @@ namespace MarkdownLinksVerifier.LinkValidator
 
         public LocalLinkValidator(string baseDirectory) => _baseDirectory = baseDirectory;
 
-        public bool IsValid(string link, string filePath)
+        public ValidationResult Validate(string link, string filePath)
         {
             // Consider [text]() as valid. It redirects to the current directory.
             if (string.IsNullOrEmpty(link))
             {
-                return true;
+                return new ValidationResult { State = ValidationState.Valid, AbsolutePathWithoutHeading = string.Empty };
             }
 
             if (link.StartsWith('#'))
             {
-                return IsHeadingValid(filePath, link[1..]);
+                return new ValidationResult
+                {
+                    State = IsHeadingValid(filePath, link[1..]) ? ValidationState.Valid : ValidationState.HeadingNotFound,
+                    AbsolutePathWithoutHeading = filePath
+                };
             }
 
             link = link.Replace("%20", " ", StringComparison.Ordinal);
@@ -59,11 +64,26 @@ namespace MarkdownLinksVerifier.LinkValidator
 
             if (headingIdWithoutHash is null)
             {
-                return File.Exists(link) || Directory.Exists(link);
+                return new ValidationResult
+                {
+                    State = File.Exists(link) || Directory.Exists(link) ? ValidationState.Valid : ValidationState.LinkNotFound,
+                    AbsolutePathWithoutHeading = link,
+                };
             }
             else
             {
-                return File.Exists(link) && IsHeadingValid(link, headingIdWithoutHash);
+                if (!File.Exists(link))
+                {
+                    return new ValidationResult { State = ValidationState.LinkNotFound, AbsolutePathWithoutHeading = link };
+                }
+                else
+                {
+                    return new ValidationResult
+                    {
+                        State = IsHeadingValid(link, headingIdWithoutHash) ? ValidationState.Valid : ValidationState.HeadingNotFound,
+                        AbsolutePathWithoutHeading = link,
+                    };
+                }
             }
         }
 
@@ -113,8 +133,7 @@ namespace MarkdownLinksVerifier.LinkValidator
                     continue;
                 }
 
-                MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseAutoIdentifiers(AutoIdentifierOptions.GitHub).Build(); // TODO: Is AutoIdentifierOptions.GitHub the correct value to use?
-                MarkdownDocument document = Markdown.Parse(File.ReadAllText(potentialFile), pipeline);
+                MarkdownDocument document = Markdown.Parse(File.ReadAllText(potentialFile), s_pipeline);
                 if (document.Descendants<HeadingBlock>().Any(heading => headingIdWithoutHash == heading.GetAttributes().Id) ||
                     document.Descendants<HtmlInline>().Any(html => IsValidHtml(html.Tag, headingIdWithoutHash)) ||
                     document.Descendants<HtmlBlock>().Any(block => block.Lines.Lines.Any(line => IsValidHtml(line.Slice.ToString(), headingIdWithoutHash))))
