@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Markdig;
@@ -10,20 +11,15 @@ using MarkdownLinksVerifier.LinkValidator;
 
 namespace MarkdownLinksVerifier
 {
+    public record LinkError(string File, string Link, string RelativeTo);
+
     public static class MarkdownFilesAnalyzer
     {
-        public static async Task<int> WriteResultsAsync(
-            TextWriter writer, MarkdownLinksVerifierConfiguration? config, string? rootDirectory = null)
+        public static async Task<List<LinkError>> GetResultsAsync(
+            MarkdownLinksVerifierConfiguration? config, string? rootDirectory = null)
         {
-            if (writer is null)
-            {
-                throw new ArgumentNullException(nameof(writer));
-            }
-
-            var returnCode = 0;
             rootDirectory ??= Directory.GetCurrentDirectory();
-            await writer.WriteLineAsync($"Starting Markdown Links Verifier in '{rootDirectory}'.");
-
+            var result = new List<LinkError>();
             foreach (string file in Directory.EnumerateFiles(rootDirectory, "*.md", SearchOption.AllDirectories))
             {
                 string? directory = Path.GetDirectoryName(file);
@@ -39,13 +35,12 @@ namespace MarkdownLinksVerifier
                     ILinkValidator validator = LinkValidatorCreator.Create(classification, directory);
                     if (!IsLinkExcluded(config, link.Url) && !validator.IsValid(link.Url, file))
                     {
-                        await writer.WriteLineAsync($"::error::In file '{file}': Invalid link: '{link.Url}' relative to '{directory}'.");
-                        returnCode = 1;
+                        result.Add(new LinkError(file, link.Url, directory));
                     }
                 }
             }
 
-            return returnCode;
+            return result;
 
             static bool IsLinkExcluded(MarkdownLinksVerifierConfiguration? config, string url)
             {
