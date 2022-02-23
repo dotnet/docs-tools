@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -20,6 +19,7 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
 #pragma warning restore CA1810 // Initialize reference type static fields inline
         {
             _workspacePath = Path.Join(Directory.GetCurrentDirectory(), WorkspaceTests);
+            Directory.CreateDirectory(_workspacePath);
             Directory.SetCurrentDirectory(_workspacePath);
         }
 
@@ -28,12 +28,6 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
             if (string.IsNullOrWhiteSpace(testName))
             {
                 throw new ArgumentException("Invalid member name.");
-            }
-
-            
-            if (!Directory.Exists(_workspacePath))
-            {
-                Directory.CreateDirectory(_workspacePath);
             }
 
             _testPath = Path.Join(_workspacePath, testName);
