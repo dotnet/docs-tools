@@ -12,8 +12,16 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
 
         private bool _initialized;
         private bool _disposed;
-        private readonly string _workspacePath;
+        private static readonly string _workspacePath;
         private readonly string _testPath;
+
+#pragma warning disable CA1810 // Initialize reference type static fields inline
+        static Workspace()
+#pragma warning restore CA1810 // Initialize reference type static fields inline
+        {
+            _workspacePath = Path.Join(Directory.GetCurrentDirectory(), WorkspaceTests);
+            Directory.SetCurrentDirectory(_workspacePath);
+        }
 
         public Workspace([CallerMemberName] string testName = null!)
         {
@@ -22,7 +30,7 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
                 throw new ArgumentException("Invalid member name.");
             }
 
-            _workspacePath = Path.Join(Directory.GetCurrentDirectory(), WorkspaceTests);
+            
             if (!Directory.Exists(_workspacePath))
             {
                 Directory.CreateDirectory(_workspacePath);
@@ -66,7 +74,6 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
             }
 
             _initialized = true;
-            Directory.SetCurrentDirectory(_workspacePath);
             return _workspacePath;
 
         }
