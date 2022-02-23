@@ -286,8 +286,8 @@ Hello world.
             Assert.Empty(result);
         }
 
-        [Fact(Skip = "https://github.com/Youssef1313/markdown-links-verifier/issues/93")]
-        public async Task TestHeadingReference_Includes()
+        [Fact]
+        public async Task TestHeadingReference_Includes_ValidLink()
         {
             using var workspace = new Workspace
             {
@@ -295,7 +295,7 @@ Hello world.
                 {
                     { "/aspnetcore.md", @"The following breaking changes in ASP.NET Core 3.0 and 3.1 are documented on this page:
 - [Obsolete Antiforgery, CORS, Diagnostics, MVC, and Routing APIs removed](#obsolete-antiforgery-cors-diagnostics-mvc-and-routing-apis-removed)
-[!INCLUDE[Obsolete Antiforgery, CORS, Diagnostics, MVC, and Routing APIs removed](~/include.md)]
+[!INCLUDE[Obsolete Antiforgery, CORS, Diagnostics, MVC, and Routing APIs removed](~/TestHeadingReference_Includes_ValidLink/include.md)]
 "
                     },
                     { "/include.md", @"### Obsolete Antiforgery, CORS, Diagnostics, MVC, and Routing APIs removed
@@ -310,6 +310,37 @@ Obsolete members and compatibility switches in ASP.NET Core 2.2 were removed.
             string workspacePath = await workspace.InitializeAsync();
             List<LinkError> result = await GetResultsAsync();
             Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task TestHeadingReference_Includes_InvalidLink()
+        {
+            using var workspace = new Workspace
+            {
+                Files =
+                {
+                    { "/aspnetcore.md", @"The following breaking changes in ASP.NET Core 3.0 and 3.1 are documented on this page:
+- [Obsolete Antiforgery, CORS, Diagnostics, MVC, and Routing APIs removed](#obsolete-antiforgery-cors-diagnostics-mvc-and-routing-apis-removedd)
+[!INCLUDE[Obsolete Antiforgery, CORS, Diagnostics, MVC, and Routing APIs removed](~/TestHeadingReference_Includes_InvalidLink/include.md)]
+"
+                    },
+                    { "/include.md", @"### Obsolete Antiforgery, CORS, Diagnostics, MVC, and Routing APIs removed
+Obsolete members and compatibility switches in ASP.NET Core 2.2 were removed.
+"
+                    },
+                }
+            };
+
+            char separator = Path.DirectorySeparatorChar;
+
+            string workspacePath = await workspace.InitializeAsync();
+            List<LinkError> result = await GetResultsAsync();
+            var expected = new LinkError[]
+            {
+                new($"{nameof(TestHeadingReference_Includes_InvalidLink)}{separator}aspnetcore.md", "#obsolete-antiforgery-cors-diagnostics-mvc-and-routing-apis-removedd", "IGNORED BY TEST COMPARER FOR NOW")
+            };
+
+            Assert.Equal(expected, result, s_linkErrorComparer);
         }
         #endregion
     }
