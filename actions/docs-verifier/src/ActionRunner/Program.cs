@@ -50,7 +50,7 @@ if (Environment.GetEnvironmentVariable("IS_TRY_FIX") is "true")
         const string dotnetPrefix = "/dotnet/";
         if (redirection is { RedirectUrl: string redirectUrl } && redirectUrl.StartsWith(dotnetPrefix, StringComparison.Ordinal))
         {
-            string newAbsolutePath = $"docs/{redirectUrl[dotnetPrefix.Length..]}";
+            var newAbsolutePath = $"docs/{redirectUrl[dotnetPrefix.Length..]}";
             if (File.Exists($"{newAbsolutePath}.md"))
             {
                 newAbsolutePath += ".md";
