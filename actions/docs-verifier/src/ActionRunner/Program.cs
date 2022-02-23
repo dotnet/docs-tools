@@ -39,7 +39,7 @@ if (!redirectionFiles.IsDefault)
     }
 }
 
-if (Environment.GetEnvironmentVariable("IS_TRY_FIX") == "true")
+if (Environment.GetEnvironmentVariable("IS_TRY_FIX") is "true")
 {
     //await File.WriteAllTextAsync("Hello_from_actions.md", "Hello!");
     foreach (LinkError linkError in result)
@@ -50,12 +50,12 @@ if (Environment.GetEnvironmentVariable("IS_TRY_FIX") == "true")
         const string dotnetPrefix = "/dotnet/";
         if (redirection is { RedirectUrl: string redirectUrl } && redirectUrl.StartsWith(dotnetPrefix, StringComparison.Ordinal))
         {
-            string newAbsolutePath = "docs/" + redirectUrl[dotnetPrefix.Length..];
-            if (File.Exists(newAbsolutePath + ".md"))
+            string newAbsolutePath = $"docs/{redirectUrl[dotnetPrefix.Length..]}";
+            if (File.Exists($"{newAbsolutePath}.md"))
             {
                 newAbsolutePath += ".md";
             }
-            else if (File.Exists(newAbsolutePath + ".yml"))
+            else if (File.Exists($"{newAbsolutePath}.yml"))
             {
                 newAbsolutePath += ".yml";
             }
