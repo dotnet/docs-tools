@@ -25,11 +25,10 @@ namespace MarkdownLinksVerifier
         private readonly static MarkdownPipeline s_pipeline = new MarkdownPipelineBuilder().UsePreciseSourceLocation().Build();
 
         public static async Task<List<LinkError>> GetResultsAsync(
-            MarkdownLinksVerifierConfiguration? config, string? rootDirectory = null)
+            MarkdownLinksVerifierConfiguration? config)
         {
-            rootDirectory ??= Directory.GetCurrentDirectory();
             var result = new List<LinkError>();
-            foreach (string file in Directory.EnumerateFiles(rootDirectory, "*.md", SearchOption.AllDirectories))
+            foreach (string file in Directory.EnumerateFiles(Directory.GetCurrentDirectory(), "*.md", SearchOption.AllDirectories))
             {
                 string? directory = Path.GetDirectoryName(file);
                 if (directory is null)
