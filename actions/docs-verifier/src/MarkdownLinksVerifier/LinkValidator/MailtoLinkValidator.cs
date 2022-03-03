@@ -8,10 +8,10 @@ namespace MarkdownLinksVerifier.LinkValidator
     {
         private static readonly EmailAddressAttribute emailAddressAttribute = new();
 
-        public bool IsValid(string link, string filePath)
+        public ValidationResult Validate(string link, string filePath)
         {
             Debug.Assert(link.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase));
-            return emailAddressAttribute.IsValid(link["mailto:".Length..]);
+            return new ValidationResult { AbsolutePathWithoutHeading = link, State = emailAddressAttribute.IsValid(link["mailto:".Length..]) ? ValidationState.Valid : ValidationState.LinkNotFound };
         }
     }
 }

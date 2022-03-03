@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub.UnitTests", "tests\G
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ActionRunner", "src\ActionRunner\ActionRunner.csproj", "{097626C4-F50D-4183-AB2F-9EBAA49E960C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildVerifier.IO.Abstractions", "BuildVerifier.IO.Abstractions\BuildVerifier.IO.Abstractions.csproj", "{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildVerifier.IO.Abstractions", "src\BuildVerifier.IO.Abstractions\BuildVerifier.IO.Abstractions.csproj", "{FD67DE5D-D8C0-48AD-A7F9-E6F316821E10}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

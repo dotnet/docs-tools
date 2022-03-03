@@ -2,6 +2,6 @@
 {
     internal interface ILinkValidator
     {
-        bool IsValid(string link, string filePath);
+        ValidationResult Validate(string link, string filePath);
     }
 }

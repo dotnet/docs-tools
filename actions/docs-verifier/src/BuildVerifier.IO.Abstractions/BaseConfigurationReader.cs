@@ -13,8 +13,8 @@ namespace BuildVerifier.IO.Abstractions
             AllowTrailingCommas = true
         };
 
-        private TConfigurationFile? s_cachedConfiguration;
-        private bool? s_fileExists;
+        private TConfigurationFile? _cachedConfiguration;
+        private bool? _fileExists;
 
         /// <summary>
         /// The name of the configuration file on disk.
@@ -28,18 +28,18 @@ namespace BuildVerifier.IO.Abstractions
         public async ValueTask<TConfigurationFile?> ReadConfigurationAsync()
         {
             // Only check if the file exists one time.
-            if (s_fileExists is null)
+            if (_fileExists is null)
             {
-                s_fileExists = File.Exists(ConfigurationFileName);
+                _fileExists = File.Exists(ConfigurationFileName);
             }
 
             // If there are cached configuration values, use 'em.
-            if (s_cachedConfiguration is not null)
+            if (_cachedConfiguration is not null)
             {
-                return s_cachedConfiguration;
+                return _cachedConfiguration;
             }
 
-            if (s_fileExists.Value)
+            if (_fileExists.Value)
             {
                 string json = await File.ReadAllTextAsync(ConfigurationFileName);
 
@@ -51,12 +51,12 @@ namespace BuildVerifier.IO.Abstractions
                     throw new InvalidOperationException($"Failed to read '{ConfigurationFileName}'.");
                 }
 
-                s_cachedConfiguration = configuration;
+                _cachedConfiguration = configuration;
             }
             else
                 Console.WriteLine($"Configuration file {ConfigurationFileName} does not exist.");
 
-            return s_cachedConfiguration;
+            return _cachedConfiguration;
         }
     }
 }
