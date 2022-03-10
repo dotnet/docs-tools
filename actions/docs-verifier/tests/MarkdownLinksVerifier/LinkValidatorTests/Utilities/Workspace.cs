@@ -84,7 +84,11 @@ namespace MarkdownLinksVerifier.UnitTests.LinkValidatorTests
                 throw new InvalidOperationException("The workspace isn't initialized.");
             }
 
-            Directory.Delete(_testPath, recursive: true);
+            if (Directory.Exists(_testPath))
+            {
+                Directory.Delete(_testPath, recursive: true);
+            }
+
             _disposed = true;
         }
     }
