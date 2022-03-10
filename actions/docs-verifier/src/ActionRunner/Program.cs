@@ -68,9 +68,10 @@ if (Environment.GetEnvironmentVariable("IS_TRY_FIX") is "true")
             file = file.Remove(linkError.UrlSpan.Start, linkError.UrlSpan.Length);
 
             string newLink = Path.GetRelativePath(Path.GetDirectoryName(linkError.File)!, newAbsolutePath);
-            if (linkError.Link.Contains('#', StringComparison.Ordinal))
+            int queryOrHeadingIndex = Math.Min(linkError.Link.LastIndexOf('#'), linkError.Link.LastIndexOf('?'));
+            if (queryOrHeadingIndex > -1)
             {
-                newLink += newLink.Substring(linkError.Link.IndexOf('#', StringComparison.Ordinal));
+                newLink += linkError.Link.Substring(queryOrHeadingIndex);
             }
 
             file = file.Insert(linkError.UrlSpan.Start, newLink);
