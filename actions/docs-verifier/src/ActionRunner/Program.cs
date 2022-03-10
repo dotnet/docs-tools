@@ -68,7 +68,21 @@ if (Environment.GetEnvironmentVariable("IS_TRY_FIX") is "true")
             file = file.Remove(linkError.UrlSpan.Start, linkError.UrlSpan.Length);
 
             string newLink = Path.GetRelativePath(Path.GetDirectoryName(linkError.File)!, newAbsolutePath);
-            int queryOrHeadingIndex = Math.Min(linkError.Link.LastIndexOf('#'), linkError.Link.LastIndexOf('?'));
+            int queryIndex = linkError.Link.LastIndexOf('?');
+            int headingIndex = linkError.Link.LastIndexOf('#');
+            int queryOrHeadingIndex = (queryIndex, headingIndex) switch
+            {
+                // No query or heading.
+                (-1, -1) => -1,
+
+                // If we have both '#' and '?', we want to get them both.
+                // So select the minimum index.
+                ( > -1, > -1) => Math.Min(queryIndex, headingIndex),
+
+                // We have one of '#' and '?'
+                _ => Math.Max(queryIndex, headingIndex),
+            };
+
             if (queryOrHeadingIndex > -1)
             {
                 newLink += linkError.Link.Substring(queryOrHeadingIndex);
