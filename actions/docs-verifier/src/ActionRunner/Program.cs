@@ -13,22 +13,16 @@ using RedirectionVerifier;
 
 ConfigurationReader configurationReader = new();
 MarkdownLinksVerifierConfiguration? configuration = await configurationReader.ReadConfigurationAsync();
-int returnCode = await MarkdownFilesAnalyzer.WriteResultsAsync(Console.Out, configuration);
 
-// on: pull_request
-// env:
-//   GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
-if (!int.TryParse(Environment.GetEnvironmentVariable("GITHUB_PR_NUMBER"), out int pullRequestNumber))
+Console.WriteLine($"Starting Markdown Links Verifier in '{Directory.GetCurrentDirectory()}'.");
+List<LinkError> result = await MarkdownFilesAnalyzer.GetResultsAsync(configuration);
+
+foreach (LinkError linkError in result)
 {
-    throw new InvalidOperationException($"The value of GITHUB_PR_NUMBER environment variable is not valid.");
+    Console.WriteLine($"::error::In file '{linkError.File}': Invalid link: '{linkError.Link}'.");
 }
 
-DocfxConfigurationReader docfxConfigurationReader = new();
-IEnumerable<Matcher> matchers = await docfxConfigurationReader.MapConfigurationAsync();
-IEnumerable<PullRequestFile> pullRequestFiles = await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber);
-
-WhatsNewConfigurationReader whatsNewConfigurationReader = new();
-string? whatsNewPath = await whatsNewConfigurationReader.MapConfigurationAsync();
+int returnCode = result.Count;
 
 // Get all redirection files.
 ImmutableArray<string> redirectionFiles = await RedirectionHelpers.GetRedirectionFileNames();
@@ -44,6 +38,79 @@ if (!redirectionFiles.IsDefault)
             allRedirections.AddRange(redirections);
     }
 }
+
+if (Environment.GetEnvironmentVariable("IS_TRY_FIX") is "true")
+{
+    //await File.WriteAllTextAsync("Hello_from_actions.md", "Hello!");
+    foreach (LinkError linkError in result)
+    {
+        // For every reported invalid link, check if it already has a redirection so that it can be fixed automatically.
+        string sourcePath = Path.GetRelativePath(Directory.GetCurrentDirectory(), linkError.AbsolutePath);
+        Redirection? redirection = allRedirections.SingleOrDefault(redirection => redirection.MatchesSourcePath(sourcePath));
+        const string dotnetPrefix = "/dotnet/";
+        if (redirection is { RedirectUrl: string redirectUrl } && redirectUrl.StartsWith(dotnetPrefix, StringComparison.Ordinal))
+        {
+            var newAbsolutePath = $"docs/{redirectUrl[dotnetPrefix.Length..]}";
+            if (File.Exists($"{newAbsolutePath}.md"))
+            {
+                newAbsolutePath += ".md";
+            }
+            else if (File.Exists($"{newAbsolutePath}.yml"))
+            {
+                newAbsolutePath += ".yml";
+            }
+            else
+            {
+                continue;
+            }
+
+            string file = await File.ReadAllTextAsync(linkError.File);
+            file = file.Remove(linkError.UrlSpan.Start, linkError.UrlSpan.Length);
+
+            string newLink = Path.GetRelativePath(Path.GetDirectoryName(linkError.File)!, newAbsolutePath);
+            int queryIndex = linkError.Link.LastIndexOf('?');
+            int headingIndex = linkError.Link.LastIndexOf('#');
+            int queryOrHeadingIndex = (queryIndex, headingIndex) switch
+            {
+                // No query or heading.
+                (-1, -1) => -1,
+
+                // If we have both '#' and '?', we want to get them both.
+                // So select the minimum index.
+                ( > -1, > -1) => Math.Min(queryIndex, headingIndex),
+
+                // We have one of '#' and '?'
+                _ => Math.Max(queryIndex, headingIndex),
+            };
+
+            if (queryOrHeadingIndex > -1)
+            {
+                newLink += linkError.Link.Substring(queryOrHeadingIndex);
+            }
+
+            file = file.Insert(linkError.UrlSpan.Start, newLink);
+            await File.WriteAllTextAsync(linkError.File, file);
+            Console.WriteLine($"CAN FIX: '{sourcePath}' to '{newAbsolutePath}'");
+        }
+    }
+    return 0;
+
+}
+
+// on: pull_request
+// env:
+//   GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+if (!int.TryParse(Environment.GetEnvironmentVariable("GITHUB_PR_NUMBER"), out int pullRequestNumber))
+{
+    throw new InvalidOperationException($"The value of GITHUB_PR_NUMBER environment variable is not valid.");
+}
+
+DocfxConfigurationReader docfxConfigurationReader = new();
+IEnumerable<Matcher> matchers = await docfxConfigurationReader.MapConfigurationAsync();
+IEnumerable<PullRequestFile> pullRequestFiles = await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber);
+
+WhatsNewConfigurationReader whatsNewConfigurationReader = new();
+string? whatsNewPath = await whatsNewConfigurationReader.MapConfigurationAsync();
 
 List<PullRequestFile> files =
     pullRequestFiles.Where(f => IsRedirectableFile(f, matchers, whatsNewPath)).ToList();

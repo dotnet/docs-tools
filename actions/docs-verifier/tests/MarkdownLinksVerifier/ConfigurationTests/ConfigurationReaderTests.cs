@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using MarkdownLinksVerifier.Configuration;
+using MarkdownLinksVerifier.UnitTests.LinkValidatorTests;
 using Xunit;
 
 namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
@@ -16,6 +17,13 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
         [InlineData("")]
         public async Task TestExcludeStartingWith(string trailingComma)
         {
+            // Without this, we get a race when running tests in parallel. The race happens as follows:
+            // 1. We first write the json contents into ConfigurationFileName in the current directory.
+            // 2. A test using Workspace is run and changes the current directory to WorkspaceTests
+            // 3. ReadConfigurationAsync will fail because the file doesn't appear to exist.
+            using var workspace = new Workspace();
+            await workspace.InitializeAsync();
+
             try
             {
                 await File.WriteAllTextAsync(ConfigurationFileName,

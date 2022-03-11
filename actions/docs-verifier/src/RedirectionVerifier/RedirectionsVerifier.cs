@@ -14,7 +14,7 @@ namespace RedirectionVerifier
         /// </summary>
         /// <returns>Returns <see langword="true"/> for a valid redirection; <see langword="false"/> otherwise.</returns>
         public static async Task<bool> WriteResultsAsync(
-            TextWriter writer, string sourcePath, List<Redirection> redirections)
+            TextWriter writer, string sourcePath, IEnumerable<Redirection> redirections)
         {
             if (writer is null)
             {
@@ -22,10 +22,7 @@ namespace RedirectionVerifier
             }
 
             List<Redirection> foundRedirections =
-                redirections.Where(
-                    redirection =>
-                        redirection.SourcePath == sourcePath ||
-                        redirection.SourcePathFromRoot == $"/{sourcePath}").ToList();
+                redirections.Where(redirection => redirection.MatchesSourcePath(sourcePath)).ToList();
             if (foundRedirections.Count == 0)
             {
                 await writer.WriteLineAsync($"::error::No redirection is found for '{sourcePath}'.");

@@ -3,10 +3,10 @@
     // Singleton?
     internal class OnlineLinkValidator : ILinkValidator
     {
-        public bool IsValid(string link, string filePath)
+        public ValidationResult Validate(string link, string filePath)
         {
             // TODO: implement this.
-            return true;
+            return new ValidationResult { State = ValidationState.Valid, AbsolutePathWithoutHeading = link };
         }
     }
 }
