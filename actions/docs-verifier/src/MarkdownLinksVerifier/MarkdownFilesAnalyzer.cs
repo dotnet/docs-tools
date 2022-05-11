@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Markdig;
 using Markdig.Syntax;
@@ -37,13 +38,17 @@ namespace MarkdownLinksVerifier
                 }
 
                 MarkdownDocument document = Markdown.Parse(await File.ReadAllTextAsync(file), s_pipeline);
-                foreach (LinkInline link in document.Descendants<LinkInline>())
+                foreach (LinkInline link in
+                    document.Descendants<LinkInline>().Where(link => link.Url is not null))
                 {
-                    LinkClassification classification = Classifier.Classify(link.Url);
+                    string url = link.Url!;
+                    LinkClassification classification = Classifier.Classify(url);
                     ILinkValidator validator = LinkValidatorCreator.Create(classification, directory);
-                    if (!IsLinkExcluded(config, link.Url) && validator.Validate(link.Url, file) is { State: not ValidationState.Valid, AbsolutePathWithoutHeading: var absolutePath })
+                    if (!IsLinkExcluded(config, url) && validator.Validate(url, file) is { State: not ValidationState.Valid, AbsolutePathWithoutHeading: var absolutePath })
                     {
-                        result.Add(new LinkError(Path.GetRelativePath(Directory.GetCurrentDirectory(), file), link.Url, absolutePath, link.UrlSpan!.Value));
+                        result.Add(new LinkError(
+                            Path.GetRelativePath(
+                                Directory.GetCurrentDirectory(), file), url, absolutePath, link.UrlSpan!));
                     }
                 }
             }
