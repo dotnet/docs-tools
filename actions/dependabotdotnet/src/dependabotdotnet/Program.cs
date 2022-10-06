@@ -8,11 +8,28 @@ string destinationFilePath = args is { Length: 2 }
     ? args[1] 
     : $".github{Path.AltDirectorySeparatorChar}dependabot.yml";
 
-static void WriteLineToBufferAndOutput(StringBuilder buffer, string content)
+static void WriteLineToBufferAndOutput(StringBuilder buffer, string content, bool isLimitReached)
 {
-    buffer.AppendLine(content);
-    WriteLine(content);
+    if (isLimitReached)
+    {
+        WriteLine("LIMIT REACHED, OVERFLOW IS DISCARDED!");
+        WriteLine(content);
+    }
+    else
+    {
+        buffer.AppendLine(content);
+        WriteLine(content);
+    }
 }
+
+/*
+Dependabot encountered the following error when parsing your .github/dependabot.yml:
+
+The property '#/updates' had more items than the allowed 200
+Please update the config file to conform with Dependabot's specification. 
+*/
+const int UpdateNodeLimit = 200;
+var updateNodeCount = 0;
 
 StringBuilder buffer = new();
 
@@ -24,7 +41,7 @@ string topMatter = """
     updates:
     """;
 
-WriteLineToBufferAndOutput(buffer, topMatter);
+WriteLineToBufferAndOutput(buffer, topMatter, false);
 
 // Entry to update GitHub Actions
 string githubActions = """
@@ -36,7 +53,7 @@ string githubActions = """
       open-pull-requests-limit: 10
   """;
 
-WriteLineToBufferAndOutput(buffer, githubActions);
+WriteLineToBufferAndOutput(buffer, githubActions, UpdateNodeLimit == updateNodeCount++);
 
 /* Generate the following pattern for each project file:
 
@@ -110,7 +127,8 @@ if (patternMatchingResult.HasMatches)
                   interval: "weekly"
                   day: "wednesday"
                 open-pull-requests-limit: 5
-            """);
+            """,
+            UpdateNodeLimit == updateNodeCount++);
 
         if (mappings.Count is 0)
         {
@@ -123,14 +141,14 @@ if (patternMatchingResult.HasMatches)
        versions: ["5.*"]        
         */
 
-        WriteLineToBufferAndOutput(buffer, "    ignore:");
+        WriteLineToBufferAndOutput(buffer, "    ignore:", false);
 
         foreach (PackageIgnoreMapping mapping in mappings)
         {
             WriteLineToBufferAndOutput(buffer, $"""
                       - dependency-name: ""{mapping.PackageName}""
                        versions: {PrintArrayAsYaml(mapping.Ignore)}
-                """);
+                """, false);
         }
     }
 }
