@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-
-if (args is { Length: 0 } || args[0] is not string path)
+﻿if (args is { Length: 0 } || args[0] is not string path)
 {
     WriteLine("Must specify a repo root directory as input");
     return 1;
@@ -8,7 +6,7 @@ if (args is { Length: 0 } || args[0] is not string path)
 
 string destinationFilePath = args is { Length: 2 }
     && !string.IsNullOrWhiteSpace(args[1])
-    ? args[1] 
+    ? args[1]
     : $".github{Path.AltDirectorySeparatorChar}dependabot.yml";
 
 static void WriteLineToBufferAndOutput(StringBuilder buffer, string content, bool isLimitReached)
@@ -187,7 +185,7 @@ static bool TryGetTargetFramework(
 }
 
 static bool TryGetPackageName(
-    string content, 
+    string content,
     [NotNullWhen(true)] out string? packageName)
 {
     packageName = null;
