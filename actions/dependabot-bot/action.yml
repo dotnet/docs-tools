@@ -4,8 +4,10 @@ author: 'David Pine'
 inputs:
   root-directory:
     description: 'The root directory in which to run the automated dependabot evaluation.'
+    default: '/github/workspace'
   dependabot-yml-path:
     description: 'The system file path to the dependabot.yml file.'
+    default: '.github/dependabot.yml'
 
 runs:
   using: composite
