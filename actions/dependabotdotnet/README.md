@@ -1,6 +1,6 @@
-# Dependadotnet -- Generator for dependabot.yml for .NET
+# dependadotnet -- Generator for dependabot.yml for .NET
 
-Dependadotnet generates [Dependabot](https://docs.github.com/en/free-pro-team@latest/github/administering-a-repository/keeping-your-dependencies-updated-automatically) YAML files for GitHub repositories that contain .NET projects. Dependabot is a GitHub service for automatically updating dependencies listed in project files for various package managers, including NuGet.
+dependadotnet generates [Dependabot](https://docs.github.com/code-security/dependabot/dependabot-version-updates) YAML files for GitHub repositories that contain .NET projects. Dependabot is a GitHub service for automatically updating dependencies listed in project files for various package managers, including NuGet.
 
 Dependabot works out of the box if you have a solution (`.sln`) or project file (like `.csproj`) at the root of the repo. It also supports _packages.config_.
 
@@ -35,8 +35,8 @@ Alternatively, if you are in the repo root, you can use the following pattern to
 dependadotnet .
 ```
 
-The tool writes to stdout. The following pattern is recommended to generate the dependabot config file (assuming the `.github` directory exists):
+The tool writes to stdout, and allows for a custom destination to write a YML file as the second parameter to the program (`args[1]`). The following pattern is recommended to generate the dependabot config file (assuming the `.github` directory exists):
 
 ```dotnetcli
-dependadotnet . > .github\dependabot.yml
+dependadotnet "path/to/repo/root/" ".github/dependabot.yml"
 ```
