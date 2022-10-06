@@ -70,9 +70,6 @@ WriteLineToBufferAndOutput(buffer, githubActions, UpdateNodeLimit == updateNodeC
 
 Dictionary<string, string[]> packageIgnore = await GetPackagesInfoAsync();
 
-const string packageReference = @"PackageReference Include=""";
-const string targetFrameworkStart = "<TargetFramework>";
-const string targetFrameworkEnd = "</TargetFramework>";
 string dotnetDir = $"**/{Path.AltDirectorySeparatorChar}.dotnet";
 
 Matcher projectMatcher = new();
@@ -163,47 +160,32 @@ return 0;
 
 static bool TryGetTargetFramework(
     string content,
-    [NotNullWhen(true)] out string? targetFramework)
-{
-    targetFramework = null;
-    int start = content.IndexOf(targetFrameworkStart);
-    if (start is -1)
-    {
-        return false;
-    }
-
-    int end = content.IndexOf(targetFrameworkEnd);
-    if (end is -1 || end < start)
-    {
-        return false;
-    }
-
-    int startOfTFM = start + targetFrameworkStart.Length;
-    targetFramework = content[startOfTFM..end];
-
-    return targetFramework.StartsWith("net");
-}
+    [NotNullWhen(true)] out string? targetFramework) =>
+    TryGetRegexGroupValue(
+        TargetFrameworkRegex(),
+        content, "tfm", out targetFramework);
 
 static bool TryGetPackageName(
     string content,
-    [NotNullWhen(true)] out string? packageName)
+    [NotNullWhen(true)] out string? packageName) =>
+    TryGetRegexGroupValue(
+        PackageReferenceIncludeRegex(),
+        content, "nuget", out packageName);
+
+static bool TryGetRegexGroupValue(
+    Regex regex, string content, string groupKey, [NotNullWhen(true)] out string? groupValue)
 {
-    packageName = null;
-    int start = content.IndexOf(packageReference);
-    if (start < 0)
+    var match = regex.Match(content);
+    if (match is { Success: true } and { Groups.Count: > 0 })
     {
+        groupValue = match.Groups[groupKey].Value;
+        return true;
+    }
+    else
+    {
+        groupValue = null;
         return false;
     }
-
-    int startOfPackageName = start + packageReference.Length;
-    int endOfPackageName = content.AsSpan(startOfPackageName).IndexOf('"');
-    if (endOfPackageName is 0)
-    {
-        return false;
-    }
-
-    packageName = content.Substring(startOfPackageName, endOfPackageName);
-    return true;
 }
 
 static async Task<Dictionary<string, string[]>> GetPackagesInfoAsync()
@@ -259,6 +241,12 @@ static partial class Program
 {
     [GeneratedRegex("PackageReference.*Version=\"[0-9]")]
     private static partial Regex PackageReferenceVersionRegex();
+
+    [GeneratedRegex("TargetFramework(.*)>(?<tfm>.+?)</")]
+    private static partial Regex TargetFrameworkRegex();
+
+    [GeneratedRegex("<PackageReference(?:.+?)Include=\"\"(?<nuget>.+?)\"\"")]
+    private static partial Regex PackageReferenceIncludeRegex();
 
     private static readonly HttpClient s_client = new();
 }
