@@ -5,8 +5,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
-	<Description>A simple .NET Core tool for generating Dependabot config for .NET.</Description>
+	<Description>A .NET tool for generating dependabot config files for .NET.</Description>
     <VersionPrefix>1.0.5</VersionPrefix>
     <Authors>Richard Lander, dapine</Authors>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -17,12 +16,16 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IsPackable>true</IsPackable>
     <PackAsTool>true</PackAsTool>
+	<ToolCommandName>dependabot-bot</ToolCommandName>
+	<PackageOutputPath>./nupkg</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\packages-ignore.json" Link="packages-ignore.json">
+    <EmbeddedResource Include="..\..\packages-ignore.json" Link="packages-ignore.json">
+	  <Pack>true</Pack>
+      <IncludeInPackage>true</IncludeInPackage>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

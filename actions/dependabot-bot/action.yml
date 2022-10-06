@@ -1,0 +1,20 @@
+name: '.NET dependabot bot'
+description: Automatically keep dependabot.yml files updated.
+author: 'David Pine'
+inputs:
+  root-directory:
+    description: 'The root directory in which to run the automated dependabot evaluation.'
+  dependabot-yml-path:
+    description: 'The system file path to the dependabot.yml file.'
+
+runs:
+  using: composite
+  steps:
+    - run: dotnet build actions/dependabotdotnet/src/dependabotdotnet/dependabotdotnet.csproj --configuration Release
+      shell: bash
+    - run: dotnet pack actions/dependabotdotnet/src/dependabotdotnet/dependabotdotnet.csproj
+      shell: bash
+    - run: dotnet tool install --global --add-source actions/dependabotdotnet/src/dependabotdotnet/nupkg dependadotnet
+      shell: bash
+    - run: dependadotnet "${{ inputs.root-directory }}" "${{ inputs.dependabot-yml-path }}"
+      shell: bash

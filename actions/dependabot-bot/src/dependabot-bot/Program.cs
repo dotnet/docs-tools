@@ -1,10 +1,13 @@
-﻿if (args is { Length: 0 } || args[0] is not string path)
+﻿using System.Reflection;
+
+if (args is { Length: 0 } || args[0] is not string path)
 {
     WriteLine("Must specify a repo root directory as input");
     return 1;
 }
 
-string destinationFilePath = args is { Length: 2 } 
+string destinationFilePath = args is { Length: 2 }
+    && !string.IsNullOrWhiteSpace(args[1])
     ? args[1] 
     : $".github{Path.AltDirectorySeparatorChar}dependabot.yml";
 
@@ -67,8 +70,7 @@ WriteLineToBufferAndOutput(buffer, githubActions, UpdateNodeLimit == updateNodeC
   open-pull-requests-limit: 5
 */
 
-string packageFilePath = "packages-ignore.json";
-Dictionary<string, string[]> packageIgnore = await GetPackagesInfoAsync(packageFilePath);
+Dictionary<string, string[]> packageIgnore = await GetPackagesInfoAsync();
 
 const string packageReference = @"PackageReference Include=""";
 const string targetFrameworkStart = "<TargetFramework>";
@@ -206,9 +208,19 @@ static bool TryGetPackageName(
     return true;
 }
 
-static async Task<Dictionary<string, string[]>> GetPackagesInfoAsync(string path)
+static async Task<Dictionary<string, string[]>> GetPackagesInfoAsync()
 {
-    var json = await File.ReadAllTextAsync(path);
+    Assembly assembly = typeof(Program).Assembly;
+    string fileName = $"{assembly.GetName().Name}.packages-ignore.json";
+    string? resourceName = assembly.GetManifestResourceNames().FirstOrDefault(name => name == fileName);
+    if (resourceName is null)
+    {
+        return new();
+    }
+
+    using var stream = assembly.GetManifestResourceStream(resourceName);
+    using var reader = new StreamReader(stream!);
+    var json = await reader.ReadToEndAsync();
     JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
 
     PackageInfoSet? packages = JsonSerializer.Deserialize<PackageInfoSet>(json, options);
