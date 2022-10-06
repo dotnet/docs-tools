@@ -26,6 +26,18 @@ string topMatter = """
 
 WriteLineToBufferAndOutput(buffer, topMatter);
 
+// Entry to update GitHub Actions
+string githubActions = """
+    - package-ecosystem: "github-actions" # Core GitHub Actions
+      directory: "/"
+      schedule:
+        interval: "weekly"
+        day: "wednesday"
+      open-pull-requests-limit: 10
+  """;
+
+WriteLineToBufferAndOutput(buffer, githubActions);
+
 /* Generate the following pattern for each project file:
 
   Note: Wednesday was chosen for quick response to .NET patch Tuesday updates
