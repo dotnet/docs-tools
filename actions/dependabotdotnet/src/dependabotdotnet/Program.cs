@@ -1,4 +1,6 @@
-﻿if (args is { Length: 0 } || args[0] is not string path)
+﻿using System.Text.Json;
+
+if (args is { Length: 0 } || args[0] is not string path)
 {
     WriteLine("Must specify a repo root directory as input");
     return 1;
@@ -37,8 +39,9 @@ WriteLineToBufferAndOutput(buffer, topMatter);
   open-pull-requests-limit: 5
 */
 
-string packagesJsonUrl = "https://raw.githubusercontent.com/dotnet/core/b5ca8283def279b20eced6c0b14c4634659cd6eb/samples/dependadotnet/package-ignore.json";
-Dictionary<string, string[]> packageIgnore = await GetPackagesInfoAsync(packagesJsonUrl);
+string packageFilePath = "packages-ignore.json";
+Dictionary<string, string[]> packageIgnore = await GetPackagesInfoAsync(packageFilePath);
+
 const string packageReference = @"PackageReference Include=""";
 const string targetFrameworkStart = "<TargetFramework>";
 const string targetFrameworkEnd = "</TargetFramework>";
@@ -172,9 +175,11 @@ static bool TryGetPackageName(
     return true;
 }
 
-static async Task<Dictionary<string, string[]>> GetPackagesInfoAsync(string url)
+static async Task<Dictionary<string, string[]>> GetPackagesInfoAsync(string path)
 {
-    PackageInfoSet? packages = await s_client.GetFromJsonAsync<PackageInfoSet>(url);
+    var json = await File.ReadAllTextAsync(path);
+    JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
+    PackageInfoSet? packages = JsonSerializer.Deserialize<PackageInfoSet>(json, options);
     if (packages is null)
     {
         throw new IOException("Could not download packages information");
