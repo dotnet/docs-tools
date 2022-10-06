@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-if (args is { Length: 0 } || args[0] is not string path)
+﻿if (args is { Length: 0 } || args[0] is not string path)
 {
     WriteLine("Must specify a repo root directory as input");
     return 1;
