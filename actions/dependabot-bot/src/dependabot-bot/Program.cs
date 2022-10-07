@@ -231,11 +231,11 @@ static string PrintArrayAsYaml(string[] array)
     return buffer.ToString();
 }
 
-record PackageInfoSet(PackageInfo[] Packages);
+file record PackageInfoSet(PackageInfo[] Packages);
 
-readonly record struct PackageInfo(string Name, PackageTargetFrameworkIgnoreMapping[] Mapping);
-readonly record struct PackageTargetFrameworkIgnoreMapping(string TargetFramework, string[] Ignore);
-readonly record struct PackageIgnoreMapping(string PackageName, string[] Ignore);
+file readonly record struct PackageInfo(string Name, PackageTargetFrameworkIgnoreMapping[] Mapping);
+file readonly record struct PackageTargetFrameworkIgnoreMapping(string TargetFramework, string[] Ignore);
+file readonly record struct PackageIgnoreMapping(string PackageName, string[] Ignore);
 
 static partial class Program
 {
