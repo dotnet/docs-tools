@@ -12,11 +12,13 @@ inputs:
 runs:
   using: composite
   steps:
-    - run: dotnet build actions/dependabot-bot/src/dependabot-bot/dependabot-bot.csproj --configuration Release
+    - run: ls # TODO: delete after debugging...
       shell: bash
-    - run: dotnet pack actions/dependabot-bot/src/dependabot-bot/dependabot-bot.csproj
+    - run: dotnet build src/dependabot-bot/dependabot-bot.csproj --configuration Release
       shell: bash
-    - run: dotnet tool install --global --add-source actions/dependabot-bot/src/dependabot-bot/nupkg dependadotnet
+    - run: dotnet pack src/dependabot-bot/dependabot-bot.csproj
       shell: bash
-    - run: dependadotnet "${{ inputs.root-directory }}" "${{ inputs.dependabot-yml-path }}"
+    - run: dotnet tool install --global --add-source src/dependabot-bot/nupkg dependabot-bot
+      shell: bash
+    - run: dependabot-bot "${{ inputs.root-directory }}" "${{ inputs.dependabot-yml-path }}"
       shell: bash
