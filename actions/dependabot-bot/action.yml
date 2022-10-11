@@ -1,6 +1,9 @@
 name: '.NET dependabot bot'
 description: Automatically keep dependabot.yml files updated.
 author: 'David Pine'
+branding:
+  icon: shield
+  color: blue
 inputs:
   root-directory:
     description: 'The root directory in which to run the automated dependabot evaluation.'
@@ -10,15 +13,8 @@ inputs:
     default: '.github/dependabot.yml'
 
 runs:
-  using: composite
-  steps:
-    - run: ls # TODO: delete after debugging...
-      shell: bash
-    - run: dotnet build src/dependabot-bot/dependabot-bot.csproj --configuration Release
-      shell: bash
-    - run: dotnet pack src/dependabot-bot/dependabot-bot.csproj
-      shell: bash
-    - run: dotnet tool install --global --add-source src/dependabot-bot/nupkg dependabot-bot
-      shell: bash
-    - run: dependabot-bot "${{ inputs.root-directory }}" "${{ inputs.dependabot-yml-path }}"
-      shell: bash
+  using: docker
+  image: Dockerfile
+  args:
+    - ${{ inputs.root-directory }}
+    - ${{ inputs.dependabot-yml-path }}
