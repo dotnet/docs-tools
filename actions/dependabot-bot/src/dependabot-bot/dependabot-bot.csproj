@@ -10,7 +10,7 @@
     <Authors>Richard Lander, dapine</Authors>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/dotnet/core/blob/main/samples/dependadotnet/README.md</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/dotnet/docs-tools/blob/main/actions/dependabot-bot/README.md</PackageProjectUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <DebugType>embedded</DebugType>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
