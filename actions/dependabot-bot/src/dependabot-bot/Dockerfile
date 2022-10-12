@@ -8,5 +8,5 @@ RUN dotnet publish "dependabot-bot.csproj" -c Release -o /app/publish /p:UseAppH
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "dependabot-bot.dll"]
