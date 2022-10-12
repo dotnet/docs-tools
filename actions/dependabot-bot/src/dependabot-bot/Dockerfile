@@ -5,4 +5,4 @@ RUN dotnet publish "dependabot-bot.csproj" -c Release -o /app/publish --no-self-
 
 FROM build AS final
 COPY --from=build /app/publish .
-ENTRYPOINT [ "dotnet", "dependabot-bot.dll" ]
+ENTRYPOINT dotnet dependabot-bot.dll
