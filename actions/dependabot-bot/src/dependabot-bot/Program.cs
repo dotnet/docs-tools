@@ -190,20 +190,7 @@ static bool TryGetRegexGroupValue(
 
 static async Task<Dictionary<string, string[]>> GetPackagesInfoAsync()
 {
-    Assembly assembly = typeof(Program).Assembly;
-    string fileName = $"{assembly.GetName().Name}.packages-ignore.json";
-    string? resourceName = assembly.GetManifestResourceNames().FirstOrDefault(name => name == fileName);
-    if (resourceName is null)
-    {
-        return new();
-    }
-
-    using var stream = assembly.GetManifestResourceStream(resourceName);
-    using var reader = new StreamReader(stream!);
-    var json = await reader.ReadToEndAsync();
-    JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
-
-    PackageInfoSet? packages = JsonSerializer.Deserialize<PackageInfoSet>(json, options);
+    var packages = await GetPackageInfoFromRawGitHubUrlAsync();
     return packages switch
     {
         null => throw new IOException("Could not download packages information"),
@@ -211,6 +198,17 @@ static async Task<Dictionary<string, string[]>> GetPackagesInfoAsync()
                 .SelectMany(package => package.Mapping.Select(mapping => (Key: $"{package.Name}_{mapping.TargetFramework}", Value: mapping.Ignore)))
                 .ToDictionary(_ => _.Key, _ => _.Value)
     };
+}
+
+static async Task<PackageInfoSet?> GetPackageInfoFromRawGitHubUrlAsync()
+{
+    const string RawGitHubUrl = """
+        https://raw.githubusercontent.com/dotnet/docs-tools/main/actions/dependabot-bot/packages-ignore.json
+        """;
+
+    using HttpClient client = new();
+    var packageInfo = await client.GetFromJsonAsync<PackageInfoSet>(RawGitHubUrl);
+    return packageInfo;
 }
 
 static string PrintArrayAsYaml(string[] array)
