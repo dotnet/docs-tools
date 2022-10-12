@@ -83,7 +83,7 @@ var patternMatchingResult = projectMatcher.Execute(
 
 if (patternMatchingResult.HasMatches)
 {
-    foreach (var fileMatch in patternMatchingResult.Files)
+    foreach (var fileMatch in patternMatchingResult.Files.OrderBy(f => f.Path))
     {
         string file = Path.Combine(path, fileMatch.Path);
         string filename = Path.GetFileName(file);
