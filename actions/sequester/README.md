@@ -16,8 +16,8 @@ To install the GitHub actions:
 1. ***Add the trigger labels***
   - You'll need to add two labels: one that informs the action to import an issue from GitHub to Quest. The second informs you that an issue has been imported.
 1. ***Add a `quest-config.json` file***
-  - In the root folder of your repo, create a config file that contains the keys shown [later in this document](#configure-consuming-github-action-workflow). In most cases, hou'll modify the org, repo, area path, and trigger labels.
-1. ***Add the `quest.yml` action configuration file***
+  - In the root folder of your repo, create a config file that contains the keys shown [later in this document](#configure-consuming-github-action-workflow). In most cases, you'll modify the Azure DevOps area path, and trigger labels.
+1. ***Add the `quest.yml` action workflow file***
   - For an example, see the [`dotnet/docs` installation](https://github.com/dotnet/docs/blob/main/.github/workflows/quest.yml). You'll likely need to change the checks on the labels.
 1. ***Add secrets for Azure Dev Ops and Microsoft Open Source Programs Office***
   - You'll need to add two secret tokens to access the OSPO REST APIs and Quest Azure DevOps APIs.
@@ -26,12 +26,16 @@ To install the GitHub actions:
 1. Start applying labels.
   - Add the trigger label to any issue, and it will be imported into Quest.
 
+> **Note**: You may need to configure GitHub Actions in your repository settings. For more information, see [Managing GitHub Actions settings for a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository).
+
 ## Suggestions for future releases
 
 - [ ] Populate the "GitHub Repo" field in Azure DevOps to make reporting by repository easier.
 - [ ] Add Epics (configurable) as a parent of user stories on import.
 - [ ] Update the label block in Quest when an issue is closed. That way, any "OKR" labels get added when the work item is completed. This would be a simplified version of updating all labels when labels are added or removed.
 - [ ] Integrate with Repoman. That tool already performs a number of actions on different events in the repo. The code underlying these events could be ported there.
+- [ ] Encapsulate services into their own projects/packages, and share them as needed.
+- [ ] Use DI where applicable, enabling `IHttpClientFactory`, Polly (for transiant fault handling), `IOptions<T>` pattern, and easier testing.
 
 ## Triggers
 
