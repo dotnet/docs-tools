@@ -9,20 +9,6 @@ string destinationFilePath = args is { Length: 2 }
     ? args[1]
     : $".github{Path.AltDirectorySeparatorChar}dependabot.yml";
 
-//static void WriteLineToBufferAndOutput(StringBuilder buffer, string content, bool isLimitReached)
-//{
-//    if (isLimitReached)
-//    {
-//        WriteLine("LIMIT REACHED, OVERFLOW IS DISCARDED!");
-//        WriteLine(content);
-//    }
-//    else
-//    {
-//        buffer.AppendLine(content);
-//        WriteLine(content);
-//    }
-//}
-
 /*
 Dependabot encountered the following error when parsing your .github/dependabot.yml:
 
