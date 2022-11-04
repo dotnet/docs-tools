@@ -35,12 +35,15 @@
                     throw new Exception(
                         "Unable to read remote quest import configuration file.");
                 }
-            }            
+            }
 
-            var importOptions = new ConfigurationBuilder()
+            var config = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
                 .AddJsonFile(questConfigPath, optional: true)
-                .Build()
+                .Build();
+
+            var importOptions = config
+                .GetSection(nameof(ImportOptions))
                 .Get<ImportOptions>()
                 .ValidateOptions();
 
