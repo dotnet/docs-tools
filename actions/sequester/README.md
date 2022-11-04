@@ -26,6 +26,8 @@ To install the GitHub actions:
 1. Start applying labels.
   - Add the trigger label to any issue, and it will be imported into Quest.
 
+> **Note**: You may need to configure GitHub Actions in your repository settings. For more information, see [Managing GitHub Actions settings for a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository).
+
 ## Suggestions for future releases
 
 - [ ] Populate the "GitHub Repo" field in Azure DevOps to make reporting by repository easier.
