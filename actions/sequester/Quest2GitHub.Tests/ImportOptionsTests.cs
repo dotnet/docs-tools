@@ -17,11 +17,6 @@ public class ImportOptionsTests
         Assert.Equal(":world_map: reQUEST", actual.ImportTriggerLabel);
         Assert.Equal(":pushpin: seQUESTered", actual.ImportedLabel);
 
-        // Azure DevOps nested options
-        Assert.Equal("msft-skilling", actual.AzureDevOps.Org);
-        Assert.Equal("Content", actual.AzureDevOps.Project);
-        Assert.Equal(@"Production\Digital and App Innovation\DotNet and more\dotnet", actual.AzureDevOps.AreaPath);
-
         // API keys object
         Assert.Null(actual.ApiKeys);
     }
