@@ -28,6 +28,7 @@ public class EnumerateIssues
                   totalCount
                 }
                 bodyHTML
+                body
                 assignees(first: 10) {
                   nodes {
                     login
