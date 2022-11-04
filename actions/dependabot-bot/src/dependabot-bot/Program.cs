@@ -9,20 +9,6 @@ string destinationFilePath = args is { Length: 2 }
     ? args[1]
     : $".github{Path.AltDirectorySeparatorChar}dependabot.yml";
 
-static void WriteLineToBufferAndOutput(StringBuilder buffer, string content, bool isLimitReached)
-{
-    if (isLimitReached)
-    {
-        WriteLine("LIMIT REACHED, OVERFLOW IS DISCARDED!");
-        WriteLine(content);
-    }
-    else
-    {
-        buffer.AppendLine(content);
-        WriteLine(content);
-    }
-}
-
 /*
 Dependabot encountered the following error when parsing your .github/dependabot.yml:
 
@@ -42,7 +28,7 @@ string topMatter = """
     updates:
     """;
 
-WriteLineToBufferAndOutput(buffer, topMatter, false);
+buffer.WriteLineToBufferAndOutput(topMatter, false);
 
 // Entry to update GitHub Actions
 string githubActions = """
@@ -54,7 +40,7 @@ string githubActions = """
       open-pull-requests-limit: 10
   """;
 
-WriteLineToBufferAndOutput(buffer, githubActions, UpdateNodeLimit == updateNodeCount++);
+buffer.WriteLineToBufferAndOutput(githubActions, UpdateNodeLimit == updateNodeCount++);
 
 /* Generate the following pattern for each project file:
 
@@ -117,7 +103,7 @@ if (patternMatchingResult.HasMatches)
             continue;
         }
 
-        WriteLineToBufferAndOutput(buffer, $"""
+        buffer.WriteLineToBufferAndOutput($"""
               - package-ecosystem: "nuget"
                 directory: "{relativeDir}" #{filename}
                 schedule:
@@ -133,16 +119,16 @@ if (patternMatchingResult.HasMatches)
         }
 
         /* Format:
-    ignore:
-     - dependency-name: "Microsoft.AspNetCore.Mvc.NewtonsoftJson"
-       versions: ["5.*"]        
+        ignore:
+         - dependency-name: "Microsoft.AspNetCore.Mvc.NewtonsoftJson"
+           versions: ["5.*"]        
         */
 
-        WriteLineToBufferAndOutput(buffer, "    ignore:", false);
+        buffer.WriteLineToBufferAndOutput("    ignore:", false);
 
         foreach (PackageIgnoreMapping mapping in mappings)
         {
-            WriteLineToBufferAndOutput(buffer, $"""
+            buffer.WriteLineToBufferAndOutput($"""
                       - dependency-name: ""{mapping.PackageName}""
                        versions: {PrintArrayAsYaml(mapping.Ignore)}
                 """, false);
@@ -157,36 +143,6 @@ if (buffer is { Length: > 118 /* top matter length */ })
 }
 
 return 0;
-
-static bool TryGetTargetFramework(
-    string content,
-    [NotNullWhen(true)] out string? targetFramework) =>
-    TryGetRegexGroupValue(
-        TargetFrameworkRegex(),
-        content, "tfm", out targetFramework);
-
-static bool TryGetPackageName(
-    string content,
-    [NotNullWhen(true)] out string? packageName) =>
-    TryGetRegexGroupValue(
-        PackageReferenceIncludeRegex(),
-        content, "nuget", out packageName);
-
-static bool TryGetRegexGroupValue(
-    Regex regex, string content, string groupKey, [NotNullWhen(true)] out string? groupValue)
-{
-    var match = regex.Match(content);
-    if (match is { Success: true } and { Groups.Count: > 0 })
-    {
-        groupValue = match.Groups[groupKey].Value;
-        return true;
-    }
-    else
-    {
-        groupValue = null;
-        return false;
-    }
-}
 
 static async Task<Dictionary<string, string[]>> GetPackagesInfoAsync()
 {
@@ -234,17 +190,3 @@ file record PackageInfoSet(PackageInfo[] Packages);
 file readonly record struct PackageInfo(string Name, PackageTargetFrameworkIgnoreMapping[] Mapping);
 file readonly record struct PackageTargetFrameworkIgnoreMapping(string TargetFramework, string[] Ignore);
 file readonly record struct PackageIgnoreMapping(string PackageName, string[] Ignore);
-
-static partial class Program
-{
-    [GeneratedRegex("PackageReference.*Version=\"[0-9]")]
-    private static partial Regex PackageReferenceVersionRegex();
-
-    [GeneratedRegex("TargetFramework(.*)>(?<tfm>.+?)</")]
-    private static partial Regex TargetFrameworkRegex();
-
-    [GeneratedRegex("<PackageReference(?:.+?)Include=\"\"(?<nuget>.+?)\"\"")]
-    private static partial Regex PackageReferenceIncludeRegex();
-
-    private static readonly HttpClient s_client = new();
-}
