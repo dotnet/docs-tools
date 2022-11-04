@@ -4,8 +4,11 @@
 /// Add or remove a label.
 /// </summary>
 /// <remarks>
-/// This class performs a mutation to remove or
-/// add a label to a "labelable" node.
+/// This is misnamed. This is where I was working when I found that
+/// one mutation operation can contain multiple requests.
+/// In time, I'll refactor all the code for mutations to use more
+/// of a builder algorithm that constructs different mutation packets,
+/// adds variables for the overall operation, and then runs the mutation.
 /// </remarks>
 public class AddOrRemoveLabelMutation
 {
@@ -41,14 +44,6 @@ public class AddOrRemoveLabelMutation
 
     private static readonly string addremoveLabelMutationText = """
         mutation AddRemoveLabels($bodyText: String!, $nodeID: ID!, $addedLabelIDs: [ID!]!, $deletedLabelIDs: [ID!]!) {
-          addLabelsToLabelable(
-            input: {labelableId: $nodeID, labelIds: $addedLabelIDs, clientMutationId: "dotnet-docs-tools"}
-          ) {
-            labelable {
-              __typename
-            }
-            clientMutationId
-          }
           removeLabelsFromLabelable(
             input: {labelableId: $nodeID, labelIds: $deletedLabelIDs, clientMutationId: "dotnet-docs-tools"}
           ) {
@@ -60,6 +55,14 @@ public class AddOrRemoveLabelMutation
           updateIssue (
             input: {body: $bodyText, clientMutationId:"dotnet-docs-tools", id:$nodeID }
           ) {
+            clientMutationId
+          }
+        addLabelsToLabelable(
+            input: {labelableId: $nodeID, labelIds: $addedLabelIDs, clientMutationId: "dotnet-docs-tools"}
+          ) {
+            labelable {
+              __typename
+            }
             clientMutationId
           }
         }
