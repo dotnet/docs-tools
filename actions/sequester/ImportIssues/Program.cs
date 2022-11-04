@@ -56,7 +56,7 @@
                 importOptions.ImportTriggerLabel,
                 importOptions.ImportedLabel);
 
-            if (issue is not null)
+            if ((issue is not null) && (issue.Value != -1))
             {
                 await serviceWorker.ProcessIssue(
                     org, repo, issue.Value);

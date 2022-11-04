@@ -14,17 +14,17 @@ Once installed, this workflow does the following:
 To install the GitHub actions:
 
 1. ***Add the trigger labels***
-  - You'll need to add two labels: one that informs the action to import an issue from GitHub to Quest. The second informs you that an issue has been imported.
+   - You'll need to add two labels: one that informs the action to import an issue from GitHub to Quest. The second informs you that an issue has been imported.
 1. ***Add a `quest-config.json` file***
-  - In the root folder of your repo, create a config file that contains the keys shown [later in this document](#configure-consuming-github-action-workflow). In most cases, you'll modify the Azure DevOps area path, and trigger labels.
+   - In the root folder of your repo, create a config file that contains the keys shown [later in this document](#configure-consuming-github-action-workflow). In most cases, you'll modify the Azure DevOps area path, and trigger labels.
 1. ***Add the `quest.yml` and `quest-bulk.yml` action workflow files***
-  - For an example, see the [`dotnet/docs` installation](https://github.com/dotnet/docs/blob/main/.github/workflows/quest.yml). You'll likely need to change the checks on the labels.
+   - For an example, see the [`dotnet/docs` installation](https://github.com/dotnet/docs/blob/main/.github/workflows/quest.yml). You'll likely need to change the checks on the labels.
 1. ***Add secrets for Azure Dev Ops and Microsoft Open Source Programs Office***
-  - You'll need to add two secret tokens to access the OSPO REST APIs and Quest Azure DevOps APIs.
-  - *OSPO_KEY*: Generate a PAT [here](https://ossmsft.visualstudio.com/_usersSettings/tokens). UserProfile: Read is the only access needed.
-  - *QUEST_KEY*: Generate a PAT [here](https://dev.azure.com/msft-skilling/_usersSettings/tokens). WorkItems: Read/Write and Project & Team: Read/Write access are needed.
+   - You'll need to add two secret tokens to access the OSPO REST APIs and Quest Azure DevOps APIs.
+   - *OSPO_KEY*: Generate a PAT [here](https://ossmsft.visualstudio.com/_usersSettings/tokens). UserProfile: Read is the only access needed.
+   - *QUEST_KEY*: Generate a PAT [here](https://dev.azure.com/msft-skilling/_usersSettings/tokens). WorkItems: Read/Write and Project & Team: Read/Write access are needed.
 1. Start applying labels.
-  - Add the trigger label to any issue, and it will be imported into Quest.
+   - Add the trigger label to any issue, and it will be imported into Quest.
 
 > **Note**: You may need to configure GitHub Actions in your repository settings. For more information, see [Managing GitHub Actions settings for a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository).
 
