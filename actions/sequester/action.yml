@@ -1,0 +1,26 @@
+name: Quest synchronizer
+description: Automatically synchronize GitHub issues with Quest (Azure DevOps).
+author: 'Bill Wagner'
+branding:
+  icon: refresh-cw
+  color: purple
+inputs:
+  org:
+    description: 'The organization the repo belongs to. Assign from github.repository_owner. Example, "dotnet".'
+    default: 'dotnet'
+  repo:
+    description: 'The repository name. Example, "docs".'
+    default: 'docs'
+  issue:
+    description: 'An optional issue number to target when being triggered for a single issue.'
+
+runs:
+  using: docker
+  image: ./Dockerfile
+  args:
+    - '--org'
+    - ${{ inputs.org }}
+    - '--repo'
+    - ${{ inputs.repo }}
+    - '--issue'
+    - ${{ inputs.issue }}

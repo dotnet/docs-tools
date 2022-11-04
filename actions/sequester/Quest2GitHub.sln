@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33012.329
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quest2GitHub", "Quest2GitHub\Quest2GitHub.csproj", "{A5EE0E3D-A7E7-4DF1-9AF8-76C9F811DCBD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{17E679D5-5646-4002-A0DA-7C3202910765}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		action.yml = action.yml
+		ImportIssues\Dockerfile = ImportIssues\Dockerfile
+		Dockerfile = Dockerfile
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImportIssues", "ImportIssues\ImportIssues.csproj", "{3BB8E621-3F16-4ABC-BADC-D724920A61FD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quest2GitHub.Tests", "Quest2GitHub.Tests\Quest2GitHub.Tests.csproj", "{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A5EE0E3D-A7E7-4DF1-9AF8-76C9F811DCBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5EE0E3D-A7E7-4DF1-9AF8-76C9F811DCBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5EE0E3D-A7E7-4DF1-9AF8-76C9F811DCBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5EE0E3D-A7E7-4DF1-9AF8-76C9F811DCBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BB8E621-3F16-4ABC-BADC-D724920A61FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BB8E621-3F16-4ABC-BADC-D724920A61FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BB8E621-3F16-4ABC-BADC-D724920A61FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BB8E621-3F16-4ABC-BADC-D724920A61FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {47D88C83-FEB7-49A8-9DBF-18AC9E4575B6}
+	EndGlobalSection
+EndGlobal
