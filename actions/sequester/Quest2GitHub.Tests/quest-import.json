@@ -1,0 +1,18 @@
+{
+  "ImportOptions": {
+    "GitHubOrg": "org",
+    "GitHubRepo": "repo",
+    "AzureDevOps": {
+      "Org": "org",
+      "Project": "proj",
+      "AreaPath": "path"
+    },
+    "ApiKeys": {
+      "GitHubToken": "ght",
+      "OSPOKey": "okey",
+      "QuestKey":  "qkey"
+    },
+    "ImportTriggerLabel": "trigger-import",
+    "ImportedLabel": "imported"
+  }
+}
