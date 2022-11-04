@@ -59,8 +59,17 @@ public class QuestClient : IDisposable
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/$User%20Story?api-version=6.0&expand=Fields";
 
         var response = await _client.PostAsync(createWorkItemUrl, request);
-        var jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-        return jsonDocument.RootElement;
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+            return jsonDocument.RootElement;
+        } else
+        {
+            var text = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(text);
+            throw new InvalidOperationException(text);
+        }
+
     }
 
     /// <summary>
