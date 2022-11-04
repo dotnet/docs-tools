@@ -30,7 +30,6 @@
             {
                 using RawGitHubFileReader reader = new();
                 questConfigPath = await reader.TryInitializeOptionsAsync(org, repo);
-
                 if (questConfigPath is null)
                 {
                     throw new Exception(
@@ -42,7 +41,6 @@
                 .AddEnvironmentVariables()
                 .AddJsonFile(questConfigPath, optional: true)
                 .Build()
-                .GetSection(nameof(ImportOptions))
                 .Get<ImportOptions>()
                 .ValidateOptions();
 
