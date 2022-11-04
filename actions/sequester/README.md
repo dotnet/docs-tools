@@ -34,6 +34,8 @@ To install the GitHub actions:
 - [ ] Add Epics (configurable) as a parent of user stories on import.
 - [ ] Update the label block in Quest when an issue is closed. That way, any "OKR" labels get added when the work item is completed. This would be a simplified version of updating all labels when labels are added or removed.
 - [ ] Integrate with Repoman. That tool already performs a number of actions on different events in the repo. The code underlying these events could be ported there.
+- [ ] Encapsulate services into their own projects/packages, and share them as needed.
+- [ ] Use DI where applicable, enabling `IHttpClientFactory`, Polly (for transiant fault handling), `IOptions<T>` pattern, and easier testing.
 
 ## Triggers
 
