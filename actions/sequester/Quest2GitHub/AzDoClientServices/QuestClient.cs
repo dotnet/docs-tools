@@ -8,8 +8,17 @@
 /// You'd need to have a second client with a different token if you were passing objects
 /// between orgs.
 /// </remarks>
-public class QuestClient : IDisposable
+public sealed class QuestClient : IDisposable
 {
+    private static readonly JsonSerializerOptions s_options = new()
+    {
+        WriteIndented = true,
+        Converters =
+        {
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+        }
+    };
+
     private readonly HttpClient _client;
     private readonly string _questOrg;
 
@@ -27,11 +36,10 @@ public class QuestClient : IDisposable
         QuestProject = project;
         _client = new HttpClient();
         _client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue(MediaTypeNames.Application.Json)
-        );
-
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-            Convert.ToBase64String(ASCIIEncoding.ASCII.GetBytes($":{token}")));
+            new MediaTypeWithQualityHeaderValue(MediaTypeNames.Application.Json));
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Basic",
+                Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
     }
 
     /// <summary>
@@ -42,34 +50,19 @@ public class QuestClient : IDisposable
     /// <returns>The JSON packet representing the new item.</returns>
     public async Task<JsonElement> CreateWorkItem(List<JsonPatchDocument> document)
     {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            Converters =
-            {
-                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
-            }
-        };
-        var jsonString = JsonSerializer.Serialize(document, options);
-        using var request = new StringContent(jsonString);
+        var json = JsonSerializer.Serialize(document, s_options);
+        Console.WriteLine($"Creating work item with:\n{json}");
+
+        using var request = new StringContent(json);
         request.Headers.ContentType = new MediaTypeHeaderValue("application/json-patch+json");
         request.Headers.Add("Accepts", MediaTypeNames.Application.Json);
 
-        string createWorkItemUrl = 
+        string createWorkItemUrl =
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/$User%20Story?api-version=6.0&expand=Fields";
+        Console.WriteLine($"Create work item URL: \"{createWorkItemUrl}\"");
 
         var response = await _client.PostAsync(createWorkItemUrl, request);
-        if (response.IsSuccessStatusCode)
-        {
-            var jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-            return jsonDocument.RootElement;
-        } else
-        {
-            var text = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(text);
-            throw new InvalidOperationException(text);
-        }
-
+        return await HandleResponseAsync(response);
     }
 
     /// <summary>
@@ -79,11 +72,12 @@ public class QuestClient : IDisposable
     /// <returns>The JSON element for the returned item.</returns>
     public async Task<JsonElement> GetWorkItem(int id)
     {
-        string getWorkItemUrl = $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
-        using var response = await _client.GetAsync(getWorkItemUrl);
+        string getWorkItemUrl = 
+            $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
+        Console.WriteLine($"Get work item URL: \"{getWorkItemUrl}\"");
 
-        var jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-        return jsonDocument.RootElement;
+        using var response = await _client.GetAsync(getWorkItemUrl);
+        return await HandleResponseAsync(response);
     }
 
     /// <summary>
@@ -94,25 +88,37 @@ public class QuestClient : IDisposable
     /// <returns>The JSON element that represents the updated work item.</returns>
     public async Task<JsonElement> PatchWorkItem(int id, List<JsonPatchDocument> document)
     {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            Converters =
-            {
-                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
-            }
-        };
+        var json = JsonSerializer.Serialize(document, s_options);
+        Console.WriteLine($"Patching {id} with:\n{json}");
 
-        var jsonString = JsonSerializer.Serialize(document, options);
-        using var request = new StringContent(jsonString);
+        using var request = new StringContent(json);
         request.Headers.ContentType = new MediaTypeHeaderValue("application/json-patch+json");
         request.Headers.Add("Accepts", MediaTypeNames.Application.Json);
 
-        string patchWorkItemUrl = $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
+        string patchWorkItemUrl = 
+            $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
+        Console.WriteLine($"Patch work item URL: \"{patchWorkItemUrl}\"");
 
         var response = await _client.PatchAsync(patchWorkItemUrl, request);
-        var jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-        return jsonDocument.RootElement;
+        return await HandleResponseAsync(response);
+    }
+
+    static async Task<JsonElement> HandleResponseAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            var jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+            return jsonDocument.RootElement;
+        }
+        else
+        {
+            var text = $"HTTP error:\n{response}";
+            var content = await response.Content.ReadAsStringAsync();
+            text += $"\nContent: \"{content}\"";
+            Console.WriteLine(text);
+
+            throw new InvalidOperationException(text);
+        }
     }
 
     /// <summary>

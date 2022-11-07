@@ -54,7 +54,7 @@ public class JsonPatchDocument
     /// The path of the attribute.
     /// </summary>
     [JsonPropertyName("path")]
-    public required string Path{ get; init; }
+    public required string Path { get; init; }
 
     /// <summary>
     /// The old value (null is valid for many operations)
@@ -66,6 +66,5 @@ public class JsonPatchDocument
     /// The new value.
     /// </summary>
     [JsonPropertyName("value")]
-    public required string? Value{ get; init; }
-
+    public required string? Value { get; init; }
 }
