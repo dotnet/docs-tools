@@ -93,7 +93,7 @@ public static class ImportOptionsExtensions
     /// <summary>
     /// Omits the <see cref="ImportOptions.ApiKeys"/> values, as those are secrets.
     /// </summary>
-    public static void WriteValuesToConsole(this ImportOptions options)
+    public static void WriteValuesToConsole(this ImportOptions? options)
     {
         Console.WriteLine($"Values configured in the ImportOptions:");
         Console.WriteLine($"  options.ImportTriggerLabel = \"{options?.ImportTriggerLabel}\"");

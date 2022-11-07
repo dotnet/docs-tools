@@ -4,7 +4,7 @@ public sealed class RawGitHubFileReader : IDisposable
 {
     private readonly HttpClient _httpClient = new();
 
-    public async Task<string?> TryInitializeOptionsAsync(
+    public async Task<ImportOptions?> ReadOptionsAsync(
         string org,
         string repo,
         string branch = "main",
@@ -18,33 +18,14 @@ public sealed class RawGitHubFileReader : IDisposable
         {
             var json = await _httpClient.GetStringAsync(url);
             var options = JsonSerializer.Deserialize<ImportOptions>(json);
-            if (options is not null)
-            {
-                return await WriteOptionsAsync(options, filename);
-            }
+            
+            options.WriteValuesToConsole();
+
+            return options;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Attempted: {url}, {ex}");
-        }
-
-        return null;
-    }
-
-    static async Task<string?> WriteOptionsAsync(ImportOptions options, string filename)
-    {
-        try
-        {
-            var json = JsonSerializer.Serialize(options);
-            await File.WriteAllTextAsync(filename, json);
-
-            options.WriteValuesToConsole();
-
-            return Path.GetFullPath(filename);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine(ex);
         }
 
         return null;

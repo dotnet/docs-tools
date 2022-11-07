@@ -26,26 +26,24 @@
                 repo = split[1];
             }
 
+
+            ImportOptions? importOptions;
             if (string.IsNullOrWhiteSpace(questConfigPath) || !File.Exists(questConfigPath))
             {
                 using RawGitHubFileReader reader = new();
-                questConfigPath = await reader.TryInitializeOptionsAsync(org, repo);
-                if (questConfigPath is null)
-                {
-                    throw new Exception(
-                        "Unable to read remote quest import configuration file.");
-                }
+                importOptions = await reader.ReadOptionsAsync(org, repo);
+            }
+            else
+            {
+                LocalFileReader reader = new();
+                importOptions = await reader.ReadOptionsAsync(questConfigPath);
             }
 
-            var config = new ConfigurationBuilder()
-                .AddEnvironmentVariables()
-                .AddJsonFile(questConfigPath, optional: true)
-                .Build();
-
-            var importOptions = config
-                .GetSection(nameof(ImportOptions))
-                .Get<ImportOptions>()
-                .ValidateOptions();
+            if (importOptions is null)
+            {
+                throw new ApplicationException(
+                    $"Unable to load Quest import configuration options.");
+            }
 
             using var serviceWorker = new QuestGitHubService(
                 importOptions.ApiKeys!.GitHubToken,
@@ -57,7 +55,7 @@
                 importOptions.ImportTriggerLabel,
                 importOptions.ImportedLabel);
 
-            if ((issue is not null) && (issue.Value != -1))
+            if (issue is not null && issue.Value != -1)
             {
                 await serviceWorker.ProcessIssue(
                     org, repo, issue.Value);
