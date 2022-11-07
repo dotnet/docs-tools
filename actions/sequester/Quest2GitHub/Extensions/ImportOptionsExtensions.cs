@@ -95,7 +95,7 @@ public static class ImportOptionsExtensions
     /// </summary>
     public static void WriteValuesToConsole(this ImportOptions? options)
     {
-        Console.WriteLine($"Values configured in the ImportOptions:");
+        Console.WriteLine($"Values configured in the ImportOptions (API Keys omitted):");
         Console.WriteLine($"  options.ImportTriggerLabel = \"{options?.ImportTriggerLabel}\"");
         Console.WriteLine($"  options.ImportedLabel = \"{options?.ImportedLabel}\"");
         Console.WriteLine($"  options.AzureDevOps.Org = \"{options?.AzureDevOps?.Org}\"");

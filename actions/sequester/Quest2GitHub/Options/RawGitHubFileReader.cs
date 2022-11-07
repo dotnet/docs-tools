@@ -20,6 +20,13 @@ public sealed class RawGitHubFileReader : IDisposable
             var options = JsonSerializer.Deserialize<ImportOptions>(json);
             
             options.WriteValuesToConsole();
+            if (options is not null)
+            {
+                options = options with
+                {
+                    ApiKeys = EnvironmentVariableReader.GetApiKeys()
+                };
+            }
 
             return options;
         }
