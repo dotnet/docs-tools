@@ -24,7 +24,7 @@
 
             Console.WriteLine(issue.HasValue && issue > -1
                 ? $"Processing single issue {issue.Value}: https://github.com/{org}/{repo}/issues/{issue.Value}"
-                : "Processing all open issues");
+                : $"Processing all open issues: {org}/{repo}");
 
             ImportOptions? importOptions;
             if (string.IsNullOrWhiteSpace(questConfigPath) || !File.Exists(questConfigPath))
