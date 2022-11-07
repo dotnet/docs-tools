@@ -167,12 +167,13 @@ public class QuestWorkItem
                 Value = "Closed",
             });
         }
-        var result = await questClient.CreateWorkItem(patchDocument);
+        JsonElement result = default;
         try
         {
+            result = await questClient.CreateWorkItem(patchDocument);
             var newItem = WorkItemFromJson(result);
             return newItem;
-        } catch (KeyNotFoundException)
+        } catch (InvalidOperationException)
         {
             Console.WriteLine(result.ToString());
             // This will happen when the assignee IS a Microsoft FTE,
