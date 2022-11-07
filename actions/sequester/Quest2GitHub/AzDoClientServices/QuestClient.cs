@@ -115,7 +115,6 @@ public sealed class QuestClient : IDisposable
             var text = $"HTTP error:\n{response}";
             var content = await response.Content.ReadAsStringAsync();
             text += $"\nContent: \"{content}\"";
-            Console.WriteLine(text);
 
             throw new InvalidOperationException(text);
         }
