@@ -5,8 +5,8 @@ public class GitHubClient : IGitHubClient, IDisposable
     private const string ProductID = "DotnetDocsTools";
     private const string ProductVersion = "2.0";
 
-    private static readonly Uri markdownUri = new Uri("https://api.github.com/markdown");
-    private static readonly Uri graphQLUri = new Uri("https://api.github.com/graphql");
+    private static readonly Uri markdownUri = new("https://api.github.com/markdown");
+    private static readonly Uri graphQLUri = new("https://api.github.com/graphql");
     private const string RESTendpoint = "https://api.github.com/repos";
     private readonly HttpClient client;
 
@@ -70,8 +70,8 @@ public class GitHubClient : IGitHubClient, IDisposable
             yield return "";
         else
         {
-            var responseStream = await response.Content.ReadAsStreamAsync();
-            StreamReader reader = new StreamReader(responseStream);
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            using StreamReader reader = new(responseStream);
             var line = await reader.ReadLineAsync();
             while (line != null)
             {

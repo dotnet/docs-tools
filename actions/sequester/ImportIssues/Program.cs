@@ -14,10 +14,6 @@
     /// <returns>0</returns>
     private static async Task<int> Main(string org, string repo, int? issue = null, string? questConfigPath = null)
     {
-        Console.WriteLine(issue.HasValue
-            ? $"Processing single issue {issue.Value}"
-            : "Processing all open issues");
-
         try
         {
             if (repo.Contains('/'))
@@ -26,6 +22,9 @@
                 repo = split[1];
             }
 
+            Console.WriteLine(issue.HasValue && issue > -1
+                ? $"Processing single issue {issue.Value}: https://github.com/{org}/{repo}/issues/{issue.Value}"
+                : $"Processing all open issues: {org}/{repo}");
 
             ImportOptions? importOptions;
             if (string.IsNullOrWhiteSpace(questConfigPath) || !File.Exists(questConfigPath))
