@@ -51,7 +51,7 @@ public sealed class QuestClient : IDisposable
     public async Task<JsonElement> CreateWorkItem(List<JsonPatchDocument> document)
     {
         var json = JsonSerializer.Serialize(document, s_options);
-        Console.WriteLine($"Creating work items with:\n{json}");
+        Console.WriteLine($"Creating work item with:\n{json}");
 
         using var request = new StringContent(json);
         request.Headers.ContentType = new MediaTypeHeaderValue("application/json-patch+json");
