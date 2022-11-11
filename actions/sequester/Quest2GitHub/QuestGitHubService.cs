@@ -108,16 +108,40 @@ public class QuestGitHubService : IDisposable
 
         //Retrieve the GitHub issue.
          var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
-        // Find a possible linked item.
-        var questItem = await FindLinkedWorkItem(ghIssue);
 
-        if ((questItem != null) && (ghIssue.Labels.Any(l => l.nodeID == _importedLabel?.nodeID)))
+        // Evaluate the labels to determine the right action.
+        var request = ghIssue.Labels.Any(l => l.nodeID == _importTriggerLabel?.nodeID);
+        var sequestered = ghIssue.Labels.Any(l => l.nodeID == _importedLabel?.nodeID);
+        // Only query AzDo if needed:
+        var questItem = ((request && ghIssue.IsOpen) || sequestered) 
+            ? await FindLinkedWorkItem(ghIssue) 
+            : null;
+
+        // The order here is important to avoid a race condition that causes
+        // an issue to be triggered multiple times.
+        // First, if an issue is open and the trigger label is added, link or 
+        // update. Update is safe, because it will only update the quest issue's
+        // state or assigned field. That can't trigger a new GH action run.
+        if (request)
+        {
+            if ((questItem is null) && ghIssue.IsOpen)
+            {
+                questItem = await LinkIssue(gitHubOrganization, gitHubRepository, ghIssue);
+            } else if (questItem is not null)
+            {
+                // This allows a human to force a manual update: just add the trigger label.
+                // Note that it updates even if the item is closed.
+                await UpdateWorkItem(questItem, ghIssue);
+
+            }
+        // Next, if the item is already linked, consider any updates.
+        // It's important that adding the linked label is the last
+        // mutation done in the linking process. That way, the GH Action
+        // does get triggered again. The second trigger will check for any updates
+        // a human made to assigned or state while the initial run was taking place.
+        } else if (sequestered && (questItem is not null))
         {
             await UpdateWorkItem(questItem, ghIssue);
-        }
-        else if (ghIssue.IsOpen && ghIssue.Labels.Any(l => l.nodeID == _importTriggerLabel?.nodeID))
-        {
-            questItem = await LinkIssue(gitHubOrganization, gitHubRepository, ghIssue);
         }
     }
 
@@ -140,6 +164,13 @@ public class QuestGitHubService : IDisposable
         var workItem = LinkedQuestId(ghIssue);
         if (workItem == null)
         {
+            // Remove the trigger label before doing anything. That prevents
+            // a race condition causing multiple imports:
+            var mutation = new AddOrRemoveLabelMutation(_ghClient, ghIssue.Id);
+
+            // Yes, this needs some later refactoring. This call won't update the description.
+            await mutation.PerformMutation("ignored", null, _importTriggerLabel?.nodeID);
+
             // Create work item:
             var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.nodeID);
 
@@ -152,10 +183,8 @@ public class QuestGitHubService : IDisposable
             [Associated WorkItem - {questItem.Id}]({_questLinkString}{questItem.Id})
             """;
 
-            // Now, do the label remove and add:
-            var mutation = new AddOrRemoveLabelMutation(_ghClient, ghIssue.Id);
-
-            await mutation.PerformMutation(updatedBody, _importedLabel?.nodeID, _importTriggerLabel?.nodeID);
+            // Now, update the body, and add the label:
+            await mutation.PerformMutation(updatedBody, _importedLabel?.nodeID, null);
             return questItem;
         } else
         {
