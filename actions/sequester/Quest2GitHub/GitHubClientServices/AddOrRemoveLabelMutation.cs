@@ -28,7 +28,7 @@ public class AddOrRemoveLabelMutation
     """;
 
     private static readonly string addLabelMutationText = """
-      mutation AddLabels($nodeID: ID!, $labelIDs: [ID!]!) {
+      mutation AddLabels($bodyText: String!, $nodeID: ID!, $labelIDs: [ID!]!) {
         updateIssue (
           input: {body: $bodyText, clientMutationId:"dotnet-docs-tools", id:$nodeID }
         ) {
