@@ -28,7 +28,12 @@ public class AddOrRemoveLabelMutation
     """;
 
     private static readonly string addLabelMutationText = """
-    mutation AddLabels($nodeID: ID!, $labelIDs: [ID!]!) {
+      mutation AddLabels($nodeID: ID!, $labelIDs: [ID!]!) {
+        updateIssue (
+          input: {body: $bodyText, clientMutationId:"dotnet-docs-tools", id:$nodeID }
+        ) {
+          clientMutationId
+        }
         addLabelsToLabelable(input: {
           labelableId:$nodeID
           labelIds:$labelIDs
@@ -95,6 +100,15 @@ public class AddOrRemoveLabelMutation
     /// </remarks>
     public async Task PerformMutation(string updatedBody, string? labelToAdd, string? labelToRemove)
     {
+        // This method is growing in some ugly ways. It needs some 
+        // refactoring. but I'd like to make sure the race condition has been
+        // addressed first.
+        // So, in this update, I did the smallest change that will work.
+        // This method is only called from one routine now. It does 
+        // need to be refactored soon.
+        // I think the right answer is to create a builder type that
+        // builds mutation commands in order, and before
+        // executing it, sets the signature and variables.
         var labelPacket = (labelToAdd, labelToRemove) switch
         {
             (null, null) => throw new ArgumentException("Must specify a label to add or remove"),
@@ -104,6 +118,7 @@ public class AddOrRemoveLabelMutation
                     variables =
                     {
                         ["nodeID"] = nodeId,
+                        ["bodyText"] = updatedBody,
                         ["labelIDs"] = labelToAdd
                     }
                 },
@@ -111,22 +126,22 @@ public class AddOrRemoveLabelMutation
                 {
                     query = removeLabelMutationText,
                     variables =
-                        {
-                            ["nodeID"] = nodeId,
-                            ["labelIDs"] = labelToRemove
-                        }
+                    {
+                        ["nodeID"] = nodeId,
+                        ["labelIDs"] = labelToRemove
+                    }
                 },
             (_, _) => new GraphQLPacket
                 {
                     query = addremoveLabelMutationText,
                     variables =
-                        {
-                            ["nodeID"] = nodeId,
-                            ["bodyText"] = updatedBody,
-                            ["addedLabelIDs"] = labelToAdd,
-                            ["deletedLabelIDs"] = labelToRemove,
+                    {
+                        ["nodeID"] = nodeId,
+                        ["bodyText"] = updatedBody,
+                        ["addedLabelIDs"] = labelToAdd,
+                        ["deletedLabelIDs"] = labelToRemove,
 
-                        }
+                    }
                 },
         };
             
