@@ -8,6 +8,8 @@ namespace Microsoft.DotnetOrg.Ospo;
 public sealed class OspoClient : IDisposable
 {
     private readonly HttpClient _httpClient;
+    private readonly Dictionary<string, OspoLink?> _allEmployeeQueries = new Dictionary<string, OspoLink?>();
+
 
     public OspoClient(string token)
     {
@@ -29,6 +31,8 @@ public sealed class OspoClient : IDisposable
 
     public async Task<OspoLink?> GetAsync(string gitHubLogin)
     {
+        if (_allEmployeeQueries.TryGetValue(gitHubLogin, out var query))
+            return query;
         var result = await _httpClient.GetFromJsonAsync<OspoLink>(
             $"people/links/github/{gitHubLogin}", JsonSerializerOptionsDefaults.Shared);
         return result;

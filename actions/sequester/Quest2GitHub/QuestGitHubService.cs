@@ -1,4 +1,7 @@
-﻿namespace Quest2GitHub;
+﻿using Microsoft.DotnetOrg.Ospo;
+using Quest2GitHub.AzureDevOpsCommunications;
+
+namespace Quest2GitHub;
 
 /// <summary>
 /// This class manages the top level workflows to synchronize
@@ -204,17 +207,22 @@ public class QuestGitHubService : IDisposable
 
     private async Task<QuestWorkItem?> UpdateWorkItem(QuestWorkItem questItem, GithubIssue ghIssue)
     {
-        string? ghAssignee = await ghIssue.AssignedMicrosoftPreferredName(_ospoClient);
+        var assigneeEmail = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
+        Guid? assigneeID = default;
+        if (assigneeEmail?.Contains("@microsoft.com") == true)
+        {
+            assigneeID = await _azdoClient.GetIDFromEmail(assigneeEmail);
+        }
         List<JsonPatchDocument> patchDocument = new();
         JsonPatchDocument? assignPatch = default;
-        if (ghAssignee != questItem.AssignedTo)
+        if (assigneeID != questItem.AssignedToId)
         {
             // build patch document for assignment.
             assignPatch = new JsonPatchDocument
             {
                 Operation = Op.Add,
                 Path = "/fields/System.AssignedTo",
-                Value = ghAssignee ?? "",
+                Value = assigneeID?.ToString() ?? "",
             };
             patchDocument.Add(assignPatch);
         }

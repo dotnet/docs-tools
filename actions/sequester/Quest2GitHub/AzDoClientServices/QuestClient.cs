@@ -120,6 +120,21 @@ public sealed class QuestClient : IDisposable
         }
     }
 
+    public async Task<Guid?> GetIDFromEmail(string emailAddress)
+    {
+        string url = $"https://vssps.dev.azure.com/{_questOrg}/_apis/identities?searchFilter=General&filterValue={emailAddress}&queryMembership=None&api-version=7.1-preview.1";
+        var response = await _client.GetAsync(url);
+        var rootElement = await HandleResponseAsync(response);
+        var count = rootElement.Descendent("count").GetInt32();
+        if (count != 1)
+        {
+            return null;
+        }
+        var values = rootElement.Descendent("value");
+        var user = values.EnumerateArray().First();
+        return (user.Descendent("id").TryGetGuid(out var id)) ? id : null;
+    }
+
     /// <summary>
     /// Dispose of the embedded HTTP client.
     /// </summary>

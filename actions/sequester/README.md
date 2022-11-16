@@ -23,6 +23,7 @@ To install the GitHub actions:
    - You'll need to add two secret tokens to access the OSPO REST APIs and Quest Azure DevOps APIs.
    - *OSPO_KEY*: Generate a PAT [here](https://ossmsft.visualstudio.com/_usersSettings/tokens). UserProfile: Read is the only access needed.
    - *QUEST_KEY*: Generate a PAT [here](https://dev.azure.com/msft-skilling/_usersSettings/tokens). WorkItems: Read/Write and Project & Team: Read/Write access are needed.
+     Identity: Read is also needed.
 1. Start applying labels.
    - Add the trigger label to any issue, and it will be imported into Quest.
 

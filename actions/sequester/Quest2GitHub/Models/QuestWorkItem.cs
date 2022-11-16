@@ -38,10 +38,10 @@ public class QuestWorkItem
     /// The assigned to email address.
     /// </summary>
     /// <remarks>
-    /// This is stored as /fields/System.AssignedTo
-    /// This is the FTE email address, or null if unassigned.
+    /// This is stored as /fields/System.AssignedTo/id
+    /// This is the unique ID of the assignee, or null if unassigned.
     /// </remarks>
-    public required string? AssignedTo { get; init; }
+    public required Guid? AssignedToId { get; init; }
 
     /// <summary>
     /// The state of the issue.
@@ -136,13 +136,18 @@ public class QuestWorkItem
         };
 
         // Query if the Github ID maps to an FTE id, add that one:
-        var assignee = await issue.AssignedMicrosoftPreferredName(ospoClient);
+        var assigneeEmail = await issue.AssignedMicrosoftEmailAddress(ospoClient);
+        Guid? assigneeID = default;
+        if (assigneeEmail?.Contains("@microsoft.com") == true)
+        {
+            assigneeID = await questClient.GetIDFromEmail(assigneeEmail);
+        }
         var assignPatch = new JsonPatchDocument
         {
             Operation = Op.Add,
             Path = "/fields/System.AssignedTo",
             From = default,
-            Value = assignee ?? ""
+            Value = assigneeID?.ToString() ?? ""
         };
         patchDocument.Add(assignPatch);
         /* This is ignored by Azure DevOps. It uses the PAT of the 
@@ -202,8 +207,8 @@ public class QuestWorkItem
         var description = fields.GetProperty("System.Description").GetString()!;
         var areaPath = fields.GetProperty("System.AreaPath").GetString()!;
         var iterationPath = fields.GetProperty("System.IterationPath").GetString();
-        var assignedNode = fields.Descendent("System.AssignedTo", "uniqueName");
-        var assignedName = (assignedNode.ValueKind is JsonValueKind.String) ?
+        var assignedNode = fields.Descendent("System.AssignedTo", "id");
+        var assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
             assignedNode.GetString() : null;
         return new QuestWorkItem
         {
@@ -213,7 +218,7 @@ public class QuestWorkItem
             Description = description,
             AreaPath = areaPath,
             IterationPath = iterationPath,
-            AssignedTo = assignedName
+            AssignedToId = (assignedID is not null) ? new Guid(assignedID) : null
         };
     }
 
@@ -227,7 +232,7 @@ public class QuestWorkItem
           WorkItem: {{Id}} -- {{Title}}
           {{Description}}
 
-          Assignee: {{AssignedTo}}
+          Assignee: {{AssignedToId}}
           AreaPath: {{AreaPath}}
           Iteration: {{IterationPath}}
           """;
