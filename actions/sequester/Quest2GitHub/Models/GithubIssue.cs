@@ -246,7 +246,14 @@ public class GithubIssue
         if (Assignees.Any())
         {
             var identity = await ospoClient.GetAsync(Assignees.First());
-            return identity?.MicrosoftInfo?.EmailAddress;
+            // This feels like a hack, but it is necessary.
+            // The email address is the email address a person configured
+            // However, the only guaranteed way to find the person in Quest 
+            // is to use their alais as an email address. Yuck.
+            if (identity?.MicrosoftInfo?.EmailAddress?.EndsWith("@microsoft.com") == true)
+                return identity.MicrosoftInfo.Alias + "@microsoft.com";
+            else
+                return identity?.MicrosoftInfo?.EmailAddress;
         }
         return null;
     }

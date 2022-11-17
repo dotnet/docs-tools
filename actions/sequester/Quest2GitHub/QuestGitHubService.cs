@@ -237,26 +237,11 @@ public class QuestGitHubService : IDisposable
                 Value = ghIssue.IsOpen ? "Active" : "Closed",
             });
         }
-        while (patchDocument.Any())
+        if (patchDocument.Any())
         {
             var jsonDocument = await _azdoClient.PatchWorkItem(questItem.Id, patchDocument);
-            try
-            {
-                var newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
-                return newItem;
-            }
-            catch (KeyNotFoundException)
-            {
-                // This will happen when the assignee IS a Microsoft FTE,
-                // but that person isn't onboarded in Quest. (Likely a product team member, or CSE)
-
-                // So, remove the node with the Assigned to and try again:
-                if (!patchDocument.Remove(assignPatch!))
-                {
-                    // If there's no assign node, clear the doc and punt
-                    patchDocument.Clear();
-                }
-            }
+            var newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
+            return newItem;
         }
         return null;
     }
