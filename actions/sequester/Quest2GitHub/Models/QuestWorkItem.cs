@@ -138,7 +138,7 @@ public class QuestWorkItem
         // Query if the Github ID maps to an FTE id, add that one:
         var assigneeEmail = await issue.AssignedMicrosoftEmailAddress(ospoClient);
         AzDoIdentity? assigneeID = default;
-        if (assigneeEmail?.Contains("@microsoft.com") == true)
+        if (assigneeEmail?.EndsWith("@microsoft.com") == true)
         {
             assigneeID = await questClient.GetIDFromEmail(assigneeEmail);
         }

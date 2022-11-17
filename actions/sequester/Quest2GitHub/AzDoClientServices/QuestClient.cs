@@ -137,7 +137,7 @@ public sealed class QuestClient : IDisposable
         // When retrieving the user identity, the property is called "subjectDescriptor".
         // But, when sending a user ID, the property name is "descriptor".
         var descriptor = user.Descendent("subjectDescriptor").GetString()!;
-        var identity = new AzDoIdentity { Id = id,UniqueName = uniqueName, Descriptor = descriptor };
+        var identity = new AzDoIdentity { Id = id, UniqueName = uniqueName, Descriptor = descriptor };
         return success ? identity : null;
     }
 

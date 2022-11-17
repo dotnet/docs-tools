@@ -209,7 +209,7 @@ public class QuestGitHubService : IDisposable
     {
         var assigneeEmail = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
         AzDoIdentity? assigneeID = default;
-        if (assigneeEmail?.Contains("@microsoft.com") == true)
+        if (assigneeEmail?.EndsWith("@microsoft.com") == true)
         {
             assigneeID = await _azdoClient.GetIDFromEmail(assigneeEmail);
         }
