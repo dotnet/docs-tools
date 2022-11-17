@@ -66,5 +66,21 @@ public class JsonPatchDocument
     /// The new value.
     /// </summary>
     [JsonPropertyName("value")]
-    public required string? Value { get; init; }
+    public required object? Value { get; init; }
+}
+
+/// <summary>
+/// The fields required to Assign to an identity
+/// </summary>
+public class AzDoIdentity
+{
+    [JsonPropertyName("uniqueName")]
+    public required string UniqueName { get; init; }
+
+    [JsonPropertyName("id")]
+    public required Guid Id { get; init; }
+
+    [JsonPropertyName("descriptor")]
+    public required string Descriptor { get; init; }
+
 }

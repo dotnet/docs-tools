@@ -208,21 +208,21 @@ public class QuestGitHubService : IDisposable
     private async Task<QuestWorkItem?> UpdateWorkItem(QuestWorkItem questItem, GithubIssue ghIssue)
     {
         var assigneeEmail = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
-        Guid? assigneeID = default;
+        AzDoIdentity? assigneeID = default;
         if (assigneeEmail?.Contains("@microsoft.com") == true)
         {
             assigneeID = await _azdoClient.GetIDFromEmail(assigneeEmail);
         }
         List<JsonPatchDocument> patchDocument = new();
         JsonPatchDocument? assignPatch = default;
-        if (assigneeID != questItem.AssignedToId)
+        if (assigneeID?.Id != questItem.AssignedToId)
         {
             // build patch document for assignment.
             assignPatch = new JsonPatchDocument
             {
                 Operation = Op.Add,
                 Path = "/fields/System.AssignedTo",
-                Value = assigneeID?.ToString() ?? "",
+                Value = assigneeID,
             };
             patchDocument.Add(assignPatch);
         }

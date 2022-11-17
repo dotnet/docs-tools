@@ -137,7 +137,7 @@ public class QuestWorkItem
 
         // Query if the Github ID maps to an FTE id, add that one:
         var assigneeEmail = await issue.AssignedMicrosoftEmailAddress(ospoClient);
-        Guid? assigneeID = default;
+        AzDoIdentity? assigneeID = default;
         if (assigneeEmail?.Contains("@microsoft.com") == true)
         {
             assigneeID = await questClient.GetIDFromEmail(assigneeEmail);
@@ -147,7 +147,7 @@ public class QuestWorkItem
             Operation = Op.Add,
             Path = "/fields/System.AssignedTo",
             From = default,
-            Value = assigneeID?.ToString() ?? ""
+            Value = assigneeID
         };
         patchDocument.Add(assignPatch);
         /* This is ignored by Azure DevOps. It uses the PAT of the 

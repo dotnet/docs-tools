@@ -120,7 +120,7 @@ public sealed class QuestClient : IDisposable
         }
     }
 
-    public async Task<Guid?> GetIDFromEmail(string emailAddress)
+    public async Task<AzDoIdentity?> GetIDFromEmail(string emailAddress)
     {
         string url = $"https://vssps.dev.azure.com/{_questOrg}/_apis/identities?searchFilter=General&filterValue={emailAddress}&queryMembership=None&api-version=7.1-preview.1";
         var response = await _client.GetAsync(url);
@@ -132,7 +132,13 @@ public sealed class QuestClient : IDisposable
         }
         var values = rootElement.Descendent("value");
         var user = values.EnumerateArray().First();
-        return (user.Descendent("id").TryGetGuid(out var id)) ? id : null;
+        bool success = user.Descendent("id").TryGetGuid(out var id);
+        var uniqueName = user.Descendent("properties", "Account", "$value").GetString()!;
+        // When retrieving the user identity, the property is called "subjectDescriptor".
+        // But, when sending a user ID, the property name is "descriptor".
+        var descriptor = user.Descendent("subjectDescriptor").GetString()!;
+        var identity = new AzDoIdentity { Id = id,UniqueName = uniqueName, Descriptor = descriptor };
+        return success ? identity : null;
     }
 
     /// <summary>
