@@ -120,6 +120,27 @@ public sealed class QuestClient : IDisposable
         }
     }
 
+    public async Task<AzDoIdentity?> GetIDFromEmail(string emailAddress)
+    {
+        string url = $"https://vssps.dev.azure.com/{_questOrg}/_apis/identities?searchFilter=General&filterValue={emailAddress}&queryMembership=None&api-version=7.1-preview.1";
+        var response = await _client.GetAsync(url);
+        var rootElement = await HandleResponseAsync(response);
+        var count = rootElement.Descendent("count").GetInt32();
+        if (count != 1)
+        {
+            return null;
+        }
+        var values = rootElement.Descendent("value");
+        var user = values.EnumerateArray().First();
+        bool success = user.Descendent("id").TryGetGuid(out var id);
+        var uniqueName = user.Descendent("properties", "Account", "$value").GetString()!;
+        // When retrieving the user identity, the property is called "subjectDescriptor".
+        // But, when sending a user ID, the property name is "descriptor".
+        var descriptor = user.Descendent("subjectDescriptor").GetString()!;
+        var identity = new AzDoIdentity { Id = id, UniqueName = uniqueName, Descriptor = descriptor };
+        return success ? identity : null;
+    }
+
     /// <summary>
     /// Dispose of the embedded HTTP client.
     /// </summary>
