@@ -24,7 +24,11 @@ public sealed class GitHubClient : IGitHubClient, IDisposable
         var delay = Backoff.DecorrelatedJitterBackoffV2(
             medianFirstRetryDelay: TimeSpan.FromSeconds(15), retryCount: 5);
         _retryPolicy = Policy
-            .Handle<HttpRequestException>()
+            .Handle<HttpRequestException>(ex =>
+            {
+                Console.WriteLine($"::warning::{ex}");
+                return true;
+            })
             .WaitAndRetryAsync(delay);
     }
 
