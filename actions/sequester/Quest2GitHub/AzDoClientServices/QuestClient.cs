@@ -1,4 +1,8 @@
-﻿namespace Quest2GitHub.AzureDevOpsCommunications;
+﻿using Polly;
+using Polly.Contrib.WaitAndRetry;
+using Polly.Retry;
+
+namespace Quest2GitHub.AzureDevOpsCommunications;
 
 /// <summary>
 /// The client services to work with Azure Dev ops.
@@ -21,6 +25,7 @@ public sealed class QuestClient : IDisposable
 
     private readonly HttpClient _client;
     private readonly string _questOrg;
+    private readonly AsyncRetryPolicy _retryPolicy;
 
     public string QuestProject { get; }
 
@@ -40,6 +45,16 @@ public sealed class QuestClient : IDisposable
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Basic",
                 Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
+
+        var delay = Backoff.DecorrelatedJitterBackoffV2(
+            medianFirstRetryDelay: TimeSpan.FromSeconds(15), retryCount: 5);
+        _retryPolicy = Policy
+            .Handle<HttpRequestException>(ex =>
+            {
+                Console.WriteLine($"::warning::{ex}");
+                return true;
+            })
+            .WaitAndRetryAsync(delay);
     }
 
     /// <summary>
@@ -61,7 +76,9 @@ public sealed class QuestClient : IDisposable
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/$User%20Story?api-version=6.0&expand=Fields";
         Console.WriteLine($"Create work item URL: \"{createWorkItemUrl}\"");
 
-        var response = await _client.PostAsync(createWorkItemUrl, request);
+        using var response = await InitiateRequestAsync(client =>
+            client.PostAsync(createWorkItemUrl, request));
+        
         return await HandleResponseAsync(response);
     }
 
@@ -76,7 +93,9 @@ public sealed class QuestClient : IDisposable
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
         Console.WriteLine($"Get work item URL: \"{getWorkItemUrl}\"");
 
-        using var response = await _client.GetAsync(getWorkItemUrl);
+        using var response = await InitiateRequestAsync(
+            client => client.GetAsync(getWorkItemUrl));
+        
         return await HandleResponseAsync(response);
     }
 
@@ -99,8 +118,19 @@ public sealed class QuestClient : IDisposable
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
         Console.WriteLine($"Patch work item URL: \"{patchWorkItemUrl}\"");
 
-        var response = await _client.PatchAsync(patchWorkItemUrl, request);
+        using var response = await InitiateRequestAsync(
+            client => client.PatchAsync(patchWorkItemUrl, request));
+
         return await HandleResponseAsync(response);
+    }
+    
+    async Task<HttpResponseMessage> InitiateRequestAsync(
+        Func<HttpClient, Task<HttpResponseMessage>> httpFunc)
+    {
+        var result = 
+            await _retryPolicy.ExecuteAndCaptureAsync(() => httpFunc(_client));
+        
+        return result.Result;
     }
 
     static async Task<JsonElement> HandleResponseAsync(HttpResponseMessage response)
@@ -123,7 +153,9 @@ public sealed class QuestClient : IDisposable
     public async Task<AzDoIdentity?> GetIDFromEmail(string emailAddress)
     {
         string url = $"https://vssps.dev.azure.com/{_questOrg}/_apis/identities?searchFilter=General&filterValue={emailAddress}&queryMembership=None&api-version=7.1-preview.1";
-        var response = await _client.GetAsync(url);
+        using var response = await InitiateRequestAsync(
+            client => client.GetAsync(url));
+
         var rootElement = await HandleResponseAsync(response);
         var count = rootElement.Descendent("count").GetInt32();
         if (count != 1)
