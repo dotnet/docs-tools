@@ -12,9 +12,9 @@
     static bool TryGetTargetFramework(
     string content,
     [NotNullWhen(true)] out string? targetFramework) =>
-    TryGetRegexGroupValue(
-        TargetFrameworkRegex(),
-        content, "tfm", out targetFramework);
+        TryGetRegexGroupValue(
+            TargetFrameworkRegex(),
+            content, "tfm", out targetFramework);
 
     static bool TryGetPackageName(
         string content,
