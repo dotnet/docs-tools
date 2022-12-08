@@ -13,6 +13,9 @@ inputs:
     default: 'docs'
   issue:
     description: 'An optional issue number to target when being triggered for a single issue.'
+  branch:
+    description: 'The branch to target. Assign from github.ref_name. Example, "main".'
+    default: 'main'
 
 runs:
   using: docker
@@ -24,3 +27,5 @@ runs:
     - ${{ inputs.repo }}
     - '--issue'
     - ${{ inputs.issue }}
+    - '--branch'
+    - ${{ inputs.branch }}

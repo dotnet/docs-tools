@@ -7,12 +7,18 @@
     /// <param name="repo">The GutHub repository names.</param>
     /// <param name="issue">The issue number. If null, process all open issues.</param>
     /// <param name="questConfigPath">The config path. If null, use the config file in the root folder of the repository.</param>
+    /// <param name="branch">The optional branch to use. Defaults to "main" otherwise.</param>
     /// <remarks>
     /// Example command line:
     /// ImportIssues --org dotnet --repo docs --issue 31331
     /// </remarks>
     /// <returns>0</returns>
-    private static async Task<int> Main(string org, string repo, int? issue = null, string? questConfigPath = null)
+    private static async Task<int> Main(
+        string org,
+        string repo,
+        int? issue = null,
+        string? questConfigPath = null,
+        string? branch = null)
     {
         try
         {
@@ -22,6 +28,8 @@
                 repo = split[1];
             }
 
+            branch ??= "main";
+            Console.WriteLine($"Using branch: '{branch}'");
             Console.WriteLine(issue.HasValue && issue > -1
                 ? $"Processing single issue {issue.Value}: https://github.com/{org}/{repo}/issues/{issue.Value}"
                 : $"Processing all open issues: {org}/{repo}");
@@ -30,7 +38,7 @@
             if (string.IsNullOrWhiteSpace(questConfigPath) || !File.Exists(questConfigPath))
             {
                 using RawGitHubFileReader reader = new();
-                importOptions = await reader.ReadOptionsAsync(org, repo);
+                importOptions = await reader.ReadOptionsAsync(org, repo, branch);
             }
             else
             {
