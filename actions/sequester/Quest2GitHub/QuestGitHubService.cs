@@ -236,6 +236,18 @@ public class QuestGitHubService : IDisposable
                 Path = "/fields/System.State",
                 Value = ghIssue.IsOpen ? "Active" : "Closed",
             });
+
+            // When the issue is opened or closed, 
+            // update the description. That picks up any new
+            // labels and comments.
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.Description",
+                From = default,
+                Value = QuestWorkItem.BuildDescriptionFromIssue(ghIssue, null)
+            });
+
         }
         if (patchDocument.Any())
         {
