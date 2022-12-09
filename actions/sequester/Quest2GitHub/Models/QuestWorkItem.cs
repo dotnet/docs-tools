@@ -174,7 +174,7 @@ public class QuestWorkItem
 
     public static string BuildDescriptionFromIssue(GithubIssue issue, string? requestLabelNodeId)
     {
-        StringBuilder body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
+        var body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
         body.AppendLine($"<p>Author: {issue.Author}</p>");
         body.AppendLine(issue.BodyHtml);
         if (issue.Labels.Any())
