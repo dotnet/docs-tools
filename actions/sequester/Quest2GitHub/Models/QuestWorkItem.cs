@@ -1,4 +1,7 @@
-﻿namespace Quest2GitHub.Models;
+﻿using Quest2GitHub.AzureDevOpsCommunications;
+using System.IO;
+
+namespace Quest2GitHub.Models;
 
 public class QuestWorkItem
 {
@@ -83,31 +86,7 @@ public class QuestWorkItem
         string path,
         string? requestLabelNodeId)
     {
-        StringBuilder body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
-        body.AppendLine($"<p>Author: {issue.Author}</p>");
-        body.AppendLine(issue.BodyHtml);
         var areaPath = $"""{questClient.QuestProject}\{path}""";
-        if (issue.Labels.Any())
-        {
-            body.AppendLine($"<p><b>Labels:</b></p>");
-            body.AppendLine("<ul>");
-            foreach (var item in issue.Labels.Where(l => l.nodeID != requestLabelNodeId))
-            {
-                body.AppendLine($"<li>#{item.name.Replace(' ', '-')}</li>");
-            }
-            body.AppendLine("</ul>");
-        }
-        if (issue.Comments.Any())
-        {
-            body.AppendLine($"<p><b>Comments:</b></p>");
-            body.AppendLine("<dl>");
-            foreach (var item in issue.Comments)
-            {
-                body.AppendLine($"<dt>{item.author}</dt>");
-                body.AppendLine($"<dd>{item.bodyHTML}</dd>");
-            }
-            body.AppendLine("</dl>");
-        }
 
         var patchDocument = new List<JsonPatchDocument>()
         {
@@ -123,7 +102,7 @@ public class QuestWorkItem
                 Operation = Op.Add,
                 Path = "/fields/System.Description",
                 From = default,
-                Value = body.ToString()
+                Value = BuildDescriptionFromIssue(issue, requestLabelNodeId)
             },
             new JsonPatchDocument
             {
@@ -191,6 +170,35 @@ public class QuestWorkItem
             result = await questClient.CreateWorkItem(patchDocument);
             return WorkItemFromJson(result);
         }
+    }
+
+    public static string BuildDescriptionFromIssue(GithubIssue issue, string? requestLabelNodeId)
+    {
+        var body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
+        body.AppendLine($"<p>Author: {issue.Author}</p>");
+        body.AppendLine(issue.BodyHtml);
+        if (issue.Labels.Any())
+        {
+            body.AppendLine($"<p><b>Labels:</b></p>");
+            body.AppendLine("<ul>");
+            foreach (var item in issue.Labels.Where(l => l.nodeID != requestLabelNodeId))
+            {
+                body.AppendLine($"<li>#{item.name.Replace(' ', '-')}</li>");
+            }
+            body.AppendLine("</ul>");
+        }
+        if (issue.Comments.Any())
+        {
+            body.AppendLine($"<p><b>Comments:</b></p>");
+            body.AppendLine("<dl>");
+            foreach (var item in issue.Comments)
+            {
+                body.AppendLine($"<dt>{item.author}</dt>");
+                body.AppendLine($"<dd>{item.bodyHTML}</dd>");
+            }
+            body.AppendLine("</dl>");
+        }
+        return body.ToString();
     }
 
     /// <summary>
