@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "CleanRepo": {
+      "commandName": "Project"
+    }
+  }
+}
