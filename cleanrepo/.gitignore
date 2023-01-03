@@ -1,0 +1,15 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/CleanRepo.sln
+/CleanRepo/bin/Debug
+/CleanRepo/obj
+/CleanRepo/CleanRepo.csproj.user
+/packages
+/CleanRepo/bin/Release
+/CleanRepo/CleanRepo.ruleset
+/CleanRepo/CleanRepo.csproj.user
+/CleanRepo/CleanRepo.sln
+/CleanRepo/.vs/CleanRepo/v15
