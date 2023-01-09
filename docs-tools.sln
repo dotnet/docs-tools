@@ -27,6 +27,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub.UnitTests", "actions
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarkdownLinksVerifier.UnitTests", "actions\docs-verifier\tests\MarkdownLinksVerifier\MarkdownLinksVerifier.UnitTests.csproj", "{602603B4-6207-43DC-8FAF-272B6AAB6EAA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocateProjects", "snippets5000\LocateProjects\LocateProjects.csproj", "{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNet.DocsTools", "DotNet.DocsTools\DotNet.DocsTools.csproj", "{2FAA5126-248D-4B18-ADF0-5D7751028A90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +85,14 @@ Global
 		{602603B4-6207-43DC-8FAF-272B6AAB6EAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{602603B4-6207-43DC-8FAF-272B6AAB6EAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{602603B4-6207-43DC-8FAF-272B6AAB6EAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FAA5126-248D-4B18-ADF0-5D7751028A90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FAA5126-248D-4B18-ADF0-5D7751028A90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FAA5126-248D-4B18-ADF0-5D7751028A90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FAA5126-248D-4B18-ADF0-5D7751028A90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
