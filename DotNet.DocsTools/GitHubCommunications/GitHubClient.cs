@@ -84,4 +84,6 @@ internal class GitHubClient : IGitHubClient
             }
         }
     }
+
+    public void Dispose() => client?.Dispose();
 }

@@ -11,7 +11,7 @@ namespace DotnetDocsTools.GitHubCommunications;
 /// GitHub endpoint. The APIs send and receive requests
 /// to the GitHub endpoints (GraphQL, REST, or Markdown2HTML).
 /// </remarks>
-public interface IGitHubClient
+public interface IGitHubClient : IDisposable
 {
     /// <summary>
     /// Post a request to the GraphQL endpoint.

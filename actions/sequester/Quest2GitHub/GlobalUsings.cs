@@ -1,5 +1,4 @@
 ﻿global using DotnetDocsTools.GitHubCommunications;
-global using DotnetDocsTools.GraphQLParsers;
 global using DotnetDocsTools.GraphQLQueries;
 global using Microsoft.DotnetOrg.Ospo;
 global using Microsoft.Extensions.Configuration;
