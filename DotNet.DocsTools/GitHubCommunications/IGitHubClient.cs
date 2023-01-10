@@ -34,7 +34,7 @@ public interface IGitHubClient : IDisposable
     /// endpoint, requesting to convert from markdown to HTML.
     /// If the request succeeds, the respons is the HTML text.
     /// </remarks>
-    Task<string> PostMarkdownRESTRequestAsync(string markdownText);
+    //Task<string> PostMarkdownRESTRequestAsync(string markdownText);
 
     /// <summary>
     /// Execute a GET request to the REST repository endpoint.
@@ -46,7 +46,7 @@ public interface IGitHubClient : IDisposable
     /// process the response for a success code and return the parsed
     /// JSONdocument.
     /// </remarks>
-    Task<JsonDocument> GetReposRESTRequestAsync(params string[] restPath);
+    // Task<JsonDocument> GetReposRESTRequestAsync(params string[] restPath);
 
     /// <summary>
     /// Retrieve the content from a (usually raw) URL.
@@ -57,7 +57,7 @@ public interface IGitHubClient : IDisposable
     /// This isn't GitHub API specific, but was moved into this class to reuse
     /// the same HttpClient instance.
     /// </remarks>
-    IAsyncEnumerable<string> GetContentAsync(string link);
+    //IAsyncEnumerable<string> GetContentAsync(string link);
 
     /// <summary>
     /// Create a default GitHub client.
