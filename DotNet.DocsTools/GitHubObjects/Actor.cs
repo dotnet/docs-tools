@@ -25,7 +25,7 @@ public readonly struct Actor
     public string Login => _node.ValueKind switch
     {
         JsonValueKind.Object => _node.TryGetProperty("login", out var login)
-            ? login.GetString()
+            ? login.GetString() ?? string.Empty
             : string.Empty,
         _ => string.Empty,
     };
@@ -43,7 +43,7 @@ public readonly struct Actor
     public string Name => _node.ValueKind switch
     {
         JsonValueKind.Object => _node.TryGetProperty("name", out var name)
-            ? name.GetString()
+            ? name.GetString() ?? string.Empty
             : string.Empty,
         _ => string.Empty,
     };

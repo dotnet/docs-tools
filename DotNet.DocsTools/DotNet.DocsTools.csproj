@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <Folder Include="GraphQLQueries\" />
-    <Folder Include="NewFolder\" />
   </ItemGroup>
 
 	<ItemGroup>

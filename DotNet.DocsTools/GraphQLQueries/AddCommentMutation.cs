@@ -11,17 +11,17 @@ namespace DotnetDocsTools.GraphQLQueries;
 /// </remarks>
 public class AddCommentMutation
 {
-    private static readonly string addCommentMutationText =
-@"mutation AddComment($nodeID: ID!, $commentText: String!) { 
-  addComment(input: {
-    subjectId:$nodeID,
-    body:$commentText,
-    clientMutationId: ""dotnet-docs-tools""
-  }) {
-    clientMutationId
-  }
-}
-";
+    private static readonly string addCommentMutationText = """
+    mutation AddComment($nodeID: ID!, $commentText: String!) { 
+      addComment(input: {
+        subjectId:$nodeID,
+        body:$commentText,
+        clientMutationId: "dotnet-docs-tools"
+      }) {
+        clientMutationId
+      }
+    }
+    """;
     private readonly IGitHubClient client;
     private readonly string nodeId;
     private readonly string commentBody;

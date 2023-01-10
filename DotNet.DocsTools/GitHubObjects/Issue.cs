@@ -24,17 +24,17 @@ public readonly struct Issue
     /// <summary>
     /// The node ID for the issue.
     /// </summary>
-    public string Id => element.GetProperty("id").GetString();
+    public string Id => element.GetProperty("id").GetString()!;
 
     /// <summary>
     /// The title of the issue.
     /// </summary>
-    public string Title => element.GetProperty("title").GetString();
+    public string Title => element.GetProperty("title").GetString()!;
 
     /// <summary>
     /// The URL for the issue.
     /// </summary>
-    public string Url => element.GetProperty("url").GetString();
+    public string Url => element.GetProperty("url").GetString()!;
 
     /// <summary>
     /// The author of this issue
