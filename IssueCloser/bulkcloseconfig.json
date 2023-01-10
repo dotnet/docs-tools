@@ -1,0 +1,722 @@
+[
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 0,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 18
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": -1
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 24
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 18
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 18
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 18
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 1,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 18
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 18
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 18
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 2,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 6
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 6
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 6
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 6
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 3
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 6
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 6
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 6
+  },
+  {
+    "Criteria": {
+      "PLabel": 3,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 18
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 0,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 0,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 18
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 1,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 1,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 2,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 6
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 2,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": true
+    },
+    "AgeInMonths": 12
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 3,
+      "HasDocIssue": true,
+      "IsInternal": false
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": true
+    },
+    "AgeInMonths": 9
+  },
+  {
+    "Criteria": {
+      "PLabel": 4,
+      "PriLabel": 3,
+      "HasDocIssue": false,
+      "IsInternal": false
+    },
+    "AgeInMonths": 12
+  }
+]
