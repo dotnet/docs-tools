@@ -1,4 +1,6 @@
-﻿namespace Quest2GitHub.Serialization;
+﻿using System.Text.Json;
+
+namespace DotnetDocsTools.Serialization;
 
 internal static class JsonSerializerOptionsDefaults
 {

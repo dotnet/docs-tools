@@ -166,7 +166,7 @@ public class QuestGitHubService : IDisposable
         {
             // Remove the trigger label before doing anything. That prevents
             // a race condition causing multiple imports:
-            var mutation = new AddOrRemoveLabelMutation(_ghClient, ghIssue.Id);
+            var mutation = new AddAndRemoveLabelMutation(_ghClient, ghIssue.Id);
 
             // Yes, this needs some later refactoring. This call won't update the description.
             await mutation.PerformMutation("ignored", null, _importTriggerLabel?.nodeID);

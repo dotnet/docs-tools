@@ -10,7 +10,7 @@
 /// of a builder algorithm that constructs different mutation packets,
 /// adds variables for the overall operation, and then runs the mutation.
 /// </remarks>
-public class AddOrRemoveLabelMutation
+public class AddAndRemoveLabelMutation
 {
     private static readonly string removeLabelMutationText = """
     mutation RemoveLabels($nodeID: ID!, $labelIDs: [ID!]!) {
@@ -81,7 +81,7 @@ public class AddOrRemoveLabelMutation
     /// </summary>
     /// <param name="client">The client.</param>
     /// <param name="nodeId">The node to modify</param>
-    public AddOrRemoveLabelMutation(IGitHubClient client, string nodeId)
+    public AddAndRemoveLabelMutation(IGitHubClient client, string nodeId)
     {
         this.client = client ?? throw new ArgumentNullException(paramName: nameof(client), message: "Cannot be null");
         this.nodeId = !string.IsNullOrWhiteSpace(nodeId)

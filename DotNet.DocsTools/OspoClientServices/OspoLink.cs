@@ -1,5 +1,7 @@
 ﻿// Taken from https://github.com/dotnet/org-policy/tree/main/src/Microsoft.DotnetOrg.Ospo
 
+using System.Text.Json.Serialization;
+
 namespace Microsoft.DotnetOrg.Ospo;
 
 #pragma warning disable CS8618 // This is a serialized type.

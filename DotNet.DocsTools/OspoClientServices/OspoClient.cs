@@ -1,10 +1,12 @@
 ﻿// Taken from https://github.com/dotnet/org-policy/tree/main/src/Microsoft.DotnetOrg.Ospo
 
+using DotnetDocsTools.Serialization;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Retry;
-using Quest2GitHub.Serialization;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 
 namespace Microsoft.DotnetOrg.Ospo;
 
