@@ -1,7 +1,4 @@
-﻿using Microsoft.DotnetOrg.Ospo;
-using Quest2GitHub.AzureDevOpsCommunications;
-
-namespace Quest2GitHub;
+﻿namespace Quest2GitHub;
 
 /// <summary>
 /// This class manages the top level workflows to synchronize
@@ -14,7 +11,7 @@ public class QuestGitHubService : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
 
-    private readonly GitHubClient _ghClient;
+    private readonly IGitHubClient _ghClient;
     private readonly QuestClient _azdoClient;
     private readonly OspoClient _ospoClient;
     private readonly string _areaPath;
@@ -46,7 +43,7 @@ public class QuestGitHubService : IDisposable
         string importTriggerLabel,
         string importedLabel)
     {
-        _ghClient = new GitHubClient(ghKey);
+        _ghClient = IGitHubClient.CreateGitHubClient(ghKey);
         _ospoClient = new OspoClient(ospoKey);
         _azdoClient = new QuestClient(azdoKey, questOrg, questProject);
         _areaPath = areaPath;

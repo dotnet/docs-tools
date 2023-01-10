@@ -4,11 +4,12 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Folder Include="AzDoClientServices\" />
-    <Folder Include="Utility\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +18,10 @@
 	<PackageReference Include="Microsoft.Extensions.Options" Version="7.0.0" />
 	<PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
 	<PackageReference Include="Polly.Extensions.Http" Version="3.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\DotNet.DocsTools\DotNet.DocsTools.csproj" />
   </ItemGroup>
 
 </Project>
