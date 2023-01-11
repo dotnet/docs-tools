@@ -33,6 +33,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.DocsTools", "DotNet.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IssueCloser", "IssueCloser\IssueCloser.csproj", "{5051D4FB-D8E5-4EAB-8C50-78E62CB8B8DA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoMan", "RepoMan\RepoMan.csproj", "{009B6BA3-57A5-4CED-8922-96E469A5D247}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoManConfigTest", "RepoManConfigTest\RepoManConfigTest.csproj", "{372B9D7C-EA70-4D3C-9225-A2C3C10F09D9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +103,14 @@ Global
 		{5051D4FB-D8E5-4EAB-8C50-78E62CB8B8DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5051D4FB-D8E5-4EAB-8C50-78E62CB8B8DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5051D4FB-D8E5-4EAB-8C50-78E62CB8B8DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{009B6BA3-57A5-4CED-8922-96E469A5D247}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{009B6BA3-57A5-4CED-8922-96E469A5D247}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{009B6BA3-57A5-4CED-8922-96E469A5D247}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{009B6BA3-57A5-4CED-8922-96E469A5D247}.Release|Any CPU.Build.0 = Release|Any CPU
+		{372B9D7C-EA70-4D3C-9225-A2C3C10F09D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{372B9D7C-EA70-4D3C-9225-A2C3C10F09D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{372B9D7C-EA70-4D3C-9225-A2C3C10F09D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{372B9D7C-EA70-4D3C-9225-A2C3C10F09D9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

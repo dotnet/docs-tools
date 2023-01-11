@@ -1,0 +1,1 @@
+Source code for the github issue labeler used on https://github.com/dotnet/docs/
