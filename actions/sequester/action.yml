@@ -19,7 +19,7 @@ inputs:
 
 runs:
   using: docker
-  image: ./Dockerfile
+  image: ../../sequester.Dockerfile
   args:
     - '--org'
     - ${{ inputs.org }}
