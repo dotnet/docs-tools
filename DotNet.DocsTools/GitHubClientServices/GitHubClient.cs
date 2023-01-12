@@ -62,7 +62,7 @@ public sealed class GitHubClient : IGitHubClient, IDisposable
         var stringResponse = await resp.Content.ReadAsStringAsync();
         return stringResponse;
     }
-
+    */
     async Task<JsonDocument> IGitHubClient.GetReposRESTRequestAsync(params string[] restPath)
     {
         var url = RESTendpoint;
@@ -80,6 +80,7 @@ public sealed class GitHubClient : IGitHubClient, IDisposable
         return jsonDocument;
     }
 
+    /*
     async IAsyncEnumerable<string> IGitHubClient.GetContentAsync(string link)
     {
         var result = await _retryPolicy.ExecuteAndCaptureAsync(

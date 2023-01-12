@@ -21,7 +21,7 @@ namespace RepoMan
             try
             {
                 var markdown = Markdig.Markdown.Parse(content);
-                var link = markdown.Descendants<ParagraphBlock>().SelectMany(x => x?.Inline?.Descendants<LinkInline>()).FirstOrDefault();
+                var link = markdown.Descendants<ParagraphBlock>().SelectMany(x => x?.Inline?.Descendants<LinkInline>()!).FirstOrDefault();
 
                 if (link == null)
                     return Markdig.Markdown.ToPlainText(content);

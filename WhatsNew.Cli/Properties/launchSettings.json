@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "WhatsNew.Cli": {
+      "commandName": "Project",
+      "commandLineArgs": "--owner dotnet --repo docs --savedir .\\docs\\whats-new",
+      "workingDirectory": "C:\\Users\\wiwagn\\source\\GitHub\\dotnet\\docs"
+    }
+  }
+}

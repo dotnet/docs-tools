@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+	  <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>WhatsNew</AssemblyName>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dotnet-whatsnew</ToolCommandName>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet package information">
+    <Authors>Scott Addie</Authors>
+    <Description>A command-line tool to generate what's new pages for docs.microsoft.com content sets.</Description>
+    <PackageIcon>docs-logo-ms.png</PackageIcon>
+    <PackageId>dotnet-whatsnew</PackageId>
+    <PackageOutputPath>./nuget</PackageOutputPath>
+    <PackageTags>dotnet;docs;whatsnew</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://dev.azure.com/mseng/TechnicalContent/_git/dotnet-docs-tools</RepositoryUrl>
+    <Version></Version>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <FileVersion>3.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectCapability Include="DynamicDependentFile" />
+    <ProjectCapability Include="DynamicFileNesting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.22272.1" />
+    <PackageReference Include="YamlDotNet" Version="12.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WhatsNew.Infrastructure\WhatsNew.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(PackageOutputPath)/images/docs-logo-ms.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

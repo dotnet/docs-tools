@@ -1,0 +1,13 @@
+{
+  "docSetProductName": "C++, C, and Assembler",
+  "rootDirectory": "docs/",
+  "docLinkSettings": {
+    "linkFormat": "relative",
+    "relativeLinkPrefix": "/cpp/"
+  },
+  "inclusionCriteria": {
+    "minAdditionsToFile": 10,
+    "omitPullRequestTitles": true
+  },
+  "areas": []
+}

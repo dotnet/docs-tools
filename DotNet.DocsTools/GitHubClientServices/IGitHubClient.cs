@@ -46,7 +46,7 @@ public interface IGitHubClient : IDisposable
     /// process the response for a success code and return the parsed
     /// JSONdocument.
     /// </remarks>
-    // Task<JsonDocument> GetReposRESTRequestAsync(params string[] restPath);
+    Task<JsonDocument> GetReposRESTRequestAsync(params string[] restPath);
 
     /// <summary>
     /// Retrieve the content from a (usually raw) URL.
