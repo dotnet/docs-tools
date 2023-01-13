@@ -10,7 +10,7 @@ Complete the following steps in Visual Studio Code:
 1. Associate your JSON configuration file with the JSON schema by adding a `$schema` property to line 2 of the JSON configuration file. The `$schema` property's value should be set as follows:
 
     ```json
-    "$schema": "https://whatsnewapi.azurewebsites.net/schema",
+    "$schema": "https://github.com/dotnet/docs-tools/blob/main/WhatsNew.Infrastructure/Configuration/reposettings.schema.json",
     ```
 
 1. Populate the various properties in the JSON file with the help of the supporting JSON schema. For more information about JSON schema support in Visual Studio Code, see [JSON schemas and settings](https://code.visualstudio.com/docs/languages/json#_json-schemas-and-settings). See also the supported [configuration file settings](#configuration-file-settings).
