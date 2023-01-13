@@ -95,6 +95,6 @@ Complete the following steps to publish the package:
 
 1. Increment the version number in the project file's `<Version>` element and commit the change. Wait for the build to complete, and ensure that the change has been merged to *main*.
 1. Select the **Run pipeline** button at https://dev.azure.com/mseng/TechnicalContent/_build?definitionId=10534.
-1. Select *master* as the branch in the **Branch/tag** drop down list.
+1. Select *main* as the branch in the **Branch/tag** drop down list.
 1. Select *true* for the question **Publish NuGet package**.
 1. Select the **Run** button.

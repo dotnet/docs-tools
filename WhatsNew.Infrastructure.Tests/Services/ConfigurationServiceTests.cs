@@ -20,7 +20,7 @@ public class ConfigurationServiceTests
         {
             Owner = "dotnet",
             Repository = "docs",
-            Branch = "master",
+            Branch = "main",
             DocSet = "cognitive-services",
             DateStart = "2020-05-01",
             DateEnd = "2020-05-31",
@@ -44,7 +44,7 @@ public class ConfigurationServiceTests
         {
             Owner = "dotnet",
             Repository = "AspNetCore.Docs",
-            Branch = "master",
+            Branch = "main",
             DateStart = "2020-05-01",
             DateEnd = "2020-05-31",
         };
