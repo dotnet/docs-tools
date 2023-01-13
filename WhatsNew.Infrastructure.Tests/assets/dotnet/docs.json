@@ -1,0 +1,15 @@
+{
+  "docSetProductName": ".NET",
+  "rootDirectory": "docs/",
+  "docLinkSettings": {
+    "linkFormat": "relative"
+  },
+  "inclusionCriteria": {
+  },
+  "areas": [
+    {
+      "names": [ "architecture" ],
+      "heading": "Architecture guides"
+    }
+  ]
+}

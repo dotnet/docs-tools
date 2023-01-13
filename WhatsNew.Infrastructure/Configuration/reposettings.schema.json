@@ -1,0 +1,221 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "JSON schema for .whatsnew.json and .whatsnew.{DOCSET-NAME}.json configuration files",
+  "required": [
+    "areas",
+    "docLinkSettings",
+    "docSetProductName",
+    "rootDirectory"
+  ],
+
+  "properties": {
+    "areas": {
+      "type": "array",
+      "description": "A list of directories to include within the repository.",
+      "items": { "$ref": "#/definitions/area" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+
+    "docLinkSettings": {
+      "$ref": "#/definitions/docLinkSetting"
+    },
+
+    "docSetProductName": {
+      "type": "string",
+      "description": "The name of the product supported by this docset.",
+      "minLength": 1
+    },
+
+    "inclusionCriteria": {
+      "$ref": "#/definitions/inclusionCriteria"
+    },
+
+    "navigationOptions": {
+      "$ref": "#/definitions/navigationOption"
+    },
+
+    "rootDirectory": {
+      "type": "string",
+      "description": "The GitHub repository's root directory path containing the docs.",
+      "minLength": 1
+    }
+  },
+
+  "definitions": {
+    "area": {
+      "type": "object",
+      "description": "Key-value pairs of repository directory names and their associated headings.",
+      "required": [
+        "names",
+        "heading"
+      ],
+
+      "properties": {
+        "names": {
+          "type": "array",
+          "description": "The directory name(s) as it/they appear(s) in the page URL.",
+          "minItems": 1,
+          "uniqueItems": true
+        },
+
+        "heading": {
+          "type": "string",
+          "description": "The friendly heading text for the directory or directories provided in `names`.",
+          "minLength": 1
+        }
+      },
+
+      "additionalProperties": false
+    },
+
+    "docLinkSetting": {
+      "type": "object",
+      "description": "Settings to control the construction of links to docs in the generated Markdown.",
+      "required": [
+        "linkFormat"
+      ],
+
+      "properties": {
+        "linkFormat": {
+          "type": "string",
+          "description": "The Markdown format to use when creating links to docs.",
+          "enum": [
+            "relative",
+            "siteRelative",
+            "xref"
+          ]
+        },
+
+        "relativeLinkPrefix": {
+          "type": "string",
+          "description": "The path that prefixes the doc link.",
+          "minLength": 1
+        }
+      },
+
+      "oneOf": [
+        {
+          "$comment": "If the `linkFormat` property is set to `relative`, the `relativeLinkPrefix` property is required.",
+          "properties": {
+            "linkFormat": { "const": "relative" }
+          },
+          "required": [
+            "relativeLinkPrefix"
+          ]
+        },
+        {
+          "$comment": "If the `linkFormat` property is set to `siteRelative`, the `relativeLinkPrefix` property is required.",
+          "properties": {
+            "linkFormat": { "const": "siteRelative" }
+          },
+          "required": [
+            "relativeLinkPrefix"
+          ]
+        },
+        {
+          "$comment": "If the `linkFormat` property is set to `xref`, the `relativeLinkPrefix` property isn't allowed.",
+          "properties": {
+            "linkFormat": { "const": "xref" }
+          }
+        }
+      ],
+
+      "additionalProperties": false
+    },
+
+    "inclusionCriteria": {
+      "type": "object",
+      "description": "Settings to control the inclusion and exclusion of PRs and community contributors.",
+
+      "properties": {
+        "labels": {
+          "type": "array",
+          "description": "A list of GitHub label filters to apply. The label filters will be converted to a space-delimited string.",
+          "minItems": 1,
+          "uniqueItems": true,
+          "examples": [
+            [ "label:cognitive-services/svc", "label:speech-service/subsvc", "-label:do-not-merge" ]
+          ]
+        },
+
+        "maxFilesChanged": {
+          "type": "integer",
+          "description": "The maximum number of changed files that a PR can contain before being ignored.",
+          "default": 75
+        },
+
+        "minAdditionsToFile": {
+          "type": "integer",
+          "description": "The minimum number of lines changed that a PR file must contain before being included.",
+          "default": 75
+        },
+
+        "omitPullRequestTitles": {
+          "type": "boolean",
+          "description": "A flag indicating whether to display pull request titles."
+        },
+
+        "pullRequestTitlesToIgnore": {
+          "type": "array",
+          "description": "A list of regular expressions matching PR titles to ignore.",
+          "minItems": 1,
+          "uniqueItems": true,
+          "examples": [
+            [ "^[Uu]pdate ", "^Prerender" ]
+          ]
+        }
+
+      },
+
+      "additionalProperties": false
+    },
+
+    "navigationOption": {
+      "type": "object",
+      "description": "This object defines the properties needed to update the TOC.YML and Index.YML files.",
+      "required": [
+        "maximumNumberOfArticles",
+        "tocParentNode",
+        "repoTocFolder",
+        "indexParentNode",
+        "repoIndexFolder"
+      ],
+
+      "properties": {
+        "maximumNumberOfArticles": {
+          "type": "integer",
+          "description": "Maximum number of articles live in the TOC.",
+          "maximum": 6,
+          "minimum": 1
+        },
+
+        "tocParentNode": {
+          "type": "string",
+          "description": "The name of the parent node in the TOC.",
+          "minLength": 1
+        },
+
+        "repoTocFolder": {
+          "type": "string",
+          "description": "Path from the root of the repository to the toc to modify.",
+          "minLength": 1
+        },
+
+        "indexParentNode": {
+          "type": "string",
+          "description": "The name of the parent node in the TOC.",
+          "minLength": 1
+        },
+
+        "repoIndexFolder": {
+          "type": "string",
+          "description": "The name of the parent node in the TOC.",
+          "minLength": 1
+        }
+      },
+
+      "additionalProperties": false
+    }
+  }
+}

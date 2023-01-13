@@ -1,0 +1,13 @@
+{
+  "docSetProductName": "ASP.NET Core",
+  "rootDirectory": "",
+  "docLinkSettings": {
+    "linkFormat": "xref"
+  },
+  "areas": [
+    {
+      "names": [ "azure" ],
+      "heading": "Azure"
+    }
+  ]
+}
