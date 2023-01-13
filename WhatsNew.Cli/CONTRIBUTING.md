@@ -2,8 +2,8 @@
 
 The following components are required to run the tool locally:
 
-- Visual Studio 2019 with the **.NET Core cross-platform development** workload
-- [.NET SDK 5.0](https://dotnet.microsoft.com/download/dotnet/5.0) or later
+- Visual Studio 2022 (17.4) with the **.NET Core cross-platform development** workload
+- [.NET SDK 7.0](https://dotnet.microsoft.com/download/dotnet/7.0) or later
 
 ## Set up a GitHub personal access token
 
