@@ -72,7 +72,7 @@ The build pipeline contains a `trigger` section which determines the branch name
 trigger:
   branches:
    include:
-     - master
+     - main
      - scottaddie/*
   paths:
     include:
@@ -84,7 +84,7 @@ trigger:
 
 With the preceding configuration:
 
-- A commit to *master* or a branch prefixed with *scottaddie/* triggers the build.
+- A commit to *main* or a branch prefixed with *scottaddie/* triggers the build.
 - Any file in the *whatsnew* directory triggers a build, with the exception of the Markdown files listed in `exclude`.
 
 ### Release
@@ -93,7 +93,7 @@ Publishing of the NuGet package (containing the .NET global tool) is handled by 
 
 Complete the following steps to publish the package:
 
-1. Increment the version number in the project file's `<Version>` element and commit the change. Wait for the build to complete, and ensure that the change has been merged to *master*.
+1. Increment the version number in the project file's `<Version>` element and commit the change. Wait for the build to complete, and ensure that the change has been merged to *main*.
 1. Select the **Run pipeline** button at https://dev.azure.com/mseng/TechnicalContent/_build?definitionId=10534.
 1. Select *master* as the branch in the **Branch/tag** drop down list.
 1. Select *true* for the question **Publish NuGet package**.
