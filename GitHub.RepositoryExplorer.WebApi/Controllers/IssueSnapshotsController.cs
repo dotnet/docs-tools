@@ -20,7 +20,7 @@ public class IssueSnapshotsController : ControllerBase
         [FromBody] SnapshotKey[] allKeys)
     {
         var dailyRecord = await _issueCountService.GetForDateAsync(
-                org, repo, ParseDate(date));
+                org, repo, ParseDate(date)) ?? throw new ArgumentException("No data for data", nameof(date));
 
         var rVal = new List<IssuesSnapshot>();
         foreach (var key in allKeys)
@@ -48,7 +48,7 @@ public class IssueSnapshotsController : ControllerBase
         [FromBody] SnapshotKey[] allKeys)
     {
         var dailyRecords = await _issueCountService.GetForRangeAsync(
-                org, repo, ParseDate(from), ParseDate(to));
+                org, repo, ParseDate(from), ParseDate(to)) ?? throw new InvalidOperationException("No data returned");
 
         var rVal = new List<IssuesSnapshot>();
         foreach (var key in allKeys)

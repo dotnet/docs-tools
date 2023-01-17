@@ -50,11 +50,13 @@ public class IssueClassificationModel
     }
 }
 
+// In all cases, these objects are serialized at startup. 
+// They are non-null once read. Hence the nullable suppression.
 public class Product : ILabelDefinition
 {
-    public string Label { get; set; }
-    public string DisplayLabel { get; set; }
-    public Technology[] Technologies { get; set; }
+    public string Label { get; set; } = default!;
+    public string DisplayLabel { get; set; } = default!;
+    public Technology[] Technologies { get; set; } = default!;
 
     public string UnassignedTechnology() => string.Join(" ", Technologies.Select(t => $"-label:{t.Label}"));
 
@@ -62,18 +64,18 @@ public class Product : ILabelDefinition
 
 public class Technology : ILabelDefinition
 {
-    public string Label { get; set; }
-    public string DisplayLabel { get; set; }
+    public string Label { get; set; } = default!;
+    public string DisplayLabel { get; set; } = default!;
 }
 
 public class Classification : ILabelDefinition
 {
-    public string Label { get; set; }
-    public string DisplayLabel { get; set; }
+    public string Label { get; set; } = default!;
+    public string DisplayLabel { get; set; } = default!;
 }
 
 public class Priority : ILabelDefinition
 {
-    public string Label { get; set; }
-    public string DisplayLabel { get; set; }
+    public string Label { get; set; } = default!;
+    public string DisplayLabel { get; set; } = default!;
 }

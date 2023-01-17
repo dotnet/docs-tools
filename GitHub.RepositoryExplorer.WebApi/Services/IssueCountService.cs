@@ -11,7 +11,7 @@ public sealed class IssueCountService
         IRepository<DailyRecord> storage, IMemoryCache cache) =>
         (_storage, _cache) = (storage, cache);
 
-    public Task<DailyRecord> GetForDateAsync(string org, string repo, DateOnly date)
+    public Task<DailyRecord?> GetForDateAsync(string org, string repo, DateOnly date)
     {
         var key = new DailyRecordKey(org, repo, date);
         return _cache.GetOrCreateAsync(key, async entry =>
@@ -23,7 +23,7 @@ public sealed class IssueCountService
         });
     }
 
-    public Task<IEnumerable<DailyRecord>> GetForRangeAsync(
+    public Task<IEnumerable<DailyRecord>?> GetForRangeAsync(
         string org, string repo, DateOnly from, DateOnly to)
     {
         var key = new DailyRecordRangeKey(org, repo, from, to);

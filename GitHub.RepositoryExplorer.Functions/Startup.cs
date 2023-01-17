@@ -34,6 +34,7 @@ public class Startup : FunctionsStartup
         builder.Services.AddCosmosRepository();
 
 
-        builder.Services.AddSingleton((_) => IGitHubClient.CreateGitHubClient(context.Configuration["GitHubKey"]));
+        builder.Services.AddSingleton((_) => IGitHubClient.CreateGitHubClient(context.Configuration["GitHubKey"] ??
+            throw new InvalidOperationException("GitHub token not found in configuration object")));
     }
 }
