@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="7.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DotNet.DocsTools\DotNet.DocsTools.csproj" />
+    <ProjectReference Include="..\GitHub.RepositoryExplorer.Models\GitHub.RepositoryExplorer.Models.csproj" />
+  </ItemGroup>
+
+</Project>
