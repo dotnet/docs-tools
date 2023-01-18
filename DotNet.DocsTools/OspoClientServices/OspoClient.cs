@@ -1,6 +1,6 @@
 ﻿// Taken from https://github.com/dotnet/org-policy/tree/main/src/Microsoft.DotnetOrg.Ospo
 
-using DotnetDocsTools.Serialization;
+using DotNetDocs.Tools.Serialization;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Retry;

@@ -1,8 +1,8 @@
 ﻿using Xunit;
 using System.Text.Json;
-using DotNet.DocsTools.RESTQueries;
+using DotNetDocs.Tools.RESTQueries;
 
-namespace DotnetDocsTools.Tests.RESTProcessingTests
+namespace DotNetDocs.Tools.Tests.RESTProcessingTests
 {
     public class PullRequestFilesQueryTests
     {

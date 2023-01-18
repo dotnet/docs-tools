@@ -1,7 +1,7 @@
-﻿using DotnetDocsTools.GitHubCommunications;
+﻿using DotNetDocs.Tools.GitHubCommunications;
 using System.Text.Json;
 
-namespace DotnetDocsTools.Tests
+namespace DotNetDocs.Tools.Tests
 {
     class FakeGitHubClient : IGitHubClient
     {

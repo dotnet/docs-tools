@@ -1,6 +1,6 @@
-﻿using DotNet.DocsTools.Utility;
-using DotnetDocsTools.GitHubCommunications;
-using DotnetDocsTools.GraphQLQueries;
+﻿using DotNetDocs.Tools.Utility;
+using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GraphQLQueries;
 
 namespace LocateProjects;
 

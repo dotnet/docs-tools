@@ -1,7 +1,7 @@
-﻿using DotnetDocsTools.GitHubCommunications;
-using DotnetDocsTools.GitHubObjects;
+﻿using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GitHubObjects;
 
-namespace DotnetDocsTools.GraphQLQueries;
+namespace DotNetDocs.Tools.GraphQLQueries;
 
 /// <summary>
 /// This query returns all issues (either closed or open) with a given label.

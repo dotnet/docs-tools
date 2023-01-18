@@ -1,7 +1,7 @@
-﻿using DotNet.DocsTools.GraphQLQueries;
+﻿using DotNetDocs.Tools.GraphQLQueries;
 using Xunit;
 
-namespace DotnetDocsTools.Tests.GraphQLProcessingTests
+namespace DotNetDocs.Tools.Tests.GraphQLProcessingTests
 {
     public class DefaultBranchQueryTests
     {

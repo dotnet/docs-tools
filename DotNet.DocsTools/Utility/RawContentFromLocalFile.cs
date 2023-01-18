@@ -1,4 +1,4 @@
-﻿namespace DotNet.DocsTools.Utility;
+﻿namespace DotNetDocs.Tools.Utility;
 
 /// <summary>
 /// Static class contains methods to parse article files.

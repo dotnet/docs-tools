@@ -1,9 +1,9 @@
-﻿using DotNet.DocsTools.GraphQLQueries;
-using DotNet.DocsTools.Utility;
+﻿using DotNetDocs.Tools.GraphQLQueries;
+using DotNetDocs.Tools.Utility;
 using System.Text.Json;
 using Xunit;
 
-namespace DotnetDocsTools.Tests.GraphQLProcessingTests
+namespace DotNetDocs.Tools.Tests.GraphQLProcessingTests
 {
     public class PullRequestPerSprintTests
     {

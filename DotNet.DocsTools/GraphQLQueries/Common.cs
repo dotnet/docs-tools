@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace DotnetDocsTools.GraphQLQueries;
+namespace DotNetDocs.Tools.GraphQLQueries;
 
 public static class Common
 {

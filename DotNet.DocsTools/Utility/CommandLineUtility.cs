@@ -1,4 +1,4 @@
-﻿namespace DotNet.DocsTools.Utility;
+﻿namespace DotNetDocs.Tools.Utility;
 
 /// <summary>
 /// This class contains utilities used for our command line tools.

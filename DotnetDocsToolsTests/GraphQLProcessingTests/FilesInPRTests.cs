@@ -1,8 +1,8 @@
-﻿using DotnetDocsTools.GraphQLQueries;
+﻿using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.Json;
 using Xunit;
 
-namespace DotnetDocsTools.Tests.GraphQLProcessingTests
+namespace DotNetDocs.Tools.Tests.GraphQLProcessingTests
 {
     public class FilesInPrTests
     {

@@ -1,8 +1,8 @@
-﻿using DotnetDocsTools.GitHubCommunications;
-using DotnetDocsTools.GraphQLQueries;
+﻿using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.Json;
 
-namespace DotNet.DocsTools.GraphQLQueries;
+namespace DotNetDocs.Tools.GraphQLQueries;
 
 /// <summary>
 /// Query for fetching a repository's default branch name.

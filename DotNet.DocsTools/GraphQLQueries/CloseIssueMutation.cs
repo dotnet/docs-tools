@@ -1,6 +1,6 @@
-﻿using DotnetDocsTools.GitHubCommunications;
+﻿using DotNetDocs.Tools.GitHubCommunications;
 
-namespace DotnetDocsTools.GraphQLQueries;
+namespace DotNetDocs.Tools.GraphQLQueries;
 
 public class CloseIssueMutation
 {

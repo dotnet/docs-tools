@@ -1,7 +1,7 @@
-using DotNet.DocsTools.Utility;
+using DotNetDocs.Tools.Utility;
 using Xunit;
 
-namespace DotnetDocsTools.Tests.Utility
+namespace DotNetDocs.Tools.Tests.Utility
 {
     public class SprintDateRangeTests
     {

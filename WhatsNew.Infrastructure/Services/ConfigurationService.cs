@@ -1,11 +1,11 @@
-﻿using DotnetDocsTools.GitHubCommunications;
-using DotNet.DocsTools.Utility;
+﻿using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.Utility;
 using Microsoft.DotnetOrg.Ospo;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WhatsNew.Infrastructure.Models;
-using DotNet.DocsTools.GraphQLQueries;
+using DotNetDocs.Tools.GraphQLQueries;
 
 namespace WhatsNew.Infrastructure.Services;
 

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace DotnetDocsTools.GitHubCommunications;
+namespace DotNetDocs.Tools.GitHubCommunications;
 
 /// <summary>
 /// This basic class represents a GraphQL post packet.

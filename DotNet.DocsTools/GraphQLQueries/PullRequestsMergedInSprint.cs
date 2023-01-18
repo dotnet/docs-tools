@@ -1,9 +1,8 @@
-﻿using DotNet.DocsTools.Utility;
-using DotnetDocsTools.GitHubCommunications;
-using DotnetDocsTools.GitHubObjects;
-using DotnetDocsTools.GraphQLQueries;
+﻿using DotNetDocs.Tools.Utility;
+using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GitHubObjects;
 
-namespace DotNet.DocsTools.GraphQLQueries;
+namespace DotNetDocs.Tools.GraphQLQueries;
 
 /// <summary>
 /// Retrieve all PRs merged during a sprint

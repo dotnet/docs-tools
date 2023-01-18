@@ -1,5 +1,5 @@
-﻿using Dotnet.DocsTools.GraphQLQueries;
-using DotnetDocsTools.GitHubCommunications;
+﻿using DotNetDocs.Tools.GraphQLQueries;
+using DotNetDocs.Tools.GitHubCommunications;
 using GitHub.RepositoryExplorer.Models;
 
 namespace GitHub.RepositoryExplorer.Services;

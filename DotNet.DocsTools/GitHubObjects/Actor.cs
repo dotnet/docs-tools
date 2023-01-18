@@ -1,7 +1,7 @@
 ﻿using Microsoft.DotnetOrg.Ospo;
 using System.Text.Json;
 
-namespace DotnetDocsTools.GitHubObjects;
+namespace DotNetDocs.Tools.GitHubObjects;
 
 /// <summary>
 /// The Actor node of a PR

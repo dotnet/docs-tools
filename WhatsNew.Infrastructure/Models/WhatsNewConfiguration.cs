@@ -1,5 +1,5 @@
-﻿using DotnetDocsTools.GitHubCommunications;
-using DotNet.DocsTools.Utility;
+﻿using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.Utility;
 using Microsoft.DotnetOrg.Ospo;
 
 namespace WhatsNew.Infrastructure.Models;
