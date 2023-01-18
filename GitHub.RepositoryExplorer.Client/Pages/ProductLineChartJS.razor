@@ -1,0 +1,46 @@
+@page "/line-chartjs"
+
+<PageTitle>GitHub Priority Issues | Line Chart</PageTitle>
+
+<ConfigureRepo @ref=_config>
+    <OptionalMessageContent>
+        <div>
+            Summaries are only available after the repo is configured.
+        </div>
+    </OptionalMessageContent>
+    <PostConfigurationContent>
+        <div class="row g-1 align-items-center">
+            <div class="col-auto">
+                <label for="date" class="col-form-label">Summary Date</label>
+            </div>
+            <div class="col-auto">
+                <input id="startdate" type="date" class="col-form-control" @bind="_date" />
+            </div>
+            <div class="col-auto">
+                <input id="enddate" type="date" class="col-form-control" @bind="_endDate" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" 
+                    disabled=@(_issueSnapshots is null) @onclick=OnLoadClick>Load</button>
+            </div>
+        </div>
+        @if (_repoLabelsState.IsLoading)
+        {
+            <ProgressIndicator Message="🏷️ Loading area labels..." />
+        }
+        @if (_issueSnapshots is null)
+        {
+            <ProgressIndicator Message="🤖 Loading data..." />
+        }
+        else if (_chartConfig.Data is { Datasets.Count : 0 })
+        {
+            <ProgressIndicator Message="📈 Building chart..." />
+        }
+        else
+        {
+            <div class="border align-content-lg-around mt-3">
+                <Chart Config="_chartConfig" @ref="_chart"></Chart>
+            </div>
+        }
+    </PostConfigurationContent>
+</ConfigureRepo>
