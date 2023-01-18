@@ -1,7 +1,7 @@
 ﻿using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Retry;
-using DotnetDocsTools.GraphQLQueries;
+using DotNetDocs.Tools.GraphQLQueries;
 
 namespace Quest2GitHub.AzureDevOpsCommunications;
 

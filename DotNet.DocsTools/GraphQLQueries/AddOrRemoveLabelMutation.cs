@@ -1,8 +1,8 @@
-﻿using DotnetDocsTools.GitHubCommunications;
+﻿using DotNetDocs.Tools.GitHubCommunications;
 using System;
 using System.Threading.Tasks;
 
-namespace DotnetDocsTools.GraphQLQueries
+namespace DotNetDocs.Tools.GraphQLQueries
 {
     /// <summary>
     /// Add or remove a label.

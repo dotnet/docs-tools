@@ -1,7 +1,7 @@
-﻿using DotnetDocsTools.GitHubCommunications;
+﻿using DotNetDocs.Tools.GitHubCommunications;
 using System.Text.Json;
 
-namespace DotNet.DocsTools.RESTQueries;
+namespace DotNetDocs.Tools.RESTQueries;
 
 /// <summary>
 /// Manage the interaction for the PR Files GitHub request

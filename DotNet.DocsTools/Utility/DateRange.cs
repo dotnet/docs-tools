@@ -1,4 +1,4 @@
-﻿namespace DotNet.DocsTools.Utility;
+﻿namespace DotNetDocs.Tools.Utility;
 
 /// <summary>
 /// Encapsulates the start and end dates for a period of time.

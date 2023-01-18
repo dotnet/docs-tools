@@ -1,4 +1,4 @@
-﻿namespace DotnetDocsTools.GraphQLQueries;
+﻿namespace DotNetDocs.Tools.GraphQLQueries;
 
 /// <summary>
 /// This query returns a single label nodeID

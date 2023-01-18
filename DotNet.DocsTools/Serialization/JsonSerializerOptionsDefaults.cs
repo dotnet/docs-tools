@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace DotnetDocsTools.Serialization;
+namespace DotNetDocs.Tools.Serialization;
 
 internal static class JsonSerializerOptionsDefaults
 {

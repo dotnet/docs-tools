@@ -60,7 +60,7 @@ namespace RepoMan.Actions
             {
                 try
                 {
-                    var sprint = DotNet.DocsTools.Utility.SprintDateRange.GetSprintFor(DateTime.Now).SprintName;
+                    var sprint = DotNetDocs.Tools.Utility.SprintDateRange.GetSprintFor(DateTime.Now).SprintName;
                     state.Logger.LogInformation($"Setting [sprint] milestone: {sprint}");
 
                     foreach (var item in milestones)

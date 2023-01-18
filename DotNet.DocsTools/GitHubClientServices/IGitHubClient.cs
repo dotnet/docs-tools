@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace DotnetDocsTools.GitHubCommunications;
+namespace DotNetDocs.Tools.GitHubCommunications;
 
 /// <summary>
 /// Interface that defines all communication between with the GitHub web APIs.

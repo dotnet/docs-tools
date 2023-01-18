@@ -1,11 +1,11 @@
-﻿using DotnetDocsTools.GitHubCommunications;
-using DotNet.DocsTools.Utility;
+﻿using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.Utility;
 using System.Text;
 using System.Text.RegularExpressions;
 using WhatsNew.Infrastructure.Models;
 using static WhatsNew.Infrastructure.Constants;
-using DotNet.DocsTools.GraphQLQueries;
-using DotNet.DocsTools.RESTQueries;
+using DotNetDocs.Tools.GraphQLQueries;
+using DotNetDocs.Tools.RESTQueries;
 
 namespace WhatsNew.Infrastructure.Services;
 

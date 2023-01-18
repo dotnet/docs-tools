@@ -1,4 +1,4 @@
-﻿namespace DotNet.DocsTools.Utility;
+﻿namespace DotNetDocs.Tools.Utility;
 
 /// <summary>
 /// Manage start and end dates for a single sprint.

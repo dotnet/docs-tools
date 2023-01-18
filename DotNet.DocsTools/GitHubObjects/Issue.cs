@@ -1,7 +1,7 @@
-﻿using DotnetDocsTools.GraphQLQueries;
+﻿using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.Json;
 
-namespace DotnetDocsTools.GitHubObjects;
+namespace DotNetDocs.Tools.GitHubObjects;
 
 /// <summary>
 /// This struct represents an issue returned

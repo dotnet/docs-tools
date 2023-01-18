@@ -5,10 +5,10 @@ using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text.Json;
 
-namespace DotnetDocsTools.GitHubCommunications;
+namespace DotNetDocs.Tools.GitHubCommunications;
 public sealed class GitHubClient : IGitHubClient, IDisposable
 {
-    private const string ProductID = "DotnetDocsTools";
+    private const string ProductID = "DotNetDocs.Tools";
     private const string ProductVersion = "2.0";
     private static readonly Uri markdownUri = new("https://api.github.com/markdown");
     private static readonly Uri graphQLUri = new("https://api.github.com/graphql");

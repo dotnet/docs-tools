@@ -1,4 +1,4 @@
-﻿using DotNet.DocsTools.Utility;
+﻿using DotNetDocs.Tools.Utility;
 
 namespace LocateProjects;
 

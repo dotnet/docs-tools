@@ -1,7 +1,6 @@
-﻿using DotnetDocsTools.GitHubCommunications;
-using DotnetDocsTools.GraphQLQueries;
+﻿using DotNetDocs.Tools.GitHubCommunications;
 
-namespace Dotnet.DocsTools.GraphQLQueries
+namespace DotNetDocs.Tools.GraphQLQueries
 {
     /// <summary>
     /// Retrieve the count of open issues based on labels

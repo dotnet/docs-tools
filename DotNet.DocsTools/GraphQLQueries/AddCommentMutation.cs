@@ -1,6 +1,6 @@
-﻿using DotnetDocsTools.GitHubCommunications;
+﻿using DotNetDocs.Tools.GitHubCommunications;
 
-namespace DotnetDocsTools.GraphQLQueries;
+namespace DotNetDocs.Tools.GraphQLQueries;
 
 /// <summary>
 /// GraphQL Object to add a comment to an existing issue.

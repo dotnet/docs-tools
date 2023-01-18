@@ -1,4 +1,4 @@
-using DotnetDocsTools.GitHubCommunications;
+using DotNetDocs.Tools.GitHubCommunications;
 using GitHub.RepositoryExplorer.Functions.Configuration;
 using GitHub.RepositoryExplorer.Models;
 using GitHub.RepositoryExplorer.Services;
