@@ -35,9 +35,10 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests
 }}");
                 MarkdownLinksVerifierConfiguration? configuration =
                     await new ConfigurationReader().ReadConfigurationAsync();
-                Assert.Equal(2, configuration?.ExcludeStartingWith.Length);
-                Assert.Contains(@"xref:", configuration?.ExcludeStartingWith, StringComparer.Ordinal);
-                Assert.Contains("~/", configuration?.ExcludeStartingWith, StringComparer.Ordinal);
+                Assert.NotNull(configuration);
+                Assert.Equal(2, configuration.ExcludeStartingWith.Length);
+                Assert.Contains(@"xref:", configuration.ExcludeStartingWith, StringComparer.Ordinal);
+                Assert.Contains("~/", configuration.ExcludeStartingWith, StringComparer.Ordinal);
             }
             finally
             {
