@@ -25,22 +25,22 @@
             </div>
         </div>
         @if (_repoLabelsState.IsLoading)
-        {
-            <ProgressIndicator Message="🏷️ Loading area labels..." />
-        }
+    {
+        <ProgressIndicator Message="🏷️ Loading area labels..." />
+    }
         @if (_issueSnapshots is null)
-        {
-            <ProgressIndicator Message="🤖 Loading summary..." />
-        }
-        else if (_chartConfig.Data is { Datasets.Count : 0 })
-        {
-            <ProgressIndicator Message="📈 Building chart..." />
-        }
-        else
-        {
-            <div class="border align-content-lg-around mt-3">
+    {
+        <ProgressIndicator Message="🤖 Loading summary..." />
+    }
+    else if (_chartConfig.Data is { Datasets.Count : 0 })
+    {
+        <ProgressIndicator Message="📈 Building chart..." />
+    }
+    else
+    {
+        <div class="border align-content-lg-around mt-3">
                 <Chart Config="_chartConfig" @ref="_chart"></Chart>
             </div>
-        }
+    }
     </PostConfigurationContent>
 </ConfigureRepo>

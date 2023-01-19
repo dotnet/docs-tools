@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RepoMan
+namespace RepoMan;
+
+public interface IRunnerItem
 {
-    public interface IRunnerItem
-    {
-        Task Run(State state);
-    }
+    Task Run(State state);
 }

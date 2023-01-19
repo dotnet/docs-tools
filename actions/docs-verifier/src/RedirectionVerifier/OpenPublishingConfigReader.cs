@@ -3,22 +3,21 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 using BuildVerifier.IO.Abstractions;
 
-namespace RedirectionVerifier
+namespace RedirectionVerifier;
+
+public class OpenPublishingConfigReader
+    : BaseMappedConfigurationReader<OpenPublishingConfig, ImmutableArray<string>?>
 {
-    public class OpenPublishingConfigReader
-        : BaseMappedConfigurationReader<OpenPublishingConfig, ImmutableArray<string>?>
+    public override string ConfigurationFileName => ".openpublishing.publish.config.json";
+
+    public override async ValueTask<ImmutableArray<string>?> MapConfigurationAsync()
     {
-        public override string ConfigurationFileName => ".openpublishing.publish.config.json";
-
-        public override async ValueTask<ImmutableArray<string>?> MapConfigurationAsync()
+        OpenPublishingConfig? configuration = await ReadConfigurationAsync();
+        if (configuration is { RedirectionFiles: { Length: > 0 } })
         {
-            OpenPublishingConfig? configuration = await ReadConfigurationAsync();
-            if (configuration is { RedirectionFiles: { Length: > 0 } })
-            {
-                return configuration.RedirectionFiles;
-            }
-
-            return default;
+            return configuration.RedirectionFiles;
         }
+
+        return default;
     }
 }

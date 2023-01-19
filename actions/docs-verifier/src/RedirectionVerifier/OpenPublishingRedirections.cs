@@ -1,11 +1,10 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
-namespace RedirectionVerifier
+namespace RedirectionVerifier;
+
+public sealed class OpenPublishingRedirections
 {
-    public sealed class OpenPublishingRedirections
-    {
-        [JsonPropertyName("redirections")]
-        public ImmutableArray<Redirection> Redirections { get; set; }
-    }
+    [JsonPropertyName("redirections")]
+    public ImmutableArray<Redirection> Redirections { get; set; }
 }

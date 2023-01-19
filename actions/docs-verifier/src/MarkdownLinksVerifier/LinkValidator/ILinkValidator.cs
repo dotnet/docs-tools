@@ -1,7 +1,6 @@
-﻿namespace MarkdownLinksVerifier.LinkValidator
+﻿namespace MarkdownLinksVerifier.LinkValidator;
+
+internal interface ILinkValidator
 {
-    internal interface ILinkValidator
-    {
-        ValidationResult Validate(string link, string filePath);
-    }
+    ValidationResult Validate(string link, string filePath);
 }

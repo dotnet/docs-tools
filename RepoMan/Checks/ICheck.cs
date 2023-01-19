@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RepoMan.Checks
+namespace RepoMan.Checks;
+
+public interface ICheck
 {
-    public interface ICheck
-    {
-        Task<bool> Run(State state);
-    }
+    Task<bool> Run(State state);
 }

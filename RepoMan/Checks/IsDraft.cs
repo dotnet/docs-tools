@@ -6,37 +6,36 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
-namespace RepoMan.Checks
+namespace RepoMan.Checks;
+
+public class IsDraft : ICheck
 {
-    public class IsDraft : ICheck
+    public bool Condition { get; }
+
+    public IsDraft(YamlMappingNode node, State state)
     {
-        public bool Condition { get; }
+        state.Logger.LogDebug($"BUILD: IsDraft");
+        Condition = Convert.ToBoolean(node["value"].ToString());
+        state.Logger.LogTrace($"BUILD: - {Condition}");
+    }
 
-        public IsDraft(YamlMappingNode node, State state)
+    public async Task<bool> Run(State state)
+    {
+        state.Logger.LogInformation($"Check IsDraft: {Condition}");
+
+        if (!state.IsPullRequest)
         {
-            state.Logger.LogDebug($"BUILD: IsDraft");
-            Condition = Convert.ToBoolean(node["value"].ToString());
-            state.Logger.LogTrace($"BUILD: - {Condition}");
+            state.Logger.LogError("Tried to check IsDraft on non-PR");
+            return await Task.FromResult(false);
         }
 
-        public async Task<bool> Run(State state)
-        {
-            state.Logger.LogInformation($"Check IsDraft: {Condition}");
+        var result = state.PullRequest?.Draft == Condition;
 
-            if (!state.IsPullRequest)
-            {
-                state.Logger.LogError("Tried to check IsDraft on non-PR");
-                return await Task.FromResult(false);
-            }
+        if (result)
+            state.Logger.LogInformation($"PASS");
+        else
+            state.Logger.LogInformation($"FAIL");
 
-            var result = state.PullRequest?.Draft == Condition;
-
-            if (result)
-                state.Logger.LogInformation($"PASS");
-            else
-                state.Logger.LogInformation($"FAIL");
-
-            return await Task.FromResult(result);
-        }
+        return await Task.FromResult(result);
     }
 }

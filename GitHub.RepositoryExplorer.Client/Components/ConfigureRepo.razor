@@ -1,7 +1,7 @@
 ﻿<div class="row">
     @if (AppState is { RepoState.IsAssigned: true } && !_isEditing)
-    {
-        <ErrorBoundary @ref="_errorBoundary">
+{
+    <ErrorBoundary @ref="_errorBoundary">
             <ChildContent>
                 @PostConfigurationContent
             </ChildContent>
@@ -12,16 +12,16 @@
                 </div>
             </ErrorContent>
         </ErrorBoundary>
-    }
-    else
-    {
-        <form class="col-4">
+}
+else
+{
+    <form class="col-4">
             @if (OptionalMessageContent is not null)
-            {
-                <div class="mb-3">
+        {
+            <div class="mb-3">
                     @OptionalMessageContent
                 </div>
-            }
+        }
             <div class="mb-3">
                 <label for="org" class="form-label">Organization</label>
                 <input id="org" @bind=@_organizationName
@@ -45,5 +45,5 @@
                 Assign
             </button>
         </form>
-    }
+}
 </div>

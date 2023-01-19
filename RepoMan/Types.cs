@@ -4,28 +4,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RepoMan
-{
-    public enum RunnerItemTypes
-    {
-        Check,
-        Label,
-        Milestone,
-        Project,
-        Comment,
-        Files,
-        Issue,
-        PullRquest,
-        Variable,
-        Assignee,
-        Reviewer,
-        Predefined
-    }
+namespace RepoMan;
 
-    public enum RunnerItemSubTypes
-    {
-        Add,
-        Remove,
-        Set
-    }
+public enum RunnerItemTypes
+{
+    Check,
+    Label,
+    Milestone,
+    Project,
+    Comment,
+    Files,
+    Issue,
+    PullRquest,
+    Variable,
+    Assignee,
+    Reviewer,
+    Predefined
+}
+
+public enum RunnerItemSubTypes
+{
+    Add,
+    Remove,
+    Set
 }

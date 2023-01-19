@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace CleanRepo
+namespace CleanRepo;
+
+internal class RedirectionFile
 {
-    internal class RedirectionFile
-    {
-        public IList<Redirect> redirections { get; set; }
-    }
+    public IList<Redirect> redirections { get; set; }
 }

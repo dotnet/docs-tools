@@ -2,11 +2,11 @@
 using System.Text.Json;
 using DotNetDocs.Tools.RESTQueries;
 
-namespace DotNetDocs.Tools.Tests.RESTProcessingTests
+namespace DotNetDocs.Tools.Tests.RESTProcessingTests;
+
+public class PullRequestFilesQueryTests
 {
-    public class PullRequestFilesQueryTests
-    {
-        private const string successResponse =
+    private const string successResponse =
 @"[
   {
     ""sha"": ""9ec0c6207fd4116137ba48577efb86871d01aa85"",
@@ -166,135 +166,134 @@ namespace DotNetDocs.Tools.Tests.RESTProcessingTests
   }
 ]";
 
-        private const string failedResponse =
+    private const string failedResponse =
 @"{
   ""message"": ""Not Found"",
   ""documentation_url"": ""https://developer.github.com/v3/pulls/#list-pull-requests-files""
 }";
-        [Fact]
-        public async Task CanIterateResultsOnSuccessfulQuery()
+    [Fact]
+    public async Task CanIterateResultsOnSuccessfulQuery()
+    {
+        var responseDoc = JsonDocument.Parse(successResponse);
+        var client = new FakeGitHubClient(responseDoc);
+
+        var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 15979);
+
+        var result = await prFiles.PerformQueryAsync();
+        Assert.True(result);
+
+        // iterate:
+        foreach(var node in prFiles.Files)
         {
-            var responseDoc = JsonDocument.Parse(successResponse);
-            var client = new FakeGitHubClient(responseDoc);
-
-            var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 15979);
-
-            var result = await prFiles.PerformQueryAsync();
-            Assert.True(result);
-
-            // iterate:
-            foreach(var node in prFiles.Files)
-            {
-                Assert.NotEmpty(node.Sha);
-                Assert.NotEmpty(node.Filename);
-                Assert.NotEqual(-1, (int)node.Status);
-                var changes = node.Additions + node.Deletions;
-                Assert.Equal(changes, node.Changes);
-                Assert.NotNull(node.BlobUrl);
-                Assert.NotNull(node.RawUrl);
-                Assert.NotNull(node.ContentsUrl);
-                Assert.NotNull(node.Patch);
-            }
+            Assert.NotEmpty(node.Sha);
+            Assert.NotEmpty(node.Filename);
+            Assert.NotEqual(-1, (int)node.Status);
+            var changes = node.Additions + node.Deletions;
+            Assert.Equal(changes, node.Changes);
+            Assert.NotNull(node.BlobUrl);
+            Assert.NotNull(node.RawUrl);
+            Assert.NotNull(node.ContentsUrl);
+            Assert.NotNull(node.Patch);
         }
+    }
 
-        [Fact]
-        public async Task CanAccessMessageOnFailedQuery()
-        {
-            var responseDoc = JsonDocument.Parse(failedResponse);
-            var client = new FakeGitHubClient(responseDoc);
+    [Fact]
+    public async Task CanAccessMessageOnFailedQuery()
+    {
+        var responseDoc = JsonDocument.Parse(failedResponse);
+        var client = new FakeGitHubClient(responseDoc);
 
-            var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
+        var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
 
-            var result = await prFiles.PerformQueryAsync();
-            Assert.False(result);
-            Assert.Equal("Not Found", prFiles.ErrorMessage);
-        }
+        var result = await prFiles.PerformQueryAsync();
+        Assert.False(result);
+        Assert.Equal("Not Found", prFiles.ErrorMessage);
+    }
 
-        // 3. Query more than once
-        [Fact]
-        public async Task RepeatedQueryRequestsExecuteAgain()
-        {
-            var responseDoc = JsonDocument.Parse(failedResponse);
-            var client = new FakeGitHubClient(responseDoc);
+    // 3. Query more than once
+    [Fact]
+    public async Task RepeatedQueryRequestsExecuteAgain()
+    {
+        var responseDoc = JsonDocument.Parse(failedResponse);
+        var client = new FakeGitHubClient(responseDoc);
 
-            var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
+        var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
 
-            var result = await prFiles.PerformQueryAsync();
-            Assert.False(result);
-            Assert.Equal("Not Found", prFiles.ErrorMessage);
+        var result = await prFiles.PerformQueryAsync();
+        Assert.False(result);
+        Assert.Equal("Not Found", prFiles.ErrorMessage);
 
-            result = await prFiles.PerformQueryAsync();
-            Assert.False(result);
-            Assert.Equal("Not Found", prFiles.ErrorMessage);
-        }
+        result = await prFiles.PerformQueryAsync();
+        Assert.False(result);
+        Assert.Equal("Not Found", prFiles.ErrorMessage);
+    }
 
-        [Fact]
-        public async Task ErrorMessageThrowsOnSuccessfulQuery()
-        {
-            var responseDoc = JsonDocument.Parse(successResponse);
-            var client = new FakeGitHubClient(responseDoc);
+    [Fact]
+    public async Task ErrorMessageThrowsOnSuccessfulQuery()
+    {
+        var responseDoc = JsonDocument.Parse(successResponse);
+        var client = new FakeGitHubClient(responseDoc);
 
-            var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
+        var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
 
-            var result = await prFiles.PerformQueryAsync();
-            Assert.True(result);
-            Assert.Throws<InvalidOperationException>(() => prFiles.ErrorMessage);
-        }
-        
-        [Fact]
-        public async Task IterationThrowsOnFailedQuery()
-        {
-            var responseDoc = JsonDocument.Parse(failedResponse);
-            var client = new FakeGitHubClient(responseDoc);
+        var result = await prFiles.PerformQueryAsync();
+        Assert.True(result);
+        Assert.Throws<InvalidOperationException>(() => prFiles.ErrorMessage);
+    }
+    
+    [Fact]
+    public async Task IterationThrowsOnFailedQuery()
+    {
+        var responseDoc = JsonDocument.Parse(failedResponse);
+        var client = new FakeGitHubClient(responseDoc);
 
-            var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
+        var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
 
-            var result = await prFiles.PerformQueryAsync();
-            Assert.False(result);
+        var result = await prFiles.PerformQueryAsync();
+        Assert.False(result);
 
-            Assert.Throws<InvalidOperationException>(() => prFiles.Files.GetEnumerator());
-        }
+        Assert.Throws<InvalidOperationException>(() => prFiles.Files.GetEnumerator());
+    }
 
-        [Fact]
-        public void AccessingResultsBeforeQueryThrows()
-        {
-            var client = new FakeGitHubClient();
-            var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
+    [Fact]
+    public void AccessingResultsBeforeQueryThrows()
+    {
+        var client = new FakeGitHubClient();
+        var prFiles = new PullRequestFilesRequest(client, "dotnet", "docs", 25000);
 
-            Assert.Throws<InvalidOperationException>(() => prFiles.ErrorMessage);
-            Assert.Throws<InvalidOperationException>(() => prFiles.Files);
-        }
+        Assert.Throws<InvalidOperationException>(() => prFiles.ErrorMessage);
+        Assert.Throws<InvalidOperationException>(() => prFiles.Files);
+    }
 
-        [Fact]
-        public void GitHubClientMustNotBeNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => new PullRequestFilesRequest(default!, "dotnet", "docs", 15));
-        }
+    [Fact]
+    public void GitHubClientMustNotBeNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => new PullRequestFilesRequest(default!, "dotnet", "docs", 15));
+    }
 
-        [Fact]
-        public void OwnerComponentMustBeValidURLComponent()
-        {
-            var client = new FakeGitHubClient();
-            Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, null!, "docs", 15));
-            Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "", "docs", 15));
-            Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "    ", "docs", 15));
-        }
+    [Fact]
+    public void OwnerComponentMustBeValidURLComponent()
+    {
+        var client = new FakeGitHubClient();
+        Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, null!, "docs", 15));
+        Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "", "docs", 15));
+        Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "    ", "docs", 15));
+    }
 
-        [Fact]
-        public void RepositoryComponentMustBeValidURLComponent()
-        {
-            var client = new FakeGitHubClient();
-            Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "dotnet", null!, 15));
-            Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "dotnet", "", 15));
-            Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "dotnet", "    ", 15));
-        }
+    [Fact]
+    public void RepositoryComponentMustBeValidURLComponent()
+    {
+        var client = new FakeGitHubClient();
+        Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "dotnet", null!, 15));
+        Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "dotnet", "", 15));
+        Assert.Throws<ArgumentException>(() => new PullRequestFilesRequest(client, "dotnet", "    ", 15));
+    }
 
-        [Fact]
-        public void PRNumberComponentMustBePositive()
-        {
-            var client = new FakeGitHubClient();
-            Assert.Throws<ArgumentOutOfRangeException>(() => new PullRequestFilesRequest(client, "dotnet", "docs", -25));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new PullRequestFilesRequest(client, "dotnet", "docs", 0));
-        }
+    [Fact]
+    public void PRNumberComponentMustBePositive()
+    {
+        var client = new FakeGitHubClient();
+        Assert.Throws<ArgumentOutOfRangeException>(() => new PullRequestFilesRequest(client, "dotnet", "docs", -25));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new PullRequestFilesRequest(client, "dotnet", "docs", 0));
     }
 }
