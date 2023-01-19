@@ -10,7 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- This preview version fixes a CA1812 (Avoid uninstantiated internal classes) false positive bug with top-level statements. -->
     <PackageReference Include="YAnalyzers" Version="1.2.0" />
   </ItemGroup>
 </Project>
