@@ -1,0 +1,29 @@
+name: node build and test
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+    - 'actions/status-checker/**' # Only run for TypeScript action updates
+  pull_request:
+    branches: [ main ]
+    paths:
+    - 'actions/status-checker/**' # Only run for TypeScript action updates
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+
+    - uses: actions/checkout@main
+    - name: Use Node.js 18
+      uses: actions/setup-node@main
+      with:
+        node-version: 18
+        cache: 'npm'
+    - run: cd cd ./actions/status-checker/
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: npm test

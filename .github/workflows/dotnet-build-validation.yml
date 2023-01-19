@@ -5,6 +5,12 @@ on:
     branches: [ main ]
     paths-ignore:
     - README.md
+    - 'actions/status-checker/**' # Ignore the TypeScript action.
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+    - README.md
+    - 'actions/status-checker/**' # Ignore the TypeScript action.
   workflow_dispatch:
     inputs:
       reason:
