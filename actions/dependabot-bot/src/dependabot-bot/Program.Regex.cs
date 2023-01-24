@@ -30,7 +30,7 @@
         [NotNullWhen(true)] out string? groupValue)
     {
         var match = regex.Match(content);
-        if (match is { Success: true } and { Groups.Count: > 0 })
+        if (match is { Success: true, Groups.Count: > 0 })
         {
             groupValue = match.Groups[groupKey].Value;
             return true;

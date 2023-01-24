@@ -11,6 +11,7 @@ using Microsoft.Extensions.FileSystemGlobbing;
 using Octokit;
 using RedirectionVerifier;
 
+#pragma warning disable CA1852
 ConfigurationReader configurationReader = new();
 MarkdownLinksVerifierConfiguration? configuration = await configurationReader.ReadConfigurationAsync();
 

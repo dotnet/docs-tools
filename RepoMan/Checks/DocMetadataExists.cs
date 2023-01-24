@@ -6,27 +6,26 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
-namespace RepoMan.Checks
+namespace RepoMan.Checks;
+
+public class DocMetadataExists : ICheck
 {
-    public class DocMetadataExists : ICheck
+    public DocMetadataExists(State state)
     {
-        public DocMetadataExists(State state)
-        {
-            state.Logger.LogDebug($"BUILD: Check-metadata-exists");
-        }
+        state.Logger.LogDebug($"BUILD: Check-metadata-exists");
+    }
 
-        public async Task<bool> Run(State state)
-        {
-            state.Logger.LogInformation($"Evaluating if doc metadata exists");
+    public async Task<bool> Run(State state)
+    {
+        state.Logger.LogInformation($"Evaluating if doc metadata exists");
 
-            bool result = state.DocIssueMetadata.Count != 0;
+        bool result = state.DocIssueMetadata.Count != 0;
 
-            if (result)
-                state.Logger.LogInformation($"PASS");
-            else
-                state.Logger.LogInformation($"FAIL");
+        if (result)
+            state.Logger.LogInformation($"PASS");
+        else
+            state.Logger.LogInformation($"FAIL");
 
-            return await Task.FromResult<bool>(result);
-        }
+        return await Task.FromResult<bool>(result);
     }
 }

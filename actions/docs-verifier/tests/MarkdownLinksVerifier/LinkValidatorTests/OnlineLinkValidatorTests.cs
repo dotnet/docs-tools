@@ -5,9 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace MarkdownLinksVerifier.UnitTests
+namespace MarkdownLinksVerifier.UnitTests;
+
+public class OnlineLinkValidatorTests
 {
-    public class OnlineLinkValidatorTests
-    {
-    }
 }

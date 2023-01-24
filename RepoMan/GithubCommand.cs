@@ -7,258 +7,257 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RepoMan
+namespace RepoMan;
+
+static class GithubCommand
 {
-    static class GithubCommand
+    /// <summary>
+    /// Caches and returns a list of all milestones associated with the repository.
+    /// </summary>
+    /// <param name="state">The state object of the Azure Function.</param>
+    /// <returns>A read-only collection of milestones.</returns>
+    public static async Task<IReadOnlyList<Milestone>> GetMilestones(State state)
     {
-        /// <summary>
-        /// Caches and returns a list of all milestones associated with the repository.
-        /// </summary>
-        /// <param name="state">The state object of the Azure Function.</param>
-        /// <returns>A read-only collection of milestones.</returns>
-        public static async Task<IReadOnlyList<Milestone>> GetMilestones(State state)
+        if (state.Milestones != null) return state.Milestones;
+
+        state.Milestones = await state.Client.Issue.Milestone.GetAllForRepository(state.RepositoryId);
+
+        return state.Milestones;
+    }
+
+    /// <summary>
+    /// Caches and returns a list of all projects associated with the repository.
+    /// </summary>
+    /// <param name="state">The state object of the Azure Function.</param>
+    /// <returns>A read-only collection of projects.</returns>
+    public static async Task<IReadOnlyList<Project>> GetProjects(State state)
+    {
+        if (state.Projects != null) return state.Projects;
+
+        state.ProjectsClient = new ProjectsClient(new ApiConnection(state.Client.Connection));
+        state.Projects = await state.ProjectsClient.GetAllForRepository(state.RepositoryId);
+
+        return state.Projects;
+    }
+
+    public static async Task<ProjectColumn[]> GetProjectColumns(State state, int projectId)
+    {
+        // If columns already cached, return those.
+        if (state.ProjectColumns.ContainsKey(projectId)) return state.ProjectColumns[projectId];
+
+        // Get projects (which will be cached)
+        var projects = await GetProjects(state);
+
+        // Search for the project we want
+        var project = projects.FirstOrDefault(e => e.Number == projectId);
+
+        // Exit if project not found
+        if (project == null) return null;
+
+        // Get the columns
+        var columns = (await state.ProjectsClient.Column.GetAll(project.Id)).ToArray();
+        state.ProjectColumns[projectId] = columns;
+
+        return columns;
+    }
+
+    /// <summary>
+    /// Adds the specified labels to the provided <see cref="State.Issue"/>.
+    /// </summary>
+    /// <param name="labels">A list of labels to add.</param>
+    /// <param name="state">The state object of the Azure Function.</param>
+    /// <returns>An empty task.</returns>
+    public static async Task AddLabels(string[] labels, State state)
+    {
+        if (labels.Length != 0)
         {
-            if (state.Milestones != null) return state.Milestones;
-
-            state.Milestones = await state.Client.Issue.Milestone.GetAllForRepository(state.RepositoryId);
-
-            return state.Milestones;
+            state.Logger.LogInformation($"GitHub: Labels added: {string.Join(",", labels)}");
+            await state.Client.Issue.Labels.AddToIssue(state.RepositoryId, state.Issue.Number, labels.ToArray());
         }
+        else
+            state.Logger.LogTrace("No labels to add");
+    }
 
-        /// <summary>
-        /// Caches and returns a list of all projects associated with the repository.
-        /// </summary>
-        /// <param name="state">The state object of the Azure Function.</param>
-        /// <returns>A read-only collection of projects.</returns>
-        public static async Task<IReadOnlyList<Project>> GetProjects(State state)
+    /// <summary>
+    /// Removes labels from the provided <see cref="State.Issue"/>.
+    /// </summary>
+    /// <param name="labels">An array of labels to remove from the issue.</param>
+    /// <param name="existingLabels">Labels from the issue.</param>
+    /// <param name="state">The state object of the Azure Function.</param>
+    /// <returns>An empty task.</returns>
+    public static async Task RemoveLabels(string[] labels, IReadOnlyList<Label> existingLabels, State state)
+    {
+        var existingLabelsTransformed = existingLabels.Select(l => l.Name.ToLower());
+
+        if (labels.Length != 0 && existingLabels != null && existingLabels.Count != 0)
         {
-            if (state.Projects != null) return state.Projects;
+            var removedLabels = new List<string>();
 
-            state.ProjectsClient = new ProjectsClient(new ApiConnection(state.Client.Connection));
-            state.Projects = await state.ProjectsClient.GetAllForRepository(state.RepositoryId);
+            foreach (var label in labels)
+                if (existingLabelsTransformed.Contains(label.ToLower()))
+                    removedLabels.Add(label);
 
-            return state.Projects;
+            state.Logger.LogInformation($"GitHub: Labels removed: {string.Join(",", labels)}");
+
+            foreach (var label in removedLabels)
+                await state.Client.Issue.Labels.RemoveFromIssue(state.RepositoryId, state.Issue.Number, label);
         }
+        else
+            state.Logger.LogTrace("No labels to remove");
+    }
 
-        public static async Task<ProjectColumn[]> GetProjectColumns(State state, int projectId)
+    /// <summary>
+    /// Adds assignees to the provided <see cref="State.Issue"/>.
+    /// </summary>
+    /// <param name="names">The login names of the users.</param>
+    /// <param name="state">The state object of the Azure Function.</param>
+    /// <returns>An empty task</returns>
+    public static async Task AddAssignees(string[] names, State state)
+    {
+        if (names.Length != 0)
         {
-            // If columns already cached, return those.
-            if (state.ProjectColumns.ContainsKey(projectId)) return state.ProjectColumns[projectId];
+            state.Logger.LogInformation($"GitHub: Adding assignees: {string.Join(",", names)}");
 
-            // Get projects (which will be cached)
-            var projects = await GetProjects(state);
+            var updateIssue = state.Issue.ToUpdate();
+            
+            foreach (var item in names)
+                updateIssue.AddAssignee(item);
 
-            // Search for the project we want
-            var project = projects.FirstOrDefault(e => e.Number == projectId);
-
-            // Exit if project not found
-            if (project == null) return null;
-
-            // Get the columns
-            var columns = (await state.ProjectsClient.Column.GetAll(project.Id)).ToArray();
-            state.ProjectColumns[projectId] = columns;
-
-            return columns;
+            await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
         }
+    }
 
-        /// <summary>
-        /// Adds the specified labels to the provided <see cref="State.Issue"/>.
-        /// </summary>
-        /// <param name="labels">A list of labels to add.</param>
-        /// <param name="state">The state object of the Azure Function.</param>
-        /// <returns>An empty task.</returns>
-        public static async Task AddLabels(string[] labels, State state)
+    /// <summary>
+    /// Adds reviewers to the provided <see cref="State.PullRequest"/>.
+    /// </summary>
+    /// <param name="names">The names of the reviewers. Teams must start with 'team:'.</param>
+    /// <param name="state">The state object of the Azure Function.</param>
+    /// <returns>An empty task</returns>
+    public static async Task AddReviewers(string[] names, State state)
+    {
+        if (names.Length != 0)
         {
-            if (labels.Length != 0)
+            var logins = new List<string>();
+            var teams = new List<string>();
+
+            foreach (var name in names)
             {
-                state.Logger.LogInformation($"GitHub: Labels added: {string.Join(",", labels)}");
-                await state.Client.Issue.Labels.AddToIssue(state.RepositoryId, state.Issue.Number, labels.ToArray());
+                if (name.StartsWith("team:", StringComparison.OrdinalIgnoreCase))
+                    teams.Add(name.Substring(5));
+                else
+                    logins.Add(name);
             }
+
+            if (logins.Count != 0)
+                state.Logger.LogInformation($"GitHub: Adding reviewers: {string.Join(",", logins)}");
             else
-                state.Logger.LogTrace("No labels to add");
-        }
+                logins = null;
 
-        /// <summary>
-        /// Removes labels from the provided <see cref="State.Issue"/>.
-        /// </summary>
-        /// <param name="labels">An array of labels to remove from the issue.</param>
-        /// <param name="existingLabels">Labels from the issue.</param>
-        /// <param name="state">The state object of the Azure Function.</param>
-        /// <returns>An empty task.</returns>
-        public static async Task RemoveLabels(string[] labels, IReadOnlyList<Label> existingLabels, State state)
-        {
-            var existingLabelsTransformed = existingLabels.Select(l => l.Name.ToLower());
-
-            if (labels.Length != 0 && existingLabels != null && existingLabels.Count != 0)
-            {
-                var removedLabels = new List<string>();
-
-                foreach (var label in labels)
-                    if (existingLabelsTransformed.Contains(label.ToLower()))
-                        removedLabels.Add(label);
-
-                state.Logger.LogInformation($"GitHub: Labels removed: {string.Join(",", labels)}");
-
-                foreach (var label in removedLabels)
-                    await state.Client.Issue.Labels.RemoveFromIssue(state.RepositoryId, state.Issue.Number, label);
-            }
+            if (teams.Count != 0)
+                state.Logger.LogInformation($"GitHub: Adding reviewer teams: {string.Join(",", teams)}");
             else
-                state.Logger.LogTrace("No labels to remove");
+                teams = null;
+
+            await state.Client.PullRequest.ReviewRequest.Create(state.RepositoryId, state.Issue.Number, new PullRequestReviewRequest(logins, teams));
         }
+    }
 
-        /// <summary>
-        /// Adds assignees to the provided <see cref="State.Issue"/>.
-        /// </summary>
-        /// <param name="names">The login names of the users.</param>
-        /// <param name="state">The state object of the Azure Function.</param>
-        /// <returns>An empty task</returns>
-        public static async Task AddAssignees(string[] names, State state)
+    /// <summary>
+    /// Creates a comment on an issue or pull request.
+    /// </summary>
+    /// <param name="comment">The comment body string.</param>
+    /// <param name="state">The state object of the Azure Function.</param>
+    public static async Task AddComment(string comment, State state)
+    {
+        state.Logger.LogInformation($"GitHub: Create comment");
+        await state.Client.Issue.Comment.Create(state.RepositoryId, state.Issue.Number, comment);
+    }
+
+    /// <summary>
+    /// Assigns a milestone to the provided <see cref="State.Issue"/>.
+    /// </summary>
+    /// <param name="milestone">The milestone id.</param>
+    /// <param name="state">The state object of the Azure Function.</param>
+    /// <returns>An empty task.</returns>
+    public static async Task SetMilestone(int milestone, State state)
+    {
+        var updateIssue = state.Issue.ToUpdate();
+        updateIssue.Milestone = milestone;
+        state.Logger.LogInformation($"GitHub: Set milestone to {milestone}");
+        await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
+    }
+
+    /// <summary>
+    /// Removes the milestone.
+    /// </summary>
+    /// <param name="milestone">The milestone id.</param>
+    /// <param name="state">The state object of the Azure Function.</param>
+    /// <returns>An empty task.</returns>
+    public static async Task RemoveMilestone(State state)
+    {
+        var updateIssue = state.Issue.ToUpdate();
+        updateIssue.Milestone = null;
+        state.Logger.LogInformation($"GitHub: Clearing milestone");
+        await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
+    }
+
+    /// <summary>
+    /// Assigns projects to the provided <see cref="State.Issue"/>.
+    /// </summary>
+    /// <param name="project">The project numbers to set.</param>
+    /// <param name="state">The state object of the Azure Function.</param>
+    /// <returns>An empty task.</returns>
+    public static async Task AddProjects(string[] projects, State state)
+    {
+        // TODO: Move this logic of checking for existing projects into the loader.
+        // No wait.. maybe this is wrong having this in the loader. If its in the loader, it's loaded every time, even if 
+        // the logic path doens't work with projects.. Ah!! Move milestone logic back here.
+        if (projects.Length != 0)
         {
-            if (names.Length != 0)
+            var existingProjects = await GetProjects(state);
+            var update = state.Issue.ToUpdate();
+
+            foreach (var projectString in projects)
             {
-                state.Logger.LogInformation($"GitHub: Adding assignees: {string.Join(",", names)}");
-
-                var updateIssue = state.Issue.ToUpdate();
-                
-                foreach (var item in names)
-                    updateIssue.AddAssignee(item);
-
-                await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
-            }
-        }
-
-        /// <summary>
-        /// Adds reviewers to the provided <see cref="State.PullRequest"/>.
-        /// </summary>
-        /// <param name="names">The names of the reviewers. Teams must start with 'team:'.</param>
-        /// <param name="state">The state object of the Azure Function.</param>
-        /// <returns>An empty task</returns>
-        public static async Task AddReviewers(string[] names, State state)
-        {
-            if (names.Length != 0)
-            {
-                var logins = new List<string>();
-                var teams = new List<string>();
-
-                foreach (var name in names)
+                if (!int.TryParse(projectString, out int id))
                 {
-                    if (name.StartsWith("team:", StringComparison.OrdinalIgnoreCase))
-                        teams.Add(name.Substring(5));
-                    else
-                        logins.Add(name);
+                    state.Logger.LogError($"Trying to add project with an invalid project id: {projectString}");
+                    continue;
                 }
 
-                if (logins.Count != 0)
-                    state.Logger.LogInformation($"GitHub: Adding reviewers: {string.Join(",", logins)}");
-                else
-                    logins = null;
+                bool foundProject = false;
 
-                if (teams.Count != 0)
-                    state.Logger.LogInformation($"GitHub: Adding reviewer teams: {string.Join(",", teams)}");
-                else
-                    teams = null;
-
-                await state.Client.PullRequest.ReviewRequest.Create(state.RepositoryId, state.Issue.Number, new PullRequestReviewRequest(logins, teams));
-            }
-        }
-
-        /// <summary>
-        /// Creates a comment on an issue or pull request.
-        /// </summary>
-        /// <param name="comment">The comment body string.</param>
-        /// <param name="state">The state object of the Azure Function.</param>
-        public static async Task AddComment(string comment, State state)
-        {
-            state.Logger.LogInformation($"GitHub: Create comment");
-            await state.Client.Issue.Comment.Create(state.RepositoryId, state.Issue.Number, comment);
-        }
-
-        /// <summary>
-        /// Assigns a milestone to the provided <see cref="State.Issue"/>.
-        /// </summary>
-        /// <param name="milestone">The milestone id.</param>
-        /// <param name="state">The state object of the Azure Function.</param>
-        /// <returns>An empty task.</returns>
-        public static async Task SetMilestone(int milestone, State state)
-        {
-            var updateIssue = state.Issue.ToUpdate();
-            updateIssue.Milestone = milestone;
-            state.Logger.LogInformation($"GitHub: Set milestone to {milestone}");
-            await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
-        }
-
-        /// <summary>
-        /// Removes the milestone.
-        /// </summary>
-        /// <param name="milestone">The milestone id.</param>
-        /// <param name="state">The state object of the Azure Function.</param>
-        /// <returns>An empty task.</returns>
-        public static async Task RemoveMilestone(State state)
-        {
-            var updateIssue = state.Issue.ToUpdate();
-            updateIssue.Milestone = null;
-            state.Logger.LogInformation($"GitHub: Clearing milestone");
-            await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
-        }
-
-        /// <summary>
-        /// Assigns projects to the provided <see cref="State.Issue"/>.
-        /// </summary>
-        /// <param name="project">The project numbers to set.</param>
-        /// <param name="state">The state object of the Azure Function.</param>
-        /// <returns>An empty task.</returns>
-        public static async Task AddProjects(string[] projects, State state)
-        {
-            // TODO: Move this logic of checking for existing projects into the loader.
-            // No wait.. maybe this is wrong having this in the loader. If its in the loader, it's loaded every time, even if 
-            // the logic path doens't work with projects.. Ah!! Move milestone logic back here.
-            if (projects.Length != 0)
-            {
-                var existingProjects = await GetProjects(state);
-                var update = state.Issue.ToUpdate();
-
-                foreach (var projectString in projects)
+                foreach (var projectObject in state.Projects)
                 {
-                    if (!int.TryParse(projectString, out int id))
+                    if (projectObject.Number == id)
                     {
-                        state.Logger.LogError($"Trying to add project with an invalid project id: {projectString}");
-                        continue;
-                    }
+                        var columns = await GetProjectColumns(state, id);
 
-                    bool foundProject = false;
-
-                    foreach (var projectObject in state.Projects)
-                    {
-                        if (projectObject.Number == id)
+                        if (columns != null)
                         {
-                            var columns = await GetProjectColumns(state, id);
+                            NewProjectCard projectCard;
 
-                            if (columns != null)
-                            {
-                                NewProjectCard projectCard;
+                            if (state.RequestType == RequestType.Issue)
+                                projectCard = new NewProjectCard(state.Issue.Id, ProjectCardContentType.Issue);
+                            else
+                                projectCard = new NewProjectCard(state.PullRequest.Id, ProjectCardContentType.PullRequest);
 
-                                if (state.RequestType == RequestType.Issue)
-                                    projectCard = new NewProjectCard(state.Issue.Id, ProjectCardContentType.Issue);
-                                else
-                                    projectCard = new NewProjectCard(state.PullRequest.Id, ProjectCardContentType.PullRequest);
+                            state.Logger.LogInformation($"GitHub: Project added: {projectObject.Number}:{projectObject.Name}");
+                            await state.ProjectsClient.Card.Create(columns[0].Id, projectCard);
 
-                                state.Logger.LogInformation($"GitHub: Project added: {projectObject.Number}:{projectObject.Name}");
-                                await state.ProjectsClient.Card.Create(columns[0].Id, projectCard);
-
-                                foundProject = true;
-                                break;
-                            }
-
-                            state.Logger.LogError($"Some how project {projectString} doesn't have any columns.");
+                            foundProject = true;
+                            break;
                         }
-                    }
 
-                    if (!foundProject)
-                        state.Logger.LogError($"Project ID not found in repository: {projectString}");
+                        state.Logger.LogError($"Some how project {projectString} doesn't have any columns.");
+                    }
                 }
+
+                if (!foundProject)
+                    state.Logger.LogError($"Project ID not found in repository: {projectString}");
             }
-            else
-                state.Logger.LogTrace("No projects to add");
         }
+        else
+            state.Logger.LogTrace("No projects to add");
     }
 }

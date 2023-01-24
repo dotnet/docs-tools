@@ -3,7 +3,6 @@
 
   <PropertyGroup>
     <Nullable>enable</Nullable>
-    <LangVersion>10</LangVersion>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-All</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
@@ -11,8 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- This preview version fixes a CA1812 (Avoid uninstantiated internal classes) false positive bug with top-level statements. -->
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="7.0.0-preview1.22068.2" />
     <PackageReference Include="YAnalyzers" Version="1.2.0" />
   </ItemGroup>
 </Project>

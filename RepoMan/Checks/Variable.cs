@@ -6,33 +6,32 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
-namespace RepoMan.Checks
+namespace RepoMan.Checks;
+
+public class Variable : ICheck
 {
-    public class Variable : ICheck
+    public string Name { get; }
+    public string Value { get; }
+
+    public Variable(YamlMappingNode node, State state)
     {
-        public string Name { get; }
-        public string Value { get; }
+        state.Logger.LogDebug($"BUILD: Variable");
+        Name = node["name"].ToString();
+        Value = node["value"].ToString();
+        state.Logger.LogTrace($"BUILD: - {Name}={Value}");
+    }
 
-        public Variable(YamlMappingNode node, State state)
-        {
-            state.Logger.LogDebug($"BUILD: Variable");
-            Name = node["name"].ToString();
-            Value = node["value"].ToString();
-            state.Logger.LogTrace($"BUILD: - {Name}={Value}");
-        }
+    public async Task<bool> Run(State state)
+    {
+        state.Logger.LogInformation($"Check variable: {Name}={Value}");
 
-        public async Task<bool> Run(State state)
-        {
-            state.Logger.LogInformation($"Check variable: {Name}={Value}");
+        var result = state.Variables.ContainsKey(Name) && state.Variables[Name] == Value;
 
-            var result = state.Variables.ContainsKey(Name) && state.Variables[Name] == Value;
+        if (result)
+            state.Logger.LogInformation($"PASS");
+        else
+            state.Logger.LogInformation($"FAIL");
 
-            if (result)
-                state.Logger.LogInformation($"PASS");
-            else
-                state.Logger.LogInformation($"FAIL");
-
-            return await Task.FromResult(result);
-        }
+        return await Task.FromResult(result);
     }
 }

@@ -6,38 +6,37 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
-namespace RepoMan.Checks
+namespace RepoMan.Checks;
+
+public class DocMetadata : ICheck
 {
-    public class DocMetadata : ICheck
+    public string Name { get; }
+    public string Value { get; }
+
+    public DocMetadata(YamlMappingNode node, State state)
     {
-        public string Name { get; }
-        public string Value { get; }
+        state.Logger.LogDebug($"BUILD: Check-metadata-comment");
 
-        public DocMetadata(YamlMappingNode node, State state)
-        {
-            state.Logger.LogDebug($"BUILD: Check-metadata-comment");
+        Name = node["name"].ToString();
+        Value = node["value"].ToString();
 
-            Name = node["name"].ToString();
-            Value = node["value"].ToString();
+        state.Logger.LogTrace($"BUILD: Name: {Name} Value: {Value}");
+    }
 
-            state.Logger.LogTrace($"BUILD: Name: {Name} Value: {Value}");
-        }
+    public async Task<bool> Run(State state)
+    {
+        bool result = false;
 
-        public async Task<bool> Run(State state)
-        {
-            bool result = false;
+        state.Logger.LogInformation($"Evaluating comment metadata: {Name} for {Value}");
 
-            state.Logger.LogInformation($"Evaluating comment metadata: {Name} for {Value}");
+        if (state.DocIssueMetadata.ContainsKey(Name))
+            result = Utilities.MatchRegex(Value, state.DocIssueMetadata[Name], state);
 
-            if (state.DocIssueMetadata.ContainsKey(Name))
-                result = Utilities.MatchRegex(Value, state.DocIssueMetadata[Name], state);
+        if (result)
+            state.Logger.LogInformation($"PASS");
+        else
+            state.Logger.LogInformation($"FAIL");
 
-            if (result)
-                state.Logger.LogInformation($"PASS");
-            else
-                state.Logger.LogInformation($"FAIL");
-
-            return await Task.FromResult<bool>(result);
-        }
+        return await Task.FromResult<bool>(result);
     }
 }

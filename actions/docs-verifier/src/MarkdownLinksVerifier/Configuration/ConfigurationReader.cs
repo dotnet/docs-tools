@@ -1,9 +1,8 @@
 ﻿using BuildVerifier.IO.Abstractions;
 
-namespace MarkdownLinksVerifier.Configuration
+namespace MarkdownLinksVerifier.Configuration;
+
+public class ConfigurationReader : BaseConfigurationReader<MarkdownLinksVerifierConfiguration>
 {
-    public class ConfigurationReader : BaseConfigurationReader<MarkdownLinksVerifierConfiguration>
-    {
-        public override string ConfigurationFileName => "markdown-links-verifier-config.json";
-    }
+    public override string ConfigurationFileName => "markdown-links-verifier-config.json";
 }
