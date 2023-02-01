@@ -122,6 +122,7 @@ public partial class ProductLineChartJS : ComponentBase
                 if (_issueSnapshots is { Count: > 0 })
                 {
                     _chartConfig.Data.Labels.Clear();
+                    _chartConfig.Data.XLabels.Clear();
                     foreach (var date in DateRange)
                     {
                         _chartConfig.Data.XLabels.Add(date.ToShortDateString());

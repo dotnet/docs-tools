@@ -31,6 +31,7 @@ public interface ILabelDefinition
 // This will be read from some config file, that somehow specifies the GitHub org and GitHub repo (maybe the config is stored there in time)
 public class IssueClassificationModel
 {
+    static readonly char[] invalidChars = { ',', '/', '\\', ':' };
 
     public Product[] Products { get; set; } = Array.Empty<Product>();
     public Classification[] Classification { get; set; } = Array.Empty<Classification>();
@@ -39,6 +40,10 @@ public class IssueClassificationModel
     public static async Task<IssueClassificationModel> CreateFromConfig(string configFolder, string organization, string repo)
     {
         // TODO: Get config file from other storage.
+        if (organization is null) throw new ArgumentNullException(nameof(organization));
+        if (repo is null) throw new ArgumentNullException(nameof(repo));
+        if (organization.IndexOfAny(invalidChars) != -1) throw new ArgumentException("organization contains invalid characters", nameof(organization));
+        if (repo.IndexOfAny(invalidChars) != -1) throw new ArgumentException("repo contains invalid characters", nameof(repo));
         var filePath = $"{organization}-{repo}.json";
         if (!string.IsNullOrEmpty(configFolder))
         {
