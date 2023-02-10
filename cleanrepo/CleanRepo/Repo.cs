@@ -17,16 +17,16 @@ class DocFxRepo
     List<FileInfo> MdAndYmlFiles { get; set; }
 
     private readonly List<string> RegExes = new List<string>
-        {
-            @"\]\((.*?(\.(png|jpg|gif|svg))+)", // ![hello](media/how-to/xamarin.png)
-            "<img[^>]*?src[ ]*=[ ]*\"([^>]*?(\\.(png|gif|jpg|svg))+)[ ]*\"", // <img data-hoverimage="./images/start.svg" src="./images/start.png" alt="Start icon" />
-            @"\[.*\]:(.*?(\.(png|gif|jpg|svg))+)", // [0]: ../../media/how-to/xamarin.png
-            @"imageSrc:([^:]*?(\.(png|gif|jpg|svg))+)", // imageSrc: ./media/vs-mac.svg
-            @"thumbnailUrl: (.*?(\.(png|gif|jpg|svg))+)", // thumbnailUrl: /thumbs/two-forest.png
-            "lightbox=\"(.*?(\\.(png|gif|jpg|svg))+)\"", // lightbox="media/azure.png"
-            ":::image [^:]*?source=\"(.*?(\\.(png|gif|jpg|svg))+)\"", // :::image type="content" source="media/publish.png" alt-text="Publish dialog.":::
-            "<a href=\"([^\"]*?(\\.(png|gif|jpg|svg))+)\"" // <a href="./media/job-large.png" target="_blank"><img src="./media/job-small.png"></a>
-        };
+    {
+        @"\]\((.*?(\.(png|jpg|gif|svg))+)", // ![hello](media/how-to/xamarin.png)
+        "<img[^>]*?src[ ]*=[ ]*\"([^>]*?(\\.(png|gif|jpg|svg))+)[ ]*\"", // <img data-hoverimage="./images/start.svg" src="./images/start.png" alt="Start icon" />
+        @"\[.*\]:(.*?(\.(png|gif|jpg|svg))+)", // [0]: ../../media/how-to/xamarin.png
+        @"imageSrc:([^:]*?(\.(png|gif|jpg|svg))+)", // imageSrc: ./media/vs-mac.svg
+        @"thumbnailUrl: (.*?(\.(png|gif|jpg|svg))+)", // thumbnailUrl: /thumbs/two-forest.png
+        "lightbox=\"(.*?(\\.(png|gif|jpg|svg))+)\"", // lightbox="media/azure.png"
+        ":::image [^:]*?source=\"(.*?(\\.(png|gif|jpg|svg))+)\"", // :::image type="content" source="media/publish.png" alt-text="Publish dialog.":::
+        "<a href=\"([^\"]*?(\\.(png|gif|jpg|svg))+)\"" // <a href="./media/job-large.png" target="_blank"><img src="./media/job-small.png"></a>
+    };
 
     // Constructor.
     public DocFxRepo(string inputDirectory)
