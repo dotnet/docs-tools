@@ -16,10 +16,12 @@ public sealed class OspoClient : IDisposable
     private OspoLinkSet? _allLinks = default;
     private readonly Dictionary<string, OspoLink?> _allEmployeeQueries = new();
     private readonly AsyncRetryPolicy _retryPolicy;
+    private readonly bool _useAllCache;
 
-    public OspoClient(string token)
+    public OspoClient(string token, bool useAllCache)
     {
         ArgumentNullException.ThrowIfNull(token);
+        _useAllCache = useAllCache;
 
         _httpClient = new HttpClient
         {
@@ -48,6 +50,12 @@ public sealed class OspoClient : IDisposable
 
     public async Task<OspoLink?> GetAsync(string gitHubLogin)
     {
+        if (_useAllCache)
+        {
+            _allLinks = _allLinks ?? await GetAllAsync();
+            return _allLinks.LinkByLogin.GetValueOrDefault(gitHubLogin); 
+        }
+
         if (_allEmployeeQueries.TryGetValue(gitHubLogin, out var query))
             return query;
 

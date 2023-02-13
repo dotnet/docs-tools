@@ -42,7 +42,7 @@ That automated process may have closed some issues that should be addressed. If 
         "");
 
         var client = IGitHubClient.CreateGitHubClient(key);
-        var ospoClient = new OspoClient(ospoKey);
+        var ospoClient = new OspoClient(ospoKey, true);
         var labelQuery = new FindLabelQuery(client, organization, repository, "won't fix");
         if (!(await labelQuery.PerformQuery()))
         {

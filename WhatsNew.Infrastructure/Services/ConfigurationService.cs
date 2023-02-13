@@ -43,7 +43,7 @@ public class ConfigurationService
 
         var client = IGitHubClient.CreateGitHubClient(key);
 
-        var ospoClient = new OspoClient(ospoKey);
+        var ospoClient = new OspoClient(ospoKey, true);
         
         if (string.IsNullOrWhiteSpace(input.Branch))
         {
