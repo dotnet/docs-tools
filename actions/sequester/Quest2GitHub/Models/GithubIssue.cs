@@ -228,17 +228,6 @@ public class GithubIssue
     /// Retrieve the assigned name, if an MS employee
     /// </summary>
     /// <param name="ospoClient">The Open Source program office client service.</param>
-    /// <returns>The email address of the assignee</returns>
-    public async Task<string?> AuthorMicrosoftEmailAddress(OspoClient ospoClient)
-    {
-        var identity = await ospoClient.GetAsync(Author);
-        return identity?.MicrosoftInfo?.EmailAddress;
-    }
-
-    /// <summary>
-    /// Retrieve the assigned name, if an MS employee
-    /// </summary>
-    /// <param name="ospoClient">The Open Source program office client service.</param>
     /// <returns>The email address of the assignee. Null if unassigned, or the assignee is not a 
     /// Microsoft FTE.</returns>
     public async Task<string?> AssignedMicrosoftEmailAddress(OspoClient ospoClient)

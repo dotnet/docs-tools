@@ -64,6 +64,7 @@ public readonly struct Actor
         // Note that for "ghost", the gitHubLogin is null or empty here.
         try
         {
+            // TODO: This is always called from command line apps. Use the full cache.
             var info = await ospoClient.GetAsync(Login);
             bool? rVal = null;
             if ((info is null) || (info.MicrosoftInfo is null))
