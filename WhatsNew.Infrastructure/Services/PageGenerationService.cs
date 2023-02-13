@@ -1,15 +1,17 @@
 ﻿using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GraphQLQueries;
+using DotNetDocs.Tools.RESTQueries;
 using DotNetDocs.Tools.Utility;
 using System.Text;
 using System.Text.RegularExpressions;
 using WhatsNew.Infrastructure.Models;
 using static WhatsNew.Infrastructure.Constants;
-using DotNetDocs.Tools.GraphQLQueries;
-using DotNetDocs.Tools.RESTQueries;
 
 namespace WhatsNew.Infrastructure.Services;
 
 public record PrDetail(string Source, bool NewContent, string PrTitle, int PrNumber);
+
+public record WhatsNewEntry(string Heading, List<PrDetail> Changes);
 
 /// <summary>
 /// The class responsible for generating monthly "What's New" pages.
@@ -26,7 +28,7 @@ public class PageGenerationService
         ".yml",
     };
     private readonly List<(string login, string name)> _contributors = new();
-    private readonly Dictionary<string, List<PrDetail>> _majorChanges = new();
+    private readonly Dictionary<string, WhatsNewEntry> _majorChanges = new();
     private readonly WhatsNewConfiguration _configuration = null!;
 
     public PageGenerationService(WhatsNewConfiguration configuration) =>
@@ -99,10 +101,10 @@ public class PageGenerationService
     private void WriteNewDocInformation(TextWriter stream)
     {
         var repo = _configuration.Repository;
+
         var allDocs = from change in _majorChanges
                       from area in repo.Areas
-                      from areaName in area.Names
-                      where change.Key.StartsWith(areaName)
+                      where change.Value.Heading == area.Heading
                       orderby area.Heading
                       group change by area.Heading into headingGroup
                       select headingGroup;
@@ -127,7 +129,7 @@ public class PageGenerationService
 
             void writeDocNodes(bool isNew)
             {
-                var prQuery = docArea.Where(da => da.Value.Any(pr => pr.NewContent == isNew));
+                var prQuery = docArea.Where(da => da.Value.Changes.Any(pr => pr.NewContent == isNew));
 
                 if (prQuery.Any())
                 {
@@ -137,7 +139,7 @@ public class PageGenerationService
                     foreach (var doc in prQuery)
                     {
                         // Potential problem: Why only look at the first source? 
-                        List<PrDetail> docPullRequests = doc.Value;
+                        List<PrDetail> docPullRequests = doc.Value.Changes;
                         // Check all PRs to get a title.
                         // If a single PR title fails, write a warning to the console.
                         // If all PRs fail to retrieve the title, put a warning in the output.
@@ -369,14 +371,22 @@ public class PageGenerationService
                     if (!link.Contains('/'))
                         link = $"./{link}";
 
-                    if (!_majorChanges.ContainsKey(link))
+                    var heading = (from area in repo.Areas
+                                  from areaName in area.Names
+                                  where link.StartsWith(areaName)
+                                  select area.Heading).FirstOrDefault();
+
+                    if (heading is not null)
                     {
-                        _majorChanges[link] =
-                            new List<PrDetail> { { prDetail } };
-                    }
-                    else
-                    {
-                        _majorChanges[link].Add(prDetail);
+                        if (!_majorChanges.ContainsKey(link))
+                        {
+                            _majorChanges[link] = new(heading,
+                                new List<PrDetail>() { prDetail });
+                        }
+                        else
+                        {
+                            _majorChanges[link].Changes.Add(prDetail);
+                        }
                     }
                 }
             }

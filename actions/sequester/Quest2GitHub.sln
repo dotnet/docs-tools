@@ -20,6 +20,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImportIssues", "ImportIssue
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quest2GitHub.Tests", "Quest2GitHub.Tests\Quest2GitHub.Tests.csproj", "{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.DocsTools", "..\..\DotNet.DocsTools\DotNet.DocsTools.csproj", "{1BDD7A74-45B3-47C7-B605-DFC9B82D87AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +40,10 @@ Global
 		{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BDD7A74-45B3-47C7-B605-DFC9B82D87AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BDD7A74-45B3-47C7-B605-DFC9B82D87AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BDD7A74-45B3-47C7-B605-DFC9B82D87AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BDD7A74-45B3-47C7-B605-DFC9B82D87AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

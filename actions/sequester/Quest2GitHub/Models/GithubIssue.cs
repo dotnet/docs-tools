@@ -249,7 +249,7 @@ public class GithubIssue
             // This feels like a hack, but it is necessary.
             // The email address is the email address a person configured
             // However, the only guaranteed way to find the person in Quest 
-            // is to use their alais as an email address. Yuck.
+            // is to use their alias as an email address. Yuck.
             if (identity?.MicrosoftInfo?.EmailAddress?.EndsWith("@microsoft.com") == true)
                 return identity.MicrosoftInfo.Alias + "@microsoft.com";
             else
