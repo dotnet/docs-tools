@@ -13,6 +13,7 @@ namespace Microsoft.DotnetOrg.Ospo;
 public sealed class OspoClient : IDisposable
 {
     private readonly HttpClient _httpClient;
+    private OspoLinkSet? _allLinks = default;
     private readonly Dictionary<string, OspoLink?> _allEmployeeQueries = new();
     private readonly AsyncRetryPolicy _retryPolicy;
 
@@ -62,6 +63,8 @@ public sealed class OspoClient : IDisposable
     
     public async Task<OspoLinkSet> GetAllAsync()
     {
+        if (_allLinks is not null)
+            return _allLinks;
         var result = await _retryPolicy.ExecuteAndCaptureAsync(async () =>
         {
             var links = await _httpClient.GetFromJsonAsync<IReadOnlyList<OspoLink>>(
@@ -75,7 +78,7 @@ public sealed class OspoClient : IDisposable
             linkSet.Initialize();
             return linkSet;
         });
-
+        _allLinks = result.Result;
         return result.Result;
     }
 }
