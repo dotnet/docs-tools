@@ -32,7 +32,7 @@ public sealed class OspoClient : IDisposable
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
 
         var delay = Backoff.DecorrelatedJitterBackoffV2(
-            medianFirstRetryDelay: TimeSpan.FromSeconds(15), retryCount: 5);
+            medianFirstRetryDelay: TimeSpan.FromMinutes(3), retryCount: 2);
 
         _retryPolicy = Policy
             .Handle<HttpRequestException>(ex =>
