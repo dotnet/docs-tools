@@ -16,15 +16,16 @@ class DocFxRepo
     public Dictionary<string, List<string>> ImageRefs = new Dictionary<string, List<string>>();
     List<FileInfo> MdAndYmlFiles { get; set; }
 
-    private readonly string[] RegExes = new string[]
+    private readonly List<string> RegExes = new List<string>
     {
-        @"\]\(([^\)]*?\.(png|jpg|gif|svg))", // ![hello](media/how-to/xamarin.png)
-        "<img[^>]*?src[ ]*=[ ]*\"([^>]*?.(png|gif|jpg|svg))[ ]*\"", // <img data-hoverimage="./images/start.svg" src="./images/start.png" alt="Start icon" />
-        @"\[.*\]:(.*\.(png|gif|jpg|svg))", // [0]: ../../media/how-to/xamarin.png
-        @"imageSrc:([^:]*\.(png|gif|jpg|svg))", // imageSrc: ./media/vs-mac.svg
-        @"thumbnailUrl: (.*\.(png|gif|jpg|svg))", // thumbnailUrl: /thumbs/two-forest.png
-        "lightbox=\"(.*?.(png|gif|jpg|svg))\"", // lightbox="media/azure.png"
-        ":::image [^:]*?source=\"(.*?.(png|gif|jpg|svg))\"" // :::image type="content" source="media/publish.png" alt-text="Publish dialog.":::
+        @"\]\((.*?(\.(png|jpg|gif|svg))+)", // ![hello](media/how-to/xamarin.png)
+        "<img[^>]*?src[ ]*=[ ]*\"([^>]*?(\\.(png|gif|jpg|svg))+)[ ]*\"", // <img data-hoverimage="./images/start.svg" src="./images/start.png" alt="Start icon" />
+        @"\[.*\]:(.*?(\.(png|gif|jpg|svg))+)", // [0]: ../../media/how-to/xamarin.png
+        @"imageSrc:([^:]*?(\.(png|gif|jpg|svg))+)", // imageSrc: ./media/vs-mac.svg
+        @"thumbnailUrl: (.*?(\.(png|gif|jpg|svg))+)", // thumbnailUrl: /thumbs/two-forest.png
+        "lightbox=\"(.*?(\\.(png|gif|jpg|svg))+)\"", // lightbox="media/azure.png"
+        ":::image [^:]*?source=\"(.*?(\\.(png|gif|jpg|svg))+)\"", // :::image type="content" source="media/publish.png" alt-text="Publish dialog.":::
+        "<a href=\"([^\"]*?(\\.(png|gif|jpg|svg))+)\"" // <a href="./media/job-large.png" target="_blank"><img src="./media/job-small.png"></a>
     };
 
     // Constructor.
@@ -38,6 +39,9 @@ class DocFxRepo
         }
 
         BasePathUrl = Program.GetUrlBasePath(DocFxDirectory);
+
+        // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
+        RegExes.Add($"social_image_url: ?\"?({BasePathUrl}.*?(\\.(png|jpg|gif|svg))+)");
 
         // Gather media file names.
         ImageRefs = GetMediaFiles(inputDirectory);
@@ -89,38 +93,57 @@ class DocFxRepo
     ///    For each markdown file
     ///       Do a RegEx search for the image
     ///          If found, BREAK to the next image
-    internal void ListOrphanedImages(bool deleteOrphanedImages)
+    internal void ListOrphanedImages(bool deleteOrphanedImages, params string[] dirsToIgnore)
     {
         // Find all image references.
         CatalogImages();
 
+        // Determine if we need to check the docfx.json file for image references.
+        string docfxText = File.ReadAllText(Path.Combine(DocFxDirectory.FullName, "docfx.json"));
+        bool checkDocFxMetadata = docfxText.Contains("social_image_url", StringComparison.InvariantCultureIgnoreCase);
+
         int orphanedCount = 0;
 
-        // Print out the image files with zero references.
+        // Print out (and delete) the image files with zero references.
         StringBuilder output = new StringBuilder();
         foreach (var image in ImageRefs)
         {
             if (image.Value.Count == 0)
             {
-                orphanedCount++;
-                output.AppendLine(Path.GetFullPath(image.Key));
-            }
-        }
+                bool ignoreImageFile = false;
 
-        if (deleteOrphanedImages)
-        {
-            // Delete orphaned image files
-            foreach (var image in ImageRefs)
-            {
-                if (image.Value.Count == 0)
+                // Check if the image is in an ignored directory.
+                foreach (string dirToIgnore in dirsToIgnore)
                 {
-                    try
+                    if (image.Key.Contains(dirToIgnore, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        File.Delete(image.Key);
+                        ignoreImageFile = true;
+                        break;
                     }
-                    catch (PathTooLongException)
+                }
+
+                if (!ignoreImageFile && checkDocFxMetadata)
+                {
+                    // As a final get out of jail card, check if the
+                    // image is referenced in any docfx.json metadata.
+                    ignoreImageFile = IsImageInDocFxFile(image.Key);
+                }
+
+                if (!ignoreImageFile)
+                {
+                    orphanedCount++;
+                    output.AppendLine(Path.GetFullPath(image.Key));
+
+                    if (deleteOrphanedImages)
                     {
-                        output.AppendLine($"Unable to delete {image.Key} because its path is too long.");
+                        try
+                        {
+                            File.Delete(image.Key);
+                        }
+                        catch (PathTooLongException)
+                        {
+                            output.AppendLine($"Unable to delete {image.Key} because its path is too long.");
+                        }
                     }
                 }
             }
@@ -131,6 +154,36 @@ class DocFxRepo
         Console.WriteLine($"\nFound {deleted}{orphanedCount} orphaned .png/.jpg/.gif/.svg files:\n");
         Console.WriteLine(output.ToString());
         Console.WriteLine("DONE");
+    }
+
+    private bool IsImageInDocFxFile(string imageFilePath)
+    {
+        // Construct the site-relative path to the file.
+
+        // First remove the directory path to the docfx.json file.
+        imageFilePath = imageFilePath.Substring(DocFxDirectory.FullName.Length);
+
+        imageFilePath = Program.ConvertImagePathSrcToDest(DocFxDirectory.FullName, imageFilePath.TrimStart('\\'));
+
+        // Replace backslashes with forward slashes.
+        imageFilePath = imageFilePath.Replace('\\', '/');
+
+        // Finally, add the base URL.
+        imageFilePath = $"{BasePathUrl}{imageFilePath}";
+
+        using (StreamReader sr = new StreamReader(Path.Combine(DocFxDirectory.FullName, "docfx.json")))
+        {
+            string line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                if (line.Contains($"\"{imageFilePath}\""))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     internal void OutputImageReferences()
@@ -154,8 +207,6 @@ class DocFxRepo
     /// [0]: ../../media/vs-acr-provisioning-dialog-2019.png
     /// :::image type = "complex" source="./media/seedwork-classes.png" alt-text="Screenshot of the SeedWork folder.":::
     /// :::image type = "content" source="../media/rpi.png" lightbox="../media/rpi-lightbox.png":::
-    /// 
-    /// Does not currently support file names that contain parentheses: [VS image] (../media/pic(azure)_1.png)
     /// </summary>
     private void CatalogImages()
     {
@@ -226,14 +277,14 @@ class DocFxRepo
         }
         else if (path.StartsWith("/"))
         {
-            if (!path.StartsWith("/" + BasePathUrl + "/"))
+            if (!path.StartsWith($"{BasePathUrl}/"))
             {
                 // The file is in a different repo, so ignore it.
                 return null;
             }
 
             // Trim off the docset name, but leave the forward slash that follows it.
-            path = path.Substring(BasePathUrl.Length + 1);
+            path = path.Substring(BasePathUrl.Length);
         }
 
         if (path != null)
@@ -243,11 +294,18 @@ class DocFxRepo
             try
             {
                 // Path could start with a tilde e.g. ~/media/pic1.png
-                // This case also includes site-relative links to files in the same repo where
-                // we've already trimmed off the docset name.
-                if (path.StartsWith("~/") || path.StartsWith("/"))
+                if (path.StartsWith("~/"))
                 {
                     absolutePath = Path.Combine(DocFxDirectory.FullName, path.TrimStart('~', '/'));
+                }
+                // This case includes site-relative links to files in the same repo where
+                // we've already trimmed off the docset name.
+                else if (path.StartsWith("/"))
+                {
+                    // Determine if any additional directory names must be added to the path.
+                    path = Program.ConvertImagePathDestToSrc(DocFxDirectory.FullName, path.TrimStart('/'));
+
+                    absolutePath = Path.Combine(DocFxDirectory.FullName, path);
                 }
                 else
                 {
@@ -259,7 +317,8 @@ class DocFxRepo
                 return null;
             }
 
-            // This cleans up the path by replacing forward slashes with back slashes, removing extra dots, etc.
+            // This cleans up the path by replacing forward slashes
+            // with back slashes, removing extra dots, etc.
             try
             {
                 absolutePath = Path.GetFullPath(absolutePath);
@@ -282,6 +341,10 @@ class DocFxRepo
         if (ImageRefs.ContainsKey(key))
         {
             ImageRefs[key].Add(linkingFile);
+        }
+        else if (ImageRefs.ContainsKey(System.Web.HttpUtility.UrlDecode(key)))
+        {
+            ImageRefs[System.Web.HttpUtility.UrlDecode(key)].Add(linkingFile);
         }
     }
 }

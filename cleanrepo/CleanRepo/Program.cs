@@ -27,7 +27,7 @@ class Program
         //args = new[] { "--trim-redirects", "--docset-root=c:\\users\\gewarren\\dotnet-docs\\docs", "--lookback-days=90", "--output-file=c:\\users\\gewarren\\desktop\\clicks.txt" };
         //args = new[] { "--remove-hops" };
         //args = new[] { "--replace-redirects" };
-        args = new[] { "--orphaned-snippets" };
+        args = new[] { "--orphaned-images" };
 #endif
 
         Parser.Default.ParseArguments<Options>(args).WithParsed(RunOptions);
@@ -66,7 +66,7 @@ class Program
             Console.WriteLine($"\nSearching the '{options.InputDirectory}' directory and its subdirectories for orphaned topics...");
 
             List<FileInfo> tocFiles = GetTocFiles(options.InputDirectory);
-            List<FileInfo> markdownFiles = GetMarkdownFiles(options.InputDirectory);
+            List<FileInfo> markdownFiles = GetMarkdownFiles(options.InputDirectory, "snippets");
 
             if (tocFiles is null || markdownFiles is null)
             {
@@ -129,7 +129,7 @@ class Program
 
             Console.WriteLine($"\nSearching the '{options.InputDirectory}' directory recursively for orphaned .png/.jpg/.gif/.svg files...\n");
 
-            repo.ListOrphanedImages(options.Delete.Value);
+            repo.ListOrphanedImages(options.Delete.Value, "snippets");
         }
         else if (options.CatalogImages)
         {
@@ -480,7 +480,7 @@ class Program
             // For more information, see [this page](/test-repo/debugger/dbg-tips).
 
             // Find links that look like [link text](/docsetName/some other text)
-            string pattern1 = @"\]\((/" + urlBasePath + @"/([^\)\s]*))";
+            string pattern1 = @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?\)";
 
             foreach (Match match in Regex.Matches(originalFileText, pattern1, RegexOptions.IgnoreCase))
             {
@@ -654,7 +654,7 @@ class Program
                 // E.g. [!INCLUDE [P2S FAQ All](vpn-gateway-faq-p2s-all-include.md)]
 
                 // RegEx pattern to match
-                string includeLinkPattern = @"\[!INCLUDE[ ]?\[[^\]]*?\]\((.*?\.md)";
+                string includeLinkPattern = @"\[!INCLUDE[ ]?\[[^\]]*?\]\(<?(.*?\.md)";
 
                 // There could be more than one INCLUDE reference on the line, hence the foreach loop.
                 foreach (Match match in Regex.Matches(line, includeLinkPattern, RegexOptions.IgnoreCase))
@@ -848,8 +848,10 @@ class Program
                     // :::code language="csharp" source="snippets/EventCounters/MinimalEventCounterSource.cs":::
                     // [!code-csharp[Violation#1](../code-quality/codesnippet/ca1010.cs)]
                     // [!code-csharp[Violation#1](../code-quality/codesnippet/ca1010.cs#snippet1)]
+                    // [!code-csharp[Hi](./code/code.cs?highlight=1,6)]
+                    // [!code-csharp[FxCop.Usage#1](./code/code.cs?range=3-6)]
 
-                    string regex = @"(\(|"")([^\)""\n]*\/" + snippetFileName + @")#?\w*(\)|"")";
+                    string regex = @"(\(|"")([^\)""\n]*\/" + snippetFileName + @")(#\w*)?(\?\w*=(\d|,|-)*)?(\)|"")";
 
                     foreach (Match match in Regex.Matches(File.ReadAllText(markdownFile.FullName), regex, RegexOptions.IgnoreCase))
                     {
@@ -1082,7 +1084,7 @@ class Program
 
         string linkRegEx = tocFile.Extension.ToLower() == ".yml" ?
             @"href:(.*?" + linkedFile.Name + ")" :
-            @"\]\((([^\)])*?" + linkedFile.Name + @")";
+            @"\]\(<?(([^\)])*?" + linkedFile.Name + @")";
 
         // For each link that contains the file name...
         foreach (Match match in Regex.Matches(text, linkRegEx, RegexOptions.IgnoreCase))
@@ -1148,7 +1150,7 @@ class Program
         {
             string linkRegEx = linkingFile.Extension.ToLower() == ".yml" ?
                     @"href:(.*?" + linkedFile.Name + ")" :
-                    @"\]\((([^\)])*?" + linkedFile.Name + @")";
+                    @"\]\(<?(([^\)])*?" + linkedFile.Name + @")";
 
             // For each link that contains the file name...
             foreach (Match match in Regex.Matches(fileContents, linkRegEx, RegexOptions.IgnoreCase))
@@ -1595,7 +1597,7 @@ class Program
             // Matches link with optional #bookmark on the end.
             string linkRegEx = linkingFile.Extension.ToLower() == ".yml" ?
                 @"href:(.*\.md)(#[\w-]+)?" :
-                @"\]\(([^\)]*\.md)(#[\w-]+)?\)";
+                @"\]\(<?([^\)]*\.md)(#[\w-]+)?>?\)";
 
             // For each link in the file...
             foreach (Match match in Regex.Matches(text, linkRegEx, RegexOptions.IgnoreCase))
@@ -1606,7 +1608,7 @@ class Program
                 if (relativePath.StartsWith("http"))
                 {
                     // This could be an absolute URL to a file in the repo, so check.
-                    string httpRegex = @"https?:\/\/docs.microsoft.com\/([A-z][A-z]-[A-z][A-z]\/)?" + docsetName + @"\/";
+                    string httpRegex = @"https?:\/\/learn.microsoft.com\/([A-z][A-z]-[A-z][A-z]\/)?" + docsetName + @"\/";
                     var httpMatch = Regex.Match(relativePath, httpRegex, RegexOptions.IgnoreCase);
 
                     if (!httpMatch.Success)
@@ -1615,7 +1617,7 @@ class Program
                         continue;
                     }
 
-                    // Chop off the https://docs.microsoft.com/docset/ part of the path.
+                    // Chop off the https://learn.microsoft.com/docset/ part of the path.
                     relativePath = relativePath.Substring(httpMatch.Value.Length);
                 }
 
@@ -1757,6 +1759,65 @@ class Program
         }
     }
 
+    public static string ConvertImagePathSrcToDest(string docfxFilePath, string currentImagePath)
+    {
+        // Deserialize the docfx.json file.
+        DocFx docfx = LoadDocfxFile(Path.Combine(docfxFilePath, "docfx.json"));
+        if (docfx == null)
+        {
+            return null;
+        }
+
+        foreach (var entry in docfx.build.resource)
+        {
+            if (entry.src == null || entry.dest == null)
+                continue;
+
+            if (entry.src.TrimEnd('/') == ".")
+                return Path.Combine(entry.dest, currentImagePath);
+
+            if (!currentImagePath.StartsWith(entry.src))
+                continue;
+
+            // If we get here, the path starts with entry.src,
+            // so replace that part of the path with whatever entry.dest is.
+            return Path.Combine(entry.dest, currentImagePath.Substring(entry.src.Length));
+        }
+
+        // We didn't find any useful info in the docfx.json file, so just return the same string back.
+        return currentImagePath;
+    }
+
+    public static string ConvertImagePathDestToSrc(string docfxFilePath, string currentImagePath)
+    {
+        // Deserialize the docfx.json file.
+        DocFx docfx = LoadDocfxFile(Path.Combine(docfxFilePath, "docfx.json"));
+        if (docfx == null)
+        {
+            return null;
+        }
+
+        foreach (var entry in docfx.build.resource)
+        {
+            if (entry.src == null || entry.dest == null)
+                continue;
+
+            // This one applies to the dotnet/docs repo.
+            if (entry.dest.TrimEnd('/') == ".")
+                return Path.Combine(entry.src, currentImagePath);
+
+            if (!currentImagePath.StartsWith(entry.dest))
+                continue;
+
+            // If we get here, the path starts with entry.dest,
+            // so replace that part of the path with whatever entry.src is.
+            return Path.Combine(entry.src, currentImagePath.Substring(entry.dest.Length));
+        }
+
+        // We didn't find any useful info in the docfx.json file, so just return the same string back.
+        return currentImagePath;
+    }
+
     private static string GetDocsetAbsolutePath(string docfxFilePath, DirectoryInfo inputDirectory)
     {
         // Deserialize the docfx.json file.
@@ -1826,11 +1887,16 @@ class Program
             char key = Console.ReadKey().KeyChar;
 
             if (key == 'y' || key == 'Y')
+            {
+                Console.WriteLine("\nThanks!");
                 return urlBasePath;
+            }
         }
 
         Console.WriteLine($"\nWhat's the URL base path for articles in the `{docFxDirectory.FullName}` directory? (Example: /aspnet/core)");
-        return Console.ReadLine();
+        string basePath = Console.ReadLine();
+        Console.WriteLine("\nThanks!");
+        return basePath;
     }
 
     private static List<string> GetRedirectionFiles(FileInfo opsConfigFile)
@@ -1940,6 +2006,12 @@ class Program
     {
         public GlobalMetadata globalMetadata { get; set; }
         public List<Content> content { get; set; }
+        public List<Resource> resource { get; set; }
+    }
+    class Resource
+    {
+        public string src { get; set; }
+        public string dest { get; set; }
     }
     class Content
     {
@@ -2011,7 +2083,7 @@ class Program
 
             string linkRegEx = linkingFile.Extension.ToLower() == ".yml" ?
                 @"href:(.*?" + linkedFile.Name + ")" :
-                @"\]\((([^\)])*?" + linkedFile.Name + @")";
+                @"\]\(<?(([^\)])*?" + linkedFile.Name + @")";
 
             // For each link that contains the file name...
             foreach (Match match in Regex.Matches(line, linkRegEx, RegexOptions.IgnoreCase))
@@ -2062,10 +2134,21 @@ class Program
     /// <summary>
     /// Gets all *.md files recursively, starting in the specified directory.
     /// </summary>
-    private static List<FileInfo> GetMarkdownFiles(string directoryPath)
+    private static List<FileInfo> GetMarkdownFiles(string directoryPath, params string[] dirsToIgnore)
     {
         DirectoryInfo dir = new DirectoryInfo(directoryPath);
-        return dir.EnumerateFiles("*.md", SearchOption.AllDirectories).ToList();
+        IEnumerable<FileInfo> files = dir.EnumerateFiles("*.md", SearchOption.AllDirectories).ToList();
+
+        if (dirsToIgnore.Length > 0)
+        {
+            foreach (string ignoreDir in dirsToIgnore)
+            {
+                string dirWithSlashes = String.Concat("\\", ignoreDir, "\\");
+                files = files.Where(f => !f.DirectoryName.Contains(dirWithSlashes, StringComparison.InvariantCultureIgnoreCase));
+            }
+        }
+
+        return files.ToList();
     }
 
     /// <summary>
