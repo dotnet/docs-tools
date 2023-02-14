@@ -13,12 +13,15 @@ namespace Microsoft.DotnetOrg.Ospo;
 public sealed class OspoClient : IDisposable
 {
     private readonly HttpClient _httpClient;
+    private OspoLinkSet? _allLinks = default;
     private readonly Dictionary<string, OspoLink?> _allEmployeeQueries = new();
     private readonly AsyncRetryPolicy _retryPolicy;
+    private readonly bool _useAllCache;
 
-    public OspoClient(string token)
+    public OspoClient(string token, bool useAllCache)
     {
         ArgumentNullException.ThrowIfNull(token);
+        _useAllCache = useAllCache;
 
         _httpClient = new HttpClient
         {
@@ -29,7 +32,7 @@ public sealed class OspoClient : IDisposable
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
 
         var delay = Backoff.DecorrelatedJitterBackoffV2(
-            medianFirstRetryDelay: TimeSpan.FromSeconds(15), retryCount: 5);
+            medianFirstRetryDelay: TimeSpan.FromMinutes(3), retryCount: 2);
 
         _retryPolicy = Policy
             .Handle<HttpRequestException>(ex =>
@@ -47,6 +50,12 @@ public sealed class OspoClient : IDisposable
 
     public async Task<OspoLink?> GetAsync(string gitHubLogin)
     {
+        if (_useAllCache)
+        {
+            _allLinks = _allLinks ?? await GetAllAsync();
+            return _allLinks.LinkByLogin.GetValueOrDefault(gitHubLogin); 
+        }
+
         if (_allEmployeeQueries.TryGetValue(gitHubLogin, out var query))
             return query;
 
@@ -62,6 +71,8 @@ public sealed class OspoClient : IDisposable
     
     public async Task<OspoLinkSet> GetAllAsync()
     {
+        if (_allLinks is not null)
+            return _allLinks;
         var result = await _retryPolicy.ExecuteAndCaptureAsync(async () =>
         {
             var links = await _httpClient.GetFromJsonAsync<IReadOnlyList<OspoLink>>(
@@ -75,7 +86,7 @@ public sealed class OspoClient : IDisposable
             linkSet.Initialize();
             return linkSet;
         });
-
+        _allLinks = result.Result;
         return result.Result;
     }
 }

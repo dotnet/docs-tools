@@ -44,7 +44,7 @@ public class QuestGitHubService : IDisposable
         string importedLabel)
     {
         _ghClient = IGitHubClient.CreateGitHubClient(ghKey);
-        _ospoClient = new OspoClient(ospoKey);
+        _ospoClient = new OspoClient(ospoKey, false);
         _azdoClient = new QuestClient(azdoKey, questOrg, questProject);
         _areaPath = areaPath;
         _questLinkString = $"https://dev.azure.com/{questOrg}/{questProject}/_workitems/edit/";
