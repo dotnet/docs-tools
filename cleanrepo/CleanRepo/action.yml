@@ -1,5 +1,5 @@
 name: Clean repo
-description: Automatically synchronize GitHub issues with Quest (Azure DevOps).
+description: Automatically clean up unused files and replace links in a DocFx repo.
 author: Genevieve Warren
 # https://actions-cool.github.io/github-action-branding/
 branding:
