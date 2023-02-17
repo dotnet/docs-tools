@@ -480,7 +480,7 @@ class Program
             // For more information, see [this page](/test-repo/debugger/dbg-tips).
 
             // Find links that look like [link text](/docsetName/some other text)
-            string pattern1 = @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?\)";
+            string pattern1 = @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?)\)";
 
             foreach (Match match in Regex.Matches(originalFileText, pattern1, RegexOptions.IgnoreCase))
             {
