@@ -32,7 +32,7 @@ public class ConfigurationService
         var dateRange = new DateRange(input.DateStart, input.DateEnd);
         string configFileName, configFileContents, markdownFileName;
 
-        if (string.IsNullOrEmpty(input.DocSet))
+        if (string.IsNullOrWhiteSpace(input.DocSet))
         {
             configFileName = ".whatsnew.json";
         }

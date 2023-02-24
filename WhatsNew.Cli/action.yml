@@ -17,7 +17,6 @@ inputs:
     default: main
   docset:
     description: 'The product name within the provided repository.'
-    default: 'false'
   startdate:
     description: 'A range start date in a valid format.'
   enddate:
