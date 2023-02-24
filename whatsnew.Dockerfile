@@ -7,4 +7,4 @@ RUN dotnet publish "WhatsNew.Cli/WhatsNew.Cli.csproj" -c Release -o out --no-sel
 # Relayer the .NET SDK, anew with the build output
 FROM mcr.microsoft.com/dotnet/sdk:7.0
 COPY --from=build-env /app/out .
-ENTRYPOINT [ "dotnet", "/WhatsNew.Cli.dll" ]
+ENTRYPOINT [ "dotnet", "/WhatsNew.dll" ]
