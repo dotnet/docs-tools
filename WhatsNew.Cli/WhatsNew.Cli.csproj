@@ -9,6 +9,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-whatsnew</ToolCommandName>
+	<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package information">
@@ -19,7 +20,7 @@
     <PackageOutputPath>./nuget</PackageOutputPath>
     <PackageTags>dotnet;docs;whatsnew</PackageTags>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://dev.azure.com/mseng/TechnicalContent/_git/dotnet-docs-tools</RepositoryUrl>
+    <RepositoryUrl>https://github.com/dotnet/docs-tools</RepositoryUrl>
     <Version></Version>
     <AssemblyVersion>3.0.0.0</AssemblyVersion>
     <FileVersion>3.0.0.0</FileVersion>
