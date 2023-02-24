@@ -1,5 +1,5 @@
-name: Clean repo
-description: Automatically synchronize GitHub issues with Quest (Azure DevOps).
+name: 'What''s new in docs'
+description: 'Automatically generate a PR that adds a "what''s new in docs" file for the recent time period.'
 author: Bill Wagner
 # https://actions-cool.github.io/github-action-branding/
 branding:
@@ -20,16 +20,13 @@ inputs:
     default: 'false'
   startdate:
     description: 'A range start date in a valid format.'
-    required: true
   enddate:
     description: 'A range end date in a valid format.'
-    required: true
   savedir:
-    description: 'An absolute directory path to which the generated Markdown file should be written.'
+    description: 'A directory path to which the generated Markdown file should be written.'
     required: true
   reporoot:
     description: 'The path to the repository root folder.'
-    required: true
 runs:
   using: docker
   image: ../whatsnew.Dockerfile
