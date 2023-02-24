@@ -1,0 +1,52 @@
+name: Clean repo
+description: Automatically synchronize GitHub issues with Quest (Azure DevOps).
+author: Bill Wagner
+# https://actions-cool.github.io/github-action-branding/
+branding:
+  icon: 'zap'
+  color: 'purple'
+inputs:
+  owner:
+    description: 'The GitHub organization name.'
+    required: true
+  repo:
+    description: 'The GitHub repository name within the provided organization.'
+    required: true
+  branch:
+    description: 'The branch name within the provided repository.'
+    default: main
+  docset:
+    description: 'The product name within the provided repository.'
+    default: 'false'
+  startdate:
+    description: 'A range start date in a valid format.'
+    required: true
+  enddate:
+    description: 'A range end date in a valid format.'
+    required: true
+  savedir:
+    description: 'An absolute directory path to which the generated Markdown file should be written.'
+    required: true
+  reporoot:
+    description: 'The path to the repository root folder.'
+    required: true
+runs:
+  using: docker
+  image: ../whatsnew.Dockerfile
+  args:
+    - '--owner'
+    - ${{ inputs.owner }}
+    - '--repo'
+    - ${{ inputs.repo }}
+    - '--branch'
+    - ${{ inputs.branch }}
+    - '--docset'
+    - ${{ inputs.docset }}
+    - '--startdate'
+    - ${{ inputs.startdate }}
+    - '--enddate'
+    - ${{ inputs.enddate }}
+    - '--savedir'
+    - ${{ inputs.savedir }}
+    - '--reporoot'
+    - ${{ inputs.reporoot }} 
