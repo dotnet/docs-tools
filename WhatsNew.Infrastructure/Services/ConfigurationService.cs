@@ -28,7 +28,6 @@ public class ConfigurationService
         if (string.IsNullOrWhiteSpace(ospoKey))
             throw new InvalidOperationException("Store your 1ES personal access token in the 'OspoKey' environment variable.");
 
-
         var dateRange = new DateRange(input.DateStart, input.DateEnd);
         string configFileName, configFileContents, markdownFileName;
 
@@ -44,7 +43,7 @@ public class ConfigurationService
         var client = IGitHubClient.CreateGitHubClient(key);
 
         var ospoClient = new OspoClient(ospoKey, true);
-        
+
         if (string.IsNullOrWhiteSpace(input.Branch))
         {
             var query = new DefaultBranchQuery(client, input.Owner, input.Repository);
@@ -54,8 +53,8 @@ public class ConfigurationService
 
         JToken configToken;
 
-        var pathToConfig = string.IsNullOrWhiteSpace(input.LocalConfig) 
-            ? Path.Combine(input.RepoRoot, configFileName) 
+        var pathToConfig = string.IsNullOrWhiteSpace(input.LocalConfig)
+            ? Path.Combine(input.RepoRoot, configFileName)
             : input.LocalConfig;
 
         configFileContents = await File.ReadAllTextAsync(pathToConfig);
@@ -71,7 +70,7 @@ public class ConfigurationService
 
         int mod = repo.NavigationOptions?.MaximumNumberOfArticles ?? 3;
         string fNameCycle = $"mod{dateRange.StartDate.Month % mod}";
-        if (string.IsNullOrEmpty(input.DocSet))
+        if (string.IsNullOrWhiteSpace(input.DocSet))
         {
             markdownFileName = $"{input.Owner}-{input.Repository}-{fNameCycle}.md";
         }
