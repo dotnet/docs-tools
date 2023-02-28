@@ -23,6 +23,13 @@ class Program
 {
     static void Main(string[] args)
     {
+#if DEBUG
+        //args = new[] { "--trim-redirects", "--docset-root=c:\\users\\gewarren\\dotnet-docs\\docs", "--lookback-days=90", "--output-file=c:\\users\\gewarren\\desktop\\clicks.txt" };
+        //args = new[] { "--remove-hops" };
+        //args = new[] { "--replace-redirects" };
+        args = new[] { "--orphaned-images" };
+#endif
+
         Parser.Default.ParseArguments<Options>(args).WithParsed(RunOptions);
     }
 
@@ -34,12 +41,12 @@ class Program
         // Find orphaned topics
         if (options.FindOrphanedTopics)
         {
-            if (string.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that you want to check for orphans:\n");
                 options.InputDirectory = Console.ReadLine();
             }
-            if (string.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
             {
                 Console.WriteLine("\nThat directory doesn't exist.");
                 return;
@@ -72,12 +79,12 @@ class Program
         else if (options.FindOrphanedImages)
         {
             // Get input directory.
-            if (string.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that you want to check for orphans:\n");
                 options.InputDirectory = Console.ReadLine();
             }
-            if (string.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
             {
                 Console.WriteLine("\nThat directory doesn't exist.");
                 return;
@@ -127,12 +134,12 @@ class Program
         else if (options.CatalogImages)
         {
             // Get input directory.
-            if (string.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory where you want to catalog image links:\n");
                 options.InputDirectory = Console.ReadLine();
             }
-            if (string.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
             {
                 Console.WriteLine("\nThat directory doesn't exist.");
                 return;
@@ -171,12 +178,12 @@ class Program
         // Find orphaned include-type files
         else if (options.FindOrphanedIncludes)
         {
-            if (string.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that you want to check for orphans:\n");
                 options.InputDirectory = Console.ReadLine();
             }
-            if (string.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
             {
                 Console.WriteLine("\nThat directory doesn't exist.");
                 return;
@@ -209,12 +216,12 @@ class Program
         // Find orphaned .cs and .vb files
         else if (options.FindOrphanedSnippets)
         {
-            if (string.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that you want to check for orphans:\n");
                 options.InputDirectory = Console.ReadLine();
             }
-            if (string.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
             {
                 Console.WriteLine("\nThat directory doesn't exist.");
                 return;
@@ -247,12 +254,12 @@ class Program
         else if (options.ReplaceRedirectTargets)
         {
             // Get the directory in which to replace links.
-            if (string.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that you want to replace links in:\n");
                 options.InputDirectory = Console.ReadLine();
             }
-            if (string.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
             {
                 Console.WriteLine("\nThat directory doesn't exist.");
                 return;
@@ -321,12 +328,12 @@ class Program
         // Replace site-relative links to *this* repo with file-relative links.
         else if (options.ReplaceWithRelativeLinks)
         {
-            if (string.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory where you want to replace redirected links:\n");
                 options.InputDirectory = Console.ReadLine();
             }
-            if (string.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
             {
                 Console.WriteLine("\nThat directory doesn't exist.");
                 return;
@@ -342,7 +349,7 @@ class Program
 
             // Check that this isn't the root directory of the repo. The code doesn't handle that case currently
             // because it can't always determine the base path of the docset (e.g. for dotnet/docs repo).
-            if (string.Equals(opsConfigFile.DirectoryName, options.InputDirectory, StringComparison.OrdinalIgnoreCase))
+            if (String.Equals(opsConfigFile.DirectoryName, options.InputDirectory, StringComparison.OrdinalIgnoreCase))
             {
                 Console.WriteLine($"\nYou entered the repo root directory. Please enter a subdirectory in which to replace links.");
                 return;
@@ -391,12 +398,12 @@ class Program
         else if (options.RemoveRedirectHops)
         {
             // Get the directory that represents the docset.
-            if (string.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory))
             {
                 Console.WriteLine("\nEnter the path to any directory in the docset:\n");
                 options.InputDirectory = Console.ReadLine();
             }
-            if (string.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
             {
                 Console.WriteLine("\nThat directory doesn't exist.");
                 return;
@@ -554,7 +561,7 @@ class Program
         absolutePath = Path.GetFullPath(absolutePath);
 
         FileInfo file = new FileInfo(absolutePath);
-        if (string.IsNullOrEmpty(file.Extension) || !string.Equals(file.Extension, ".md") || !string.Equals(file.Extension, ".yml"))
+        if (String.IsNullOrEmpty(file.Extension) || !string.Equals(file.Extension, ".md") || !string.Equals(file.Extension, ".yml"))
         {
             // Look for a file of this name in the same directory to obtain its extension.
             try
@@ -597,9 +604,9 @@ class Program
             if (fileRelativePath != null)
             {
                 // Add the bookmark back onto the end, if there is one.
-                if (!string.IsNullOrEmpty(bookmark))
+                if (!String.IsNullOrEmpty(bookmark))
                 {
-                    fileRelativePath += bookmark;
+                    fileRelativePath = fileRelativePath + bookmark;
                 }
 
                 string newText = originalMatch.Replace(originalLink, fileRelativePath);
@@ -734,7 +741,7 @@ class Program
 
         Dictionary<string, int> includeFiles = new Dictionary<string, int>();
 
-        if (string.Compare(dir.Name, "includes", true) == 0 || string.Compare(dir.Name, "_shared", true) == 0)
+        if (String.Compare(dir.Name, "includes", true) == 0 || String.Compare(dir.Name, "_shared", true) == 0)
         {
             // This is a folder that is likely to contain "include"-type files, i.e. files that aren't in the TOC.
 
@@ -747,7 +754,7 @@ class Program
         // Search in subdirectories.
         foreach (var subDirectory in dir.EnumerateDirectories("*", SearchOption.AllDirectories))
         {
-            if (string.Compare(subDirectory.Name, "includes", true) == 0 || string.Compare(subDirectory.Name, "_shared", true) == 0)
+            if (String.Compare(subDirectory.Name, "includes", true) == 0 || String.Compare(subDirectory.Name, "_shared", true) == 0)
             {
                 // This is a folder that is likely to contain "include"-type files, i.e. files that aren't in the TOC.
 
@@ -870,7 +877,7 @@ class Program
                                 // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
                                 fullPath = Path.GetFullPath(fullPath);
 
-                                if (string.Equals(snippetFile, fullPath, StringComparison.InvariantCultureIgnoreCase))
+                                if (String.Equals(snippetFile, fullPath, StringComparison.InvariantCultureIgnoreCase))
                                 {
                                     // This snippet file is not orphaned.
                                     foundSnippetReference = true;
@@ -943,7 +950,7 @@ class Program
                                 // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
                                 fullPath = Path.GetFullPath(fullPath);
 
-                                if (string.Equals(projectDir.FullName, fullPath, StringComparison.InvariantCultureIgnoreCase))
+                                if (String.Equals(projectDir.FullName, fullPath, StringComparison.InvariantCultureIgnoreCase))
                                 {
                                     // This snippet file is not orphaned.
                                     foundSnippetReference = true;
@@ -1019,8 +1026,8 @@ class Program
             !file.FullName.Contains("\\includes\\") &&
             !file.FullName.Contains("\\_shared\\") &&
             !file.FullName.Contains("\\misc\\") &&
-            string.Compare(file.Name, "TOC.md", true) != 0 &&
-            string.Compare(file.Name, "index.md", true) != 0;
+            String.Compare(file.Name, "TOC.md", true) != 0 &&
+            String.Compare(file.Name, "index.md", true) != 0;
 
         List<FileInfo> orphanedFiles = new List<FileInfo>();
 
@@ -1107,7 +1114,7 @@ class Program
                 if (fullPath != null)
                 {
                     // See if our constructed path matches the actual file we think it is
-                    if (string.Compare(fullPath, linkedFile.FullName, true) == 0)
+                    if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
                     {
                         return true;
                     }
@@ -1174,7 +1181,7 @@ class Program
                     if (fullPath != null)
                     {
                         // See if our constructed path matches the actual file we think it is
-                        if (string.Compare(fullPath, linkedFile.FullName, true) == 0)
+                        if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
                         {
                             // File is linked from another file.
                             if (filesToKeep.ContainsKey(linkedFile.FullName))
@@ -1514,7 +1521,7 @@ class Program
             while (redirectsLookup.ContainsKey(normalizedTargetPath))
             {
                 // Avoid an infinite loop by checking that this isn't the same key/value pair.
-                if (string.Equals(redirectsLookup[normalizedTargetPath], currentTarget))
+                if (String.Equals(redirectsLookup[normalizedTargetPath], currentTarget))
                 {
                     Console.WriteLine($"\nWARNING: {normalizedTargetPath} REDIRECTS TO ITSELF. PLEASE FIND A DIFFERENT REDIRECT URL.\n");
                     break;
@@ -1651,8 +1658,8 @@ class Program
                         string redirectURL = redirectLookup[fullPath].redirect_url;
 
                         // Add the bookmark back on, in case it applies to the new target.
-                        if (!string.IsNullOrEmpty(match.Groups[2].Value))
-                            redirectURL += match.Groups[2].Value;
+                        if (!String.IsNullOrEmpty(match.Groups[2].Value))
+                            redirectURL = redirectURL + match.Groups[2].Value;
 
                         output.AppendLine($"REPLACING '({relativePath})' with '({redirectURL})'.");
 
@@ -1874,7 +1881,7 @@ class Program
             }
         }
 
-        if (!string.IsNullOrEmpty(urlBasePath))
+        if (!String.IsNullOrEmpty(urlBasePath))
         {
             Console.WriteLine($"Is '{urlBasePath}' the correct URL base path for your docs (y or n)?");
             char key = Console.ReadKey().KeyChar;
@@ -1968,7 +1975,7 @@ class Program
                             if (docsetFilePath == ".")
                                 docsetFilePath = item.src;
                             else
-                                docsetFilePath = string.Concat(docsetFilePath, "/", item.src);
+                                docsetFilePath = String.Concat(docsetFilePath, "/", item.src);
                         }
                     }
 
@@ -2107,7 +2114,7 @@ class Program
                     if (fullPath != null)
                     {
                         // See if our constructed path matches the actual file we think it is
-                        if (string.Compare(fullPath, linkedFile.FullName, true) == 0)
+                        if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
                         {
                             return true;
                         }
@@ -2136,7 +2143,7 @@ class Program
         {
             foreach (string ignoreDir in dirsToIgnore)
             {
-                string dirWithSlashes = string.Concat("\\", ignoreDir, "\\");
+                string dirWithSlashes = String.Concat("\\", ignoreDir, "\\");
                 files = files.Where(f => !f.DirectoryName.Contains(dirWithSlashes, StringComparison.InvariantCultureIgnoreCase));
             }
         }
