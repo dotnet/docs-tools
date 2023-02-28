@@ -1,7 +1,8 @@
 {
   "profiles": {
     "CleanRepo": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "--replace-redirects=true\r\n--docset-root=c:\\users\\gewarren\\dotnet-docs\\docs\r\n--lookback-days=90\r\n--output-file=c:\\users\\gewarren\\desktop\\clicks.txt"
     }
   }
 }
