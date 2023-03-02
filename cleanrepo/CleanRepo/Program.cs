@@ -27,7 +27,7 @@ class Program
         //args = new[] { "--trim-redirects", "--docset-root=c:\\users\\gewarren\\dotnet-docs\\docs", "--lookback-days=90", "--output-file=c:\\users\\gewarren\\desktop\\clicks.txt" };
         //args = new[] { "--remove-hops" };
         //args = new[] { "--replace-redirects" };
-        args = new[] { "--orphaned-images" };
+        args = new[] { "--orphaned-images", "--base-path=/dotnet" };
 #endif
 
         Parser.Default.ParseArguments<Options>(args).WithParsed(RunOptions);
@@ -93,7 +93,7 @@ class Program
             DocFxRepo repo;
             try
             {
-                repo = new DocFxRepo(options.InputDirectory);
+                repo = new DocFxRepo(options.InputDirectory, options.UrlBasePath);
             }
             catch (ArgumentException ex)
             {
@@ -148,7 +148,7 @@ class Program
             DocFxRepo repo;
             try
             {
-                repo = new DocFxRepo(options.InputDirectory);
+                repo = new DocFxRepo(options.InputDirectory, options.UrlBasePath);
             }
             catch (ArgumentException ex)
             {
@@ -276,7 +276,7 @@ class Program
             }
 
             // Get the base path URL for the docset.
-            string urlBasePath = GetUrlBasePath(docfxDir);
+            string urlBasePath = options.UrlBasePath;
             if (urlBasePath == null)
             {
                 Console.WriteLine("\nCould not find the base path URL for this directory.");
@@ -1848,56 +1848,57 @@ class Program
         return docsetPath;
     }
 
-    internal static string GetUrlBasePath(DirectoryInfo docFxDirectory)
-    {
-        string docfxFilePath = Path.Combine(docFxDirectory.FullName, "docfx.json");
-        string urlBasePath = null;
+    // The base path should be obtained through a user-provided option instead.
+    //internal static string GetUrlBasePath(DirectoryInfo docFxDirectory)
+    //{
+    //    string docfxFilePath = Path.Combine(docFxDirectory.FullName, "docfx.json");
+    //    string urlBasePath = null;
 
-        // Deserialize the docfx.json file.
-        DocFx docfx = LoadDocfxFile(docfxFilePath);
-        if (docfx == null)
-        {
-            return null;
-        }
+    //    // Deserialize the docfx.json file.
+    //    DocFx docfx = LoadDocfxFile(docfxFilePath);
+    //    if (docfx == null)
+    //    {
+    //        return null;
+    //    }
 
-        // Hack: Parse URL base path out of breadcrumbPath. Examples:
-        // "breadcrumb_path": "/visualstudio/_breadcrumb/toc.json"
-        // "breadcrumb_path": "/windows/uwp/breadcrumbs/toc.json"
-        // "breadcrumb_path": "/dotnet/breadcrumb/toc.json"
-        // "breadcrumb_path": "breadcrumb/toc.yml"  <--Need to handle this.
+    //    // Hack: Parse URL base path out of breadcrumbPath. Examples:
+    //    // "breadcrumb_path": "/visualstudio/_breadcrumb/toc.json"
+    //    // "breadcrumb_path": "/windows/uwp/breadcrumbs/toc.json"
+    //    // "breadcrumb_path": "/dotnet/breadcrumb/toc.json"
+    //    // "breadcrumb_path": "breadcrumb/toc.yml"  <--Need to handle this.
 
-        string? breadcrumbPath = docfx.build.globalMetadata.breadcrumb_path;
+    //    string? breadcrumbPath = docfx.build.globalMetadata.breadcrumb_path;
 
-        if (breadcrumbPath is not null)
-        {
-            // Remove everything after and including the second last / character.
-            if (breadcrumbPath.Contains('/'))
-            {
-                breadcrumbPath = breadcrumbPath[0..breadcrumbPath.LastIndexOf('/')];
-                if (breadcrumbPath.Contains('/'))
-                {
-                    urlBasePath = breadcrumbPath[0..breadcrumbPath.LastIndexOf('/')];
-                }
-            }
-        }
+    //    if (breadcrumbPath is not null)
+    //    {
+    //        // Remove everything after and including the second last / character.
+    //        if (breadcrumbPath.Contains('/'))
+    //        {
+    //            breadcrumbPath = breadcrumbPath[0..breadcrumbPath.LastIndexOf('/')];
+    //            if (breadcrumbPath.Contains('/'))
+    //            {
+    //                urlBasePath = breadcrumbPath[0..breadcrumbPath.LastIndexOf('/')];
+    //            }
+    //        }
+    //    }
 
-        if (!String.IsNullOrEmpty(urlBasePath))
-        {
-            Console.WriteLine($"Is '{urlBasePath}' the correct URL base path for your docs (y or n)?");
-            char key = Console.ReadKey().KeyChar;
+    //    if (!String.IsNullOrEmpty(urlBasePath))
+    //    {
+    //        Console.WriteLine($"Is '{urlBasePath}' the correct URL base path for your docs (y or n)?");
+    //        char key = Console.ReadKey().KeyChar;
 
-            if (key == 'y' || key == 'Y')
-            {
-                Console.WriteLine("\nThanks!");
-                return urlBasePath;
-            }
-        }
+    //        if (key == 'y' || key == 'Y')
+    //        {
+    //            Console.WriteLine("\nThanks!");
+    //            return urlBasePath;
+    //        }
+    //    }
 
-        Console.WriteLine($"\nWhat's the URL base path for articles in the `{docFxDirectory.FullName}` directory? (Example: /aspnet/core)");
-        string basePath = Console.ReadLine();
-        Console.WriteLine("\nThanks!");
-        return basePath;
-    }
+    //    Console.WriteLine($"\nWhat's the URL base path for articles in the `{docFxDirectory.FullName}` directory? (Example: /aspnet/core)");
+    //    string basePath = Console.ReadLine();
+    //    Console.WriteLine("\nThanks!");
+    //    return basePath;
+    //}
 
     private static List<string> GetRedirectionFiles(FileInfo opsConfigFile)
     {

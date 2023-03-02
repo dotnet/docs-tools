@@ -29,7 +29,7 @@ class DocFxRepo
     };
 
     // Constructor.
-    public DocFxRepo(string inputDirectory)
+    public DocFxRepo(string inputDirectory, string urlBasePath)
     {
         DocFxDirectory = Program.GetDirectory(new DirectoryInfo(inputDirectory), "docfx.json");
 
@@ -38,7 +38,7 @@ class DocFxRepo
             throw new ArgumentException("Unable to find a docfx.json file in the input directory or one of its ancestors.");
         }
 
-        BasePathUrl = Program.GetUrlBasePath(DocFxDirectory);
+        BasePathUrl = urlBasePath;
 
         // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
         RegExes.Add($"social_image_url: ?\"?({BasePathUrl}.*?(\\.(png|jpg|gif|svg))+)");
