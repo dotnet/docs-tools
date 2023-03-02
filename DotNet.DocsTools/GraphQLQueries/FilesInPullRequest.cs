@@ -1,4 +1,5 @@
 ﻿using DotNetDocs.Tools.GitHubCommunications;
+using System.Text.Json;
 
 namespace DotNetDocs.Tools.GraphQLQueries;
 
@@ -74,14 +75,23 @@ public class FilesInPullRequest
 
         var cursor = default(string);
         bool hasMore = true;
+        JsonElement jsonData = default;
         while (hasMore)
         {
             queryText.variables["cursor"] = cursor!;
-            var jsonData = await client.PostGraphQLRequestAsync(queryText);
-
+            try
+            {
+                jsonData = await client.PostGraphQLRequestAsync(queryText);
+            }
+            catch (InvalidOperationException) 
+            { 
+                hasMore = false;
+                break;
+            }
 
             var filesNode = jsonData.Descendent("repository", "pullRequest", "files");
-            (hasMore, cursor) = filesNode.NextPageInfo();
+                (hasMore, cursor) = filesNode.NextPageInfo();
+
 
             var elements = filesNode.GetProperty("nodes").EnumerateArray();
             foreach (var item in elements)
