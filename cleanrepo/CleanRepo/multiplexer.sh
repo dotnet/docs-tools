@@ -27,7 +27,7 @@ env_var_is_set() {
 
 # Use this option to find orphaned topics.
 if env_var_is_set "INPUT_ORPHANED_TOPICS"; then
-	dotnet CleanRepo.dll -- \
+	dotnet ./CleanRepo.dll -- \
 	--start-directory="$INPUT_STARTING_DIRECTORY" \
 	--docset-root="$INPUT_DOCSET_ROOT" \
 	--repo-root="$INPUT_REPO_ROOT" \
@@ -37,7 +37,7 @@ fi
 
 # Find orphaned .png, .gif, .jpg, or .svg files.
 if env_var_is_set "INPUT_ORPHANED_IMAGES"; then
-	dotnet CleanRepo.dll -- \
+	dotnet ./CleanRepo.dll -- \
 	--start-directory="$INPUT_STARTING_DIRECTORY" \
 	--docset-root="$INPUT_DOCSET_ROOT" \
 	--repo-root="$INPUT_REPO_ROOT" \
@@ -47,7 +47,7 @@ fi
 
 # Find orphaned .cs and .vb files.
 if env_var_is_set "INPUT_ORPHANED_SNIPPETS"; then
-	dotnet CleanRepo.dll -- \
+	dotnet ./CleanRepo.dll -- \
 	--start-directory="$INPUT_STARTING_DIRECTORY" \
 	--docset-root="$INPUT_DOCSET_ROOT" \
 	--repo-root="$INPUT_REPO_ROOT" \
@@ -57,7 +57,7 @@ fi
 
 # Find orphaned INCLUDE files.
 if env_var_is_set "INPUT_ORPHANED_INCLUDES"; then
-	dotnet CleanRepo.dll -- \
+	dotnet ./CleanRepo.dll -- \
 	--start-directory="$INPUT_STARTING_DIRECTORY" \
 	--docset-root="$INPUT_DOCSET_ROOT" \
 	--repo-root="$INPUT_REPO_ROOT" \
@@ -67,7 +67,7 @@ fi
 
 # Find backlinks to redirected files and replace with new target.
 if env_var_is_set "INPUT_REPLACE_REDIRECTS"; then
-	dotnet CleanRepo.dll -- \
+	dotnet ./CleanRepo.dll -- \
 	--start-directory="$INPUT_STARTING_DIRECTORY" \
 	--docset-root="$INPUT_DOCSET_ROOT" \
 	--repo-root="$INPUT_REPO_ROOT" \
@@ -77,7 +77,7 @@ fi
 
 # Replace site-relative links with file-relative links.
 if env_var_is_set "INPUT_RELATIVE_LINKS"; then
-	dotnet CleanRepo.dll -- \
+	dotnet ./CleanRepo.dll -- \
 	--start-directory="$INPUT_STARTING_DIR" \
 	--docset-root="$INPUT_DOCSET_ROOT" \
 	--repo-root="$INPUT_REPO_ROOT" \
@@ -87,7 +87,7 @@ fi
 
 # Clean redirection JSON file by replacing targets that are themselves redirected (daisy chains).
 if env_var_is_set "INPUT_REMOVE_HOPS"; then
-	dotnet CleanRepo.dll -- \
+	dotnet ./CleanRepo.dll -- \
 	--start-directory="$INPUT_STARTING_DIRECTORY" \
 	--docset-root="$INPUT_DOCSET_ROOT" \
 	--repo-root="$INPUT_REPO_ROOT" \
