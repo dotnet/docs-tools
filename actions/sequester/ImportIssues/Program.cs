@@ -71,7 +71,7 @@
             if (singleIssue)
             {
                 await serviceWorker.ProcessIssue(
-                    org, repo, issue!.Value); // Odd. There;s a  warning on issue, but it is null checked above.
+                    org, repo, issue!.Value); // Odd. There's a warning on issue, but it is null checked above.
             }
             else
             {

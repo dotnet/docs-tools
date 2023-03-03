@@ -82,7 +82,7 @@ public class QuestGitHubService : IDisposable
             {
                 Console.WriteLine($"{item.IssueNumber}: {item.Title}");
                 var questItem = await FindLinkedWorkItem(item);
-                if (dryRun == false)
+                if (dryRun is false)
                 {
                     if (questItem != null)
                     {

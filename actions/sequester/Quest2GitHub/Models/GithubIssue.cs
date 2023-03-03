@@ -141,7 +141,6 @@ public class GithubIssue
 
     public required DateTime UpdatedAt { get; init; }
 
-
     /// <summary>
     /// Retrieve an issue
     /// </summary>
@@ -225,7 +224,7 @@ public class GithubIssue
             Comments = comments.ToArray(),
             InProjects = numberProjects > 0,
             UpdatedAt = updated,
-    };
+        };
     }
 
 
