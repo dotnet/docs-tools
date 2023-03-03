@@ -2,10 +2,18 @@
 
 public class EnumerateIssues
 {
-    private static readonly string enumerateOpenIssues = """
-        query FindIssuesWithLabel($organization: String!, $repository: String!, $cursor: String){
-          repository(owner:$organization, name:$repository) {
-            issues(first:25, after: $cursor, states:OPEN) {
+    private static readonly string enumerateUpdatedQuestIssues = """
+        query FindUpdatedIssues($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
+          repository(owner: $organization, name: $repository) {
+            issues(
+              first: 25
+              after: $cursor
+              labels: $questlabels
+              orderBy: {
+                field: UPDATED_AT, 
+                direction: DESC
+              }
+            ) {
               pageInfo {
                 hasNextPage
                 endCursor
@@ -15,6 +23,7 @@ public class EnumerateIssues
                 number
                 title
                 state
+                updatedAt
                 author {
                   login
                   ... on User {
@@ -34,16 +43,16 @@ public class EnumerateIssues
                     login
                     ... on User {
                       name
-                    }          
+                    }
                   }
                 }
-                labels(first: 10) {
+                labels(first: 15) {
                   nodes {
                     name
                     id
                   }
                 }
-                comments(first: 25) {
+                comments(first: 50) {
                   nodes {
                     author {
                       login
@@ -60,15 +69,22 @@ public class EnumerateIssues
         }
         """;
 
-    public async IAsyncEnumerable<GithubIssue> AllOpenIssue(IGitHubClient client, string organization, string repository)
+    public async IAsyncEnumerable<GithubIssue> AllQuestIssues(IGitHubClient client, 
+        string organization, string repository, 
+        string importTriggerLabelText, string importedLabelText)
     {
         var findIssuesPacket = new GraphQLPacket
         {
-            query = enumerateOpenIssues,
+            query = enumerateUpdatedQuestIssues,
             variables =
             {
                 ["organization"] = organization,
                 ["repository"] = repository,
+                ["questlabels"] = new string[]
+                {
+                    importTriggerLabelText,
+                    importedLabelText
+                }
             }
         };
 
@@ -83,7 +99,9 @@ public class EnumerateIssues
 
             var elements = jsonData.Descendent("repository", "issues", "nodes").EnumerateArray();
             foreach (var item in elements)
+            {
                 yield return GithubIssue.FromJson(item, organization, repository);
+            }
         }
     }
 }

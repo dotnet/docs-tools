@@ -139,6 +139,9 @@ public class GithubIssue
     /// </remarks>
     public required bool InProjects { get; init; }
 
+    public required DateTime UpdatedAt { get; init; }
+
+
     /// <summary>
     /// Retrieve an issue
     /// </summary>
@@ -189,6 +192,7 @@ public class GithubIssue
         var bodyMarkdown = issueNode.Descendent("body").GetString();
         var numberProjects = issueNode.Descendent("projectsV2", "totalCount").GetInt32() +
             issueNode.Descendent("projectItems", "totalCount").GetInt32();
+        DateTime updated = issueNode.GetProperty("updatedAt").GetDateTime();
 
         var assignees = from item in issueNode.Descendent("assignees").GetProperty("nodes").EnumerateArray()
                         select item.GetProperty("login").GetString();
@@ -220,7 +224,8 @@ public class GithubIssue
             Labels = labels.ToArray(),
             Comments = comments.ToArray(),
             InProjects = numberProjects > 0,
-        };
+            UpdatedAt = updated,
+    };
     }
 
 
