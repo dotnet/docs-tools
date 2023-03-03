@@ -24,10 +24,22 @@ class Program
     static void Main(string[] args)
     {
 #if DEBUG
+        // TODO: Consider using launchSettings.json with command line args instead:
+        //
+        //   {
+        //     "profiles": {
+        //       "CleanRepo": {
+        //         "commandName": "Project",
+        //         "commandLineArgs": "--orphaned-images\r\n--base-path=\"/dotnet\""
+        //       }
+        //     }
+        //   }
+        //
+        // ... to void hardcoded values in DEBUG preprocessor directives like this:
         //args = new[] { "--trim-redirects", "--docset-root=c:\\users\\gewarren\\dotnet-docs\\docs", "--lookback-days=90", "--output-file=c:\\users\\gewarren\\desktop\\clicks.txt" };
         //args = new[] { "--remove-hops" };
         //args = new[] { "--replace-redirects" };
-        args = new[] { "--orphaned-images", "--base-path=/dotnet" };
+        //args = new[] { "--orphaned-images", "--base-path=/dotnet" };
 #endif
 
         Parser.Default.ParseArguments<Options>(args).WithParsed(RunOptions);
@@ -75,8 +87,9 @@ class Program
 
             ListOrphanedTopics(tocFiles, markdownFiles, options.Delete.Value);
         }
+
         // Find orphaned images
-        else if (options.FindOrphanedImages)
+        if (options.FindOrphanedImages)
         {
             // Get input directory.
             if (String.IsNullOrEmpty(options.InputDirectory))
@@ -131,7 +144,9 @@ class Program
 
             repo.ListOrphanedImages(options.Delete.Value, "snippets");
         }
-        else if (options.CatalogImages)
+
+        // Catalog images
+        if (options.CatalogImages)
         {
             // Get input directory.
             if (String.IsNullOrEmpty(options.InputDirectory))
@@ -175,8 +190,9 @@ class Program
 
             repo.OutputImageReferences();
         }
+
         // Find orphaned include-type files
-        else if (options.FindOrphanedIncludes)
+        if (options.FindOrphanedIncludes)
         {
             if (String.IsNullOrEmpty(options.InputDirectory))
             {
@@ -213,8 +229,9 @@ class Program
 
             ListOrphanedIncludes(options.InputDirectory, includeFiles, options.Delete.Value);
         }
+
         // Find orphaned .cs and .vb files
-        else if (options.FindOrphanedSnippets)
+        if (options.FindOrphanedSnippets)
         {
             if (String.IsNullOrEmpty(options.InputDirectory))
             {
@@ -250,8 +267,9 @@ class Program
 
             ListOrphanedSnippets(options.InputDirectory, snippetFiles, options.Delete.Value);
         }
+
         // Replace links to topics that are redirected in the master redirection file.
-        else if (options.ReplaceRedirectTargets)
+        if (options.ReplaceRedirectTargets)
         {
             // Get the directory in which to replace links.
             if (String.IsNullOrEmpty(options.InputDirectory))
@@ -325,8 +343,9 @@ class Program
 
             Console.WriteLine("\nFinished replacing links.");
         }
+
         // Replace site-relative links to *this* repo with file-relative links.
-        else if (options.ReplaceWithRelativeLinks)
+        if (options.ReplaceWithRelativeLinks)
         {
             if (String.IsNullOrEmpty(options.InputDirectory))
             {
@@ -394,8 +413,9 @@ class Program
             // Check all links in these files.
             ReplaceLinks(linkingFiles, urlBasePath, rootDirectory);
         }
-        // Remove hops/daisy chains in a redirection file.
-        else if (options.RemoveRedirectHops)
+
+        // Remove hops/daisy chains in a redirection file.        
+        if (options.RemoveRedirectHops)
         {
             // Get the directory that represents the docset.
             if (String.IsNullOrEmpty(options.InputDirectory))
@@ -452,8 +472,16 @@ class Program
                 RemoveRedirectHops(redirectsFile, docsets, opsConfigFile.DirectoryName);
             }
         }
+
         // Nothing to do.
-        else
+        if (options.FindOrphanedTopics is false &&
+            options.FindOrphanedImages is false &&
+            options.CatalogImages is false &&
+            options.FindOrphanedIncludes is false &&
+            options.FindOrphanedSnippets is false &&
+            options.ReplaceRedirectTargets is false &&
+            options.ReplaceWithRelativeLinks is false &&
+            options.RemoveRedirectHops is false)
         {
             Console.WriteLine("\nYou did not specify which function to perform. To see options, use 'CleanRepo.exe -?'.");
             return;
