@@ -17,6 +17,9 @@
 #   INPUT_RELATIVE_LINKS (--relative-links): Replace site-relative links with file-relative links.
 #   INPUT_REMOVE_HOPS (--remove-hops): Clean redirection JSON file by replacing targets that are themselves redirected (daisy chains).
 
+# Where are we?
+pwd
+
 env_var_is_set() {
 	if [[ "${!1}" =~ ^[Tt]rue$|^[1]$ ]]; then
 		return 0
