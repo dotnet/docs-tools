@@ -15,6 +15,8 @@ inputs:
   repo_root:
     description: 'The full path to the local root directory for the repository, e.g. "dotnet-docs"'
     default: '.'
+  base_path:
+    description: 'The URL base path for the docset, e.g. "/windows/uwp" or "/dotnet"'
   delete:
     description: 'True to delete orphaned files.'
     default: 'false'
