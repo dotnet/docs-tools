@@ -60,7 +60,7 @@ runs:
     - '--repo-root'
     - ${{ inputs.repo_root }}
     - '--base-path'
-    - ${{ imputs.base_path }}
+    - ${{ inputs.base_path }}
     - '--delete'
     - ${{ inputs.delete }}
     - '--orphaned-topics'
