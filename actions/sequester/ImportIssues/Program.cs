@@ -8,6 +8,7 @@
     /// <param name="issue">The issue number. If null, process all open issues.</param>
     /// <param name="questConfigPath">The config path. If null, use the config file in the root folder of the repository.</param>
     /// <param name="branch">The optional branch to use. Defaults to "main" otherwise.</param>
+    /// <param name="duration">For bulk import, how many days past to examine. -1 means all issues. Default is 5</param>
     /// <remarks>
     /// Example command line:
     /// ImportIssues --org dotnet --repo docs --issue 31331
@@ -17,9 +18,11 @@
         string org,
         string repo,
         int? issue = null,
+        int? duration = 5,
         string? questConfigPath = null,
         string? branch = null)
     {
+        Console.WriteLine(duration);
         try
         {
             if (repo.Contains('/'))
@@ -52,6 +55,8 @@
                     $"Unable to load Quest import configuration options.");
             }
 
+            bool singleIssue = (issue is not null && issue.Value != -1);
+
             using var serviceWorker = new QuestGitHubService(
                 importOptions.ApiKeys!.GitHubToken,
                 importOptions.ApiKeys.OSPOKey,
@@ -60,17 +65,18 @@
                 importOptions.AzureDevOps.Project,
                 importOptions.AzureDevOps.AreaPath,
                 importOptions.ImportTriggerLabel,
-                importOptions.ImportedLabel);
+                importOptions.ImportedLabel,
+                !singleIssue);
 
-            if (issue is not null && issue.Value != -1)
+            if (singleIssue)
             {
                 await serviceWorker.ProcessIssue(
-                    org, repo, issue.Value);
+                    org, repo, issue!.Value); // Odd. There's a warning on issue, but it is null checked above.
             }
             else
             {
                 await serviceWorker.ProcessIssues(
-                    org, repo, false);
+                    org, repo, duration ?? -1, false);
             }
         }
         catch (Exception ex)
