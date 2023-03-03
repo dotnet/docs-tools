@@ -10,13 +10,13 @@ set -eu -o pipefail
 #
 # Optional environment variables:
 #
-#   INPUT_ORPHANED-TOPICS (--orphaned-topics): Use this option to find orphaned topics.
-#   INPUT_ORPHANED-IMAGES (--orphaned-images): Find orphaned .png, .gif, .jpg, or .svg files.
-#   INPUT_ORPHANED-SNIPPETS (--orphaned-snippets): Find orphaned .cs and .vb files.
-#   INPUT_ORPHANED-INCLUDES (--orphaned-includes): Find orphaned INCLUDE files.
-#   INPUT_REPLACE-REDIRECTS (--replace-redirects): Find backlinks to redirected files and replace with new target.
-#   INPUT_RELATIVE-LINKS (--relative-links): Replace site-relative links with file-relative links.
-#   INPUT_REMOVE-HOPS (--remove-hops): Clean redirection JSON file by replacing targets that are themselves redirected (daisy chains).
+#   INPUT_ORPHANED_TOPICS (--orphaned-topics): Use this option to find orphaned topics.
+#   INPUT_ORPHANED_IMAGES (--orphaned-images): Find orphaned .png, .gif, .jpg, or .svg files.
+#   INPUT_ORPHANED_SNIPPETS (--orphaned-snippets): Find orphaned .cs and .vb files.
+#   INPUT_ORPHANED_INCLUDES (--orphaned-includes): Find orphaned INCLUDE files.
+#   INPUT_REPLACE_REDIRECTS (--replace-redirects): Find backlinks to redirected files and replace with new target.
+#   INPUT_RELATIVE_LINKS (--relative-links): Replace site-relative links with file-relative links.
+#   INPUT_REMOVE_HOPS (--remove-hops): Clean redirection JSON file by replacing targets that are themselves redirected (daisy chains).
 
 env_var_is_set() {
 	if [[ "${!1}" =~ ^[Tt]rue$|^[1]$ ]]; then
@@ -27,71 +27,71 @@ env_var_is_set() {
 }
 
 # Use this option to find orphaned topics.
-if env_var_is_set "INPUT_ORPHANED-TOPICS"; then
+if env_var_is_set "INPUT_ORPHANED_TOPICS"; then
 	dotnet CleanRepo.dll -- \
-	--start-directory="$STARTING_DIR" \
-	--docset-root="$DOCSET_ROOT" \
-	--repo-root="$REPO_ROOT" \
-	--base-path="$BASE_PATH" \
+	--start-directory='$INPUT_STARTING-DIRECTORY' \
+	--docset-root='$INPUT_DOCSET-ROOT' \
+	--repo-root='$INPUT_REPO-ROOT' \
+	--base-path='$INPUT_BASE-PATH' \
 	--delete --orphaned-topics
 fi
 
 # Find orphaned .png, .gif, .jpg, or .svg files.
-if env_var_is_set "INPUT_ORPHANED-IMAGES"; then
+if env_var_is_set "INPUT_ORPHANED_IMAGES"; then
 	dotnet CleanRepo.dll -- \
-	--start-directory="$STARTING_DIR" \
-	--docset-root="$DOCSET_ROOT" \
-	--repo-root="$REPO_ROOT" \
-	--base-path="$BASE_PATH" \
+	--start-directory='$INPUT_STARTING-DIRECTORY' \
+	--docset-root='$INPUT_DOCSET-ROOT' \
+	--repo-root='$INPUT_REPO-ROOT' \
+	--base-path='$INPUT_BASE-PATH' \
 	--delete --orphaned-images
 fi
 
 # Find orphaned .cs and .vb files.
-if env_var_is_set "INPUT_ORPHANED-SNIPPETS"; then
+if env_var_is_set "INPUT_ORPHANED_SNIPPETS"; then
 	dotnet CleanRepo.dll -- \
-	--start-directory="$STARTING_DIR" \
-	--docset-root="$DOCSET_ROOT" \
-	--repo-root="$REPO_ROOT" \
-	--base-path="$BASE_PATH" \
+	--start-directory='$INPUT_STARTING-DIRECTORY' \
+	--docset-root='$INPUT_DOCSET-ROOT' \
+	--repo-root='$INPUT_REPO-ROOT' \
+	--base-path='$INPUT_BASE-PATH' \
 	--delete --orphaned-snippets
 fi
 
 # Find orphaned INCLUDE files.
-if env_var_is_set "INPUT_ORPHANED-INCLUDES"; then
+if env_var_is_set "INPUT_ORPHANED_INCLUDES"; then
 	dotnet CleanRepo.dll -- \
-	--start-directory="$STARTING_DIR" \
-	--docset-root="$DOCSET_ROOT" \
-	--repo-root="$REPO_ROOT" \
-	--base-path="$BASE_PATH" \
+	--start-directory='$INPUT_STARTING-DIRECTORY' \
+	--docset-root='$INPUT_DOCSET-ROOT' \
+	--repo-root='$INPUT_REPO-ROOT' \
+	--base-path='$INPUT_BASE-PATH' \
 	--delete --orphaned-includes
 fi
 
 # Find backlinks to redirected files and replace with new target.
-if env_var_is_set "INPUT_REPLACE-REDIRECTS"; then
+if env_var_is_set "INPUT_REPLACE_REDIRECTS"; then
 	dotnet CleanRepo.dll -- \
-	--start-directory="$STARTING_DIR" \
-	--docset-root="$DOCSET_ROOT" \
-	--repo-root="$REPO_ROOT" \
-	--base-path="$BASE_PATH" \
+	--start-directory='$INPUT_STARTING-DIRECTORY' \
+	--docset-root='$INPUT_DOCSET-ROOT' \
+	--repo-root='$INPUT_REPO-ROOT' \
+	--base-path='$INPUT_BASE-PATH' \
 	--replace-redirects
 fi
 
 # Replace site-relative links with file-relative links.
-if env_var_is_set "INPUT_RELATIVE-LINKS"; then
+if env_var_is_set "INPUT_RELATIVE_LINKS"; then
 	dotnet CleanRepo.dll -- \
-	--start-directory="$STARTING_DIR" \
-	--docset-root="$DOCSET_ROOT" \
-	--repo-root="$REPO_ROOT" \
-	--base-path="$BASE_PATH" \
+	--start-directory="$INPUT_STARTING_DIR" \
+	--docset-root='$INPUT_DOCSET-ROOT' \
+	--repo-root='$INPUT_REPO-ROOT' \
+	--base-path='$INPUT_BASE-PATH' \
 	--relative-links
 fi
 
 # Clean redirection JSON file by replacing targets that are themselves redirected (daisy chains).
-if env_var_is_set "INPUT_REMOVE-HOPS"; then
+if env_var_is_set "INPUT_REMOVE_HOPS"; then
 	dotnet CleanRepo.dll -- \
-	--start-directory="$STARTING_DIR" \
-	--docset-root="$DOCSET_ROOT" \
-	--repo-root="$REPO_ROOT" \
-	--base-path="$BASE_PATH" \
+	--start-directory='$INPUT_STARTING-DIRECTORY' \
+	--docset-root='$INPUT_DOCSET-ROOT' \
+	--repo-root='$INPUT_REPO-ROOT' \
+	--base-path='$INPUT_BASE-PATH' \
 	--remove-hops
 fi
