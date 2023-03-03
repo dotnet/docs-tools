@@ -19,6 +19,8 @@
 
 # Where are we?
 pwd
+# What's near?
+ls
 
 env_var_is_set() {
 	if [[ "${!1}" =~ ^[Tt]rue$|^[1]$ ]]; then
