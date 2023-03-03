@@ -90,7 +90,7 @@ public class FilesInPullRequest
             }
 
             var filesNode = jsonData.Descendent("repository", "pullRequest", "files");
-                (hasMore, cursor) = filesNode.NextPageInfo();
+            (hasMore, cursor) = filesNode.NextPageInfo();
 
 
             var elements = filesNode.GetProperty("nodes").EnumerateArray();
