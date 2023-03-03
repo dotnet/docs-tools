@@ -1,5 +1,4 @@
 #!/bin/bash
-set -eu -o pipefail
 
 # Requires the following environment variables:
 #
