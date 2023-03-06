@@ -1,5 +1,4 @@
 ﻿using CommandLine;
-using CommandLine.Text;
 
 namespace CleanRepo;
 
@@ -14,6 +13,9 @@ class Options
 
     [Option("repo-root", Required = false, HelpText = "The full path to the local root directory for the repository, e.g. 'c:\\users\\gewarren\\dotnet-docs'.")]
     public string RepoRoot { get; set; }
+
+    [Option("base-path", Required = false, HelpText = "The URL base path for the docset, e.g. '/windows/uwp' or '/dotnet'.")]
+    public string UrlBasePath { get; set; }
 
     [Option("delete", Required = false, HelpText = "True to delete orphaned files.")]
     public bool? Delete { get; set; }

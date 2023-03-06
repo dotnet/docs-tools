@@ -33,6 +33,7 @@ public class QuestGitHubService : IDisposable
     /// <param name="areaPath">The area path for work items from this repo</param>
     /// <param name="importTriggerLabel">The text of the label that triggers an import</param>
     /// <param name="importedLabel">The text of the label that indicates an issue has been imported</param>
+    /// <param name="bulkImport">True if this run is doing a bulk import.</param>
     public QuestGitHubService(
         string ghKey,
         string ospoKey,
@@ -41,10 +42,11 @@ public class QuestGitHubService : IDisposable
         string questProject,
         string areaPath,
         string importTriggerLabel,
-        string importedLabel)
+        string importedLabel,
+        bool bulkImport)
     {
         _ghClient = IGitHubClient.CreateGitHubClient(ghKey);
-        _ospoClient = new OspoClient(ospoKey, false);
+        _ospoClient = new OspoClient(ospoKey, bulkImport);
         _azdoClient = new QuestClient(azdoKey, questOrg, questProject);
         _areaPath = areaPath;
         _questLinkString = $"https://dev.azure.com/{questOrg}/{questProject}/_workitems/edit/";
@@ -57,32 +59,40 @@ public class QuestGitHubService : IDisposable
     /// </summary>
     /// <param name="organization">The GitHub org</param>
     /// <param name="repository">The GitHub repository</param>
+    /// <param name="duration">How far back to examine.</param>
     /// <param name="dryRun">true for a dry run, false to process all issues</param>
     /// <returns></returns>
-    public async Task ProcessIssues(string organization, string repository, bool dryRun)
+    public async Task ProcessIssues(string organization, string repository, int duration, bool dryRun)
     {
         if ((_importTriggerLabel == null) || (_importedLabel == null))
             await retrieveLabelIDs(organization, repository);
 
         var iter = new EnumerateIssues();
 
+        var historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
+
         int totalImport = 0;
         int totalSkipped = 0;
-        await foreach (var item in iter.AllOpenIssue(_ghClient, organization, repository))
+        await foreach (var item in iter.AllQuestIssues(_ghClient, organization, repository, _importTriggerLabelText, _importedLabelText))
         {
+            if (item.UpdatedAt < historyThreshold)
+                break;
+
             if (item.Labels.Any(l => (l.nodeID == _importTriggerLabel?.nodeID) || (l.nodeID == _importedLabel?.nodeID)))
             {
                 Console.WriteLine($"{item.IssueNumber}: {item.Title}");
                 var questItem = await FindLinkedWorkItem(item);
-                if (questItem != null)
+                if (dryRun is false)
                 {
-                    await UpdateWorkItem(questItem, item);
+                    if (questItem != null)
+                    {
+                        await UpdateWorkItem(questItem, item);
+                    }
+                    else
+                    {
+                        questItem = await LinkIssue(organization, repository, item);
+                    }
                 }
-                else
-                {
-                    questItem = await LinkIssue(organization, repository, item);
-                }
-
                 totalImport++;
             }
             else
@@ -107,14 +117,14 @@ public class QuestGitHubService : IDisposable
             await retrieveLabelIDs(gitHubOrganization, gitHubRepository);
 
         //Retrieve the GitHub issue.
-         var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
+        var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
 
         // Evaluate the labels to determine the right action.
         var request = ghIssue.Labels.Any(l => l.nodeID == _importTriggerLabel?.nodeID);
         var sequestered = ghIssue.Labels.Any(l => l.nodeID == _importedLabel?.nodeID);
         // Only query AzDo if needed:
-        var questItem = ((request && ghIssue.IsOpen) || sequestered) 
-            ? await FindLinkedWorkItem(ghIssue) 
+        var questItem = ((request && ghIssue.IsOpen) || sequestered)
+            ? await FindLinkedWorkItem(ghIssue)
             : null;
 
         // The order here is important to avoid a race condition that causes
@@ -127,19 +137,21 @@ public class QuestGitHubService : IDisposable
             if ((questItem is null) && ghIssue.IsOpen)
             {
                 questItem = await LinkIssue(gitHubOrganization, gitHubRepository, ghIssue);
-            } else if (questItem is not null)
+            }
+            else if (questItem is not null)
             {
                 // This allows a human to force a manual update: just add the trigger label.
                 // Note that it updates even if the item is closed.
                 await UpdateWorkItem(questItem, ghIssue);
 
             }
-        // Next, if the item is already linked, consider any updates.
-        // It's important that adding the linked label is the last
-        // mutation done in the linking process. That way, the GH Action
-        // does get triggered again. The second trigger will check for any updates
-        // a human made to assigned or state while the initial run was taking place.
-        } else if (sequestered && (questItem is not null))
+            // Next, if the item is already linked, consider any updates.
+            // It's important that adding the linked label is the last
+            // mutation done in the linking process. That way, the GH Action
+            // does get triggered again. The second trigger will check for any updates
+            // a human made to assigned or state while the initial run was taking place.
+        }
+        else if (sequestered && (questItem is not null))
         {
             await UpdateWorkItem(questItem, ghIssue);
         }
@@ -186,7 +198,8 @@ public class QuestGitHubService : IDisposable
             // Now, update the body, and add the label:
             await mutation.PerformMutation(updatedBody, _importedLabel?.nodeID, null);
             return questItem;
-        } else
+        }
+        else
         {
             throw new InvalidOperationException("Issue already linked");
         }

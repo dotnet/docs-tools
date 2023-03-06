@@ -6,45 +6,47 @@ branding:
   icon: 'sliders'
   color: 'purple'
 inputs:
-  start-directory:
+  start_directory:
     description: 'Top-level directory in which to perform clean up (for example, find orphaned markdown files).'
     required: true
-  docset-root:
+  docset_root:
     description: 'The full path to the root directory for the docset, e.g. "./dotnet-docs/docs".'
     default: './docs'
-  repo-root:
+  repo_root:
     description: 'The full path to the local root directory for the repository, e.g. "dotnet-docs"'
     default: '.'
+  base_path:
+    description: 'The URL base path for the docset, e.g. "/windows/uwp" or "/dotnet"'
   delete:
     description: 'True to delete orphaned files.'
     default: 'false'
-  orphaned-topics:
+  orphaned_topics:
     description: 'Use this option to find orphaned topics.'
     default: 'false'
-  orphaned-images:
+  orphaned_images:
     description: 'Find orphaned .png, .gif, .jpg, or .svg files.'
     default: 'false'
-  catalog-images:
+  catalog_images:
     description: 'Map images to the markdown/YAML files that reference them.'
     default: 'false'
-  orphaned-snippets:
+  orphaned_snippets:
     description: 'Find orphaned .cs and .vb files.'
     default: 'false'
-  orphaned-includes:
+  orphaned_includes:
     description: 'Find orphaned INCLUDE files.'
     default: 'false'
-  lookback-days:
+  lookback_days:
     description: 'The number of days to check for link-click activity.'
     default: '180'
-  output-file:
+  output_file:
     description: 'The file to write the redirect page view output to.'
-  replace-redirects:
+  replace_redirects:
     description: 'Find backlinks to redirected files and replace with new target.'
     default: 'false'
-  relative-links:
+  relative_links:
     description: 'Replace site-relative links with file-relative links.'
     default: 'false'
-  remove-hops:
+  remove_hops:
     description: 'Clean redirection JSON file by replacing targets that are themselves redirected (daisy chains).'
     default: 'false'
 runs:
@@ -52,30 +54,32 @@ runs:
   image: Dockerfile
   args:
     - '--start-directory'
-    - ${{ inputs.start-directory }}
+    - ${{ inputs.start_directory }}
     - '--docset-root'
-    - ${{ inputs.docset-root }}
+    - ${{ inputs.docset_root }}
     - '--repo-root'
-    - ${{ inputs.repo-root }}
+    - ${{ inputs.repo_root }}
+    - '--base-path'
+    - ${{ inputs.base_path }}
     - '--delete'
     - ${{ inputs.delete }}
     - '--orphaned-topics'
-    - ${{ inputs.orphaned-topics }}
+    - ${{ inputs.orphaned_topics }}
     - '--orphaned-images'
-    - ${{ inputs.orphaned-images }}
+    - ${{ inputs.orphaned_images }}
     - '--catalog-images'
-    - ${{ inputs.catalog-images }}
+    - ${{ inputs.catalog_images }}
     - '--orphaned-snippets'
-    - ${{ inputs.orphaned-snippets }} 
+    - ${{ inputs.orphaned_snippets }} 
     - '--orphaned-includes'
-    - ${{ inputs.orphaned-includes }}
+    - ${{ inputs.orphaned_includes }}
     - '--lookback-days'
-    - ${{ inputs.lookback-days }}
+    - ${{ inputs.lookback_days }}
     - '--output-file'
-    - ${{ inputs.output-file }}
+    - ${{ inputs.output_file }}
     - '--replace-redirects'
-    - ${{ inputs.replace-redirects }}
+    - ${{ inputs.replace_redirects }}
     - '--relative-links'
-    - ${{ inputs.relative-links }}
+    - ${{ inputs.relative_links }}
     - '--remove-hops'
-    - ${{ inputs.remove-hops }}
+    - ${{ inputs.remove_hops }}
