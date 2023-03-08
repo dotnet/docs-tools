@@ -12,14 +12,10 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-// Publish command:
-// dotnet publish -c release -p:PublishSingleFile=true --no-self-contained -r win10-x64 c:\users\gewarren\cleanrepo\CleanRepo\CleanRepo.csproj
-
 namespace CleanRepo;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1304:Specify CultureInfo", Justification = "Annoying")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1307:Specify StringComparison", Justification = "Annoying")]
-class Program
+static class Program
 {
     static void Main(string[] args)
     {
@@ -35,11 +31,12 @@ class Program
         //     }
         //   }
         //
-        // ... to void hardcoded values in DEBUG preprocessor directives like this:
-        //args = new[] { "--trim-redirects", "--docset-root=c:\\users\\gewarren\\dotnet-docs\\docs", "--lookback-days=90", "--output-file=c:\\users\\gewarren\\desktop\\clicks.txt" };
-        //args = new[] { "--remove-hops" };
-        //args = new[] { "--replace-redirects" };
-        //args = new[] { "--orphaned-images", "--base-path=/dotnet" };
+        // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
+        args = new[] { "--relative-links" };
+        //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
+        //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
+        //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
+        //"--docfx-directory=c:\\users\\gewarren\\docs", "--url-base-path=/dotnet", "--delete=false"};
 #endif
 
         Parser.Default.ParseArguments<Options>(args).WithParsed(RunOptions);
@@ -50,20 +47,40 @@ class Program
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        // Find orphaned topics
-        if (options.FindOrphanedTopics)
-        {
-            if (String.IsNullOrEmpty(options.InputDirectory))
-            {
-                Console.WriteLine("\nEnter the path to the directory that you want to check for orphans:\n");
-                options.InputDirectory = Console.ReadLine();
-            }
-            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
-            {
-                Console.WriteLine("\nThat directory doesn't exist.");
-                return;
-            }
+        string startDirectory = null;
 
+        if (!String.IsNullOrEmpty(options.DocFxDirectory))
+            startDirectory = options.DocFxDirectory;
+        else if (!String.IsNullOrEmpty(options.ArticlesDirectory))
+            startDirectory = options.ArticlesDirectory;
+        else if (!String.IsNullOrEmpty(options.MediaDirectory))
+            startDirectory = options.MediaDirectory;
+        else if (!String.IsNullOrEmpty(options.SnippetsDirectory))
+            startDirectory = options.SnippetsDirectory;
+        else if (!String.IsNullOrEmpty(options.IncludesDirectory))
+            startDirectory = options.IncludesDirectory;
+        else
+        {
+            Console.WriteLine("\nEnter the path to the directory that contains the docfx.json file for the docset:\n");
+            options.DocFxDirectory = Console.ReadLine();
+            startDirectory = options.DocFxDirectory;
+        }
+
+        if (String.IsNullOrEmpty(startDirectory) || !Directory.Exists(startDirectory))
+        {
+            Console.WriteLine($"\nThe {startDirectory} directory doesn't exist.");
+            return;
+        }
+
+        // Initialize the DocFxRepo object for all options.
+        var docFxRepo = new DocFxRepo(startDirectory);
+
+        // Determine if we're to delete orphans (or just report them).
+        if (options.FindOrphanedImages 
+            || options.FindOrphanedSnippets 
+            || options.FindOrphanedIncludes 
+            || options.FindOrphanedArticles)
+        {
             if (options.Delete is null)
             {
                 options.Delete = false;
@@ -74,152 +91,148 @@ class Program
                     options.Delete = true;
                 }
             }
+        }
 
-            Console.WriteLine($"\nSearching the '{options.InputDirectory}' directory and its subdirectories for orphaned topics...");
+        // Find orphaned articles.
+        if (options.FindOrphanedArticles)
+        {
+            if (String.IsNullOrEmpty(options.ArticlesDirectory))
+            {
+                Console.WriteLine("\nEnter the path to the directory that you want to check for orphaned articles:\n");
+                options.ArticlesDirectory = Console.ReadLine();
+            }
+            if (String.IsNullOrEmpty(options.ArticlesDirectory) || !Directory.Exists(options.ArticlesDirectory))
+            {
+                Console.WriteLine($"\nThe {options.ArticlesDirectory} directory doesn't exist.");
+                return;
+            }
 
-            List<FileInfo> tocFiles = GetTocFiles(options.InputDirectory);
-            List<FileInfo> markdownFiles = GetMarkdownFiles(options.InputDirectory, "snippets");
+            // Make sure the searchable directory is part of the same DocFx docset.
+            if (!options.ArticlesDirectory.StartsWith(docFxRepo.DocFxDirectory.FullName))
+            {
+                Console.WriteLine($"{options.ArticlesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                return;
+            }
 
-            if (tocFiles is null || markdownFiles is null)
+            Console.WriteLine($"\nSearching the '{options.ArticlesDirectory}' directory and its subdirectories for orphaned articles...");
+
+            List<FileInfo> markdownFiles = GetMarkdownFiles(options.ArticlesDirectory, "snippets");
+
+            if (docFxRepo.AllTocFiles is null || markdownFiles is null)
             {
                 return;
             }
 
-            ListOrphanedTopics(tocFiles, markdownFiles, options.Delete.Value);
+            ListOrphanedTopics(docFxRepo.AllTocFiles, markdownFiles, options.Delete.Value);
         }
 
         // Find orphaned images
         if (options.FindOrphanedImages)
         {
-            // Get input directory.
-            if (String.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.MediaDirectory))
             {
-                Console.WriteLine("\nEnter the path to the directory that you want to check for orphans:\n");
-                options.InputDirectory = Console.ReadLine();
+                Console.WriteLine("\nEnter the path to the directory that you want to check for orphaned media files:\n");
+                options.MediaDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.MediaDirectory) || !Directory.Exists(options.MediaDirectory))
             {
-                Console.WriteLine("\nThat directory doesn't exist.");
+                Console.WriteLine($"\nThe {options.MediaDirectory} directory doesn't exist.");
                 return;
             }
 
-            DocFxRepo repo;
-            try
+            // Make sure the searchable directory is part of the same DocFx docset.
+            if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                repo = new DocFxRepo(options.InputDirectory, options.UrlBasePath);
-            }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"{options.MediaDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
                 return;
             }
 
-            // Check that this directory or one of its ancestors has a docfx.json file.
-            // I.e. we don't want it to be a parent directory of a docfx.json directory, so single docset only.
-            if (repo.DocFxDirectory == null)
+            if (String.IsNullOrEmpty(options.UrlBasePath))
             {
-                Console.WriteLine("\nCould not find the docfx.json file for this directory.");
-                return;
+                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
+                options.UrlBasePath = Console.ReadLine();
             }
 
-            // Get the base path URL for the docset.
-            if (repo.BasePathUrl == null)
-            {
-                Console.WriteLine("\nCould not find the base path URL for this directory.");
-                return;
-            }
+            docFxRepo.UrlBasePath = options.UrlBasePath;
 
-            if (options.Delete is null)
-            {
-                options.Delete = false;
-                Console.WriteLine("\nDo you want to delete orphans (y or n)?");
-                var info = Console.ReadKey();
-                if (info.KeyChar == 'y' || info.KeyChar == 'Y')
-                {
-                    options.Delete = true;
-                }
-            }
+            // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
+            // This is done here (dynamically) because it relies on knowing the base path URL.
+            docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?({docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
 
-            Console.WriteLine($"\nSearching the '{options.InputDirectory}' directory recursively for orphaned .png/.jpg/.gif/.svg files...\n");
+            // Gather media file names.
+            docFxRepo.ImageRefs = GetMediaFiles(options.MediaDirectory);
 
-            repo.ListOrphanedImages(options.Delete.Value, "snippets");
+            Console.WriteLine($"\nSearching the '{options.MediaDirectory}' directory recursively for orphaned .png/.jpg/.gif/.svg files...\n");
+
+            docFxRepo.ListOrphanedImages(options.Delete.Value, "snippets");
         }
 
         // Catalog images
         if (options.CatalogImages)
         {
-            // Get input directory.
-            if (String.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.MediaDirectory))
             {
-                Console.WriteLine("\nEnter the path to the directory where you want to catalog image links:\n");
-                options.InputDirectory = Console.ReadLine();
+                Console.WriteLine("\nEnter the path to the directory where you want to catalog media files:\n");
+                options.MediaDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.MediaDirectory) || !Directory.Exists(options.MediaDirectory))
             {
-                Console.WriteLine("\nThat directory doesn't exist.");
+                Console.WriteLine($"\nThe {options.MediaDirectory} directory doesn't exist.");
                 return;
             }
 
-            DocFxRepo repo;
-            try
+            // Make sure the searchable directory is part of the same DocFx docset.
+            if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                repo = new DocFxRepo(options.InputDirectory, options.UrlBasePath);
-            }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine($"{options.MediaDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
                 return;
             }
 
-            // Check that this directory or one of its ancestors has a docfx.json file.
-            // I.e. we don't want it to be a parent directory of a docfx.json directory, so single docset only.
-            if (repo.DocFxDirectory == null)
+            if (String.IsNullOrEmpty(options.UrlBasePath))
             {
-                Console.WriteLine("\nCould not find the docfx.json file for this directory.");
-                return;
+                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
+                options.UrlBasePath = Console.ReadLine();
             }
 
-            // Get the base path URL for the docset.
-            if (repo.BasePathUrl == null)
-            {
-                Console.WriteLine("\nCould not find the base path URL for this directory.");
-                return;
-            }
+            docFxRepo.UrlBasePath = options.UrlBasePath;
 
-            Console.WriteLine($"\nCataloging the images in the '{options.InputDirectory}' directory...\n");
+            // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
+            // This is done here (dynamically) because it relies on knowing the base path URL.
+            docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?({docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
 
-            repo.OutputImageReferences();
+            // Gather media file names.
+            docFxRepo.ImageRefs = GetMediaFiles(options.MediaDirectory);
+
+            Console.WriteLine($"\nCataloging the images in the '{options.MediaDirectory}' directory...\n");
+
+            docFxRepo.OutputImageReferences();
         }
 
         // Find orphaned include-type files
         if (options.FindOrphanedIncludes)
         {
-            if (String.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.IncludesDirectory))
             {
-                Console.WriteLine("\nEnter the path to the directory that you want to check for orphans:\n");
-                options.InputDirectory = Console.ReadLine();
+                Console.WriteLine("\nEnter the path to the directory that you want to check for orphaned include files:\n");
+                options.IncludesDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.IncludesDirectory) || !Directory.Exists(options.IncludesDirectory))
             {
-                Console.WriteLine("\nThat directory doesn't exist.");
+                Console.WriteLine($"\nThe {options.IncludesDirectory} directory doesn't exist.");
                 return;
             }
 
-            if (options.Delete is null)
+            // Make sure the searchable directory is part of the same DocFx docset.
+            if (!options.IncludesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                options.Delete = false;
-                Console.WriteLine("\nDo you want to delete orphans (y or n)?");
-                var info = Console.ReadKey();
-                if (info.KeyChar == 'y' || info.KeyChar == 'Y')
-                {
-                    options.Delete = true;
-                }
+                Console.WriteLine($"{options.IncludesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                return;
             }
 
-            Console.WriteLine($"\nSearching the '{options.InputDirectory}' directory recursively for orphaned .md files " +
+            Console.WriteLine($"\nSearching the '{options.IncludesDirectory}' directory recursively for orphaned .md files " +
                 $"in directories named 'includes' or '_shared'.");
 
-            Dictionary<string, int> includeFiles = GetIncludeFiles(options.InputDirectory);
+            Dictionary<string, int> includeFiles = GetIncludeFiles(options.IncludesDirectory);
 
             if (includeFiles.Count == 0)
             {
@@ -227,37 +240,33 @@ class Program
                 return;
             }
 
-            ListOrphanedIncludes(options.InputDirectory, includeFiles, options.Delete.Value);
+            ListOrphanedIncludes(options.IncludesDirectory, includeFiles, options.Delete.Value);
         }
 
         // Find orphaned .cs and .vb files
         if (options.FindOrphanedSnippets)
         {
-            if (String.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.SnippetsDirectory))
             {
-                Console.WriteLine("\nEnter the path to the directory that you want to check for orphans:\n");
-                options.InputDirectory = Console.ReadLine();
+                Console.WriteLine("\nEnter the path to the directory that you want to check for orphaned snippet files:\n");
+                options.SnippetsDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.SnippetsDirectory) || !Directory.Exists(options.SnippetsDirectory))
             {
-                Console.WriteLine("\nThat directory doesn't exist.");
+                Console.WriteLine($"\nThe {options.SnippetsDirectory} directory doesn't exist.");
                 return;
             }
 
-            if (options.Delete is null)
+            // Make sure the searchable directory is part of the same DocFx docset.
+            if (!options.SnippetsDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                options.Delete = false;
-                Console.WriteLine("\nDo you want to delete orphans (y or n)?");
-                var info = Console.ReadKey();
-                if (info.KeyChar == 'y' || info.KeyChar == 'Y')
-                {
-                    options.Delete = true;
-                }
+                Console.WriteLine($"{options.SnippetsDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                return;
             }
 
-            Console.WriteLine($"\nSearching the '{options.InputDirectory}' directory recursively for orphaned .cs and .vb files.");
+            Console.WriteLine($"\nSearching the '{options.SnippetsDirectory}' directory recursively for orphaned .cs and .vb files.");
 
-            List<string> snippetFiles = GetSnippetFiles(options.InputDirectory);
+            List<string> snippetFiles = GetSnippetFiles(options.SnippetsDirectory);
 
             if (snippetFiles.Count == 0)
             {
@@ -265,216 +274,138 @@ class Program
                 return;
             }
 
-            ListOrphanedSnippets(options.InputDirectory, snippetFiles, options.Delete.Value);
+            ListOrphanedSnippets(options.SnippetsDirectory, snippetFiles, options.Delete.Value);
         }
 
-        // Replace links to topics that are redirected in the master redirection file.
+        // Replace links to articles that are redirected in the master redirection files.
         if (options.ReplaceRedirectTargets)
         {
-            // Get the directory in which to replace links.
-            if (String.IsNullOrEmpty(options.InputDirectory))
+            // Get the directory that represents the docset.
+            if (String.IsNullOrEmpty(options.ArticlesDirectory))
             {
-                Console.WriteLine("\nEnter the path to the directory that you want to replace links in:\n");
-                options.InputDirectory = Console.ReadLine();
+                Console.WriteLine("\nEnter the path to the directory that contains the articles with links to fix up:\n");
+                options.ArticlesDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.ArticlesDirectory) || !Directory.Exists(options.ArticlesDirectory))
             {
-                Console.WriteLine("\nThat directory doesn't exist.");
+                Console.WriteLine($"\nThe {options.ArticlesDirectory} directory doesn't exist.");
                 return;
             }
 
-            // Check that this directory or one of its ancestors has a docfx.json file.
-            // I.e. we don't want it to be a parent directory of a docfx.json directory, so single docset only.
-            var directory = new DirectoryInfo(options.InputDirectory);
-            DirectoryInfo docfxDir = GetDirectory(directory, "docfx.json");
-            if (docfxDir == null)
+            // Make sure the searchable directory is part of the same DocFx docset.
+            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine("\nCould not find the docfx.json file for this directory.");
+                Console.WriteLine($"{options.ArticlesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
                 return;
             }
 
-            // Get the base path URL for the docset.
-            string urlBasePath = options.UrlBasePath;
-            if (urlBasePath == null)
+            if (String.IsNullOrEmpty(options.UrlBasePath))
             {
-                Console.WriteLine("\nCould not find the base path URL for this directory.");
-                return;
+                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
+                options.UrlBasePath = Console.ReadLine();
             }
 
-            // Get the OPS config file.
-            FileInfo opsConfigFile = GetFileHereOrInParent(options.InputDirectory, ".openpublishing.publish.config.json");
-            if (opsConfigFile == null)
-            {
-                Console.WriteLine($"\nCouldn't find OPS config file for directory '{options.InputDirectory}'.");
-                return;
-            }
-            if (opsConfigFile.DirectoryName == null)
-            {
-                Console.WriteLine("Could not determine directory name for OPS config file.");
-                return;
-            }
+            docFxRepo.UrlBasePath = options.UrlBasePath;
 
-            Console.WriteLine($"\nSearching the '{options.InputDirectory}' directory for links to redirected topics...\n");
-
-            // Get a list of all redirection files.
-            List<string> redirectionFiles = GetRedirectionFiles(opsConfigFile);
+            Console.WriteLine($"\nSearching the '{options.ArticlesDirectory}' directory for links to redirected topics...\n");
 
             // Gather all the redirects.
-            List<Redirect> redirects = new List<Redirect>();
-            foreach (string redirectionFile in redirectionFiles)
-            {
-                FileInfo redirectsFile = new FileInfo(Path.Combine(opsConfigFile.DirectoryName, redirectionFile));
-                if (redirectsFile == null)
-                {
-                    Console.WriteLine($"\nCould not find redirection file '{redirectionFile}'.");
-                    continue;
-                }
-
-                redirects.AddRange(GetAllRedirectedFiles(redirectsFile, opsConfigFile.DirectoryName));
-            }
+            List<Redirect> redirects = docFxRepo.GetAllRedirects();
 
             // Get all the markdown and YAML files.
-            List<FileInfo> linkingFiles = GetMarkdownFiles(options.InputDirectory);
-            linkingFiles.AddRange(GetYAMLFiles(options.InputDirectory));
+            List<FileInfo> linkingFiles = GetMarkdownFiles(options.ArticlesDirectory);
+            linkingFiles.AddRange(GetYAMLFiles(options.ArticlesDirectory));
 
             // Check all links, including in toc.yml, to files in the redirects list.
             // Replace links to redirected files.
-            ReplaceRedirectedLinks(redirects, linkingFiles, urlBasePath);
+            docFxRepo.ReplaceRedirectedLinks(redirects, linkingFiles);
 
-            Console.WriteLine("\nFinished replacing links.");
+            Console.WriteLine("\nFinished replacing redirected links.");
         }
 
         // Replace site-relative links to *this* repo with file-relative links.
         if (options.ReplaceWithRelativeLinks)
         {
-            if (String.IsNullOrEmpty(options.InputDirectory))
+            // Get the directory that represents the docset.
+            if (String.IsNullOrEmpty(options.ArticlesDirectory))
             {
-                Console.WriteLine("\nEnter the path to the directory where you want to replace redirected links:\n");
-                options.InputDirectory = Console.ReadLine();
+                Console.WriteLine("\nEnter the path to the directory that contains the articles with links to fix up:\n");
+                options.ArticlesDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.ArticlesDirectory) || !Directory.Exists(options.ArticlesDirectory))
             {
-                Console.WriteLine("\nThat directory doesn't exist.");
+                Console.WriteLine($"\nThe {options.ArticlesDirectory} directory doesn't exist.");
                 return;
             }
 
-            // Get the OPS config file.
-            FileInfo opsConfigFile = GetFileHereOrInParent(options.InputDirectory, ".openpublishing.publish.config.json");
-            if (opsConfigFile == null)
+            // Make sure the searchable directory is part of the same DocFx docset.
+            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"\nCouldn't find OPS config file for directory '{options.InputDirectory}'.");
+                Console.WriteLine($"{options.ArticlesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
                 return;
             }
 
             // Check that this isn't the root directory of the repo. The code doesn't handle that case currently
             // because it can't always determine the base path of the docset (e.g. for dotnet/docs repo).
-            if (String.Equals(opsConfigFile.DirectoryName, options.InputDirectory, StringComparison.OrdinalIgnoreCase))
+            if (String.Equals(docFxRepo.OpsConfigFile.DirectoryName, options.ArticlesDirectory, StringComparison.OrdinalIgnoreCase))
             {
                 Console.WriteLine($"\nYou entered the repo root directory. Please enter a subdirectory in which to replace links.");
                 return;
             }
 
-            // Check that this directory or one of its ancestors has a docfx.json file.
-            // I.e. we don't want it to be a parent directory of a docfx.json directory, so single docset only.
-            var directory = new DirectoryInfo(options.InputDirectory);
-            DirectoryInfo docfxDir = GetDirectory(directory, "docfx.json");
-            if (docfxDir == null)
-            {
-                Console.WriteLine("\nCould not find the docfx.json file for this directory.");
-                return;
-            }
-
             // Get the absolute path to the base directory for this docset.
-            string rootDirectory = GetDocsetAbsolutePath(docfxDir.FullName, directory);
+            string rootDirectory = docFxRepo.GetDocsetAbsolutePath(options.ArticlesDirectory);
 
-            // Find the docset and its URL base path.
-            // Get all docsets for the OPS config file.
-            Dictionary<string, string> docsets = GetDocsetInfo(opsConfigFile);
-            // Find the specific docset info for the input directory.
-            string relativePathToDocset = Path.GetRelativePath(opsConfigFile.DirectoryName, rootDirectory);
-            string urlBasePath = null;
-            foreach (var docset in docsets)
+            if (String.IsNullOrEmpty(options.UrlBasePath))
             {
-                if (docset.Key == relativePathToDocset)
-                {
-                    // Bingo!
-                    urlBasePath = docset.Value;
-                    break;
-                }
+                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
+                options.UrlBasePath = Console.ReadLine();
             }
 
-            Console.WriteLine($"\nReplacing site-relative links to '{urlBasePath}/' in " +
-                $"the '{options.InputDirectory}' directory with file-relative links.\n");
+            docFxRepo.UrlBasePath = options.UrlBasePath;
 
-            // Get all the markdown and YAML files.
-            List<FileInfo> linkingFiles = GetMarkdownFiles(options.InputDirectory);
-            linkingFiles.AddRange(GetYAMLFiles(options.InputDirectory));
+            Console.WriteLine($"\nReplacing site-relative links to '{docFxRepo.UrlBasePath}/' in " +
+                $"the '{options.ArticlesDirectory}' directory with file-relative links.\n");
+
+            // Get all the markdown and YAML files in the search directory.
+            List<FileInfo> linkingFiles = GetMarkdownFiles(options.ArticlesDirectory);
+            linkingFiles.AddRange(GetYAMLFiles(options.ArticlesDirectory));
 
             // Check all links in these files.
-            ReplaceLinks(linkingFiles, urlBasePath, rootDirectory);
+            ReplaceLinks(linkingFiles, docFxRepo.UrlBasePath, rootDirectory);
+
+            Console.WriteLine("\nFinished fixing relative links.");
         }
 
         // Remove hops/daisy chains in a redirection file.        
         if (options.RemoveRedirectHops)
         {
             // Get the directory that represents the docset.
-            if (String.IsNullOrEmpty(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.DocFxDirectory))
             {
-                Console.WriteLine("\nEnter the path to any directory in the docset:\n");
-                options.InputDirectory = Console.ReadLine();
+                Console.WriteLine("\nEnter the path to the directory that contains the docfx.json file:\n");
+                options.DocFxDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.InputDirectory) || !Directory.Exists(options.InputDirectory))
+            if (String.IsNullOrEmpty(options.DocFxDirectory) || !Directory.Exists(options.DocFxDirectory))
             {
-                Console.WriteLine("\nThat directory doesn't exist.");
+                Console.WriteLine($"\nThe {options.DocFxDirectory} directory doesn't exist.");
                 return;
             }
 
-            // Check that this directory or one of its ancestors has a docfx.json file.
-            // I.e. we don't want it to be a parent directory of a docfx.json directory, so single docset only.
-            var directory = new DirectoryInfo(options.InputDirectory);
-            DirectoryInfo docfxDir = GetDirectory(directory, "docfx.json");
-            if (docfxDir == null)
+            // Make sure the searchable directory is part of the same DocFx docset.
+            if (!options.DocFxDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine("\nCould not find the docfx.json file for this directory.");
+                Console.WriteLine($"{options.DocFxDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
                 return;
             }
 
-            // Get the OPS config file.
-            FileInfo opsConfigFile = GetFileHereOrInParent(options.InputDirectory, ".openpublishing.publish.config.json");
-            if (opsConfigFile == null)
-            {
-                Console.WriteLine($"\nCouldn't find OPS config file for directory '{options.InputDirectory}'.");
-                return;
-            }
-            if (opsConfigFile.DirectoryName == null)
-            {
-                Console.WriteLine("Could not determine directory name for OPS config file.");
-                return;
-            }
+            docFxRepo.RemoveAllRedirectHops();
 
-            // Get all docsets for the OPS config file.
-            Dictionary<string, string> docsets = GetDocsetInfo(opsConfigFile);
-
-            // Get a list of all redirection files.
-            List<string> redirectionFiles = GetRedirectionFiles(opsConfigFile);
-
-            // Remove hops within each file.
-            foreach (string redirectionFile in redirectionFiles)
-            {
-                FileInfo redirectsFile = new FileInfo(Path.Combine(opsConfigFile.DirectoryName, redirectionFile));
-                if (redirectsFile == null)
-                {
-                    Console.WriteLine($"\nCould not find redirection file '{redirectionFile}'.");
-                    continue;
-                }
-
-                Console.WriteLine($"\nRemoving hops from the '{redirectionFile}' redirection file.\n");
-                RemoveRedirectHops(redirectsFile, docsets, opsConfigFile.DirectoryName);
-            }
+            Console.WriteLine("\nFinished removing redirect hops.");
         }
 
         // Nothing to do.
-        if (options.FindOrphanedTopics is false &&
+        if (options.FindOrphanedArticles is false &&
             options.FindOrphanedImages is false &&
             options.CatalogImages is false &&
             options.FindOrphanedIncludes is false &&
@@ -483,7 +414,7 @@ class Program
             options.ReplaceWithRelativeLinks is false &&
             options.RemoveRedirectHops is false)
         {
-            Console.WriteLine("\nYou did not specify which function to perform. To see options, use 'CleanRepo.exe -?'.");
+            Console.WriteLine("\nYou didn't specify which function to perform. To see options, use 'CleanRepo.exe -?'.");
             return;
         }
 
@@ -1050,16 +981,16 @@ class Program
 
         Console.WriteLine("\nTopics not in any TOC file (that are also not includes or shared or misc):\n");
 
-        bool IsTopicFile(FileInfo file) =>
+        bool IsArticleFile(FileInfo file) =>
             !file.FullName.Contains("\\includes\\") &&
             !file.FullName.Contains("\\_shared\\") &&
             !file.FullName.Contains("\\misc\\") &&
-            String.Compare(file.Name, "TOC.md", true) != 0 &&
-            String.Compare(file.Name, "index.md", true) != 0;
+            String.Compare(file.Name, "TOC.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            String.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0;
 
         List<FileInfo> orphanedFiles = new List<FileInfo>();
 
-        Parallel.ForEach(markdownFiles.Where(IsTopicFile), markdownFile =>
+        Parallel.ForEach(markdownFiles.Where(IsArticleFile), markdownFile =>
         {
             var found = tocFiles.Any(tocFile => IsFileLinkedFromTocFile(markdownFile, tocFile));
             if (!found)
@@ -1233,486 +1164,6 @@ class Program
     }
     #endregion
 
-    #region Redirected files
-
-    private static RedirectionFile LoadRedirectJson(FileInfo redirectsFile)
-    {
-        using (StreamReader reader = new StreamReader(redirectsFile.FullName))
-        {
-            string json = reader.ReadToEnd();
-
-            try
-            {
-                return JsonSerializer.Deserialize<RedirectionFile>(json);
-            }
-            catch (JsonException e)
-            {
-                Console.WriteLine($"Caught exception while reading the {redirectsFile.FullName} file: {e.Message} {e.InnerException?.Message}");
-                return null;
-            }
-        }
-    }
-
-    private static void FormatRedirectionFile(FileInfo redirectsFileInfo)
-    {
-        // Deserialize the redirect entries.
-        RedirectionFile RedirectionFile = LoadRedirectJson(redirectsFileInfo);
-        if (RedirectionFile is null)
-        {
-            Console.WriteLine("Deserialization failed.");
-            return;
-        }
-
-        // Serialize the redirects back to the file.
-        WriteRedirectJson(redirectsFileInfo.FullName, RedirectionFile);
-    }
-
-    private static void WriteRedirectJson(string filePath, RedirectionFile redirects)
-    {
-        JsonSerializerOptions options = new()
-        {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            WriteIndented = true
-        };
-
-        string json = JsonSerializer.Serialize(redirects, options);
-        File.WriteAllText(filePath, json);
-    }
-
-    /// <summary>
-    /// For each source path in a redirect entry, check if it's been clicked in any locale
-    /// in the last X days. If not, remove the redirect entry from the redirection file.
-    /// </summary>
-    private static void TrimRedirectEntries(FileInfo redirectsFileInfo, Dictionary<string, string> docsets, int lookbackDays, string outputFile)
-    {
-        throw new NotImplementedException();
-
-        //RedirectionFile RedirectionFile = LoadRedirectJson(redirectsFileInfo);
-        //if (RedirectionFile is null)
-        //{
-        //    Console.WriteLine("Deserialization of redirection file failed.");
-        //    return;
-        //}
-
-        //// Set up Kusto client.
-        //KustoConnectionStringBuilder builder = new KustoConnectionStringBuilder("https://cgadataout.kusto.windows.net/;Fed=true", "CustomerTouchPoint");
-        //var client = Kusto.Data.Net.Client.KustoClientFactory.CreateCslQueryProvider(builder);
-
-        //// Tracks which redirects to remove.
-        //var noClickRedirects = new List<Redirect>();
-        //// For link-click output.
-        //var sb = new StringBuilder();
-
-        ////for (int i = 0; i < RedirectionFile.redirections.Count && i < 50; i++)
-        //for (int i = 0; i < RedirectionFile.redirections.Count; i++)
-        //{
-        //    // Output for long-running jobs.
-        //    if ((i % 50 == 0) && (i > 0))
-        //    {
-        //        Console.WriteLine($"Progress update: Checked {i} of {RedirectionFile.redirections.Count} redirects.");
-        //    }
-
-        //    Redirect redirect = RedirectionFile.redirections[i];
-
-        //    // If the redirect has a moniker, we don't know how to construct the URL, so ignore it.
-        //    // TODO: To query page views on redirects with a moniker, 
-        //    // probably just add "?view=<moniker>" to the end of the URL.
-        //    // But what if there are multiple monikers?
-        //    if (redirect.monikers != null)
-        //        continue;
-
-        //    // Trim off the file extension.
-        //    string trimmedPath = redirect.source_path[0..redirect.source_path.LastIndexOf('.')];
-
-        //    // If the file name is exactly "index", remove it from the URL.
-        //    if (String.Compare(trimmedPath[(trimmedPath.LastIndexOf('/') + 1)..].ToLowerInvariant(), "index") == 0)
-        //    {
-        //        trimmedPath = trimmedPath[0..(trimmedPath.LastIndexOf('/') + 1)];
-        //    }
-
-        //    string urlBasePath = null;
-
-        //    // Trim off the beginning of the path and obtain the corresponding base path for the URL.
-        //    foreach (var docset in docsets)
-        //    {
-        //        if (trimmedPath.StartsWith(docset.Key))
-        //        {
-        //            trimmedPath = trimmedPath[(docset.Key.Length + 1)..];
-        //            urlBasePath = docset.Value;
-        //            break;
-        //        }
-        //    }
-
-        //    if (String.IsNullOrEmpty(urlBasePath))
-        //    {
-        //        // Ignore this redirect.
-        //        continue;
-        //    }
-
-        //    // Construct the URL to the article.
-        //    string sourcePathUrl = $"{urlBasePath}/{trimmedPath}";
-
-        //    long clicks = -1;
-        //    try
-        //    {
-        //        clicks = NumberOfClicks(sourcePathUrl);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        if (ex is KustoClientException || ex is KustoServiceException)
-        //        {
-        //            // Finish up with the data we have and then exit.
-        //            Console.WriteLine("Caught a KustoClientException or KustoServiceException exception. Exiting the program.");
-        //            break;
-        //        }
-
-        //        throw;
-        //    }
-
-        //    // Differentiate between invalid URL and no page views
-        //    if (clicks == 0)
-        //    {
-        //        string liveUrl = String.Concat("https://docs.microsoft.com/en-us", sourcePathUrl);
-        //        bool isValidUrl = false;
-
-        //        try
-        //        {
-        //            isValidUrl = IsUrlValid(liveUrl);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            if (ex is KustoClientException || ex is KustoServiceException)
-        //            {
-        //                // Finish up with the data we have and then exit.
-        //                Console.WriteLine("Caught a KustoClientException or KustoServiceException exception. Exiting the program.");
-        //                break;
-        //            }
-
-        //            throw;
-        //        }
-
-        //        if (isValidUrl)
-        //        {
-        //            // It's a valid URL with no recent page views.
-        //            noClickRedirects.Add(redirect);
-        //        }
-        //        else
-        //        {
-        //            // Invalid URL, so don't delete redirect entry
-        //            // in case we constructed the URL incorrectly.
-        //            clicks = -1;
-        //        }
-        //    }
-
-        //    sb.AppendLine($"{sourcePathUrl}\t{clicks}");
-        //}
-
-        //// Remove any defunct redirects.
-        //foreach (var redirect in noClickRedirects)
-        //{
-        //    RedirectionFile.redirections.Remove(redirect);
-        //}
-
-        //// Serialize the new list of redirects to the file.
-        //WriteRedirectJson(redirectsFileInfo.FullName, RedirectionFile);
-
-        //// Write the link-click output to a file.
-        //File.WriteAllText(outputFile, sb.ToString());
-
-        //Console.WriteLine($"\nRemoved a total of {noClickRedirects.Count} inactive redirect entries. Tab-separated page view data written to {outputFile}.");
-
-        //long NumberOfClicks(string url)
-        //{
-        //    string query = @"PageView | where Site == ""docs.microsoft.com"" | where StartDateTime > ago(" + lookbackDays +
-        //        @"d) | where Url endswith """ + url + @""" | summarize PageViews=dcount(PageViewId) by ContentId";
-
-        //    IDataReader reader = null;
-        //    try
-        //    {
-        //        reader = client.ExecuteQuery(query);
-        //    }
-        //    catch (DataTableIncompleteDataStreamException)
-        //    {
-        //        // Just ignore this redirect for now.
-        //        Console.WriteLine("Caught DataTableIncompleteDataStreamException. Will continue on with the next redirect.");
-        //        return -1;
-        //    }
-
-        //    long numClicks = 0;
-
-        //    if (reader != null && reader.FieldCount == 2)
-        //    {
-        //        if (reader.Read())
-        //        {
-        //            numClicks = reader.GetInt64(reader.GetOrdinal("PageViews"));
-        //        }
-
-        //        reader.Close();
-        //    }
-
-        //    return numClicks;
-        //}
-
-        //bool IsUrlValid(string LiveUrl)
-        //{
-        //    string query = @"TopicMetadata | where LiveUrl == """ + LiveUrl + @""" | distinct ContentId";
-
-        //    IDataReader reader = null;
-        //    try
-        //    {
-        //        reader = client.ExecuteQuery(query);
-        //    }
-        //    catch (DataTableIncompleteDataStreamException)
-        //    {
-        //        // Could still be valid, but return false just in case.
-        //        return false;
-        //    }
-
-        //    bool isValid = false;
-        //    if (reader != null && reader.FieldCount == 1)
-        //    {
-        //        if (reader.Read())
-        //        {
-        //            isValid = true;
-        //        }
-
-        //        reader.Close();
-        //    }
-
-        //    return isValid;
-        //}
-    }
-
-    /// <summary>
-    /// For each target URL, see if it's a source_path somewhere else.
-    /// If so, replace the original target URL with the new target URL.
-    /// </summary>
-    private static void RemoveRedirectHops(FileInfo redirectsFile, Dictionary<string, string> docsets, string rootPath)
-    {
-        RedirectionFile RedirectionFile = LoadRedirectJson(redirectsFile);
-        if (RedirectionFile is null)
-        {
-            Console.WriteLine("Deserialization of redirection file failed.");
-            return;
-        }
-
-        string fileText = File.ReadAllText(redirectsFile.FullName);
-
-        // Load the sources and targets into a dictionary for easier look up.
-        Dictionary<string, string> redirectsLookup = new Dictionary<string, string>(RedirectionFile.redirections.Count);
-        foreach (Redirect redirect in RedirectionFile.redirections)
-        {
-            string fullPath = null;
-            if (redirect.source_path != null)
-            {
-                // Construct the full path to the redirected file
-                fullPath = Path.Combine(redirectsFile.DirectoryName, redirect.source_path);
-            }
-            else if (redirect.source_path_from_root != null)
-            {
-                // Construct the full path to the redirected file
-                fullPath = Path.Combine(rootPath, redirect.source_path_from_root.Substring(1));
-            }
-
-            redirectsLookup.Add(Path.GetFullPath(fullPath), redirect.redirect_url);
-        }
-
-        foreach (var redirectPair in redirectsLookup)
-        {
-            string currentTarget = redirectPair.Value;
-
-            string docsetRootFolderName = null;
-            string basePathUrl = null;
-
-            foreach (var docset in docsets)
-            {
-                if (currentTarget.StartsWith(docset.Value + "/"))
-                {
-                    docsetRootFolderName = docset.Key;
-                    basePathUrl = docset.Value;
-                    break;
-                }
-            }
-
-            if (docsetRootFolderName == null)
-            {
-                // Redirect URL is in a different docset/repo, so ignore it.
-                continue;
-            }
-
-            // Formulate the full path for the redirect URL (so it matches the dictionary key format).
-            string targetPath = currentTarget.Remove(0, basePathUrl.Length) + ".md";
-            string normalizedTargetPath = Path.GetFullPath(Path.Combine(rootPath, docsetRootFolderName, targetPath[1..] /* Removes the initial forward slash */));
-
-            // If we enter this loop, the target of a redirect is also the source of one or more redirects.
-            // Keep looping till you find the final target.
-            while (redirectsLookup.ContainsKey(normalizedTargetPath))
-            {
-                // Avoid an infinite loop by checking that this isn't the same key/value pair.
-                if (String.Equals(redirectsLookup[normalizedTargetPath], currentTarget))
-                {
-                    Console.WriteLine($"\nWARNING: {normalizedTargetPath} REDIRECTS TO ITSELF. PLEASE FIND A DIFFERENT REDIRECT URL.\n");
-                    break;
-                }
-
-                currentTarget = redirectsLookup[normalizedTargetPath];
-
-                targetPath = currentTarget.Remove(0, basePathUrl.Length) + ".md";
-                normalizedTargetPath = Path.GetFullPath(Path.Combine(rootPath, docsetRootFolderName, targetPath[1..] /* Removes the initial forward slash */));
-            }
-
-            if (redirectPair.Value != currentTarget)
-            {
-                Console.WriteLine($"Replacing target URL '{redirectPair.Value}' with '{currentTarget}'.");
-
-                fileText = fileText.Replace($"\"redirect_url\": \"{redirectPair.Value}\"", $"\"redirect_url\": \"{currentTarget}\"");
-            }
-        }
-
-        // Write the redirects back to the file.
-        File.WriteAllText(redirectsFile.FullName, fileText);
-    }
-
-    private static IList<Redirect> GetAllRedirectedFiles(FileInfo redirectsFile, string rootPath)
-    {
-        RedirectionFile RedirectionFile = LoadRedirectJson(redirectsFile);
-
-        if (RedirectionFile is null)
-        {
-            Console.WriteLine("Deserialization failed.");
-            return null;
-        }
-
-        foreach (Redirect redirect in RedirectionFile.redirections)
-        {
-            if (redirect.source_path != null)
-            {
-                // Construct the full path to the redirected file
-                string fullPath = Path.Combine(redirectsFile.DirectoryName, redirect.source_path);
-
-                // This cleans up the path by replacing forward slashes with back slashes, removing extra dots, etc.
-                fullPath = Path.GetFullPath(fullPath);
-
-                redirect.source_path_absolute = fullPath;
-            }
-            else if (redirect.source_path_from_root != null)
-            {
-                // Construct the full path to the redirected file
-                string fullPath = Path.Combine(rootPath, redirect.source_path_from_root.Substring(1));
-
-                // This cleans up the path by replacing forward slashes with back slashes, removing extra dots, etc.
-                fullPath = Path.GetFullPath(fullPath);
-
-                redirect.source_path_absolute = fullPath;
-            }
-        }
-
-        return RedirectionFile.redirections;
-    }
-
-    private static void ReplaceRedirectedLinks(IList<Redirect> redirects, List<FileInfo> linkingFiles, string docsetName)
-    {
-        Dictionary<string, Redirect> redirectLookup = Enumerable.ToDictionary<Redirect, string>(redirects, r => r.source_path_absolute);
-
-        // For each file...
-        foreach (var linkingFile in linkingFiles)
-        {
-            bool foundOldLink = false;
-            StringBuilder output = new StringBuilder($"FILE '{linkingFile.FullName}' contains the following link(s) to redirected files:\n\n");
-
-            string text = File.ReadAllText(linkingFile.FullName);
-
-            // Matches link with optional #bookmark on the end.
-            string linkRegEx = linkingFile.Extension.ToLower() == ".yml" ?
-                @"href:(.*\.md)(#[\w-]+)?" :
-                @"\]\(<?([^\)]*\.md)(#[\w-]+)?>?\)";
-
-            // For each link in the file...
-            foreach (Match match in Regex.Matches(text, linkRegEx, RegexOptions.IgnoreCase))
-            {
-                // Get the file-relative path to the linked file.
-                string relativePath = match.Groups[1].Value.Trim();
-
-                if (relativePath.StartsWith("http"))
-                {
-                    // This could be an absolute URL to a file in the repo, so check.
-                    string httpRegex = @"https?:\/\/learn.microsoft.com\/([A-z][A-z]-[A-z][A-z]\/)?" + docsetName + @"\/";
-                    var httpMatch = Regex.Match(relativePath, httpRegex, RegexOptions.IgnoreCase);
-
-                    if (!httpMatch.Success)
-                    {
-                        // The file is in a different repo, so ignore it.
-                        continue;
-                    }
-
-                    // Chop off the https://learn.microsoft.com/docset/ part of the path.
-                    relativePath = relativePath.Substring(httpMatch.Value.Length);
-                }
-
-                // Remove any quotation marks
-                relativePath = relativePath.Replace("\"", "");
-
-                string fullPath = null;
-                try
-                {
-                    // Construct the full path to the linked file.
-                    fullPath = Path.Combine(linkingFile.DirectoryName, relativePath);
-                }
-                catch (ArgumentException)
-                {
-                    Console.WriteLine($"Ignoring the link {relativePath} due to possibly invalid format.\n");
-                    continue;
-                }
-
-                // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
-                try
-                {
-                    fullPath = Path.GetFullPath(fullPath);
-                }
-                catch (NotSupportedException)
-                {
-                    //Console.WriteLine($"Found a possibly malformed link '{match.Groups[0].Value}' in '{linkingFile.FullName}'.\n");
-                    break;
-                }
-
-                if (fullPath != null)
-                {
-                    // See if our constructed path matches a source file in the dictionary of redirects.
-                    if (redirectLookup.ContainsKey(fullPath))
-                    {
-                        foundOldLink = true;
-                        output.AppendLine($"'{relativePath}'");
-
-                        string redirectURL = redirectLookup[fullPath].redirect_url;
-
-                        // Add the bookmark back on, in case it applies to the new target.
-                        if (!String.IsNullOrEmpty(match.Groups[2].Value))
-                            redirectURL = redirectURL + match.Groups[2].Value;
-
-                        output.AppendLine($"REPLACING '({relativePath})' with '({redirectURL})'.");
-
-                        // Replace the link.
-                        if (linkingFile.Extension.ToLower() == ".md")
-                        {
-                            text = text.Replace(match.Groups[0].Value, $"]({redirectURL})");
-                        }
-                        else // .yml file
-                        {
-                            text = text.Replace(match.Groups[0].Value, $"href: {redirectURL}");
-                        }
-                        File.WriteAllText(linkingFile.FullName, text);
-                    }
-                }
-            }
-
-            if (foundOldLink)
-            {
-                Console.WriteLine(output.ToString());
-            }
-        }
-    }
-    #endregion
-
     #region Popular files
     /// <summary>
     /// Finds topics that appear more than once, either in one TOC.md file, or multiple TOC.md files.
@@ -1763,7 +1214,7 @@ class Program
     /// Looks for the specified file in the specified directory, and if not found,
     /// in all parent directories up to the disk root directory.
     /// </summary>
-    private static FileInfo GetFileHereOrInParent(string inputDirectory, string fileName)
+    public static FileInfo GetFileHereOrInParent(string inputDirectory, string fileName)
     {
         DirectoryInfo dir = new DirectoryInfo(inputDirectory);
 
@@ -1787,93 +1238,29 @@ class Program
         }
     }
 
-    public static string ConvertImagePathSrcToDest(string docfxFilePath, string currentImagePath)
+    /// <summary>
+    /// Returns true if 'child' is a subdirectory (or the same directory) as 'other'.
+    /// </summary>
+    public static bool IsSubdirectoryOf(this string child, string other)
     {
-        // Deserialize the docfx.json file.
-        DocFx docfx = LoadDocfxFile(Path.Combine(docfxFilePath, "docfx.json"));
-        if (docfx == null)
+        bool isChild = false;
+
+        var childInfo = new DirectoryInfo(child);
+        var otherInfo = new DirectoryInfo(other);
+
+        if (childInfo.FullName== otherInfo.FullName) { return true; }
+
+        while (childInfo.Parent != null)
         {
-            return null;
-        }
-
-        foreach (var entry in docfx.build.resource)
-        {
-            if (entry.src == null || entry.dest == null)
-                continue;
-
-            if (entry.src.TrimEnd('/') == ".")
-                return Path.Combine(entry.dest, currentImagePath);
-
-            if (!currentImagePath.StartsWith(entry.src))
-                continue;
-
-            // If we get here, the path starts with entry.src,
-            // so replace that part of the path with whatever entry.dest is.
-            return Path.Combine(entry.dest, currentImagePath.Substring(entry.src.Length));
-        }
-
-        // We didn't find any useful info in the docfx.json file, so just return the same string back.
-        return currentImagePath;
-    }
-
-    public static string ConvertImagePathDestToSrc(string docfxFilePath, string currentImagePath)
-    {
-        // Deserialize the docfx.json file.
-        DocFx docfx = LoadDocfxFile(Path.Combine(docfxFilePath, "docfx.json"));
-        if (docfx == null)
-        {
-            return null;
-        }
-
-        foreach (var entry in docfx.build.resource)
-        {
-            if (entry.src == null || entry.dest == null)
-                continue;
-
-            // This one applies to the dotnet/docs repo.
-            if (entry.dest.TrimEnd('/') == ".")
-                return Path.Combine(entry.src, currentImagePath);
-
-            if (!currentImagePath.StartsWith(entry.dest))
-                continue;
-
-            // If we get here, the path starts with entry.dest,
-            // so replace that part of the path with whatever entry.src is.
-            return Path.Combine(entry.src, currentImagePath.Substring(entry.dest.Length));
-        }
-
-        // We didn't find any useful info in the docfx.json file, so just return the same string back.
-        return currentImagePath;
-    }
-
-    private static string GetDocsetAbsolutePath(string docfxFilePath, DirectoryInfo inputDirectory)
-    {
-        // Deserialize the docfx.json file.
-        DocFx docfx = LoadDocfxFile(Path.Combine(docfxFilePath, "docfx.json"));
-        if (docfx == null)
-        {
-            return null;
-        }
-
-        string docsetPath = null;
-
-        // If there's more than one docset, choose the one that includes the input directory.
-        foreach (var entry in docfx.build.content)
-        {
-            if (entry.src == null)
-                continue;
-
-            if (entry.src.TrimEnd('/') == ".")
-                docsetPath = docfxFilePath;
-            else
-                docsetPath = Path.GetFullPath(entry.src, docfxFilePath);
-
-            // Check that it's a parent (or the same) directory as the input directory.
-            if (inputDirectory.FullName.StartsWith(docsetPath))
+            if (childInfo.Parent.FullName == otherInfo.FullName)
+            {
+                isChild = true;
                 break;
+            }
+            else childInfo = childInfo.Parent;
         }
 
-        return docsetPath;
+        return isChild;
     }
 
     // The base path should be obtained through a user-provided option instead.
@@ -1927,172 +1314,6 @@ class Program
     //    Console.WriteLine("\nThanks!");
     //    return basePath;
     //}
-
-    private static List<string> GetRedirectionFiles(FileInfo opsConfigFile)
-    {
-        // Deserialize the OPS config file.
-        OPSConfig config = LoadOPSJson(opsConfigFile);
-        if (config == null || config.redirection_files == null)
-        {
-            return new List<string>() { ".openpublishing.redirection.json" };
-        }
-        else
-            return config.redirection_files;
-    }
-
-    /// <summary>
-    /// Pulls docset information, including URL base path, from the OPS config and docfx.json files.
-    /// </summary>
-    private static Dictionary<string, string> GetDocsetInfo(FileInfo opsConfigFile)
-    {
-        // Deserialize the OPS config file to get build source folders.
-        OPSConfig config = LoadOPSJson(opsConfigFile);
-        if (config == null)
-        {
-            Console.WriteLine("Could not deserialize OPS config file.");
-            return null;
-        }
-
-        var mappingInfo = new Dictionary<string, string>();
-        foreach (var sourceFolder in config.docsets_to_publish)
-        {
-            // Deserialize the corresponding docfx.json file.
-            string docfxFilePath = Path.Combine(opsConfigFile.DirectoryName, sourceFolder.build_source_folder, "docfx.json");
-            DocFx docfx = LoadDocfxFile(docfxFilePath);
-            if (docfx == null)
-            {
-                continue;
-            }
-
-            string? breadcrumbPath = docfx.build.globalMetadata.breadcrumb_path;
-            string basePath = "";
-
-            if (breadcrumbPath is not null)
-            {
-                // Remove everything after and including the second last / character.
-                breadcrumbPath = breadcrumbPath[0..breadcrumbPath.LastIndexOf('/')];
-                basePath = breadcrumbPath[0..breadcrumbPath.LastIndexOf('/')];
-            }
-
-            if (breadcrumbPath is null || basePath.StartsWith('~'))
-            {
-                // We can't get the URL base path automatically, so ask the user.
-                Console.WriteLine($"What's the URL base path for articles in the `{sourceFolder.build_source_folder}` directory? (Example: /aspnet/core)");
-                basePath = Console.ReadLine();
-            }
-
-            // There can be more than one "src" path.
-            foreach (var item in docfx.build.content)
-            {
-                // Examples:
-                // "src": "./vs-2015"
-                // "src": "./"
-
-                // Construct the full path to where the docset files are located.
-                string docsetFilePath = sourceFolder.build_source_folder;
-
-                if (item.src != null)
-                {
-                    if (item.src != ".")
-                    {
-                        // Trim "./" off the beginning, if it's there.
-                        if (item.src.StartsWith("./"))
-                            item.src = item.src[2..];
-
-                        if (item.src.Length > 0)
-                        {
-                            if (docsetFilePath == ".")
-                                docsetFilePath = item.src;
-                            else
-                                docsetFilePath = String.Concat(docsetFilePath, "/", item.src);
-                        }
-                    }
-
-                    if (!mappingInfo.ContainsKey(docsetFilePath))
-                        mappingInfo.Add(docsetFilePath, basePath);
-                }
-            }
-        }
-
-        return mappingInfo;
-    }
-
-    // Classes for deserialization.
-    class OPSConfig
-    {
-        public List<Docset> docsets_to_publish { get; set; }
-        public List<string> redirection_files { get; set; }
-    }
-    class Docset
-    {
-        public string build_source_folder { get; set; }
-    }
-    class DocFx
-    {
-        public Build build { get; set; }
-    }
-    class Build
-    {
-        public GlobalMetadata globalMetadata { get; set; }
-        public List<Content> content { get; set; }
-        public List<Resource> resource { get; set; }
-    }
-    class Resource
-    {
-        public string src { get; set; }
-        public string dest { get; set; }
-    }
-    class Content
-    {
-        public string src { get; set; }
-        public string dest { get; set; }
-    }
-    class GlobalMetadata
-    {
-        public string breadcrumb_path { get; set; }
-    }
-
-    /// <summary>
-    /// Deserialize OPS config file.
-    /// </summary>
-    private static OPSConfig LoadOPSJson(FileInfo opsFile)
-    {
-        using (StreamReader reader = new StreamReader(opsFile.FullName))
-        {
-            string json = reader.ReadToEnd();
-
-            try
-            {
-                return JsonSerializer.Deserialize<OPSConfig>(json);
-            }
-            catch (JsonException e)
-            {
-                Console.WriteLine($"Caught exception while reading OPS config file: {e.Message}");
-                return null;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Deserialize docfx.json file.
-    /// </summary>
-    private static DocFx LoadDocfxFile(string docfxFilePath)
-    {
-        using (StreamReader reader = new StreamReader(docfxFilePath))
-        {
-            string json = reader.ReadToEnd();
-
-            try
-            {
-                return JsonSerializer.Deserialize<DocFx>(json);
-            }
-            catch (JsonException e)
-            {
-                Console.WriteLine($"Caught exception while reading docfx.json file: {e.Message}");
-                return null;
-            }
-        }
-    }
 
     /// <summary>
     /// Checks if the specified file path is referenced in the specified file.
@@ -2190,6 +1411,36 @@ class Program
     }
 
     /// <summary>
+    /// Returns a dictionary of all .png/.jpg/.gif/.svg files in the directory.
+    /// The search includes the specified directory and (optionally) all its subdirectories.
+    /// </summary>
+    private static Dictionary<string, List<string>> GetMediaFiles(string mediaDirectory, bool searchRecursively = true)
+    {
+        DirectoryInfo dir = new DirectoryInfo(mediaDirectory);
+
+        SearchOption searchOption = searchRecursively ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+
+        Dictionary<string, List<string>> mediaFiles = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        string[] fileExtensions = new string[] { "*.png", "*.jpg", "*.gif", "*.svg" };
+
+        foreach (var extension in fileExtensions)
+        {
+            foreach (var file in dir.EnumerateFiles(extension, searchOption))
+            {
+                mediaFiles.Add(file.FullName.ToLower(), new List<string>());
+            }
+        }
+
+        if (mediaFiles.Count == 0)
+        {
+            Console.WriteLine("\nNo .png/.jpg/.gif/.svg files were found!");
+        }
+
+        return mediaFiles;
+    }
+
+    /// <summary>
     /// Gets all *.yml files recursively, starting in the ancestor directory that contains docfx.json.
     /// </summary>
     internal static List<FileInfo> GetAllYamlFiles(string directoryPath, out DirectoryInfo rootDirectory)
@@ -2215,24 +1466,6 @@ class Program
             return null;
 
         return rootDirectory.EnumerateFiles("*.md", SearchOption.AllDirectories).ToList();
-    }
-
-    /// <summary>
-    /// Gets all TOC.* files recursively, starting in the specified directory if it contains "docfx.json" file.
-    /// Otherwise it looks up the directory path until it finds a "docfx.json" file. Then it starts the recursive search
-    /// for TOC.* files from that directory.
-    /// </summary>
-    private static List<FileInfo> GetTocFiles(string directoryPath)
-    {
-        DirectoryInfo dir = new DirectoryInfo(directoryPath);
-
-        // Look further up the path until we find docfx.json
-        dir = GetDirectory(dir, "docfx.json");
-
-        if (dir is null)
-            return null;
-
-        return dir.EnumerateFiles("TOC.*", SearchOption.AllDirectories).ToList();
     }
 
     /// <summary>
