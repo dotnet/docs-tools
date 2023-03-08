@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,14 +10,16 @@ using System.Threading.Tasks;
 
 namespace CleanRepo;
 
+/// <summary>
+/// Represents a DocFx docset under a single docfx.json file.
+/// </summary>
 class DocFxRepo
 {
-    public string BasePathUrl { get; private set; }
+    internal string UrlBasePath { get; set; }
     public DirectoryInfo DocFxDirectory { get; private set; }
-    public Dictionary<string, List<string>> ImageRefs = new Dictionary<string, List<string>>();
-    List<FileInfo> MdAndYmlFiles { get; set; }
 
-    private readonly List<string> RegExes = new List<string>
+    internal Dictionary<string, List<string>> ImageRefs = new Dictionary<string, List<string>>();
+    internal readonly List<string> ImageLinkRegExes = new List<string>
     {
         @"\]\((.*?(\.(png|jpg|gif|svg))+)", // ![hello](media/how-to/xamarin.png)
         "<img[^>]*?src[ ]*=[ ]*\"([^>]*?(\\.(png|gif|jpg|svg))+)[ ]*\"", // <img data-hoverimage="./images/start.svg" src="./images/start.png" alt="Start icon" />
@@ -27,61 +30,73 @@ class DocFxRepo
         ":::image [^:]*?source=\"(.*?(\\.(png|gif|jpg|svg))+)\"", // :::image type="content" source="media/publish.png" alt-text="Publish dialog.":::
         "<a href=\"([^\"]*?(\\.(png|gif|jpg|svg))+)\"" // <a href="./media/job-large.png" target="_blank"><img src="./media/job-small.png"></a>
     };
-
-    // Constructor.
-    public DocFxRepo(string inputDirectory, string urlBasePath)
+    private List<FileInfo> _allMdAndYmlFiles;
+    private List<FileInfo> AllMdAndYmlFiles
     {
-        DocFxDirectory = Program.GetDirectory(new DirectoryInfo(inputDirectory), "docfx.json");
+        get
+        {
+            if (_allMdAndYmlFiles == null)
+            {
+                _allMdAndYmlFiles = Program.GetAllMarkdownFiles(DocFxDirectory.FullName, out _);
+                _allMdAndYmlFiles.AddRange(Program.GetAllYamlFiles(DocFxDirectory.FullName, out _));
+            }
+            return _allMdAndYmlFiles;
+        }
+    }
+    private List<FileInfo> _allTocFiles;
+    internal List<FileInfo> AllTocFiles
+    {
+        get
+        {
+            if (_allTocFiles == null)
+            {
+                _allTocFiles = DocFxDirectory.EnumerateFiles("toc.*", SearchOption.AllDirectories).ToList();
+            }
+            return _allTocFiles;
+        }
+    }
+    private FileInfo _opsConfigFile;
+    internal FileInfo OpsConfigFile
+    {
+        get
+        {
+            if (_opsConfigFile == null)
+            {
+                _opsConfigFile = Program.GetFileHereOrInParent(DocFxDirectory.FullName, ".openpublishing.publish.config.json");
+            }
+            if (_opsConfigFile == null)
+            {
+                throw new InvalidOperationException($"Could not find OPS config file for the {DocFxDirectory.FullName} directory.");
+            }
+            return _opsConfigFile;
+        }
+    }
+    private List<string> _redirectionFiles;
+    internal List<string> RedirectionFiles
+    {
+        get
+        {
+            if (_redirectionFiles == null)
+            {
+                _redirectionFiles = GetRedirectionFiles();
+            }
+            return _redirectionFiles;
+        }
+    }
 
+    #region Constructors
+    public DocFxRepo(string startDirectory)
+    {
+        DocFxDirectory = Program.GetDirectory(new DirectoryInfo(startDirectory), "docfx.json");
+
+        // Check that this directory or one of its ancestors has a docfx.json file.
+        // I.e. we don't want to be given a parent directory of a docfx.json directory; single docset only.
         if (DocFxDirectory is null)
         {
-            throw new ArgumentException("Unable to find a docfx.json file in the input directory or one of its ancestors.");
+            throw new ArgumentException("Unable to find a docfx.json file in the provided directory or its ancestors.", "startDirectory");
         }
-
-        BasePathUrl = urlBasePath;
-
-        // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
-        RegExes.Add($"social_image_url: ?\"?({BasePathUrl}.*?(\\.(png|jpg|gif|svg))+)");
-
-        // Gather media file names.
-        ImageRefs = GetMediaFiles(inputDirectory);
-
-        // Gather Markdown files.
-        MdAndYmlFiles = Program.GetAllMarkdownFiles(inputDirectory, out _);
-
-        // Add YAML files.
-        MdAndYmlFiles.AddRange(Program.GetAllYamlFiles(inputDirectory, out _));
     }
-
-    /// <summary>
-    /// Returns a dictionary of all .png/.jpg/.gif/.svg files in the directory.
-    /// The search includes the specified directory and (optionally) all its subdirectories.
-    /// </summary>
-    private static Dictionary<string, List<string>> GetMediaFiles(string mediaDirectory, bool searchRecursively = true)
-    {
-        DirectoryInfo dir = new DirectoryInfo(mediaDirectory);
-
-        SearchOption searchOption = searchRecursively ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-
-        Dictionary<string, List<string>> mediaFiles = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-
-        string[] fileExtensions = new string[] { "*.png", "*.jpg", "*.gif", "*.svg" };
-
-        foreach (var extension in fileExtensions)
-        {
-            foreach (var file in dir.EnumerateFiles(extension, searchOption))
-            {
-                mediaFiles.Add(file.FullName.ToLower(), new List<string>());
-            }
-        }
-
-        if (mediaFiles.Count == 0)
-        {
-            Console.WriteLine("\nNo .png/.jpg/.gif/.svg files were found!");
-        }
-
-        return mediaFiles;
-    }
+    #endregion
 
     /// <summary>
     /// If any of the input image files are not
@@ -156,6 +171,10 @@ class DocFxRepo
         Console.WriteLine("DONE");
     }
 
+    /// <summary>
+    /// Returns true if the docfx.json file references the specified image, 
+    /// for example, in metadata such as social_image_url.
+    /// </summary>
     private bool IsImageInDocFxFile(string imageFilePath)
     {
         // Construct the site-relative path to the file.
@@ -163,13 +182,13 @@ class DocFxRepo
         // First remove the directory path to the docfx.json file.
         imageFilePath = imageFilePath.Substring(DocFxDirectory.FullName.Length);
 
-        imageFilePath = Program.ConvertImagePathSrcToDest(DocFxDirectory.FullName, imageFilePath.TrimStart('\\'));
+        imageFilePath = ConvertImagePathSrcToDest(imageFilePath.TrimStart('\\'));
 
         // Replace backslashes with forward slashes.
         imageFilePath = imageFilePath.Replace('\\', '/');
 
         // Finally, add the base URL.
-        imageFilePath = $"{BasePathUrl}{imageFilePath}";
+        imageFilePath = $"{UrlBasePath}{imageFilePath}";
 
         using (StreamReader sr = new StreamReader(Path.Combine(DocFxDirectory.FullName, "docfx.json")))
         {
@@ -210,18 +229,18 @@ class DocFxRepo
     /// </summary>
     private void CatalogImages()
     {
-        if (MdAndYmlFiles is null)
+        if (AllMdAndYmlFiles is null)
         {
             return;
         }
 
         // Find all image refs.
-        Parallel.ForEach(MdAndYmlFiles, sourceFile =>
+        Parallel.ForEach(AllMdAndYmlFiles, sourceFile =>
         //foreach (var sourceFile in MdAndYmlFiles)
         {
             foreach (string line in File.ReadAllLines(sourceFile.FullName))
             {
-                foreach (var regEx in RegExes)
+                foreach (var regEx in ImageLinkRegExes)
                 {
                     // There could be more than one image reference on the line, hence the foreach loop.
                     foreach (Match match in Regex.Matches(line, regEx, RegexOptions.IgnoreCase))
@@ -251,11 +270,60 @@ class DocFxRepo
         string json = JsonSerializer.Serialize(ImageRefs, options);
 
         // Create a new file path.
-        string fileName = $"ImageFiles-{BasePathUrl.TrimStart('/').Replace('/', '-')}-{DateTime.Now.Ticks.ToString()}.json";
+        string fileName = $"ImageFiles-{UrlBasePath.TrimStart('/').Replace('/', '-')}-{DateTime.Now.Ticks.ToString()}.json";
         string outputPath = Path.Combine(Path.GetTempPath(), fileName);
         File.WriteAllText(outputPath, json);
 
         Console.WriteLine($"Image file catalog successfully written to {outputPath}.");
+    }
+
+    internal List<Redirect> GetAllRedirects()
+    {
+        // Gather all the redirects.
+        List<Redirect> redirects = new List<Redirect>();
+        foreach (string redirectionFile in RedirectionFiles)
+        {
+            FileInfo redirectsFile = new FileInfo(Path.Combine(OpsConfigFile.DirectoryName, redirectionFile));
+            if (redirectsFile == null)
+            {
+                Console.WriteLine($"\nCould not find redirection file '{redirectionFile}'.");
+                continue;
+            }
+
+            redirects.AddRange(GetAllRedirectedFiles(redirectsFile, OpsConfigFile.DirectoryName));
+        }
+
+        return redirects;
+    }
+
+    internal string GetDocsetAbsolutePath(string startDirectory)
+    {
+        // Deserialize the docfx.json file.
+        DocFx docfx = LoadDocfxFile(Path.Combine(DocFxDirectory.FullName, "docfx.json"));
+        if (docfx == null)
+        {
+            return null;
+        }
+
+        string docsetPath = null;
+
+        // If there's more than one docset, choose the one that includes the input directory.
+        foreach (var entry in docfx.build.content)
+        {
+            if (entry.src == null)
+                continue;
+
+            if (entry.src.TrimEnd('/') == ".")
+                docsetPath = DocFxDirectory.FullName;
+            else
+                docsetPath = Path.GetFullPath(entry.src, DocFxDirectory.FullName);
+
+            // Check that it's a parent (or the same) directory as the input directory.
+            if (startDirectory.StartsWith(docsetPath))
+                break;
+        }
+
+        return docsetPath;
     }
 
     private string GetAbsolutePath(string path, FileInfo linkingFile)
@@ -263,7 +331,7 @@ class DocFxRepo
         if (path.StartsWith("http:") || path.StartsWith("https:"))
         {
             // This could be an absolute URL to a file in the repo, so check.
-            string httpRegex = @"https?:\/\/docs.microsoft.com\/([A-z][A-z]-[A-z][A-z]\/)?" + BasePathUrl + @"\/";
+            string httpRegex = @"https?:\/\/docs.microsoft.com\/([A-z][A-z]-[A-z][A-z]\/)?" + UrlBasePath + @"\/";
             var httpMatch = Regex.Match(path, httpRegex, RegexOptions.IgnoreCase);
 
             if (!httpMatch.Success)
@@ -277,14 +345,14 @@ class DocFxRepo
         }
         else if (path.StartsWith("/"))
         {
-            if (!path.StartsWith($"{BasePathUrl}/"))
+            if (!path.StartsWith($"{UrlBasePath}/"))
             {
                 // The file is in a different repo, so ignore it.
                 return null;
             }
 
             // Trim off the docset name, but leave the forward slash that follows it.
-            path = path.Substring(BasePathUrl.Length);
+            path = path.Substring(UrlBasePath.Length);
         }
 
         if (path != null)
@@ -303,7 +371,7 @@ class DocFxRepo
                 else if (path.StartsWith("/"))
                 {
                     // Determine if any additional directory names must be added to the path.
-                    path = Program.ConvertImagePathDestToSrc(DocFxDirectory.FullName, path.TrimStart('/'));
+                    path = ConvertImagePathDestToSrc(path.TrimStart('/'));
 
                     absolutePath = Path.Combine(DocFxDirectory.FullName, path);
                 }
@@ -336,6 +404,9 @@ class DocFxRepo
         }
     }
 
+    /// <summary>
+    /// Helper function to add a linking file to the catalog of image references.
+    /// </summary>
     void TryAddLinkingFile(string key, string linkingFile)
     {
         if (ImageRefs.ContainsKey(key))
@@ -347,4 +418,516 @@ class DocFxRepo
             ImageRefs[System.Web.HttpUtility.UrlDecode(key)].Add(linkingFile);
         }
     }
+
+    /// <summary>
+    /// Pulls docset information, including URL base path, from the OPS config and docfx.json files.
+    /// </summary>
+    internal Dictionary<string, string> GetDocsetInfo()
+    {
+        // Deserialize the OPS config file to get build source folders.
+        OPSConfig config = LoadOPSJson();
+        if (config == null)
+        {
+            Console.WriteLine("Could not deserialize OPS config file.");
+            return null;
+        }
+
+        var mappingInfo = new Dictionary<string, string>();
+        foreach (var sourceFolder in config.docsets_to_publish)
+        {
+            // Deserialize the corresponding docfx.json file.
+            string docfxFilePath = Path.Combine(OpsConfigFile.DirectoryName, sourceFolder.build_source_folder, "docfx.json");
+            DocFx docfx = LoadDocfxFile(docfxFilePath);
+            if (docfx == null)
+            {
+                continue;
+            }
+
+            // There can be more than one "src" path.
+            foreach (var item in docfx.build.content)
+            {
+                // Examples:
+                // "src": "./vs-2015"
+                // "src": "./"
+
+                // Construct the full path to where the docset files are located.
+                string docsetFilePath = sourceFolder.build_source_folder;
+
+                if (item.src != null)
+                {
+                    if (item.src != ".")
+                    {
+                        // Trim "./" off the beginning, if it's there.
+                        if (item.src.StartsWith("./"))
+                            item.src = item.src[2..];
+
+                        if (item.src.Length > 0)
+                        {
+                            if (docsetFilePath == ".")
+                                docsetFilePath = item.src;
+                            else
+                                docsetFilePath = String.Concat(docsetFilePath, "/", item.src);
+                        }
+                    }
+
+                    if (!mappingInfo.ContainsKey(docsetFilePath))
+                        mappingInfo.Add(docsetFilePath, UrlBasePath);
+                }
+            }
+        }
+
+        return mappingInfo;
+    }
+
+    internal string ConvertImagePathSrcToDest(string currentImagePath)
+    {
+        // Deserialize the docfx.json file.
+        DocFx docfx = LoadDocfxFile(Path.Combine(DocFxDirectory.FullName, "docfx.json"));
+        if (docfx == null)
+        {
+            return null;
+        }
+
+        foreach (var entry in docfx.build.resource)
+        {
+            if (entry.src == null || entry.dest == null)
+                continue;
+
+            if (entry.src.TrimEnd('/') == ".")
+                return Path.Combine(entry.dest, currentImagePath);
+
+            if (!currentImagePath.StartsWith(entry.src))
+                continue;
+
+            // If we get here, the path starts with entry.src,
+            // so replace that part of the path with whatever entry.dest is.
+            return Path.Combine(entry.dest, currentImagePath.Substring(entry.src.Length));
+        }
+
+        // We didn't find any useful info in the docfx.json file, so just return the same string back.
+        return currentImagePath;
+    }
+
+    internal string ConvertImagePathDestToSrc(string currentImagePath)
+    {
+        // Deserialize the docfx.json file.
+        DocFx docfx = LoadDocfxFile(Path.Combine(DocFxDirectory.FullName, "docfx.json"));
+        if (docfx == null)
+        {
+            return null;
+        }
+
+        foreach (var entry in docfx.build.resource)
+        {
+            if (entry.src == null || entry.dest == null)
+                continue;
+
+            // This one applies to the dotnet/docs repo.
+            if (entry.dest.TrimEnd('/') == ".")
+                return Path.Combine(entry.src, currentImagePath);
+
+            if (!currentImagePath.StartsWith(entry.dest))
+                continue;
+
+            // If we get here, the path starts with entry.dest,
+            // so replace that part of the path with whatever entry.src is.
+            return Path.Combine(entry.src, currentImagePath.Substring(entry.dest.Length));
+        }
+
+        // We didn't find any useful info in the docfx.json file, so just return the same string back.
+        return currentImagePath;
+    }
+
+    #region Redirected files
+
+    public List<string> GetRedirectionFiles()
+    {
+        // Deserialize the OPS config file.
+        OPSConfig config = LoadOPSJson();
+        if (config == null || config.redirection_files == null)
+        {
+            return new List<string>() { ".openpublishing.redirection.json" };
+        }
+        else
+            return config.redirection_files;
+    }
+
+    internal void RemoveAllRedirectHops()
+    {
+        // Get all docsets for the OPS config file.
+        Dictionary<string, string> docsets = GetDocsetInfo();
+
+        // Remove hops within each file.
+        foreach (string redirectionFile in RedirectionFiles)
+        {
+            FileInfo redirectsFile = new FileInfo(Path.Combine(OpsConfigFile.DirectoryName, redirectionFile));
+            if (redirectsFile == null)
+            {
+                Console.WriteLine($"\nCould not find redirection file '{redirectionFile}'.");
+                continue;
+            }
+
+            Console.WriteLine($"\nRemoving hops from the '{redirectionFile}' redirection file.");
+            RemoveRedirectHopsFromFile(redirectsFile, docsets, OpsConfigFile.DirectoryName);
+        }
+    }
+
+    private static RedirectionFile LoadRedirectJson(FileInfo redirectsFile)
+    {
+        using (StreamReader reader = new StreamReader(redirectsFile.FullName))
+        {
+            string json = reader.ReadToEnd();
+
+            try
+            {
+                return JsonSerializer.Deserialize<RedirectionFile>(json);
+            }
+            catch (JsonException e)
+            {
+                Console.WriteLine($"Caught exception while reading the {redirectsFile.FullName} file: {e.Message} {e.InnerException?.Message}");
+                return null;
+            }
+        }
+    }
+
+    private static void WriteRedirectJson(string filePath, RedirectionFile redirects)
+    {
+        JsonSerializerOptions options = new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            WriteIndented = true
+        };
+
+        string json = JsonSerializer.Serialize(redirects, options);
+        File.WriteAllText(filePath, json);
+    }
+
+    /// <summary>
+    /// For each target URL, see if it's a source_path somewhere else.
+    /// If so, replace the original target URL with the new target URL.
+    /// </summary>
+    private static void RemoveRedirectHopsFromFile(FileInfo redirectsFile, Dictionary<string, string> docsets, string rootPath)
+    {
+        RedirectionFile RedirectionFile = LoadRedirectJson(redirectsFile);
+        if (RedirectionFile is null)
+        {
+            Console.WriteLine("Deserialization of redirection file failed.");
+            return;
+        }
+
+        string fileText = File.ReadAllText(redirectsFile.FullName);
+
+        // Load the sources and targets into a dictionary for easier look up.
+        Dictionary<string, string> redirectsLookup = new Dictionary<string, string>(RedirectionFile.redirections.Count);
+        foreach (Redirect redirect in RedirectionFile.redirections)
+        {
+            string fullPath = null;
+            if (redirect.source_path != null)
+            {
+                // Construct the full path to the redirected file
+                fullPath = Path.Combine(redirectsFile.DirectoryName, redirect.source_path);
+            }
+            else if (redirect.source_path_from_root != null)
+            {
+                // Construct the full path to the redirected file
+                fullPath = Path.Combine(rootPath, redirect.source_path_from_root.Substring(1));
+            }
+
+            redirectsLookup.Add(Path.GetFullPath(fullPath), redirect.redirect_url);
+        }
+
+        foreach (var redirectPair in redirectsLookup)
+        {
+            string currentTarget = redirectPair.Value;
+
+            string docsetRootFolderName = null;
+            string basePathUrl = null;
+
+            foreach (var docset in docsets)
+            {
+                if (currentTarget.StartsWith(docset.Value + "/"))
+                {
+                    docsetRootFolderName = docset.Key;
+                    basePathUrl = docset.Value;
+                    break;
+                }
+            }
+
+            if (docsetRootFolderName == null)
+            {
+                // Redirect URL is in a different docset/repo, so ignore it.
+                continue;
+            }
+
+            // Formulate the full path for the redirect URL (so it matches the dictionary key format).
+            string targetPath = currentTarget.Remove(0, basePathUrl.Length) + ".md";
+            string normalizedTargetPath = Path.GetFullPath(Path.Combine(rootPath, docsetRootFolderName, targetPath[1..] /* Removes the initial forward slash */));
+
+            // If we enter this loop, the target of a redirect is also the source of one or more redirects.
+            // Keep looping till you find the final target.
+            while (redirectsLookup.ContainsKey(normalizedTargetPath))
+            {
+                // Avoid an infinite loop by checking that this isn't the same key/value pair.
+                if (String.Equals(redirectsLookup[normalizedTargetPath], currentTarget))
+                {
+                    Console.WriteLine($"\nWARNING: {normalizedTargetPath} REDIRECTS TO ITSELF. PLEASE FIND A DIFFERENT REDIRECT URL.\n");
+                    break;
+                }
+
+                currentTarget = redirectsLookup[normalizedTargetPath];
+
+                targetPath = currentTarget.Remove(0, basePathUrl.Length) + ".md";
+                normalizedTargetPath = Path.GetFullPath(Path.Combine(rootPath, docsetRootFolderName, targetPath[1..] /* Removes the initial forward slash */));
+            }
+
+            if (redirectPair.Value != currentTarget)
+            {
+                Console.WriteLine($"Replacing target URL '{redirectPair.Value}' with '{currentTarget}'.");
+
+                fileText = fileText.Replace($"\"redirect_url\": \"{redirectPair.Value}\"", $"\"redirect_url\": \"{currentTarget}\"");
+            }
+        }
+
+        // Write the redirects back to the file.
+        File.WriteAllText(redirectsFile.FullName, fileText);
+    }
+
+    private static IList<Redirect> GetAllRedirectedFiles(FileInfo redirectsFile, string rootPath)
+    {
+        RedirectionFile RedirectionFile = LoadRedirectJson(redirectsFile);
+
+        if (RedirectionFile is null)
+        {
+            Console.WriteLine("Deserialization failed.");
+            return null;
+        }
+
+        foreach (Redirect redirect in RedirectionFile.redirections)
+        {
+            if (redirect.source_path != null)
+            {
+                // Construct the full path to the redirected file
+                string fullPath = Path.Combine(redirectsFile.DirectoryName, redirect.source_path);
+
+                // This cleans up the path by replacing forward slashes with back slashes, removing extra dots, etc.
+                fullPath = Path.GetFullPath(fullPath);
+
+                redirect.source_path_absolute = fullPath;
+            }
+            else if (redirect.source_path_from_root != null)
+            {
+                // Construct the full path to the redirected file
+                string fullPath = Path.Combine(rootPath, redirect.source_path_from_root.Substring(1));
+
+                // This cleans up the path by replacing forward slashes with back slashes, removing extra dots, etc.
+                fullPath = Path.GetFullPath(fullPath);
+
+                redirect.source_path_absolute = fullPath;
+            }
+        }
+
+        return RedirectionFile.redirections;
+    }
+
+    internal void ReplaceRedirectedLinks(IList<Redirect> redirects, List<FileInfo> linkingFiles)
+    {
+        Dictionary<string, Redirect> redirectLookup = Enumerable.ToDictionary<Redirect, string>(redirects, r => r.source_path_absolute);
+
+        // For each file...
+        foreach (var linkingFile in linkingFiles)
+        {
+            bool foundOldLink = false;
+            StringBuilder output = new StringBuilder($"FILE '{linkingFile.FullName}' contains the following link(s) to redirected files:\n\n");
+
+            string text = File.ReadAllText(linkingFile.FullName);
+
+            // Matches link with optional #bookmark on the end.
+            string linkRegEx = linkingFile.Extension.ToLower() == ".yml" ?
+                @"href:(.*\.md)(#[\w-]+)?" :
+                @"\]\(<?([^\)]*\.md)(#[\w-]+)?>?\)";
+
+            // For each link in the file...
+            foreach (Match match in Regex.Matches(text, linkRegEx, RegexOptions.IgnoreCase))
+            {
+                // Get the file-relative path to the linked file.
+                string relativePath = match.Groups[1].Value.Trim();
+
+                if (relativePath.StartsWith("http"))
+                {
+                    // This could be an absolute URL to a file in the repo, so check.
+                    string httpRegex = @"https?:\/\/learn.microsoft.com\/([A-z][A-z]-[A-z][A-z]\/)?" + UrlBasePath + @"\/";
+                    var httpMatch = Regex.Match(relativePath, httpRegex, RegexOptions.IgnoreCase);
+
+                    if (!httpMatch.Success)
+                    {
+                        // The file is in a different repo, so ignore it.
+                        continue;
+                    }
+
+                    // Chop off the https://learn.microsoft.com/BasePathUrl/ part of the path.
+                    relativePath = relativePath.Substring(httpMatch.Value.Length);
+                }
+
+                // Remove any quotation marks
+                relativePath = relativePath.Replace("\"", "");
+
+                string fullPath = null;
+                try
+                {
+                    // Construct the full path to the linked file.
+                    fullPath = Path.Combine(linkingFile.DirectoryName, relativePath);
+                }
+                catch (ArgumentException)
+                {
+                    Console.WriteLine($"Ignoring the link {relativePath} due to possibly invalid format.\n");
+                    continue;
+                }
+
+                // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
+                try
+                {
+                    fullPath = Path.GetFullPath(fullPath);
+                }
+                catch (NotSupportedException)
+                {
+                    //Console.WriteLine($"Found a possibly malformed link '{match.Groups[0].Value}' in '{linkingFile.FullName}'.\n");
+                    break;
+                }
+
+                if (fullPath != null)
+                {
+                    // See if our constructed path matches a source file in the dictionary of redirects.
+                    if (redirectLookup.ContainsKey(fullPath))
+                    {
+                        foundOldLink = true;
+                        output.AppendLine($"'{relativePath}'");
+
+                        string redirectURL = redirectLookup[fullPath].redirect_url;
+
+                        // Add the bookmark back on, in case it applies to the new target.
+                        if (!String.IsNullOrEmpty(match.Groups[2].Value))
+                            redirectURL = redirectURL + match.Groups[2].Value;
+
+                        output.AppendLine($"REPLACING '({relativePath})' with '({redirectURL})'.");
+
+                        // Replace the link.
+                        if (linkingFile.Extension.ToLower() == ".md")
+                        {
+                            text = text.Replace(match.Groups[0].Value, $"]({redirectURL})");
+                        }
+                        else // .yml file
+                        {
+                            text = text.Replace(match.Groups[0].Value, $"href: {redirectURL}");
+                        }
+                        File.WriteAllText(linkingFile.FullName, text);
+                    }
+                }
+            }
+
+            if (foundOldLink)
+            {
+                Console.WriteLine(output.ToString());
+            }
+        }
+    }
+    #endregion
+
+    /// <summary>
+    /// Deserialize OPS config file.
+    /// </summary>
+    private OPSConfig LoadOPSJson()
+    {
+        using (StreamReader reader = new StreamReader(OpsConfigFile.FullName))
+        {
+            string json = reader.ReadToEnd();
+
+            try
+            {
+                return JsonSerializer.Deserialize<OPSConfig>(json);
+            }
+            catch (JsonException e)
+            {
+                Console.WriteLine($"Caught exception while reading OPS config file: {e.Message}");
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Deserialize the docfx.json file for this docset.
+    /// </summary>
+    private DocFx LoadDocfxFile()
+    {
+        using (StreamReader reader = new StreamReader(Path.Combine(DocFxDirectory.FullName, "docfx.json")))
+        {
+            string json = reader.ReadToEnd();
+
+            try
+            {
+                return JsonSerializer.Deserialize<DocFx>(json);
+            }
+            catch (JsonException e)
+            {
+                Console.WriteLine($"Caught exception while reading docfx.json file: {e.Message}");
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Deserialize any docfx.json file.
+    /// </summary>
+    private static DocFx LoadDocfxFile(string docFxPath)
+    {
+        using (StreamReader reader = new StreamReader(docFxPath))
+        {
+            string json = reader.ReadToEnd();
+
+            try
+            {
+                return JsonSerializer.Deserialize<DocFx>(json);
+            }
+            catch (JsonException e)
+            {
+                Console.WriteLine($"Caught exception while reading docfx.json file: {e.Message}");
+                return null;
+            }
+        }
+    }
+
+    #region Deserialization classes
+    class OPSConfig
+    {
+        public List<Docset> docsets_to_publish { get; set; }
+        public List<string> redirection_files { get; set; }
+    }
+    class Docset
+    {
+        public string build_source_folder { get; set; }
+    }
+    class DocFx
+    {
+        public Build build { get; set; }
+    }
+    class Build
+    {
+        public GlobalMetadata globalMetadata { get; set; }
+        public List<Content> content { get; set; }
+        public List<Resource> resource { get; set; }
+    }
+    class Resource
+    {
+        public string src { get; set; }
+        public string dest { get; set; }
+    }
+    class Content
+    {
+        public string src { get; set; }
+        public string dest { get; set; }
+    }
+    class GlobalMetadata
+    {
+        public string breadcrumb_path { get; set; }
+    }
+    #endregion
 }

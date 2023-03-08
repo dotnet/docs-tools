@@ -6,22 +6,25 @@ branding:
   icon: 'sliders'
   color: 'purple'
 inputs:
-  start_directory:
-    description: 'Top-level directory in which to perform clean up (for example, find orphaned markdown files).'
+  docfx_directory:
+    description: 'The directory that contains the docfx.json file for the docset.'
     required: true
-  docset_root:
-    description: 'The full path to the root directory for the docset, e.g. "./dotnet-docs/docs".'
-    default: './docs'
-  repo_root:
-    description: 'The full path to the local root directory for the repository, e.g. "dotnet-docs"'
-    default: '.'
-  base_path:
+  articles_directory:
+    description: 'The directory in which you want to clean up orphaned Markdown files (except INCLUDE files), 
+                  update redirected links, or replace site-relative links with file-relative links.'
+  media_directory:
+    description: 'The directory in which you want to clean up orphaned image files.'
+  snippets_directory:
+    description: 'The directory in which you want to clean up orphaned .cs and .vb files.'
+  includes_directory:
+    description: 'The directory in which you want to clean up orphaned Markdown INCLUDE files.'
+  url_base_path:
     description: 'The URL base path for the docset, e.g. "/windows/uwp" or "/dotnet"'
   delete:
     description: 'True to delete orphaned files.'
     default: 'false'
-  orphaned_topics:
-    description: 'Use this option to find orphaned topics.'
+  orphaned_articles:
+    description: 'Find orphaned Markdown articles.'
     default: 'false'
   orphaned_images:
     description: 'Find orphaned .png, .gif, .jpg, or .svg files.'
@@ -35,13 +38,8 @@ inputs:
   orphaned_includes:
     description: 'Find orphaned INCLUDE files.'
     default: 'false'
-  lookback_days:
-    description: 'The number of days to check for link-click activity.'
-    default: '180'
-  output_file:
-    description: 'The file to write the redirect page view output to.'
   replace_redirects:
-    description: 'Find backlinks to redirected files and replace with new target.'
+    description: 'Find backlinks to redirected files and update them with the new target.'
     default: 'false'
   relative_links:
     description: 'Replace site-relative links with file-relative links.'
@@ -53,18 +51,22 @@ runs:
   using: docker
   image: Dockerfile
   args:
-    - '--start-directory'
-    - ${{ inputs.start_directory }}
-    - '--docset-root'
-    - ${{ inputs.docset_root }}
-    - '--repo-root'
-    - ${{ inputs.repo_root }}
-    - '--base-path'
-    - ${{ inputs.base_path }}
+    - '--docfx-directory'
+    - ${{ inputs.docfx_directory }}
+    - '--snippets-directory'
+    - ${{ inputs.snippets_directory }}
+    - '--includes-directory'
+    - ${{ inputs.includes_directory }}
+    - '--media-directory'
+    - ${{ inputs.media_directory }}
+    - '--articles-directory'
+    - ${{ inputs.articles_directory }}
+    - '--url-base-path'
+    - ${{ inputs.url_base_path }}
     - '--delete'
     - ${{ inputs.delete }}
-    - '--orphaned-topics'
-    - ${{ inputs.orphaned_topics }}
+    - '--orphaned-articles'
+    - ${{ inputs.orphaned_articles }}
     - '--orphaned-images'
     - ${{ inputs.orphaned_images }}
     - '--catalog-images'
@@ -73,10 +75,6 @@ runs:
     - ${{ inputs.orphaned_snippets }} 
     - '--orphaned-includes'
     - ${{ inputs.orphaned_includes }}
-    - '--lookback-days'
-    - ${{ inputs.lookback_days }}
-    - '--output-file'
-    - ${{ inputs.output_file }}
     - '--replace-redirects'
     - ${{ inputs.replace_redirects }}
     - '--relative-links'
