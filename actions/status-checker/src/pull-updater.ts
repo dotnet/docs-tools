@@ -130,7 +130,7 @@ function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
   markdownTable += '|:--|:--|\n';
 
   links.forEach((link, file) => {
-    markdownTable += `| 📄 _${file}_ | 🔗 [Preview: ${file.replace('.md', '')}](link) |\n`;
+    markdownTable += `| 📄 _${file}_ | 🔗 [Preview: ${file.replace('.md', '')}](${link}) |\n`;
   });
 
   return markdownTable;
@@ -150,5 +150,16 @@ ${tail}`;
 function appendTable(body: string, table: string) {
   return `${body}
 
-  ${table}`;
+${table}`;
+}
+
+export const exportedForTesting = {
+  appendTable,
+  buildMarkdownPreviewTable,
+  getModifiedMarkdownFiles,
+  isFileModified,
+  isPullRequestModifyingMarkdownFiles,
+  PREVIEW_TABLE_END,
+  PREVIEW_TABLE_START,
+  replaceExistingTable,
 }
