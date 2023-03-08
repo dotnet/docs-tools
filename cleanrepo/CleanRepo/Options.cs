@@ -14,14 +14,14 @@ class Options
     [Option("media-directory", HelpText = "Top-level directory in which to perform image/media cleanup.")]
     public string MediaDirectory { get; set; }
 
-    [Option("url-base-path", Required = false, HelpText = "The URL base path for the docset, e.g. '/windows/uwp' or '/dotnet'.")]
-    public string UrlBasePath { get; set; }
-
     [Option("includes-directory", HelpText = "Top-level directory in which to perform include-file cleanup.")]
     public string IncludesDirectory { get; set; }
 
     [Option("articles-directory", HelpText = "Top-level directory in which to perform article cleanup (i.e. find orphans or fix links).")]
     public string ArticlesDirectory { get; set; }
+
+    [Option("url-base-path", Required = false, HelpText = "The URL base path for the docset, e.g. '/windows/uwp' or '/dotnet'.")]
+    public string UrlBasePath { get; set; }
 
     [Option("delete", Required = false, HelpText = "True to delete orphaned files.")]
     public bool? Delete { get; set; }
