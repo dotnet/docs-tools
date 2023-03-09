@@ -75,6 +75,7 @@ function tryUpdatePullRequestBody(token) {
             console.log(`Update pull ${prNumber} request body.`);
             const details = yield getPullRequest(token);
             if (details) {
+                console.log(details);
                 const pr = (_b = (_a = details.data) === null || _a === void 0 ? void 0 : _a.repository) === null || _b === void 0 ? void 0 : _b.pullRequest;
                 if (pr) {
                     if (pr.changedFiles == 0) {
@@ -109,6 +110,9 @@ function tryUpdatePullRequestBody(token) {
                     else {
                         console.log('Unable to update pull request...');
                     }
+                }
+                else {
+                    console.log('Unable to pull request details from object-graph.');
                 }
             }
             else {

@@ -15,6 +15,8 @@ export async function tryUpdatePullRequestBody(token: string) {
 
     const details = await getPullRequest(token);
     if (details) {
+      console.log(details);
+
       const pr = details.data?.repository?.pullRequest;
       if (pr) {
         if (pr.changedFiles == 0) {
@@ -52,6 +54,8 @@ export async function tryUpdatePullRequestBody(token: string) {
         } else {
           console.log('Unable to update pull request...')
         }
+      } else {
+        console.log('Unable to pull request details from object-graph.');
       }
     } else {
       console.log('Unable to get the pull request from GitHub GraphQL');
