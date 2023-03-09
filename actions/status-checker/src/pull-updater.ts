@@ -48,12 +48,10 @@ export async function tryUpdatePullRequestBody(token: string) {
           body: updatedBody
         });
 
-        if (response) {
-          if (response.status === 200) {
-            notice('Pull request updated...');
-          } else {
-            warning('Unable to update pull request...')
-          }
+        if (response && response.status === 200) {
+          notice('Pull request updated...');
+        } else {
+          warning('Unable to update pull request...')
         }
       }
     } else {

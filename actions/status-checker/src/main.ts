@@ -12,8 +12,11 @@ async function run(): Promise<void> {
     console.log("Waited 60 seconds.");
 
     // When the status is passed, try to update the PR body.
-    if (await isSuccessStatus(token)) {
+    const isSuccess = await isSuccessStatus(token);
+    if (isSuccess) {
       await tryUpdatePullRequestBody(token);
+    } else {
+      console.log('Unsuccessful status detected.');
     }
   } catch (error: unknown) {
     const e = error as Error;
