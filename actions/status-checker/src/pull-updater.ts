@@ -57,8 +57,12 @@ export async function tryUpdatePullRequestBody(token: string) {
     } else {
       notice('Unable to get the pull request from GitHub GraphQL');
     }
-  } catch (error: unknown) {
-    warning(error as Error);
+  } catch (error) {
+    console.log(`Unable to process markdown preview: ${error}`);
+    const e: Error = error as Error;
+    if (e) {
+      warning(e.message);
+    }
   } finally {
     endGroup();
   }

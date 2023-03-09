@@ -117,7 +117,11 @@ function tryUpdatePullRequestBody(token) {
             }
         }
         catch (error) {
-            (0, core_1.warning)(error);
+            console.log(`Unable to process markdown preview: ${error}`);
+            const e = error;
+            if (e) {
+                (0, core_1.warning)(e.message);
+            }
         }
         finally {
             (0, core_1.endGroup)();
