@@ -1,4 +1,4 @@
-import { startGroup, endGroup, warning, notice } from "@actions/core";
+import { startGroup, endGroup } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { ChangeType } from "./types/ChangeType";
 import { FileChange } from "./types/FileChange";
@@ -19,12 +19,12 @@ export async function tryUpdatePullRequestBody(token: string) {
       const pr = details.data?.repository?.pullRequest;
       if (pr) {
         if (pr.changedFiles == 0) {
-          warning('No files changed at all...');
+          console.log('No files changed at all...');
           return;
         }
 
         if (isPullRequestModifyingMarkdownFiles(pr) == false) {
-          warning('No updated markdown files...');
+          console.log('No updated markdown files...');
           return;
         }
 
@@ -49,19 +49,19 @@ export async function tryUpdatePullRequestBody(token: string) {
         });
 
         if (response && response.status === 200) {
-          notice('Pull request updated...');
+          console.log('Pull request updated...');
         } else {
-          warning('Unable to update pull request...')
+          console.log('Unable to update pull request...')
         }
       }
     } else {
-      notice('Unable to get the pull request from GitHub GraphQL');
+      console.log('Unable to get the pull request from GitHub GraphQL');
     }
   } catch (error) {
     console.log(`Unable to process markdown preview: ${error}`);
     const e: Error = error as Error;
     if (e) {
-      warning(e.message);
+      console.log(e.message);
     }
   } finally {
     endGroup();

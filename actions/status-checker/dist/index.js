@@ -79,11 +79,11 @@ function tryUpdatePullRequestBody(token) {
                 const pr = (_b = (_a = details.data) === null || _a === void 0 ? void 0 : _a.repository) === null || _b === void 0 ? void 0 : _b.pullRequest;
                 if (pr) {
                     if (pr.changedFiles == 0) {
-                        (0, core_1.warning)('No files changed at all...');
+                        console.log('No files changed at all...');
                         return;
                     }
                     if (isPullRequestModifyingMarkdownFiles(pr) == false) {
-                        (0, core_1.warning)('No updated markdown files...');
+                        console.log('No updated markdown files...');
                         return;
                     }
                     const modifiedMarkdownFiles = getModifiedMarkdownFiles(pr);
@@ -105,22 +105,22 @@ function tryUpdatePullRequestBody(token) {
                         body: updatedBody
                     });
                     if (response && response.status === 200) {
-                        (0, core_1.notice)('Pull request updated...');
+                        console.log('Pull request updated...');
                     }
                     else {
-                        (0, core_1.warning)('Unable to update pull request...');
+                        console.log('Unable to update pull request...');
                     }
                 }
             }
             else {
-                (0, core_1.notice)('Unable to get the pull request from GitHub GraphQL');
+                console.log('Unable to get the pull request from GitHub GraphQL');
             }
         }
         catch (error) {
             console.log(`Unable to process markdown preview: ${error}`);
             const e = error;
             if (e) {
-                (0, core_1.warning)(e.message);
+                console.log(e.message);
             }
         }
         finally {
