@@ -2,16 +2,14 @@ import { setFailed } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { wait } from "./wait";
 
-export async function checkStatus(token: string) {
+export async function isSuccessStatus(token: string) {
   const octokit = getOctokit(token);
   const owner = context.repo.owner;
   const repo = context.repo.repo;
   const payload = context.payload;
 
   if (
-    ["pull_request", "pull_request_target"].includes(
-      context.eventName
-    ) &&
+    ["pull_request", "pull_request_target"].includes(context.eventName) &&
     payload?.action
   ) {
     const prNumber = payload.number;
@@ -22,18 +20,19 @@ export async function checkStatus(token: string) {
 
     let buildStatus: any;
 
-    const { data: statuses } = await octokit.rest.repos.listCommitStatusesForRef({
-      owner,
-      repo,
-      ref: commit,
-    });
+    const { data: statuses } =
+      await octokit.rest.repos.listCommitStatusesForRef({
+        owner,
+        repo,
+        ref: commit,
+      });
 
     // Get the most recent OPS status.
     for (const status of statuses) {
       if (status.context === "OpenPublishing.Build") {
         buildStatus = status;
         console.log("Found OPS status check.");
-        break;
+        break
       }
     }
 
@@ -44,11 +43,12 @@ export async function checkStatus(token: string) {
       // Sleep for 10 seconds.
       await wait(10000);
 
-      const { data: statuses } = await octokit.rest.repos.listCommitStatusesForRef({
-        owner,
-        repo,
-        ref: commit,
-      });
+      const { data: statuses } =
+        await octokit.rest.repos.listCommitStatusesForRef({
+          owner,
+          repo,
+          ref: commit,
+        });
 
       // Get the most recent OPS status.
       for (const status of statuses) {
@@ -79,11 +79,12 @@ export async function checkStatus(token: string) {
       await wait(10000);
 
       // Get latest OPS status.
-      const { data: statuses } = await octokit.rest.repos.listCommitStatusesForRef({
-        owner,
-        repo,
-        ref: commit,
-      });
+      const { data: statuses } =
+        await octokit.rest.repos.listCommitStatusesForRef({
+          owner,
+          repo,
+          ref: commit,
+        });
 
       buildStatus = null;
       for (const status of statuses) {
@@ -112,17 +113,15 @@ export async function checkStatus(token: string) {
         console.log(
           "OpenPublishing.Build status check does not have warnings."
         );
-        return;
+        return true;
       }
     } else {
       // Build status is error/failure.
       setFailed("OpenPublishing.Build status is either failure or error.");
-      return;
     }
   } else {
-    setFailed(
-      "Event is not a pull request or payload action is undefined."
-    );
-    return;
+    setFailed("Event is not a pull request or payload action is undefined.");
   }
+
+  return false;
 }
