@@ -68,7 +68,7 @@ const ChangeType_1 = __nccwpck_require__(9944);
 const PREVIEW_TABLE_START = '<!-- PREVIEW-TABLE-START -->';
 const PREVIEW_TABLE_END = '<!-- PREVIEW-TABLE-END -->';
 function tryUpdatePullRequestBody(token) {
-    var _a, _b;
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const prNumber = github_1.context.payload.number;
@@ -76,7 +76,7 @@ function tryUpdatePullRequestBody(token) {
             const details = yield getPullRequest(token);
             if (details) {
                 console.log(details);
-                const pr = (_b = (_a = details.data) === null || _a === void 0 ? void 0 : _a.repository) === null || _b === void 0 ? void 0 : _b.pullRequest;
+                const pr = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
                 if (pr) {
                     if (pr.changedFiles == 0) {
                         console.log('No files changed at all...');

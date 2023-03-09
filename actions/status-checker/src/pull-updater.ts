@@ -17,7 +17,7 @@ export async function tryUpdatePullRequestBody(token: string) {
     if (details) {
       console.log(details);
 
-      const pr = details.data?.repository?.pullRequest;
+      const pr = details.repository?.pullRequest;
       if (pr) {
         if (pr.changedFiles == 0) {
           console.log('No files changed at all...');
