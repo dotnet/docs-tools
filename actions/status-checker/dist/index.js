@@ -33,7 +33,7 @@ function run() {
                 yield (0, pull_updater_1.tryUpdatePullRequestBody)(token);
             }
             else {
-                console.log('Unsuccessful status detected.');
+                console.log("Unsuccessful status detected.");
             }
         }
         catch (error) {
@@ -64,8 +64,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
 const github_1 = __nccwpck_require__(5438);
-const PREVIEW_TABLE_START = '<!-- PREVIEW-TABLE-START -->';
-const PREVIEW_TABLE_END = '<!-- PREVIEW-TABLE-END -->';
+const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
+const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 function tryUpdatePullRequestBody(token) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -73,63 +73,55 @@ function tryUpdatePullRequestBody(token) {
             const prNumber = github_1.context.payload.number;
             console.log(`Update pull ${prNumber} request body.`);
             const details = yield getPullRequest(token);
-            if (details) {
-                console.log(details);
-                const pr = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
-                if (pr) {
-                    if (pr.changedFiles == 0) {
-                        console.log('No files changed at all...');
-                        return;
-                    }
-                    else {
-                        console.log(pr.files);
-                    }
-                    if (isPullRequestModifyingMarkdownFiles(pr) == false) {
-                        console.log('No updated markdown files...');
-                        return;
-                    }
-                    const modifiedMarkdownFiles = getModifiedMarkdownFiles(pr);
-                    const markdownTable = buildMarkdownPreviewTable(prNumber, modifiedMarkdownFiles);
-                    let updatedBody = '';
-                    if (pr.body.includes(PREVIEW_TABLE_START) && pr.body.includes(PREVIEW_TABLE_END)) {
-                        // Replace existing preview table.
-                        updatedBody = replaceExistingTable(pr.body, markdownTable);
-                    }
-                    else {
-                        // Append preview table to bottom.
-                        updatedBody = appendTable(pr.body, markdownTable);
-                    }
-                    const octokit = (0, github_1.getOctokit)(token);
-                    const response = yield octokit.rest.pulls.update({
-                        owner: github_1.context.repo.owner,
-                        repo: github_1.context.repo.repo,
-                        pull_number: prNumber,
-                        body: updatedBody
-                    });
-                    if (response && response.status === 200) {
-                        console.log('Pull request updated...');
-                    }
-                    else {
-                        console.log('Unable to update pull request...');
-                    }
-                }
-                else {
-                    console.log('Unable to pull request details from object-graph.');
-                }
+            if (!details) {
+                console.log("Unable to get the pull request from GitHub GraphQL");
+            }
+            const pr = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
+            if (!pr) {
+                console.log("Unable to pull request details from object-graph.");
+            }
+            if (pr.changedFiles == 0) {
+                console.log("No files changed at all...");
+                return;
             }
             else {
-                console.log('Unable to get the pull request from GitHub GraphQL');
+                console.log(pr.files);
+            }
+            if (isPullRequestModifyingMarkdownFiles(pr) == false) {
+                console.log("No updated markdown files...");
+                return;
+            }
+            const modifiedMarkdownFiles = getModifiedMarkdownFiles(pr);
+            const markdownTable = buildMarkdownPreviewTable(prNumber, modifiedMarkdownFiles);
+            let updatedBody = "";
+            if (pr.body.includes(PREVIEW_TABLE_START) &&
+                pr.body.includes(PREVIEW_TABLE_END)) {
+                // Replace existing preview table.
+                updatedBody = replaceExistingTable(pr.body, markdownTable);
+            }
+            else {
+                // Append preview table to bottom.
+                updatedBody = appendTable(pr.body, markdownTable);
+            }
+            const octokit = (0, github_1.getOctokit)(token);
+            const response = yield octokit.rest.pulls.update({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                pull_number: prNumber,
+                body: updatedBody,
+            });
+            if (response && response.status === 200) {
+                console.log("Pull request updated...");
+            }
+            else {
+                console.log("Unable to update pull request...");
             }
         }
         catch (error) {
             console.log(`Unable to process markdown preview: ${error}`);
-            const e = error;
-            if (e) {
-                console.log(e.message);
-            }
         }
         finally {
-            console.log('Finished attempting to generate preview.');
+            console.log("Finished attempting to generate preview.");
         }
     });
 }
@@ -158,43 +150,46 @@ function getPullRequest(token) {
     }`,
             name: github_1.context.repo.repo,
             owner: github_1.context.repo.owner,
-            number: github_1.context.payload.number
+            number: github_1.context.payload.number,
         });
     });
 }
 function isFileModified(_) {
-    return _.node.changeType == "ADDED"
-        || _.node.changeType == "CHANGED"
-        || _.node.changeType == "MODIFIED";
+    return (_.node.changeType == "ADDED" ||
+        _.node.changeType == "CHANGED" ||
+        _.node.changeType == "MODIFIED");
 }
 function isPullRequestModifyingMarkdownFiles(pr) {
-    return pr
-        && pr.changedFiles > 0
-        && pr.files
-        && pr.files.edges
-        && pr.files.edges.some(_ => isFileModified(_) && _.node.path.endsWith(".md"));
+    return (pr &&
+        pr.changedFiles > 0 &&
+        pr.files &&
+        pr.files.edges &&
+        pr.files.edges.some((_) => isFileModified(_) && _.node.path.endsWith(".md")));
 }
 function getModifiedMarkdownFiles(pr) {
     return pr.files.edges
-        .filter(_ => _.node.path.endsWith(".md") && isFileModified(_))
-        .map(_ => _.node.path);
+        .filter((_) => _.node.path.endsWith(".md") && isFileModified(_))
+        .map((_) => _.node.path);
 }
 function buildMarkdownPreviewTable(prNumber, files) {
     // Given: docs/orleans/resources/nuget-packages.md
     // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
     // TODO: consider being a bit smarter about this, don't assume "dotnet" and "docs".
     const toLink = (file) => {
-        const path = file.replace('docs/', '').replace('.md', '');
+        const path = file.replace("docs/", "").replace(".md", "");
         return `https://review.learn.microsoft.com/en-us/dotnet/${path}?branch=pr-en-us-${prNumber}`;
     };
     const links = new Map();
-    files.sort((a, b) => a.localeCompare(b)).forEach(file => {
+    files
+        .sort((a, b) => a.localeCompare(b))
+        .forEach((file) => {
         links.set(file, toLink(file));
     });
-    let markdownTable = '| File | Preview |\n';
-    markdownTable += '|:--|:--|\n';
+    let markdownTable = "#### Internal previews\n\n";
+    markdownTable += "| 📄 File(s) | 🔗 Preview link(s) |\n";
+    markdownTable += "|:--|:--|\n";
     links.forEach((link, file) => {
-        markdownTable += `| 📄 _${file}_ | 🔗 [Preview: ${file.replace('.md', '')}](${link}) |\n`;
+        markdownTable += `| _${file}_ | [Preview: ${file.replace(".md", "")}](${link}) |\n`;
     });
     return markdownTable;
 }
