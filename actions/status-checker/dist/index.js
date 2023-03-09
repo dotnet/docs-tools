@@ -189,8 +189,16 @@ function buildMarkdownPreviewTable(prNumber, files) {
     return markdownTable;
 }
 function replaceExistingTable(body, table) {
-    const start = body.substring(0, body.lastIndexOf(PREVIEW_TABLE_START) + PREVIEW_TABLE_START.length);
-    const tail = body.substring(body.lastIndexOf(PREVIEW_TABLE_END));
+    const startIndex = body.indexOf(PREVIEW_TABLE_START);
+    if (startIndex === -1) {
+        return "Unable to parse starting index of existing markdown table.";
+    }
+    const endIndex = body.lastIndexOf(PREVIEW_TABLE_END);
+    if (endIndex === -1) {
+        return "Unable to parse ending index of existing markdown table.";
+    }
+    const start = body.substring(0, startIndex + PREVIEW_TABLE_START.length);
+    const tail = body.substring(endIndex);
     return `${start}
 
 ${table}
