@@ -64,7 +64,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
 const github_1 = __nccwpck_require__(5438);
-const ChangeType_1 = __nccwpck_require__(9944);
 const PREVIEW_TABLE_START = '<!-- PREVIEW-TABLE-START -->';
 const PREVIEW_TABLE_END = '<!-- PREVIEW-TABLE-END -->';
 function tryUpdatePullRequestBody(token) {
@@ -81,6 +80,9 @@ function tryUpdatePullRequestBody(token) {
                     if (pr.changedFiles == 0) {
                         console.log('No files changed at all...');
                         return;
+                    }
+                    else {
+                        console.log(pr.files);
                     }
                     if (isPullRequestModifyingMarkdownFiles(pr) == false) {
                         console.log('No updated markdown files...');
@@ -161,16 +163,15 @@ function getPullRequest(token) {
     });
 }
 function isFileModified(_) {
-    return _.node.changeType == ChangeType_1.ChangeType.ADDED
-        || _.node.changeType == ChangeType_1.ChangeType.CHANGED
-        || _.node.changeType == ChangeType_1.ChangeType.MODIFIED;
+    return _.node.changeType == "ADDED"
+        || _.node.changeType == "CHANGED"
+        || _.node.changeType == "MODIFIED";
 }
 function isPullRequestModifyingMarkdownFiles(pr) {
     return pr
         && pr.changedFiles > 0
         && pr.files
         && pr.files.edges
-        && pr.files.edges.length > 0
         && pr.files.edges.some(_ => isFileModified(_) && _.node.path.endsWith(".md"));
 }
 function getModifiedMarkdownFiles(pr) {
@@ -350,26 +351,6 @@ function isSuccessStatus(token) {
     });
 }
 exports.isSuccessStatus = isSuccessStatus;
-
-
-/***/ }),
-
-/***/ 9944:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ChangeType = void 0;
-var ChangeType;
-(function (ChangeType) {
-    ChangeType[ChangeType["ADDED"] = 0] = "ADDED";
-    ChangeType[ChangeType["CHANGED"] = 1] = "CHANGED";
-    ChangeType[ChangeType["COPIED"] = 2] = "COPIED";
-    ChangeType[ChangeType["DELETED"] = 3] = "DELETED";
-    ChangeType[ChangeType["MODIFIED"] = 4] = "MODIFIED";
-    ChangeType[ChangeType["RENAMED"] = 5] = "RENAMED";
-})(ChangeType = exports.ChangeType || (exports.ChangeType = {}));
 
 
 /***/ }),

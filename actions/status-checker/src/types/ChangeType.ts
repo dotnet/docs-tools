@@ -1,8 +1,7 @@
-export enum ChangeType {
-  "ADDED",
-  "CHANGED",
-  "COPIED",
-  "DELETED",
-  "MODIFIED",
-  "RENAMED",
-}
+export type ChangeType =
+  "ADDED" |
+  "CHANGED" |
+  "COPIED" |
+  "DELETED" |
+  "MODIFIED" |
+  "RENAMED";
