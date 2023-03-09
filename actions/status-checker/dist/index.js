@@ -63,7 +63,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
-const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
 const ChangeType_1 = __nccwpck_require__(9944);
 const PREVIEW_TABLE_START = '<!-- PREVIEW-TABLE-START -->';
@@ -73,7 +72,7 @@ function tryUpdatePullRequestBody(token) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const prNumber = github_1.context.payload.number;
-            (0, core_1.startGroup)(`Update pull ${prNumber} request body.`);
+            console.log(`Update pull ${prNumber} request body.`);
             const details = yield getPullRequest(token);
             if (details) {
                 const pr = (_b = (_a = details.data) === null || _a === void 0 ? void 0 : _a.repository) === null || _b === void 0 ? void 0 : _b.pullRequest;
@@ -124,7 +123,7 @@ function tryUpdatePullRequestBody(token) {
             }
         }
         finally {
-            (0, core_1.endGroup)();
+            console.log('Finished attempting to generate preview.');
         }
     });
 }
