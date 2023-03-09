@@ -48,7 +48,7 @@ ${PREVIEW_TABLE_END}`);
             node: {
                 deletions: 1,
                 additions: 1,
-                changeType: ChangeType.DELETED,
+                changeType: "DELETED",
                 path: 'path/to/file.md'
             }
         })).toBe(false);
@@ -59,7 +59,7 @@ ${PREVIEW_TABLE_END}`);
             node: {
                 deletions: 1,
                 additions: 1,
-                changeType: ChangeType.MODIFIED,
+                changeType: "MODIFIED",
                 path: 'path/to/file.md'
             }
         })).toBe(true);
@@ -75,7 +75,7 @@ ${PREVIEW_TABLE_END}`);
                         node: {
                             deletions: 1,
                             additions: 1,
-                            changeType: ChangeType.RENAMED,
+                            changeType: "RENAMED",
                             path: 'path/to/renamed-file.md'
                         }
                     },
@@ -83,7 +83,7 @@ ${PREVIEW_TABLE_END}`);
                         node: {
                             deletions: 1,
                             additions: 0,
-                            changeType: ChangeType.DELETED,
+                            changeType: "DELETED",
                             path: 'path/to/deleted-file.md'
                         }
                     },
@@ -91,7 +91,7 @@ ${PREVIEW_TABLE_END}`);
                         node: {
                             deletions: 0,
                             additions: 1,
-                            changeType: ChangeType.MODIFIED,
+                            changeType: "MODIFIED",
                             path: 'path/to/modified-file.md'
                         }
                     }
@@ -112,7 +112,7 @@ ${PREVIEW_TABLE_END}`);
                         node: {
                             deletions: 1,
                             additions: 1,
-                            changeType: ChangeType.RENAMED,
+                            changeType: "RENAMED",
                             path: 'path/to/renamed-file.md'
                         }
                     },
@@ -120,7 +120,7 @@ ${PREVIEW_TABLE_END}`);
                         node: {
                             deletions: 1,
                             additions: 0,
-                            changeType: ChangeType.DELETED,
+                            changeType: "DELETED",
                             path: 'path/to/deleted-file.md'
                         }
                     }
@@ -141,7 +141,7 @@ ${PREVIEW_TABLE_END}`);
                         node: {
                             deletions: 1,
                             additions: 1,
-                            changeType: ChangeType.RENAMED,
+                            changeType: "RENAMED",
                             path: 'path/to/renamed-file.md'
                         }
                     },
@@ -149,7 +149,7 @@ ${PREVIEW_TABLE_END}`);
                         node: {
                             deletions: 1,
                             additions: 0,
-                            changeType: ChangeType.DELETED,
+                            changeType: "DELETED",
                             path: 'path/to/deleted-file.md'
                         }
                     },
@@ -157,7 +157,7 @@ ${PREVIEW_TABLE_END}`);
                         node: {
                             deletions: 0,
                             additions: 1,
-                            changeType: ChangeType.MODIFIED,
+                            changeType: "MODIFIED",
                             path: 'path/to/modified-file.md'
                         }
                     }

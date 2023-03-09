@@ -16,12 +16,13 @@ export async function tryUpdatePullRequestBody(token: string) {
     const details = await getPullRequest(token);
     if (details) {
       console.log(details);
-
       const pr = details.repository?.pullRequest;
       if (pr) {
         if (pr.changedFiles == 0) {
           console.log('No files changed at all...');
           return;
+        } else {
+          console.log(pr.files);
         }
 
         if (isPullRequestModifyingMarkdownFiles(pr) == false) {
@@ -99,9 +100,9 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
 }
 
 function isFileModified(_: NodeOf<FileChange>) {
-  return _.node.changeType == ChangeType.ADDED
-    || _.node.changeType == ChangeType.CHANGED
-    || _.node.changeType == ChangeType.MODIFIED;
+  return _.node.changeType == "ADDED"
+    || _.node.changeType == "CHANGED"
+    || _.node.changeType == "MODIFIED";
 }
 
 function isPullRequestModifyingMarkdownFiles(pr: Pull): boolean {
@@ -109,7 +110,6 @@ function isPullRequestModifyingMarkdownFiles(pr: Pull): boolean {
     && pr.changedFiles > 0
     && pr.files
     && pr.files.edges
-    && pr.files.edges.length > 0
     && pr.files.edges.some(_ => isFileModified(_) && _.node.path.endsWith(".md"));
 }
 
