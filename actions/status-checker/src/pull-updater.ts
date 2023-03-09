@@ -1,4 +1,3 @@
-import { startGroup, endGroup } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { ChangeType } from "./types/ChangeType";
 import { FileChange } from "./types/FileChange";
@@ -12,10 +11,12 @@ const PREVIEW_TABLE_END = '<!-- PREVIEW-TABLE-END -->';
 export async function tryUpdatePullRequestBody(token: string) {
   try {
     const prNumber: number = context.payload.number;
-    startGroup(`Update pull ${prNumber} request body.`);
+    console.log(`Update pull ${prNumber} request body.`);
 
     const details = await getPullRequest(token);
     if (details) {
+      console.log(details);
+
       const pr = details.data?.repository?.pullRequest;
       if (pr) {
         if (pr.changedFiles == 0) {
@@ -53,6 +54,8 @@ export async function tryUpdatePullRequestBody(token: string) {
         } else {
           console.log('Unable to update pull request...')
         }
+      } else {
+        console.log('Unable to pull request details from object-graph.');
       }
     } else {
       console.log('Unable to get the pull request from GitHub GraphQL');
@@ -64,7 +67,7 @@ export async function tryUpdatePullRequestBody(token: string) {
       console.log(e.message);
     }
   } finally {
-    endGroup();
+    console.log('Finished attempting to generate preview.');
   }
 }
 
