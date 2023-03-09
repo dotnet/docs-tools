@@ -67,8 +67,9 @@ export async function tryUpdatePullRequestBody(token: string) {
 async function getPullRequest(token: string): Promise<PullRequestDetails> {
   const octokit = getOctokit(token);
   return await octokit.graphql<PullRequestDetails>({
-    query: `query repository($name: !String, $owner: !String) {
-        pullRequest(number: $prNumber) {
+    query: `query getPullRequest($name: String!, $owner: String!, $number: Int!) {
+      repository(name: $name, owner: $owner) {
+        pullRequest(number: $number) {
           body
           changedFiles
           files(first: 100) {
@@ -82,10 +83,11 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
             }
           }
         }
-      }`,
+      }
+    }`,
     name: context.repo.repo,
     owner: context.repo.owner,
-    prNumber: context.payload.number
+    number: context.payload.number
   });
 }
 

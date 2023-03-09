@@ -129,8 +129,9 @@ function getPullRequest(token) {
     return __awaiter(this, void 0, void 0, function* () {
         const octokit = (0, github_1.getOctokit)(token);
         return yield octokit.graphql({
-            query: `query repository($name: !String, $owner: !String) {
-        pullRequest(number: $prNumber) {
+            query: `query getPullRequest($name: String!, $owner: String!, $number: Int!) {
+      repository(name: $name, owner: $owner) {
+        pullRequest(number: $number) {
           body
           changedFiles
           files(first: 100) {
@@ -144,10 +145,11 @@ function getPullRequest(token) {
             }
           }
         }
-      }`,
+      }
+    }`,
             name: github_1.context.repo.repo,
             owner: github_1.context.repo.owner,
-            prNumber: github_1.context.payload.number
+            number: github_1.context.payload.number
         });
     });
 }
