@@ -55,7 +55,7 @@ export async function isSuccessStatus(token: string) {
         if (status.context === "OpenPublishing.Build") {
           buildStatus = status;
           console.log("Found OPS status check.");
-          break;
+          break
         }
       }
     }
@@ -90,7 +90,7 @@ export async function isSuccessStatus(token: string) {
       for (const status of statuses) {
         if (status.context === "OpenPublishing.Build") {
           buildStatus = status;
-          break;
+          break
         }
       }
 

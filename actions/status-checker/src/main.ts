@@ -16,7 +16,7 @@ async function run(): Promise<void> {
     if (isSuccess) {
       await tryUpdatePullRequestBody(token);
     } else {
-      console.log('Unsuccessful status detected.');
+      console.log("Unsuccessful status detected.");
     }
   } catch (error: unknown) {
     const e = error as Error;
