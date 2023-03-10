@@ -15,32 +15,6 @@ public sealed class IssuesByClassificationClient
         _httpClient = factory.CreateClient(HttpClientNames.IssuesApi);
     }
 
-    public async Task<IEnumerable<IssuesSnapshot>?> GetSnapshotsForDateAsync(
-        Repository state, DateOnly date, RepoLabels labels)
-    {
-        var (org, repo) = (state.Org, state.Repo);
-        var route = _encode(date);
-        // TODO: This is going to be different for different graph sets
-        var allKeys = new List<SnapshotKey>();
-        foreach (var classificationKey in labels.IssueClassification.ClassificationWithUnassigned())
-        {
-            allKeys.Add(new SnapshotKey(Product: null,
-                Technology: null,
-                Priority: null,
-                Classification: classificationKey.Label));
-        }
-        // end hack
-        var content = new StringContent(JsonSerializer.Serialize(allKeys), Encoding.UTF8, "application/json");
-        var response =
-            await _httpClient.PostAsync(
-                $"api/snapshots/{org}/{repo}/{route}", content);
-        response.EnsureSuccessStatusCode();
-        var jsonSnapshots = await response.Content.ReadAsStringAsync();
-
-        return JsonSerializer.Deserialize<IEnumerable<IssuesSnapshot>>(jsonSnapshots);
-    }
-
-    // Start here:
     public async Task<IEnumerable<IssuesSnapshot>?> GetIssuesForDateRangeAsync(
         Repository state, DateOnly from, DateOnly to, RepoLabels labels)
     {

@@ -47,13 +47,15 @@ public class IssueSnapshotsController : ControllerBase
         [FromQuery] string to,
         [FromBody] SnapshotKey[] allKeys)
     {
+        DateOnly fromDate = ParseDate(from);
+        DateOnly toDate = ParseDate(to);
         var dailyRecords = await _issueCountService.GetForRangeAsync(
-                org, repo, ParseDate(from), ParseDate(to)) ?? throw new InvalidOperationException("No data returned");
+                org, repo, fromDate, ParseDate(to)) ?? throw new InvalidOperationException("No data returned");
 
         var rVal = new List<IssuesSnapshot>();
         foreach (var key in allKeys)
         {
-            rVal.Add(dailyRecords.ToSnapshot(key));
+            rVal.Add(dailyRecords.ToSnapshot(key, fromDate, toDate));
         }
         return rVal;
     }

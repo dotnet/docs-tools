@@ -15,28 +15,22 @@ public sealed class IssuesClient
     }
 
     public async Task<DailyRecord?> GetIssuesForDateAsync(
-        Repository state, DateOnly date)
+        Repository state, DateOnly date, IssueClassificationModel model)
     {
         var (org, repo) = (state.Org, state.Repo);
         var route =  _encode(date);
-        var dailyRecord =
-            await _httpClient.GetFromJsonAsync<DailyRecord>(
-                $"api/issues/{org}/{repo}/{route}");
+        try
+        {
+            var dailyRecord =
+                await _httpClient.GetFromJsonAsync<DailyRecord>(
+                    $"api/issues/{org}/{repo}/{route}");
 
-        return dailyRecord;
-    }
-
-    public async Task<IEnumerable<DailyRecord>?> GetIssuesForDateRangeAsync(
-        Repository state, DateOnly from, DateOnly to)
-    {
-        var (org, repo) = (state.Org, state.Repo);
-        var queryString =
-            $"from={_encode(from)}&to={_encode(to)}";
-
-        var dailyRecords =
-            await _httpClient.GetFromJsonAsync<IEnumerable<DailyRecord>>(
-                $"api/issues/{org}/{repo}?{queryString}");
-
-        return dailyRecords;
+            return dailyRecord;
+        }
+        catch ( Exception ex )
+        {
+            Console.WriteLine(ex);
+            return DailyRecordFactory.CreateMissingRecord(date, model, org, repo);
+        }
     }
 }

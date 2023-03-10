@@ -69,7 +69,7 @@ public sealed partial class Areas
                 };
                 StateHasChanged();
 
-                var data = await IssuesClient.GetIssuesForDateAsync(state, date);
+                var data = await IssuesClient.GetIssuesForDateAsync(state, date, classifications);
                 if (data is { Issues.Length: > 0 })
                 {
                     _summaryState = _summaryState with
@@ -114,11 +114,17 @@ public sealed partial class Areas
         return Task.CompletedTask;
     }
 
-    public int GetIssueCountForProductAndPriority(
-        string productLabel, string priorityLabel) =>
-         _summaryState.Data.IssueCount(productLabel, null, priorityLabel, null);
+    public string GetIssueCountForProductAndPriority(
+        string productLabel, string priorityLabel)
+    {
+        var count = _summaryState.Data.IssueCount(productLabel, null, priorityLabel, null);
+        return count == -1 ? "?" : $"{count:#,0}";
+    }
 
-    public int GetIssueCountForProductTechAndPriority(
-        string productLabel, string techLabel, string priorityLabel) =>
-        _summaryState.Data.IssueCount(productLabel, techLabel, priorityLabel, null);
+    public string GetIssueCountForProductTechAndPriority(
+        string productLabel, string techLabel, string priorityLabel)
+    {
+        int count = _summaryState.Data.IssueCount(productLabel, techLabel, priorityLabel, null);
+        return count == -1 ? "?" : $"{count}";
+    }
 }
