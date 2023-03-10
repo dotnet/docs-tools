@@ -67,7 +67,7 @@
                                                         @onclick=@(() => PrepareModalData(product, null, priority))
                                                         @onclick:preventDefault="true"
                                                         @onclick:stopPropagation="true">
-                                                        @($"{priority.DisplayLabel}: {GetIssueCountForProductAndPriority(product.Label, priority.Label):#,0}")
+                                                        @($"{priority.DisplayLabel}: {GetIssueCountForProductAndPriority(product.Label, priority.Label)}")
                                                     </span>
                                                 </span>
                                         }
@@ -126,7 +126,7 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    @foreach (var (index, title, count) in _modalData.Select((item, index) => (index, item.Title, item.Count)))
+                                    @foreach (var (index, title, count) in _modalData.Select((item, index) => (index, item.Title, item.Count == -1 ? "?" : item.Count.ToString())))
                                 {
                                     var isLastRow = _modalData.Count == index + 1;
                                     var style = isLastRow ? "fw-bold" : "";

@@ -119,6 +119,7 @@ public partial class PriorityLineChart: ComponentBase
                 var data =
                     await SnapshotsClient.GetIssuesForDateRangeAsync(state, _date, _endDate, _repoLabelsState);
                 _issueSnapshots = data?.ToList() ?? Array.Empty<IssuesSnapshot>().ToList();
+                // Replace (-1) with "missing" in the date range It looks like ChartJS uses "NaN"
                 if (_issueSnapshots is { Count: > 0 })
                 {
                     _chartConfig.Data.Labels.Clear();
@@ -131,9 +132,12 @@ public partial class PriorityLineChart: ComponentBase
                     _chartConfig.Data.Datasets.Clear();
                     foreach (var grouping in _issueSnapshots)
                     {
+                        double[] lineSeries = grouping.DailyCount
+                            .Select(i => (i == -1) ? double.NaN : (double)i)
+                            .ToArray();
                         _chartConfig.Data.Datasets.Add(
-                            new LineDataset<int>(
-                                grouping.DailyCount)
+                            new LineDataset<double>(
+                                lineSeries)
                             {
                                 Fill = FillingMode.Start,
                                 Label = classifications.PriorityWithUnassigned().First(p => p.Label == grouping.Priority).DisplayLabel,
