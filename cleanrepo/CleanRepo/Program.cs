@@ -33,7 +33,7 @@ static class Program
         //   }
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\docs\\docs\\orleans" };
+        args = new[] { "--orphaned-articles", "--articles-directory=../../../../../../testrepo2/docs", "--delete=false" };
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
@@ -124,7 +124,7 @@ static class Program
                 return;
             }
 
-            ListOrphanedTopics(docFxRepo.AllTocFiles, markdownFiles, options.Delete.Value);
+            ListOrphanedArticles(docFxRepo.AllTocFiles, markdownFiles, options.Delete.Value);
         }
 
         // Find orphaned images
@@ -424,7 +424,7 @@ static class Program
         }
 
         stopwatch.Stop();
-        Console.WriteLine($"\nElapsed time: {stopwatch.Elapsed.ToHumanReadableString()}");
+        Console.WriteLine($"Elapsed time: {stopwatch.Elapsed.ToHumanReadableString()}");
     }
 
     #region Replace site-relative links
@@ -1050,11 +1050,11 @@ static class Program
     /// <summary>
     /// Lists the markdown files that aren't referenced from a TOC file.
     /// </summary>
-    private static void ListOrphanedTopics(List<FileInfo> tocFiles, List<FileInfo> markdownFiles, bool deleteOrphanedTopics)
+    private static void ListOrphanedArticles(List<FileInfo> tocFiles, List<FileInfo> markdownFiles, bool deleteOrphanedTopics)
     {
-        Dictionary<string, int> filesToKeep = new Dictionary<string, int>();
+        Console.WriteLine($"Checking {markdownFiles.Count} Markdown files in {tocFiles.Count} TOC files.");
 
-        Console.WriteLine("\nTopics not in any TOC file (that are also not includes or shared or misc):\n");
+        Dictionary<string, int> filesToKeep = new Dictionary<string, int>();
 
         bool IsArticleFile(FileInfo file) =>
             !file.FullName.Contains("\\includes\\") &&
@@ -1065,17 +1065,25 @@ static class Program
 
         List<FileInfo> orphanedFiles = new List<FileInfo>();
 
+        StringBuilder sb = new StringBuilder("\n");
+
         Parallel.ForEach(markdownFiles.Where(IsArticleFile), markdownFile =>
-        {
+        //foreach (var markdownFile in markdownFiles)
+        { 
+            // Ignore TOC files.
+            if (String.Compare(markdownFile.Name, "TOC.md", true) == 0)
+                return; //continue;
+
             var found = tocFiles.Any(tocFile => IsFileLinkedFromTocFile(markdownFile, tocFile));
             if (!found)
             {
                 orphanedFiles.Add(markdownFile);
-                Console.WriteLine(markdownFile.FullName);
+                sb.AppendLine(markdownFile.FullName);
             }
         });
 
-        Console.WriteLine($"\nFound {orphanedFiles.Count} .md files that aren't referenced in a TOC.");
+        sb.AppendLine($"\nFound {orphanedFiles.Count} Markdown files that aren't referenced in a TOC.");
+        Console.WriteLine(sb.ToString());
 
         // Delete files if the option is set.
         if (deleteOrphanedTopics)
@@ -1094,7 +1102,7 @@ static class Program
 
             if (filesToKeep.Count > 0)
             {
-                Console.Write($"\nThe following {filesToKeep.Count} files *were not deleted* " +
+                Console.Write($"\nThe following {filesToKeep.Count} files *weren't deleted* " +
                     $"because they're referenced in one or more files:\n\n");
                 foreach (var fileName in filesToKeep)
                 {
@@ -1117,12 +1125,15 @@ static class Program
         // # [Managing External Tools](ide/managing-external-tools.md)
 
         string linkRegEx = tocFile.Extension.ToLower() == ".yml" ?
-            @"href:(.*?" + linkedFile.Name + ")" :
-            @"\]\(<?(([^\)])*?" + linkedFile.Name + @")";
+            @"href:\s*(" + linkedFile.Name + @"|.+?\/" + linkedFile.Name + ")" :
+            @"\]\(\s*<?\s*(\/?" + linkedFile.Name + @"|[^\)]+\/" + linkedFile.Name + ")";
 
         // For each link that contains the file name...
         foreach (Match match in Regex.Matches(text, linkRegEx, RegexOptions.IgnoreCase))
         {
+            // For debugging only.
+            //Console.WriteLine($"Matching text is '{match.Groups[1].Value.Trim()}'.");
+
             // Get the file-relative path to the linked file.
             string relativePath = match.Groups[1].Value.Trim();
 
@@ -1155,6 +1166,9 @@ static class Program
                     else
                     {
                         // If we get here, the file name matched but the full path did not.
+                        Console.WriteLine("\nNot a proper match:");
+                        Console.WriteLine($"Full path to referenced file is '{fullPath}'.");
+                        Console.WriteLine($"Path to orphaned file candidate is '{linkedFile.FullName}'.");
                     }
                 }
             }
