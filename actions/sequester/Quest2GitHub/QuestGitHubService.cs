@@ -21,6 +21,7 @@ public class QuestGitHubService : IDisposable
 
     private GitHubLabel? _importTriggerLabel;
     private GitHubLabel? _importedLabel;
+    private QuestIteration[]? _allIterations;
 
     /// <summary>
     /// Initialize the service.
@@ -64,8 +65,15 @@ public class QuestGitHubService : IDisposable
     /// <returns></returns>
     public async Task ProcessIssues(string organization, string repository, int duration, bool dryRun)
     {
-        if ((_importTriggerLabel == null) || (_importedLabel == null))
+        if ((_importTriggerLabel is null) || (_importedLabel is null))
             await retrieveLabelIDs(organization, repository);
+        if (_allIterations is null)
+        {
+            _allIterations = await retrieveIterationLabels();
+        }
+        var currentIterationPath = QuestIteration.CurrentIterationPath();
+        Console.WriteLine($"Current sprint path: {currentIterationPath}");
+        var currentIteration = _allIterations.Single(sprint => sprint.Path == currentIterationPath);
 
         var iter = new EnumerateIssues();
 
@@ -86,11 +94,11 @@ public class QuestGitHubService : IDisposable
                 {
                     if (questItem != null)
                     {
-                        await UpdateWorkItem(questItem, item);
+                        await UpdateWorkItem(questItem, item, currentIteration);
                     }
                     else
                     {
-                        questItem = await LinkIssue(organization, repository, item);
+                        questItem = await LinkIssue(organization, repository, item, currentIteration);
                     }
                 }
                 totalImport++;
@@ -110,11 +118,18 @@ public class QuestGitHubService : IDisposable
     /// <param name="gitHubOrganization">The GitHub organization</param>
     /// <param name="gitHubRepository">The GitHub repository</param>
     /// <param name="issueNumber">The issue Number</param>
-    /// <returns></returns>
+    /// <returns>A task representing the current operation</returns>
     public async Task ProcessIssue(string gitHubOrganization, string gitHubRepository, int issueNumber)
     {
         if ((_importTriggerLabel == null) || (_importedLabel == null))
             await retrieveLabelIDs(gitHubOrganization, gitHubRepository);
+        if (_allIterations is null)
+        {
+            _allIterations = await retrieveIterationLabels();
+        }
+        var currentIterationPath = QuestIteration.CurrentIterationPath();
+        Console.WriteLine($"Current sprint path: {currentIterationPath}");
+        var currentIteration = _allIterations.Single(sprint => sprint.Path == currentIterationPath);
 
         //Retrieve the GitHub issue.
         var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
@@ -123,7 +138,7 @@ public class QuestGitHubService : IDisposable
         var request = ghIssue.Labels.Any(l => l.nodeID == _importTriggerLabel?.nodeID);
         var sequestered = ghIssue.Labels.Any(l => l.nodeID == _importedLabel?.nodeID);
         // Only query AzDo if needed:
-        var questItem = ((request && ghIssue.IsOpen) || sequestered)
+        var questItem = (request || sequestered)
             ? await FindLinkedWorkItem(ghIssue)
             : null;
 
@@ -134,15 +149,15 @@ public class QuestGitHubService : IDisposable
         // state or assigned field. That can't trigger a new GH action run.
         if (request)
         {
-            if ((questItem is null) && ghIssue.IsOpen)
+            if (questItem is null)
             {
-                questItem = await LinkIssue(gitHubOrganization, gitHubRepository, ghIssue);
+                questItem = await LinkIssue(gitHubOrganization, gitHubRepository, ghIssue, currentIteration);
             }
             else if (questItem is not null)
             {
                 // This allows a human to force a manual update: just add the trigger label.
                 // Note that it updates even if the item is closed.
-                await UpdateWorkItem(questItem, ghIssue);
+                await UpdateWorkItem(questItem, ghIssue, currentIteration);
 
             }
             // Next, if the item is already linked, consider any updates.
@@ -153,7 +168,7 @@ public class QuestGitHubService : IDisposable
         }
         else if (sequestered && (questItem is not null))
         {
-            await UpdateWorkItem(questItem, ghIssue);
+            await UpdateWorkItem(questItem, ghIssue, currentIteration);
         }
     }
 
@@ -171,7 +186,31 @@ public class QuestGitHubService : IDisposable
     private Task<GithubIssue> RetrieveIssueAsync(string org, string repo, int issueNumber) =>
             GithubIssue.QueryIssue(_ghClient, org, repo, issueNumber);
 
-    private async Task<QuestWorkItem?> LinkIssue(string organization, string repo, GithubIssue ghIssue)
+    private async Task<QuestIteration[]> retrieveIterationLabels()
+    {
+        var sprintPackets = await _azdoClient.RetrieveAllIterations();
+
+        var iterations = new List<QuestIteration>();
+        foreach (var sprintElement in sprintPackets.Descendent("value").EnumerateArray())
+        {
+            var id = sprintElement.GetProperty("id").GetGuid();
+            var name = sprintElement.GetProperty("name").GetString();
+            var path = sprintElement.GetProperty("path").GetString();
+            if ((name is not null) && (path is not null))
+            {
+                iterations.Add(new QuestIteration()
+                {
+                    Id = id,
+                    Name = name,
+                    Path = path,
+                });
+            }
+        }
+        return iterations.ToArray();
+    }
+
+
+    private async Task<QuestWorkItem?> LinkIssue(string organization, string repo, GithubIssue ghIssue, QuestIteration currentIteration)
     {
         var workItem = LinkedQuestId(ghIssue);
         if (workItem == null)
@@ -184,7 +223,7 @@ public class QuestGitHubService : IDisposable
             await mutation.PerformMutation("ignored", null, _importTriggerLabel?.nodeID);
 
             // Create work item:
-            var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.nodeID);
+            var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.nodeID, currentIteration);
 
             // Add Tagged comment to GH Issue description.
             var updatedBody = $"""
@@ -215,25 +254,31 @@ public class QuestGitHubService : IDisposable
         }
     }
 
-    private async Task<QuestWorkItem?> UpdateWorkItem(QuestWorkItem questItem, GithubIssue ghIssue)
+    private async Task<QuestWorkItem?> UpdateWorkItem(QuestWorkItem questItem, GithubIssue ghIssue, QuestIteration currentIteration)
     {
-        var assigneeEmail = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
-        AzDoIdentity? assigneeID = default;
-        if (assigneeEmail?.EndsWith("@microsoft.com") == true)
+        var ghAssigneeEmailAddress = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
+        AzDoIdentity? questAssigneeID = default;
+        if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
         {
-            assigneeID = await _azdoClient.GetIDFromEmail(assigneeEmail);
+            questAssigneeID = await _azdoClient.GetIDFromEmail(ghAssigneeEmailAddress);
         }
         List<JsonPatchDocument> patchDocument = new();
         JsonPatchDocument? assignPatch = default;
-        if (assigneeID?.Id != questItem.AssignedToId)
+        if (questAssigneeID?.Id != questItem.AssignedToId)
         {
             // build patch document for assignment.
-            assignPatch = new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.AssignedTo",
-                Value = assigneeID,
-            };
+            assignPatch = (questAssigneeID == null) ?
+                new JsonPatchDocument
+                {
+                    Operation = Op.Remove,
+                    Path = "/fields/System.AssignedTo",
+                } :
+                new JsonPatchDocument
+                {
+                    Operation = Op.Add,
+                    Path = "/fields/System.AssignedTo/id",
+                    Value = null,
+                };
             patchDocument.Add(assignPatch);
         }
         var questItemOpen = questItem.State is not "Closed";
@@ -245,6 +290,14 @@ public class QuestGitHubService : IDisposable
                 Operation = Op.Add,
                 Path = "/fields/System.State",
                 Value = ghIssue.IsOpen ? "Active" : "Closed",
+            });
+
+            // Update to the current sprint when an item is closed, or reopened:
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.IterationPath",
+                Value = currentIteration.Path,
             });
 
             // When the issue is opened or closed, 
