@@ -1,5 +1,6 @@
 ﻿using CleanRepo.Extensions;
 using CommandLine;
+using Microsoft.Build.Construction;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -76,9 +77,9 @@ static class Program
         var docFxRepo = new DocFxRepo(startDirectory);
 
         // Determine if we're to delete orphans (or just report them).
-        if (options.FindOrphanedImages 
-            || options.FindOrphanedSnippets 
-            || options.FindOrphanedIncludes 
+        if (options.FindOrphanedImages
+            || options.FindOrphanedSnippets
+            || options.FindOrphanedIncludes
             || options.FindOrphanedArticles)
         {
             if (options.Delete is null)
@@ -108,9 +109,9 @@ static class Program
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
-            if (!options.ArticlesDirectory.StartsWith(docFxRepo.DocFxDirectory.FullName))
+            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.ArticlesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.ArticlesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -143,7 +144,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.MediaDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.MediaDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -184,7 +185,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.MediaDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.MediaDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -225,7 +226,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.IncludesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.IncludesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.IncludesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -260,21 +261,24 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.SnippetsDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.SnippetsDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.SnippetsDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
             Console.WriteLine($"\nSearching the '{options.SnippetsDirectory}' directory recursively for orphaned .cs and .vb files.");
 
+            // Get all .cs and .vb files.
             List<string> snippetFiles = GetSnippetFiles(options.SnippetsDirectory);
-
             if (snippetFiles.Count == 0)
             {
                 Console.WriteLine("\nNo .cs or .vb files were found.");
                 return;
             }
 
-            ListOrphanedSnippets(options.SnippetsDirectory, snippetFiles, options.Delete.Value);
+            // Catalog all the solution files and the project (directories) they reference.
+            List<(string, List<string>)> solutionFiles = GetSolutionFiles(options.SnippetsDirectory);
+
+            ListOrphanedSnippets(options.SnippetsDirectory, snippetFiles, solutionFiles, options.Delete.Value);
         }
 
         // Replace links to articles that are redirected in the master redirection files.
@@ -295,7 +299,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.ArticlesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.ArticlesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -341,7 +345,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.ArticlesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.ArticlesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -393,9 +397,10 @@ static class Program
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
+            // These can be different if docFxRepo was constructed using a different directory (e.g. articles/media/snippets/include).
             if (!options.DocFxDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.DocFxDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.DocFxDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -762,7 +767,27 @@ static class Program
         return snippetFiles;
     }
 
-    private static void ListOrphanedSnippets(string inputDirectory, List<string> snippetFiles, bool deleteOrphanedSnippets)
+    /// <summary>
+    /// Builds a list of solution files and all the (unique) project directories they reference (using full paths).
+    /// </summary>
+    private static List<(string, List<string>)> GetSolutionFiles(string startDirectory)
+    {
+        List<(string, List<string>)> solutionFiles = new List<(string, List<string>)>();
+
+        DirectoryInfo dir = new DirectoryInfo(startDirectory);
+        foreach (var slnFile in dir.EnumerateFiles("*.sln", SearchOption.AllDirectories))
+        {
+            SolutionFile solutionFile = SolutionFile.Parse(slnFile.FullName);
+            List<string> projectFiles = solutionFile.ProjectsInOrder.Select(p => Path.GetDirectoryName(p.AbsolutePath).ToLowerInvariant()).Distinct().ToList();
+
+            solutionFiles.Add((slnFile.FullName, projectFiles));
+        }
+
+        return solutionFiles;
+    }
+
+    private static void ListOrphanedSnippets(string inputDirectory, List<string> snippetFiles,
+        List<(string, List<string>)> solutionFiles, bool deleteOrphanedSnippets)
     {
         // Get all files that could possibly link to the snippet files
         var files = GetAllMarkdownFiles(inputDirectory, out DirectoryInfo rootDirectory);
@@ -778,13 +803,8 @@ static class Program
         // Prints out the snippet files that have zero references.
         StringBuilder output = new StringBuilder();
 
-        // Keep track of which directories need to be deleted.
-        // We can't delete them as we go because then our list of snippet files
-        // will be inaccurate.
-        List<string> directoriesToDelete = new List<string>();
-
-        // Keep track of directories we know we have to preserve.
-        List<string> directoriesToKeep = new List<string>();
+        // Keep track of which directories are referenced/unreferenced.
+        Dictionary<string, int> snippetDirectories = new Dictionary<string, int>();
 
         foreach (var snippetFile in snippetFiles)
         {
@@ -869,9 +889,8 @@ static class Program
                 // If any descendants of the project file directory
                 // are referenced, then don't delete anything in the project file directory.
 
-                // If we already know this project directory is orphaned or unorphaned, move on.
-                if (directoriesToDelete.Contains(projectDir.FullName)
-                    || directoriesToKeep.Contains(projectDir.FullName))
+                // If we've already determined this project directory is orphaned or unorphaned, move on.
+                if (snippetDirectories.ContainsKey(projectDir.FullName))
                     continue;
 
                 foreach (FileInfo markdownFile in files)
@@ -915,8 +934,10 @@ static class Program
                                     foundSnippetReference = true;
 
                                     // Add the project directory to the known list of directories to keep (saves searching again).
-                                    if (!directoriesToKeep.Contains(projectDir.FullName))
-                                        directoriesToKeep.Add(projectDir.FullName);
+                                    if (!snippetDirectories.ContainsKey(projectDir.FullName))
+                                        snippetDirectories.Add(projectDir.FullName, 1);
+                                    else
+                                        snippetDirectories[projectDir.FullName]++;
 
                                     break;
                                 }
@@ -932,29 +953,83 @@ static class Program
                 if (!foundSnippetReference)
                 {
                     // The snippet file and its project directory is orphaned (not used anywhere).
-                    if (!directoriesToDelete.Contains(projectDir.FullName))
+                    // Set reference count to 0;
+                    if (!snippetDirectories.ContainsKey(projectDir.FullName))
                     {
-                        directoriesToDelete.Add(projectDir.FullName);
+                        snippetDirectories.Add(projectDir.FullName, 0);
                     }
                 }
             }
         }
 
-        // Delete orphaned directories.
-        Console.WriteLine($"Found {directoriesToDelete.Count} orphaned directories:\n");
+        // Output info for non-project snippets.
+        Console.WriteLine($"\nFound {countOfOrphans} orphaned snippet files:\n");
+        Console.WriteLine(output.ToString());
 
-        if (deleteOrphanedSnippets)
+        StringBuilder dirSlnOutput = new StringBuilder("The following project directories are orphaned:\n\n");
+
+        // Delete orphaned directories.
+        IEnumerable<string> directoriesToDelete = snippetDirectories.Where(kvp => kvp.Value == 0).Select(kvp => kvp.Key);
+
+        foreach (var directory in directoriesToDelete)
         {
-            foreach (var directory in directoriesToDelete)
+            bool isPartOfSolution = false;
+
+            // Check if the directory is referenced in a solution file.
+            // If so, we'll (possibly) delete it in the next step.
+            foreach (var slnFile in solutionFiles)
             {
-                Console.WriteLine(directory);
-                Directory.Delete(directory, true);
+                if (slnFile.Item2.Contains(directory, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    isPartOfSolution = true;
+                    break;
+                }
+            }
+
+            if (!isPartOfSolution)
+            {
+                dirSlnOutput.AppendLine(directory);
+                if (deleteOrphanedSnippets)
+                {
+                    Directory.Delete(directory, true);
+                }
             }
         }
 
-        Console.WriteLine($"\nFound {countOfOrphans} orphaned snippet files:\n");
-        Console.WriteLine(output.ToString());
-        Console.WriteLine("DONE");
+        dirSlnOutput.AppendLine("\nThe following solution directories are orphaned:\n");
+
+        // Delete orphaned solutions.
+        foreach (var solutionFile in solutionFiles)
+        {
+            // Check if any of its projects (snippets) are referenced anywhere.
+            bool isReferenced = false;
+
+            foreach (var projectDir in solutionFile.Item2)
+            {
+                if (snippetDirectories.TryGetValue(projectDir, out int refCount))
+                {
+                    if (refCount > 0)
+                    {
+                        isReferenced = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isReferenced)
+            {
+                string path = Path.GetDirectoryName(solutionFile.Item1);
+                dirSlnOutput.AppendLine(path);
+                if (deleteOrphanedSnippets)
+                {
+                    // Delete the solution and its directory.
+                    Directory.Delete(path, true);
+                }
+            }
+        }
+
+        // Output info for unreferenced projects and solutions.
+        Console.WriteLine(dirSlnOutput.ToString());
     }
     #endregion
 
@@ -1262,7 +1337,7 @@ static class Program
         var childInfo = new DirectoryInfo(child);
         var otherInfo = new DirectoryInfo(other);
 
-        if (childInfo.FullName== otherInfo.FullName) { return true; }
+        if (childInfo.FullName == otherInfo.FullName) { return true; }
 
         while (childInfo.Parent != null)
         {

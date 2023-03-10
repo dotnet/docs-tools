@@ -1,6 +1,7 @@
-import { wait } from "./wait"
-import { checkStatus } from "./status-checker"
+import { wait } from "./wait";
+import { isSuccessStatus } from "./status-checker";
 import { getInput, setFailed } from "@actions/core";
+import { tryUpdatePullRequestBody } from "./pull-updater";
 
 async function run(): Promise<void> {
   try {
@@ -10,11 +11,17 @@ async function run(): Promise<void> {
     await wait(60000);
     console.log("Waited 60 seconds.");
 
-    await checkStatus(token);
+    // When the status is passed, try to update the PR body.
+    const isSuccess = await isSuccessStatus(token);
+    if (isSuccess) {
+      await tryUpdatePullRequestBody(token);
+    } else {
+      console.log('Unsuccessful status detected.');
+    }
   } catch (error: unknown) {
     const e = error as Error;
     setFailed(e.message);
   }
-};
+}
 
 run();
