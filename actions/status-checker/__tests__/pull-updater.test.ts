@@ -60,7 +60,7 @@ ${PREVIEW_TABLE_START}
 [updated-table]
 ${PREVIEW_TABLE_END}`;
 
-  expect(actual).toEqual(expectedBody);
+    expect(actual).toEqual(expectedBody);
   });
 
   it("buildMarkdownPreviewTable builds preview table correctly", () => {

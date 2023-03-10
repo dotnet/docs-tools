@@ -24,14 +24,14 @@ export async function tryUpdatePullRequestBody(token: string) {
 
     if (pr.changedFiles == 0) {
       console.log("No files changed at all...");
-      return
+      return;
     } else {
       console.log(pr.files);
     }
 
     if (isPullRequestModifyingMarkdownFiles(pr) == false) {
       console.log("No updated markdown files...");
-      return
+      return;
     }
 
     const modifiedMarkdownFiles = getModifiedMarkdownFiles(pr);
@@ -119,7 +119,12 @@ function isPullRequestModifyingMarkdownFiles(pr: Pull): boolean {
 
 function getModifiedMarkdownFiles(pr: Pull): string[] {
   return pr.files.edges
-    .filter((_) => _.node.path.endsWith(".md") && _.node.path.includes("includes") === false && isFileModified(_))
+    .filter(
+      (_) =>
+        _.node.path.endsWith(".md") &&
+        _.node.path.includes("/includes/") === false &&
+        isFileModified(_)
+    )
     .map((_) => _.node.path);
 }
 
@@ -130,14 +135,14 @@ function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
   const toLink = (file: string): string => {
     const path = file.replace("docs/", "").replace(".md", "");
     return `https://review.learn.microsoft.com/en-us/dotnet/${path}?branch=pr-en-us-${prNumber}`;
-  }
+  };
 
   const links = new Map<string, string>();
   files
     .sort((a, b) => a.localeCompare(b))
     .forEach((file) => {
       links.set(file, toLink(file));
-    })
+    });
 
   let markdownTable = "#### Internal previews\n\n";
   markdownTable += "| 📄 File(s) | 🔗 Preview link(s) |\n";
@@ -148,7 +153,7 @@ function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
       ".md",
       ""
     )}](${link}) |\n`;
-  })
+  });
 
   return markdownTable;
 }
