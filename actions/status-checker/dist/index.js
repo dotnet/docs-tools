@@ -213,7 +213,9 @@ ${tail}`;
 function appendTable(body, table) {
     return `${body}
 
-${table}`;
+${PREVIEW_TABLE_START}
+${table}
+${PREVIEW_TABLE_END}`;
 }
 exports.exportedForTesting = {
     appendTable,

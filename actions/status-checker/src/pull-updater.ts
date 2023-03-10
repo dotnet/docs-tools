@@ -176,7 +176,9 @@ ${tail}`;
 function appendTable(body: string, table: string) {
   return `${body}
 
-${table}`;
+${PREVIEW_TABLE_START}
+${table}
+${PREVIEW_TABLE_END}`;
 }
 
 export const exportedForTesting = {
