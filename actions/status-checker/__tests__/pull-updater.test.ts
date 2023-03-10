@@ -19,7 +19,9 @@ describe("pull-updater", () => {
 
     expect(actual).toEqual(`...
 
-[table]`);
+${PREVIEW_TABLE_START}
+[table]
+${PREVIEW_TABLE_END}`);
   });
 
   it("replaceExistingTable correctly replaces table", () => {
@@ -27,14 +29,38 @@ describe("pull-updater", () => {
 
         [existing-table]
 
-${PREVIEW_TABLE_END}`;
+${PREVIEW_TABLE_END}
+
+testing...1, 2, 3!`;
     const actual = replaceExistingTable(body, "[updated-table]");
 
     expect(actual).toEqual(`...${PREVIEW_TABLE_START}
 
 [updated-table]
 
-${PREVIEW_TABLE_END}`);
+${PREVIEW_TABLE_END}
+
+testing...1, 2, 3!`);
+  });
+
+  it("appendTable followed by replaceExistingTable correctly replaces table", () => {
+    const body = "...";
+    let actual = appendTable(body, "[table]");
+    let expectedBody = `...
+
+${PREVIEW_TABLE_START}
+[table]
+${PREVIEW_TABLE_END}`;
+
+    expect(actual).toEqual(expectedBody);
+    actual = appendTable(body, "[updated-table]");
+    expectedBody = `...
+
+${PREVIEW_TABLE_START}
+[updated-table]
+${PREVIEW_TABLE_END}`;
+
+  expect(actual).toEqual(expectedBody);
   });
 
   it("buildMarkdownPreviewTable builds preview table correctly", () => {
