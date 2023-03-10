@@ -168,7 +168,7 @@ function isPullRequestModifyingMarkdownFiles(pr) {
 }
 function getModifiedMarkdownFiles(pr) {
     return pr.files.edges
-        .filter((_) => _.node.path.endsWith(".md") && isFileModified(_))
+        .filter((_) => _.node.path.endsWith(".md") && _.node.path.includes("includes") === false && isFileModified(_))
         .map((_) => _.node.path);
 }
 function buildMarkdownPreviewTable(prNumber, files) {

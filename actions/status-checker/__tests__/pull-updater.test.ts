@@ -126,6 +126,14 @@ ${PREVIEW_TABLE_END}`;
               path: "path/to/modified-file.md",
             },
           },
+          {
+            node: {
+              deletions: 0,
+              additions: 1,
+              changeType: "MODIFIED",
+              path: "path/includes/modified-file.md",
+            },
+          },
         ],
       },
     });

@@ -1,5 +1,4 @@
 import { context, getOctokit } from "@actions/github";
-import { ChangeType } from "./types/ChangeType";
 import { FileChange } from "./types/FileChange";
 import { Pull } from "./types/Pull";
 import { PullRequestDetails } from "./types/PullRequestDetails";
@@ -120,7 +119,7 @@ function isPullRequestModifyingMarkdownFiles(pr: Pull): boolean {
 
 function getModifiedMarkdownFiles(pr: Pull): string[] {
   return pr.files.edges
-    .filter((_) => _.node.path.endsWith(".md") && isFileModified(_))
+    .filter((_) => _.node.path.endsWith(".md") && _.node.path.includes("includes") === false && isFileModified(_))
     .map((_) => _.node.path);
 }
 
