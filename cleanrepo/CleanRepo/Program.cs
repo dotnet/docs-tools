@@ -109,9 +109,9 @@ static class Program
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
-            if (!options.ArticlesDirectory.StartsWith(docFxRepo.DocFxDirectory.FullName))
+            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.ArticlesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.ArticlesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -144,7 +144,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.MediaDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.MediaDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -185,7 +185,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.MediaDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.MediaDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -226,7 +226,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.IncludesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.IncludesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.IncludesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -261,7 +261,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.SnippetsDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.SnippetsDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.SnippetsDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -299,7 +299,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.ArticlesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.ArticlesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -345,7 +345,7 @@ static class Program
             // Make sure the searchable directory is part of the same DocFx docset.
             if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.ArticlesDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.ArticlesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
@@ -397,9 +397,10 @@ static class Program
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
+            // These can be different if docFxRepo was constructed using a different directory (e.g. articles/media/snippets/include).
             if (!options.DocFxDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
             {
-                Console.WriteLine($"{options.DocFxDirectory} is not a child of the docfx.json file's directory {docFxRepo.DocFxDirectory}.");
+                Console.WriteLine($"'{options.DocFxDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
