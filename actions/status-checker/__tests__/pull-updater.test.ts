@@ -60,7 +60,7 @@ ${PREVIEW_TABLE_START}
 [updated-table]
 ${PREVIEW_TABLE_END}`;
 
-  expect(actual).toEqual(expectedBody);
+    expect(actual).toEqual(expectedBody);
   });
 
   it("buildMarkdownPreviewTable builds preview table correctly", () => {
@@ -124,6 +124,14 @@ ${PREVIEW_TABLE_END}`;
               additions: 1,
               changeType: "MODIFIED",
               path: "path/to/modified-file.md",
+            },
+          },
+          {
+            node: {
+              deletions: 0,
+              additions: 1,
+              changeType: "MODIFIED",
+              path: "path/includes/modified-file.md",
             },
           },
         ],
