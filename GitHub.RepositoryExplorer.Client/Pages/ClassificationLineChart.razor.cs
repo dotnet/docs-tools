@@ -133,9 +133,12 @@ public partial class ClassificationLineChart: ComponentBase
                     foreach (var grouping in _issueSnapshots)
                     {
                         var color = ColorUtil.RandomColorString();
+                        double[] lineSeries = grouping.DailyCount
+                            .Select(i => (i == -1) ? double.NaN : (double)i)
+                            .ToArray();
                         _chartConfig.Data.Datasets.Add(
-                            new LineDataset<int>(
-                                grouping.DailyCount)
+                            new LineDataset<double>(
+                                lineSeries)
                             {
                                 Fill = FillingMode.Start,
                                 Label = classifications.ClassificationWithUnassigned().First(p => p.Label == grouping.Classification).DisplayLabel,

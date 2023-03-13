@@ -73,6 +73,7 @@ public class QuestWorkItem
     /// <param name="questClient">The quest client.</param>
     /// <param name="ospoClient">the MS open source programs office client.</param>
     /// <param name="path">The path component for the area path.</param>
+    /// <param name="currentIteration">The current AzDo iteration</param>
     /// <returns>The newly created linked Quest work item.</returns>
     /// <remarks>
     /// Fill in the Json patch document from the GitHub issue.
@@ -84,7 +85,8 @@ public class QuestWorkItem
         QuestClient questClient, 
         OspoClient ospoClient,
         string path,
-        string? requestLabelNodeId)
+        string? requestLabelNodeId,
+        QuestIteration currentIteration)
     {
         var areaPath = $"""{questClient.QuestProject}\{path}""";
 
@@ -129,6 +131,13 @@ public class QuestWorkItem
             Value = assigneeID
         };
         patchDocument.Add(assignPatch);
+        patchDocument.Add(new JsonPatchDocument
+        {
+            Operation = Op.Add,
+            Path = "/fields/System.IterationPath",
+            Value = currentIteration.Path,
+        });
+
         /* This is ignored by Azure DevOps. It uses the PAT of the 
          * account running the code.
         var creator = await issue.AuthorMicrosoftPreferredName(ospoClient);

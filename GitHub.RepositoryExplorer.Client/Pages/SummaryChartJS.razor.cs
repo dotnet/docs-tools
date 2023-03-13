@@ -86,7 +86,7 @@ public sealed partial class SummaryChartJS
                 };
                 StateHasChanged();
 
-                var data = await IssuesClient.GetIssuesForDateAsync(state, _date);
+                var data = await IssuesClient.GetIssuesForDateAsync(state, _date, classifications);
                 if (classifications is not null && data is { Issues.Length: > 0 })
                 {
                     _summaryState = _summaryState with
@@ -109,9 +109,9 @@ public sealed partial class SummaryChartJS
                     // data is the DailyRecord.
                     foreach (var priority in _repoLabelsState.IssueClassification.PriorityWithUnassigned())
                     {
-                        IDataset<int> dataset = new BarDataset<int>(classifications
+                        IDataset<double> dataset = new BarDataset<double>(classifications
                             .Products
-                            .Select(p => data.Issues.IssueCount(p.Label, null, priority.Label, null)))
+                            .Select(p => data.Issues.IssueCount(p.Label, null, priority.Label, null) == -1 ? double.NaN : data.Issues.IssueCount(p.Label, null, priority.Label, null)))
                         {
                             Label = priority.DisplayLabel,
                             BackgroundColor = PriorityColor(priority.Label)

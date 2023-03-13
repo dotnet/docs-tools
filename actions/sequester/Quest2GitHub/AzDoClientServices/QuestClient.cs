@@ -59,6 +59,23 @@ public sealed class QuestClient : IDisposable
     }
 
     /// <summary>
+    /// Retrieve the JsonElement for all iterations in the project
+    /// </summary>
+    /// <returns>The JSON packet containing all iterations</returns>
+    public async Task<JsonElement> RetrieveAllIterations()
+    {
+        string getIterationsUrl =
+            $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/work/teamsettings/iterations?api-version=7.1-preview.1";
+        Console.WriteLine($"Get Iterations URL: \"{getIterationsUrl}\"");
+
+        using var response = await InitiateRequestAsync(
+            client => client.GetAsync(getIterationsUrl));
+
+        return await HandleResponseAsync(response);
+
+    }
+
+    /// <summary>
     /// Create a work item from an array of JsonPatch documents.
     /// </summary>
     /// <param name="document">The Json patch document that represents

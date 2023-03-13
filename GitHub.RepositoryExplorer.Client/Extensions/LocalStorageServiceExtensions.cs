@@ -22,4 +22,5 @@ internal static class LocalStorageServiceExtensions
         }
         catch { }
     }
+
 }
