@@ -59,14 +59,14 @@ public class JsonPatchDocument
     /// <summary>
     /// The old value (null is valid for many operations)
     /// </summary>
-    [JsonPropertyName("from")]
+    [JsonPropertyName("from"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? From { get; init; }
 
     /// <summary>
     /// The new value.
     /// </summary>
-    [JsonPropertyName("value")]
-    public required object? Value { get; init; }
+    [JsonPropertyName("value"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object? Value { get; init; }
 }
 
 /// <summary>
