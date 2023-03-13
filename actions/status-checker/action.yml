@@ -8,8 +8,8 @@ inputs:
   docs-path:
     description: 'The path to the docs folder, such as; "docs" for the .NET docs repo.'
     default: 'docs'
-  vanity-slug:
-    description: 'The vanity slug for the docs repo, for example; "dotnet" for the .NET docs repo.'
+  url-base-path:
+    description: 'The URL base path for the docs repo, for example; "dotnet" for the .NET docs repo.'
     default: 'dotnet'
 runs:
   using: 'node16'

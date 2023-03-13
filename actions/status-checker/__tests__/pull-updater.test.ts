@@ -65,7 +65,7 @@ ${PREVIEW_TABLE_END}`;
 
   it("buildMarkdownPreviewTable builds preview table correctly", () => {
     setInput("docs-path", "docs");
-    setInput("vanity-slug", "dotnet");
+    setInput("url-base-path", "dotnet");
 
     const actual = buildMarkdownPreviewTable(7, ["test/markdown.md"]);
     expect(actual).toEqual(

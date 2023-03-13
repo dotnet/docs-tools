@@ -134,11 +134,11 @@ function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
   // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
 
   const docsPath = getInput("docs-path");
-  const vanitySlug = getInput("vanity-slug");
+  const urlBasePath = getInput("url-base-path");
 
   const toLink = (file: string): string => {
     const path = file.replace(`${docsPath}/`, "").replace(".md", "");
-    return `https://review.learn.microsoft.com/en-us/${vanitySlug}/${path}?branch=pr-en-us-${prNumber}`;
+    return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
   };
 
   const links = new Map<string, string>();
