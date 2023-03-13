@@ -3,8 +3,14 @@ description: "Checks the OpenPublishing.Build's status check's description to se
 author: 'Genevieve Warren'
 inputs:
   repo-token:
-    description: 'The GITHUB_TOKEN secret'
+    description: 'The GITHUB_TOKEN secret. Requires the following permissions: statuses: write, issues: write, pull-requests: write.'
     required: true
+  docs-path:
+    description: 'The path to the docs folder, such as; "docs" for the .NET docs repo.'
+    default: 'docs'
+  vanity-slug:
+    description: 'The vanity slug for the docs repo, for example; "dotnet" for the .NET docs repo.'
+    default: 'dotnet'
 runs:
   using: 'node16'
   main: 'dist/index.js'

@@ -63,6 +63,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
+const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
@@ -169,17 +170,18 @@ function isPullRequestModifyingMarkdownFiles(pr) {
 function getModifiedMarkdownFiles(pr) {
     return pr.files.edges
         .filter((_) => _.node.path.endsWith(".md") &&
-        _.node.path.includes("/includes/") === false &&
+        _.node.path.includes("includes/") === false &&
         isFileModified(_))
         .map((_) => _.node.path);
 }
 function buildMarkdownPreviewTable(prNumber, files) {
     // Given: docs/orleans/resources/nuget-packages.md
     // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
-    // TODO: consider being a bit smarter about this, don't assume "dotnet" and "docs".
+    const docsPath = (0, core_1.getInput)("docs-path");
+    const vanitySlug = (0, core_1.getInput)("vanity-slug");
     const toLink = (file) => {
-        const path = file.replace("docs/", "").replace(".md", "");
-        return `https://review.learn.microsoft.com/en-us/dotnet/${path}?branch=pr-en-us-${prNumber}`;
+        const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+        return `https://review.learn.microsoft.com/en-us/${vanitySlug}/${path}?branch=pr-en-us-${prNumber}`;
     };
     const links = new Map();
     files
