@@ -64,6 +64,9 @@ ${PREVIEW_TABLE_END}`;
   });
 
   it("buildMarkdownPreviewTable builds preview table correctly", () => {
+    setInput("docs-path", "docs");
+    setInput("url-base-path", "dotnet");
+
     const actual = buildMarkdownPreviewTable(7, ["test/markdown.md"]);
     expect(actual).toEqual(
       "#### Internal previews\n\n| 📄 File(s) | 🔗 Preview link(s) |\n|:--|:--|\n| _test/markdown.md_ | [Preview: test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n"
@@ -131,7 +134,7 @@ ${PREVIEW_TABLE_END}`;
               deletions: 0,
               additions: 1,
               changeType: "MODIFIED",
-              path: "path/includes/modified-file.md",
+              path: "includes/modified-file.md",
             },
           },
         ],
@@ -207,3 +210,6 @@ ${PREVIEW_TABLE_END}`;
     expect(actual).toBeTruthy();
   });
 });
+
+const setInput = (name: string, value: string) =>
+  (process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] = value);

@@ -1,3 +1,4 @@
+import { getInput } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { FileChange } from "./types/FileChange";
 import { Pull } from "./types/Pull";
@@ -122,7 +123,7 @@ function getModifiedMarkdownFiles(pr: Pull): string[] {
     .filter(
       (_) =>
         _.node.path.endsWith(".md") &&
-        _.node.path.includes("/includes/") === false &&
+        _.node.path.includes("includes/") === false &&
         isFileModified(_)
     )
     .map((_) => _.node.path);
@@ -131,10 +132,13 @@ function getModifiedMarkdownFiles(pr: Pull): string[] {
 function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
   // Given: docs/orleans/resources/nuget-packages.md
   // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
-  // TODO: consider being a bit smarter about this, don't assume "dotnet" and "docs".
+
+  const docsPath = getInput("docs-path");
+  const urlBasePath = getInput("url-base-path");
+
   const toLink = (file: string): string => {
-    const path = file.replace("docs/", "").replace(".md", "");
-    return `https://review.learn.microsoft.com/en-us/dotnet/${path}?branch=pr-en-us-${prNumber}`;
+    const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+    return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
   };
 
   const links = new Map<string, string>();
