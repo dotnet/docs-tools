@@ -1,9 +1,9 @@
-import { getInput } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { FileChange } from "./types/FileChange";
 import { Pull } from "./types/Pull";
 import { PullRequestDetails } from "./types/PullRequestDetails";
 import { NodeOf } from "./types/NodeOf";
+import { Options, options } from "./types/Options";
 
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
@@ -73,6 +73,12 @@ export async function tryUpdatePullRequestBody(token: string) {
   }
 }
 
+/**
+ * Returns the {PullRequestDetails} that correspond to
+ * the contextual GitHub Action workflow run.
+ * @param token The GITHUB_TOKEN value to obtain an instance of octokit with.
+ * @returns A {Promise} of {PullRequestDetails}.
+ */
 async function getPullRequest(token: string): Promise<PullRequestDetails> {
   const octokit = getOctokit(token);
   return await octokit.graphql<PullRequestDetails>({
@@ -130,14 +136,13 @@ function getModifiedMarkdownFiles(pr: Pull): string[] {
 }
 
 function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
-  // Given: docs/orleans/resources/nuget-packages.md
-  // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
-
-  const docsPath = getInput("docs-path");
-  const urlBasePath = getInput("url-base-path");
-
+  const opts: Options = options;
   const toLink = (file: string): string => {
+    // Given: docs/orleans/resources/nuget-packages.md
+    // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
+    const docsPath = options.docsPath ?? "docs";
     const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+    const urlBasePath = opts.urlBasePath ?? "dotnet";
     return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
   };
 
@@ -149,15 +154,23 @@ function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
     });
 
   let markdownTable = "#### Internal previews\n\n";
+
+  const isCollapsible = (opts.collapsibleAfter ?? 10) < links.size;
+  if (isCollapsible) {
+    markdownTable +=
+      "<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n";
+  }
+
   markdownTable += "| 📄 File | 🔗 Preview link |\n";
   markdownTable += "|:--|:--|\n";
 
   links.forEach((link, file) => {
-    markdownTable += `| _${file}_ | [Preview: ${file.replace(
-      ".md",
-      ""
-    )}](${link}) |\n`;
+    markdownTable += `| _${file}_ | [${file.replace(".md", "")}](${link}) |\n`;
   });
+
+  if (isCollapsible) {
+    markdownTable += "\n</details>\n";
+  }
 
   return markdownTable;
 }

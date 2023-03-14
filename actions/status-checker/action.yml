@@ -2,15 +2,18 @@ name: 'Status check checker'
 description: "Checks the OpenPublishing.Build's status check's description to see if there are build warnings, and adds a new status check with a state of failure if build warnings are present."
 author: 'Genevieve Warren'
 inputs:
-  repo-token:
+  repo_token:
     description: 'The GITHUB_TOKEN secret. Requires the following permissions: statuses: write, issues: write, pull-requests: write.'
     required: true
-  docs-path:
+  docs_path:
     description: 'The path to the docs folder, such as; "docs" for the .NET docs repo.'
     default: 'docs'
-  url-base-path:
+  url_base_path:
     description: 'The URL base path for the docs repo, for example; "dotnet" for the .NET docs repo.'
     default: 'dotnet'
+  collapsible_after:
+    description: 'The number at which the automated preview table defaults as collapsed but expandable, using the HTML summary and details elements.'
+    default: '10'
 runs:
   using: 'node16'
   main: 'dist/index.js'

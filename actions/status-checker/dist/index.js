@@ -63,8 +63,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
-const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
+const Options_1 = __nccwpck_require__(8847);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 function tryUpdatePullRequestBody(token) {
@@ -127,6 +127,12 @@ function tryUpdatePullRequestBody(token) {
     });
 }
 exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
+/**
+ * Returns the {PullRequestDetails} that correspond to
+ * the contextual GitHub Action workflow run.
+ * @param token The GITHUB_TOKEN value to obtain an instance of octokit with.
+ * @returns A {Promise} of {PullRequestDetails}.
+ */
 function getPullRequest(token) {
     return __awaiter(this, void 0, void 0, function* () {
         const octokit = (0, github_1.getOctokit)(token);
@@ -175,12 +181,15 @@ function getModifiedMarkdownFiles(pr) {
         .map((_) => _.node.path);
 }
 function buildMarkdownPreviewTable(prNumber, files) {
-    // Given: docs/orleans/resources/nuget-packages.md
-    // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
-    const docsPath = (0, core_1.getInput)("docs-path");
-    const urlBasePath = (0, core_1.getInput)("url-base-path");
+    var _a;
+    const opts = Options_1.options;
     const toLink = (file) => {
+        var _a, _b;
+        // Given: docs/orleans/resources/nuget-packages.md
+        // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
+        const docsPath = (_a = Options_1.options.docsPath) !== null && _a !== void 0 ? _a : "docs";
         const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+        const urlBasePath = (_b = opts.urlBasePath) !== null && _b !== void 0 ? _b : "dotnet";
         return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
     };
     const links = new Map();
@@ -190,11 +199,19 @@ function buildMarkdownPreviewTable(prNumber, files) {
         links.set(file, toLink(file));
     });
     let markdownTable = "#### Internal previews\n\n";
+    const isCollapsible = ((_a = opts.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < links.size;
+    if (isCollapsible) {
+        markdownTable +=
+            "<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n";
+    }
     markdownTable += "| 📄 File | 🔗 Preview link |\n";
     markdownTable += "|:--|:--|\n";
     links.forEach((link, file) => {
-        markdownTable += `| _${file}_ | [Preview: ${file.replace(".md", "")}](${link}) |\n`;
+        markdownTable += `| _${file}_ | [${file.replace(".md", "")}](${link}) |\n`;
     });
+    if (isCollapsible) {
+        markdownTable += "\n</details>\n";
+    }
     return markdownTable;
 }
 function replaceExistingTable(body, table) {
@@ -352,6 +369,35 @@ function isSuccessStatus(token) {
     });
 }
 exports.isSuccessStatus = isSuccessStatus;
+
+
+/***/ }),
+
+/***/ 8847:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.options = exports.Options = void 0;
+const core_1 = __nccwpck_require__(2186);
+class Options {
+    get collapsibleAfter() {
+        const val = parseInt((0, core_1.getInput)("collapsible_after", { required: false }) || "10");
+        return val || 10;
+    }
+    get docsPath() {
+        const val = (0, core_1.getInput)("docs_path", { required: true });
+        return val || "docs";
+    }
+    get urlBasePath() {
+        const val = (0, core_1.getInput)("url_base_path", { required: true });
+        return val || "dotnet";
+    }
+    constructor() { }
+}
+exports.Options = Options;
+exports.options = new Options();
 
 
 /***/ }),
