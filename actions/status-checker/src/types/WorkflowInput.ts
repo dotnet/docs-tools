@@ -1,6 +1,6 @@
 import { getInput } from "@actions/core";
 
-export class Options {
+export class WorkflowInput {
   get collapsibleAfter(): number {
     const val = parseInt(
       getInput("collapsible_after", { required: false }) || "10"
@@ -17,7 +17,13 @@ export class Options {
     const val = getInput("url_base_path", { required: true });
     return val || "dotnet";
   }
+
+  get repoToken(): string {
+    const val = getInput("repo_token", { required: true });
+    return val;
+  }
+
   constructor() {}
 }
 
-export const options: Options = new Options();
+export const workflowInput: WorkflowInput = new WorkflowInput();

@@ -20,10 +20,11 @@ const wait_1 = __nccwpck_require__(5817);
 const status_checker_1 = __nccwpck_require__(6430);
 const core_1 = __nccwpck_require__(2186);
 const pull_updater_1 = __nccwpck_require__(8791);
+const WorkflowInput_1 = __nccwpck_require__(6741);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const token = (0, core_1.getInput)("repo-token");
+            const token = WorkflowInput_1.workflowInput.repoToken;
             // Wait 60 seconds before checking status check result.
             yield (0, wait_1.wait)(60000);
             console.log("Waited 60 seconds.");
@@ -64,7 +65,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
 const github_1 = __nccwpck_require__(5438);
-const Options_1 = __nccwpck_require__(8847);
+const WorkflowInput_1 = __nccwpck_require__(6741);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 function tryUpdatePullRequestBody(token) {
@@ -182,12 +183,12 @@ function getModifiedMarkdownFiles(pr) {
 }
 function buildMarkdownPreviewTable(prNumber, files) {
     var _a;
-    const opts = Options_1.options;
+    const opts = WorkflowInput_1.workflowInput;
     const toLink = (file) => {
         var _a, _b;
         // Given: docs/orleans/resources/nuget-packages.md
         // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
-        const docsPath = (_a = Options_1.options.docsPath) !== null && _a !== void 0 ? _a : "docs";
+        const docsPath = (_a = WorkflowInput_1.workflowInput.docsPath) !== null && _a !== void 0 ? _a : "docs";
         const path = file.replace(`${docsPath}/`, "").replace(".md", "");
         const urlBasePath = (_b = opts.urlBasePath) !== null && _b !== void 0 ? _b : "dotnet";
         return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
@@ -373,15 +374,15 @@ exports.isSuccessStatus = isSuccessStatus;
 
 /***/ }),
 
-/***/ 8847:
+/***/ 6741:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.options = exports.Options = void 0;
+exports.workflowInput = exports.WorkflowInput = void 0;
 const core_1 = __nccwpck_require__(2186);
-class Options {
+class WorkflowInput {
     get collapsibleAfter() {
         const val = parseInt((0, core_1.getInput)("collapsible_after", { required: false }) || "10");
         return val || 10;
@@ -394,10 +395,14 @@ class Options {
         const val = (0, core_1.getInput)("url_base_path", { required: true });
         return val || "dotnet";
     }
+    get repoToken() {
+        const val = (0, core_1.getInput)("repo_token", { required: true });
+        return val;
+    }
     constructor() { }
 }
-exports.Options = Options;
-exports.options = new Options();
+exports.WorkflowInput = WorkflowInput;
+exports.workflowInput = new WorkflowInput();
 
 
 /***/ }),

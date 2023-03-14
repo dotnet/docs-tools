@@ -1,11 +1,12 @@
 import { wait } from "./wait";
 import { isSuccessStatus } from "./status-checker";
-import { getInput, setFailed } from "@actions/core";
+import { setFailed } from "@actions/core";
 import { tryUpdatePullRequestBody } from "./pull-updater";
+import { workflowInput } from "./types/WorkflowInput";
 
 async function run(): Promise<void> {
   try {
-    const token: string = getInput("repo-token");
+    const token: string = workflowInput.repoToken;
 
     // Wait 60 seconds before checking status check result.
     await wait(60000);

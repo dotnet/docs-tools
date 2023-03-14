@@ -3,7 +3,7 @@ import { FileChange } from "./types/FileChange";
 import { Pull } from "./types/Pull";
 import { PullRequestDetails } from "./types/PullRequestDetails";
 import { NodeOf } from "./types/NodeOf";
-import { Options, options } from "./types/Options";
+import { WorkflowInput, workflowInput } from "./types/WorkflowInput";
 
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
@@ -136,11 +136,11 @@ function getModifiedMarkdownFiles(pr: Pull): string[] {
 }
 
 function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
-  const opts: Options = options;
+  const opts: WorkflowInput = workflowInput;
   const toLink = (file: string): string => {
     // Given: docs/orleans/resources/nuget-packages.md
     // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
-    const docsPath = options.docsPath ?? "docs";
+    const docsPath = workflowInput.docsPath ?? "docs";
     const path = file.replace(`${docsPath}/`, "").replace(".md", "");
     const urlBasePath = opts.urlBasePath ?? "dotnet";
     return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;

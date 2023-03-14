@@ -1,6 +1,6 @@
 import { exportedForTesting } from "../src/pull-updater";
 import { describe, expect, it } from "@jest/globals";
-import { Options, options } from "../src/types/Options";
+import { WorkflowInput, workflowInput } from "../src/types/WorkflowInput";
 
 const {
   appendTable,
@@ -79,7 +79,7 @@ ${PREVIEW_TABLE_END}`;
     setInput("DOCS_PATH", "test/path");
     setInput("URL_BASE_PATH", "foundation");
 
-    const opts: Options = options;
+    const opts: WorkflowInput = workflowInput;
 
     expect(opts).toBeDefined();
     expect(opts.collapsibleAfter).toBe(7);
