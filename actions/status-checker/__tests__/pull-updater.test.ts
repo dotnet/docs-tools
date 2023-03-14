@@ -6,7 +6,7 @@ const {
   appendTable,
   buildMarkdownPreviewTable,
   getModifiedMarkdownFiles,
-  isFileModified,
+  isFilePreviewable,
   isPullRequestModifyingMarkdownFiles,
   PREVIEW_TABLE_END,
   PREVIEW_TABLE_START,
@@ -104,9 +104,9 @@ ${PREVIEW_TABLE_END}`;
     );
   });
 
-  it("isFileModified returns false when no file change types match", () => {
+  it("isFilePreviewable returns false when no file change types match", () => {
     expect(
-      isFileModified({
+      isFilePreviewable({
         node: {
           deletions: 1,
           additions: 1,
@@ -117,9 +117,9 @@ ${PREVIEW_TABLE_END}`;
     ).toBe(false);
   });
 
-  it("isFileModified returns true when file change types match", () => {
+  it("isFilePreviewable returns true when file change types match", () => {
     expect(
-      isFileModified({
+      isFilePreviewable({
         node: {
           deletions: 1,
           additions: 1,
@@ -172,7 +172,10 @@ ${PREVIEW_TABLE_END}`;
       },
     });
 
-    expect(actual).toEqual(["path/to/modified-file.md"]);
+    expect(actual).toEqual([
+      "path/to/renamed-file.md",
+      "path/to/modified-file.md",
+    ]);
   });
 
   it("isPullRequestModifyingMarkdownFiles returns false when no modified .md files", () => {
@@ -185,7 +188,7 @@ ${PREVIEW_TABLE_END}`;
             node: {
               deletions: 1,
               additions: 1,
-              changeType: "RENAMED",
+              changeType: "COPIED",
               path: "path/to/renamed-file.md",
             },
           },

@@ -106,11 +106,12 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
   });
 }
 
-function isFileModified(_: NodeOf<FileChange>) {
+function isFilePreviewable(_: NodeOf<FileChange>) {
   return (
     _.node.changeType == "ADDED" ||
     _.node.changeType == "CHANGED" ||
-    _.node.changeType == "MODIFIED"
+    _.node.changeType == "MODIFIED" ||
+    _.node.changeType == "RENAMED"
   );
 }
 
@@ -120,7 +121,9 @@ function isPullRequestModifyingMarkdownFiles(pr: Pull): boolean {
     pr.changedFiles > 0 &&
     pr.files &&
     pr.files.edges &&
-    pr.files.edges.some((_) => isFileModified(_) && _.node.path.endsWith(".md"))
+    pr.files.edges.some(
+      (_) => isFilePreviewable(_) && _.node.path.endsWith(".md")
+    )
   );
 }
 
@@ -130,7 +133,7 @@ function getModifiedMarkdownFiles(pr: Pull): string[] {
       (_) =>
         _.node.path.endsWith(".md") &&
         _.node.path.includes("includes/") === false &&
-        isFileModified(_)
+        isFilePreviewable(_)
     )
     .map((_) => _.node.path);
 }
@@ -206,7 +209,7 @@ export const exportedForTesting = {
   appendTable,
   buildMarkdownPreviewTable,
   getModifiedMarkdownFiles,
-  isFileModified,
+  isFilePreviewable,
   isPullRequestModifyingMarkdownFiles,
   PREVIEW_TABLE_END,
   PREVIEW_TABLE_START,

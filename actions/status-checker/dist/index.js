@@ -162,23 +162,24 @@ function getPullRequest(token) {
         });
     });
 }
-function isFileModified(_) {
+function isFilePreviewable(_) {
     return (_.node.changeType == "ADDED" ||
         _.node.changeType == "CHANGED" ||
-        _.node.changeType == "MODIFIED");
+        _.node.changeType == "MODIFIED" ||
+        _.node.changeType == "RENAMED");
 }
 function isPullRequestModifyingMarkdownFiles(pr) {
     return (pr &&
         pr.changedFiles > 0 &&
         pr.files &&
         pr.files.edges &&
-        pr.files.edges.some((_) => isFileModified(_) && _.node.path.endsWith(".md")));
+        pr.files.edges.some((_) => isFilePreviewable(_) && _.node.path.endsWith(".md")));
 }
 function getModifiedMarkdownFiles(pr) {
     return pr.files.edges
         .filter((_) => _.node.path.endsWith(".md") &&
         _.node.path.includes("includes/") === false &&
-        isFileModified(_))
+        isFilePreviewable(_))
         .map((_) => _.node.path);
 }
 function buildMarkdownPreviewTable(prNumber, files) {
@@ -243,7 +244,7 @@ exports.exportedForTesting = {
     appendTable,
     buildMarkdownPreviewTable,
     getModifiedMarkdownFiles,
-    isFileModified,
+    isFilePreviewable,
     isPullRequestModifyingMarkdownFiles,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
