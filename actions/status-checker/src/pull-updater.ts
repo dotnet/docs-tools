@@ -149,7 +149,7 @@ function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
     });
 
   let markdownTable = "#### Internal previews\n\n";
-  markdownTable += "| 📄 File(s) | 🔗 Preview link(s) |\n";
+  markdownTable += "| 📄 File | 🔗 Preview link |\n";
   markdownTable += "|:--|:--|\n";
 
   links.forEach((link, file) => {

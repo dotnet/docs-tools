@@ -190,7 +190,7 @@ function buildMarkdownPreviewTable(prNumber, files) {
         links.set(file, toLink(file));
     });
     let markdownTable = "#### Internal previews\n\n";
-    markdownTable += "| 📄 File(s) | 🔗 Preview link(s) |\n";
+    markdownTable += "| 📄 File | 🔗 Preview link |\n";
     markdownTable += "|:--|:--|\n";
     links.forEach((link, file) => {
         markdownTable += `| _${file}_ | [Preview: ${file.replace(".md", "")}](${link}) |\n`;

@@ -69,7 +69,7 @@ ${PREVIEW_TABLE_END}`;
 
     const actual = buildMarkdownPreviewTable(7, ["test/markdown.md"]);
     expect(actual).toEqual(
-      "#### Internal previews\n\n| 📄 File(s) | 🔗 Preview link(s) |\n|:--|:--|\n| _test/markdown.md_ | [Preview: test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n"
+      "#### Internal previews\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| _test/markdown.md_ | [Preview: test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n"
     );
   });
 
