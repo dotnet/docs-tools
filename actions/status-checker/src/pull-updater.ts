@@ -3,7 +3,7 @@ import { FileChange } from "./types/FileChange";
 import { Pull } from "./types/Pull";
 import { PullRequestDetails } from "./types/PullRequestDetails";
 import { NodeOf } from "./types/NodeOf";
-import { WorkflowInput, workflowInput } from "./types/WorkflowInput";
+import { workflowInput } from "./types/WorkflowInput";
 
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
@@ -35,10 +35,12 @@ export async function tryUpdatePullRequestBody(token: string) {
       return;
     }
 
-    const modifiedMarkdownFiles = getModifiedMarkdownFiles(pr);
+    const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
     const markdownTable = buildMarkdownPreviewTable(
       prNumber,
-      modifiedMarkdownFiles
+      files,
+      pr.checksUrl,
+      exceedsMax
     );
 
     let updatedBody = "";
@@ -86,6 +88,7 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
       repository(name: $name, owner: $owner) {
         pullRequest(number: $number) {
           body
+          checksUrl
           changedFiles
           files(first: 100) {
             edges {
@@ -127,38 +130,83 @@ function isPullRequestModifyingMarkdownFiles(pr: Pull): boolean {
   );
 }
 
-function getModifiedMarkdownFiles(pr: Pull): string[] {
-  return pr.files.edges
+/**
+ * Gets the modified markdown files using the following filtering rules:
+ * -  It's a markdown file, that isn't an "include", and is considered previewable.
+ * -  Files are sorted by most changes in descending order, a max number of files are returned.
+ * -  The remaining files are then sorted alphabetically.
+ */
+function getModifiedMarkdownFiles(pr: Pull): {
+  files: FileChange[];
+  exceedsMax: boolean;
+} {
+  const modifiedFiles = pr.files.edges
     .filter(
       (_) =>
         _.node.path.endsWith(".md") &&
         _.node.path.includes("includes/") === false &&
         isFilePreviewable(_)
     )
-    .map((_) => _.node.path);
+    .map((_) => _.node);
+
+  const exceedsMax = modifiedFiles.length > workflowInput.maxRowCount;
+  const mostChanged = sortByMostChanged(modifiedFiles, true);
+  const sorted = sortAlphabetically(
+    mostChanged.slice(0, workflowInput.maxRowCount)
+  );
+
+  return { files: sorted, exceedsMax };
 }
 
-function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
-  const opts: WorkflowInput = workflowInput;
-  const toLink = (file: string): string => {
-    // Given: docs/orleans/resources/nuget-packages.md
-    // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
-    const docsPath = workflowInput.docsPath ?? "docs";
-    const path = file.replace(`${docsPath}/`, "").replace(".md", "");
-    const urlBasePath = opts.urlBasePath ?? "dotnet";
-    return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
-  };
+function sortByMostChanged(
+  files: FileChange[],
+  descending?: boolean
+): FileChange[] {
+  return files.sort((a, b) => {
+    const aChanges = a.additions + a.deletions;
+    const bChanges = b.additions + b.deletions;
 
+    return descending ? bChanges - aChanges : aChanges - bChanges;
+  });
+}
+
+function sortAlphabetically(files: FileChange[]): FileChange[] {
+  return files.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function toGitHubLink(file: string): string {
+  // Given: docs/orleans/resources/nuget-packages.md
+  // https://review.learn.microsoft.com/en-us/dotnet/orleans/docs/orleans/resources/nuget-packages.md
+  const owner = context.repo.owner;
+  const repo = context.repo.repo;
+  const sha = context.sha;
+
+  return `https://github.com/${owner}/${repo}/blob/${sha}/${file}`;
+}
+
+function toPreviewLink(file: string, prNumber: number): string {
+  // Given: docs/orleans/resources/nuget-packages.md
+  // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
+  const docsPath = workflowInput.docsPath;
+  const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+  const urlBasePath = workflowInput.urlBasePath;
+
+  return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
+}
+
+function buildMarkdownPreviewTable(
+  prNumber: number,
+  files: FileChange[],
+  checksUrl: string,
+  exceedsMax: boolean = false
+): string {
   const links = new Map<string, string>();
-  files
-    .sort((a, b) => a.localeCompare(b))
-    .forEach((file) => {
-      links.set(file, toLink(file));
-    });
+  files.forEach((file) => {
+    links.set(file.path, toPreviewLink(file.path, prNumber));
+  });
 
   let markdownTable = "#### Internal previews\n\n";
-
-  const isCollapsible = (opts.collapsibleAfter ?? 10) < links.size;
+  const isCollapsible = (workflowInput.collapsibleAfter ?? 10) < links.size;
   if (isCollapsible) {
     markdownTable +=
       "<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n";
@@ -168,11 +216,18 @@ function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
   markdownTable += "|:--|:--|\n";
 
   links.forEach((link, file) => {
-    markdownTable += `| _${file}_ | [${file.replace(".md", "")}](${link}) |\n`;
+    markdownTable += `| [${file}](${toGitHubLink(file)}) | [${file.replace(
+      ".md",
+      ""
+    )}](${link}) |\n`;
   });
 
   if (isCollapsible) {
     markdownTable += "\n</details>\n";
+  }
+
+  if (exceedsMax /* include footnote when we're truncating... */) {
+    markdownTable += `\nThis table shows preview links for the ${workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
   }
 
   return markdownTable;
