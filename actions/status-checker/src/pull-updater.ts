@@ -36,11 +36,12 @@ export async function tryUpdatePullRequestBody(token: string) {
     }
 
     const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
+    const commitOid = context.payload.pull_request?.head.sha;
     const markdownTable = buildMarkdownPreviewTable(
       prNumber,
       files,
       pr.checksUrl,
-      pr.commits?.edges?.[0].node.commit?.oid,
+      commitOid,
       exceedsMax
     );
 

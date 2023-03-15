@@ -366,7 +366,9 @@ ${PREVIEW_TABLE_END}`;
 
     expect(pr).toBeDefined();
     expect(pr.repository.pullRequest.changedFiles).toBe(3);
-    expect(pr.repository.pullRequest.commits?.edges[0].node.commit.oid).toBe("a1dd55dcf59070e36f2bd5e64a41eca9bdb3544a");
+    expect(pr.repository.pullRequest.commits?.edges[0].node.commit.oid).toBe(
+      "a1dd55dcf59070e36f2bd5e64a41eca9bdb3544a"
+    );
   });
 });
 

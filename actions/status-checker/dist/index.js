@@ -69,7 +69,7 @@ const WorkflowInput_1 = __nccwpck_require__(6741);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 function tryUpdatePullRequestBody(token) {
-    var _a, _b, _c, _d;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const prNumber = github_1.context.payload.number;
@@ -94,7 +94,8 @@ function tryUpdatePullRequestBody(token) {
                 return;
             }
             const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
-            const markdownTable = buildMarkdownPreviewTable(prNumber, files, pr.checksUrl, (_d = (_c = (_b = pr.commits) === null || _b === void 0 ? void 0 : _b.edges) === null || _c === void 0 ? void 0 : _c[0].node.commit) === null || _d === void 0 ? void 0 : _d.oid, exceedsMax);
+            const commitOid = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha;
+            const markdownTable = buildMarkdownPreviewTable(prNumber, files, pr.checksUrl, commitOid, exceedsMax);
             let updatedBody = "";
             if (pr.body.includes(PREVIEW_TABLE_START) &&
                 pr.body.includes(PREVIEW_TABLE_END)) {
