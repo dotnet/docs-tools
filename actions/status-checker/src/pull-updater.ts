@@ -40,6 +40,7 @@ export async function tryUpdatePullRequestBody(token: string) {
       prNumber,
       files,
       pr.checksUrl,
+      pr.commits?.edges?.[0].node.commit?.oid,
       exceedsMax
     );
 
@@ -90,6 +91,7 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
           body
           checksUrl
           changedFiles
+          state
           files(first: 100) {
             edges {
               node {
@@ -97,6 +99,13 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
                 changeType
                 deletions
                 path
+              }
+            }
+          }
+          commits(last: 1) {
+            nodes {
+              commit {
+                oid
               }
             }
           }
@@ -174,19 +183,19 @@ function sortAlphabetically(files: FileChange[]): FileChange[] {
   return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
-function toGitHubLink(file: string): string {
-  // Given: docs/orleans/resources/nuget-packages.md
-  // https://review.learn.microsoft.com/en-us/dotnet/orleans/docs/orleans/resources/nuget-packages.md
+function toGitHubLink(
+  file: string,
+  commitOid: string | undefined | null
+): string {
   const owner = context.repo.owner;
   const repo = context.repo.repo;
-  const sha = context.sha;
 
-  return `https://github.com/${owner}/${repo}/blob/${sha}/${file}`;
+  return !!commitOid
+    ? `https://github.com/${owner}/${repo}/blob/${commitOid}/${file}`
+    : `_${file}_`;
 }
 
 function toPreviewLink(file: string, prNumber: number): string {
-  // Given: docs/orleans/resources/nuget-packages.md
-  // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
   const docsPath = workflowInput.docsPath;
   const path = file.replace(`${docsPath}/`, "").replace(".md", "");
   const urlBasePath = workflowInput.urlBasePath;
@@ -198,6 +207,7 @@ function buildMarkdownPreviewTable(
   prNumber: number,
   files: FileChange[],
   checksUrl: string,
+  commitOid: string | undefined | null,
   exceedsMax: boolean = false
 ): string {
   const links = new Map<string, string>();
@@ -216,10 +226,10 @@ function buildMarkdownPreviewTable(
   markdownTable += "|:--|:--|\n";
 
   links.forEach((link, file) => {
-    markdownTable += `| [${file}](${toGitHubLink(file)}) | [${file.replace(
-      ".md",
-      ""
-    )}](${link}) |\n`;
+    markdownTable += `| [${file}](${toGitHubLink(
+      file,
+      commitOid
+    )}) | [${file.replace(".md", "")}](${link}) |\n`;
   });
 
   if (isCollapsible) {
