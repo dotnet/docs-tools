@@ -17,5 +17,5 @@ public static class Common
 
     public static (bool hasNext, string endCursor) NextPageInfo(this JsonElement pageInfoNode) =>
         (pageInfoNode.Descendent("pageInfo", "hasNextPage").GetBoolean(), 
-        pageInfoNode.Descendent("pageInfo", "endCursor").GetString() ?? throw new InvalidOperationException("endCursor not present"));
+        pageInfoNode.Descendent("pageInfo", "endCursor").GetString() ?? string.Empty);
 }
