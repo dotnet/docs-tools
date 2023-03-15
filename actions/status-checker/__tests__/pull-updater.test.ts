@@ -13,6 +13,10 @@ const {
   replaceExistingTable,
 } = exportedForTesting;
 
+beforeAll(() => {
+  process.env["GITHUB_REPOSITORY"] = "dotnet/docs";
+});
+
 describe("pull-updater", () => {
   it("appendTable correctly appends table", () => {
     const body = "...";
@@ -68,9 +72,20 @@ ${PREVIEW_TABLE_END}`;
     setInput("DOCS_PATH", "docs");
     setInput("URL_BASE_PATH", "dotnet");
 
-    const actual = buildMarkdownPreviewTable(7, ["test/markdown.md"]);
+    const actual = buildMarkdownPreviewTable(
+      7,
+      [
+        {
+          additions: 1,
+          deletions: 1,
+          path: "test/markdown.md",
+          changeType: "MODIFIED",
+        },
+      ],
+      ""
+    );
     expect(actual).toEqual(
-      "#### Internal previews\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| _test/markdown.md_ | [test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n"
+      "#### Internal previews\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [test/markdown.md](https://github.com/dotnet/docs/blob/undefined/test/markdown.md) | [test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n"
     );
   });
 
@@ -92,15 +107,44 @@ ${PREVIEW_TABLE_END}`;
     setInput("DOCS_PATH", "docs");
     setInput("URL_BASE_PATH", "dotnet");
 
-    const actual = buildMarkdownPreviewTable(7, [
-      "1/one.md",
-      "2/two.md",
-      "3/three.md",
-      "4/four.md",
-      "5/five.md",
-    ]);
+    const actual = buildMarkdownPreviewTable(
+      7,
+      [
+        {
+          additions: 1,
+          deletions: 1,
+          path: "1/one.md",
+          changeType: "MODIFIED",
+        },
+        {
+          additions: 1,
+          deletions: 1,
+          path: "2/two.md",
+          changeType: "MODIFIED",
+        },
+        {
+          additions: 1,
+          deletions: 1,
+          path: "3/three.md",
+          changeType: "MODIFIED",
+        },
+        {
+          additions: 1,
+          deletions: 1,
+          path: "4/four.md",
+          changeType: "MODIFIED",
+        },
+        {
+          additions: 1,
+          deletions: 1,
+          path: "5/five.md",
+          changeType: "MODIFIED",
+        },
+      ],
+      ""
+    );
     expect(actual).toEqual(
-      "#### Internal previews\n\n<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| _1/one.md_ | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| _2/two.md_ | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| _3/three.md_ | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| _4/four.md_ | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| _5/five.md_ | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n"
+      "#### Internal previews\n\n<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/undefined/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/undefined/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [3/three.md](https://github.com/dotnet/docs/blob/undefined/3/three.md) | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/undefined/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/undefined/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n"
     );
   });
 
@@ -131,9 +175,10 @@ ${PREVIEW_TABLE_END}`;
   });
 
   it("getModifiedMarkdownFiles gets only modified files", () => {
-    const actual = getModifiedMarkdownFiles({
+    const { files, exceedsMax } = getModifiedMarkdownFiles({
       body: "",
       changedFiles: 3,
+      checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
       files: {
         edges: [
           {
@@ -154,8 +199,8 @@ ${PREVIEW_TABLE_END}`;
           },
           {
             node: {
-              deletions: 0,
-              additions: 1,
+              deletions: 5,
+              additions: 17,
               changeType: "MODIFIED",
               path: "path/to/modified-file.md",
             },
@@ -172,15 +217,27 @@ ${PREVIEW_TABLE_END}`;
       },
     });
 
-    expect(actual).toEqual([
-      "path/to/renamed-file.md",
-      "path/to/modified-file.md",
+    expect(exceedsMax).toBe(false);
+    expect(files).toEqual([
+      {
+        additions: 17,
+        deletions: 5,
+        path: "path/to/modified-file.md",
+        changeType: "MODIFIED",
+      },
+      {
+        additions: 1,
+        deletions: 1,
+        path: "path/to/renamed-file.md",
+        changeType: "RENAMED",
+      },
     ]);
   });
 
   it("isPullRequestModifyingMarkdownFiles returns false when no modified .md files", () => {
     const actual = isPullRequestModifyingMarkdownFiles({
       body: "",
+      checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
       changedFiles: 2,
       files: {
         edges: [
@@ -210,6 +267,7 @@ ${PREVIEW_TABLE_END}`;
   it("isPullRequestModifyingMarkdownFiles returns true when modified .md files", () => {
     const actual = isPullRequestModifyingMarkdownFiles({
       body: "",
+      checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
       changedFiles: 3,
       files: {
         edges: [

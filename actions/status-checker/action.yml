@@ -14,6 +14,9 @@ inputs:
   collapsible_after:
     description: 'The number at which the automated preview table defaults as collapsed but expandable, using the HTML summary and details elements.'
     default: '10'
+  max_row_count:
+    description: 'The maximum number of rows to display in the automated preview table.'
+    default: '30'
 runs:
   using: 'node16'
   main: 'dist/index.js'
