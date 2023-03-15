@@ -222,7 +222,7 @@ function buildMarkdownPreviewTable(
   const isCollapsible = (workflowInput.collapsibleAfter ?? 10) < links.size;
   if (isCollapsible) {
     markdownTable +=
-      "<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n";
+      "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
   }
 
   markdownTable += "| 📄 File | 🔗 Preview link |\n";
@@ -260,6 +260,8 @@ function replaceExistingTable(body: string, table: string) {
 
   return `${start}
 
+<hr />
+
 ${table}
 
 ${tail}`;
@@ -269,6 +271,9 @@ function appendTable(body: string, table: string) {
   return `${body}
 
 ${PREVIEW_TABLE_START}
+
+<hr />
+
 ${table}
 ${PREVIEW_TABLE_END}`;
 }

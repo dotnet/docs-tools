@@ -27,6 +27,9 @@ describe("pull-updater", () => {
     expect(actual).toEqual(`...
 
 ${PREVIEW_TABLE_START}
+
+<hr />
+
 [table]
 ${PREVIEW_TABLE_END}`);
   });
@@ -43,6 +46,8 @@ testing...1, 2, 3!`;
 
     expect(actual).toEqual(`...${PREVIEW_TABLE_START}
 
+<hr />
+
 [updated-table]
 
 ${PREVIEW_TABLE_END}
@@ -56,6 +61,9 @@ testing...1, 2, 3!`);
     let expectedBody = `...
 
 ${PREVIEW_TABLE_START}
+
+<hr />
+
 [table]
 ${PREVIEW_TABLE_END}`;
 
@@ -64,6 +72,9 @@ ${PREVIEW_TABLE_END}`;
     expectedBody = `...
 
 ${PREVIEW_TABLE_START}
+
+<hr />
+
 [updated-table]
 ${PREVIEW_TABLE_END}`;
 
@@ -148,7 +159,7 @@ ${PREVIEW_TABLE_END}`;
       "oid"
     );
     expect(actual).toEqual(
-      `#### Internal previews\n\n<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/oid/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/oid/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [3/three.md](https://github.com/dotnet/docs/blob/oid/3/three.md) | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/oid/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/oid/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n`
+      `#### Internal previews\n\n<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/oid/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/oid/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [3/three.md](https://github.com/dotnet/docs/blob/oid/3/three.md) | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/oid/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/oid/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n`
     );
   });
 
