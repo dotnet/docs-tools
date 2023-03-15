@@ -1,3 +1,4 @@
+import { context } from "@actions/github";
 import { exportedForTesting } from "../src/pull-updater";
 import { describe, expect, it } from "@jest/globals";
 import { WorkflowInput, workflowInput } from "../src/types/WorkflowInput";
@@ -85,7 +86,7 @@ ${PREVIEW_TABLE_END}`;
       ""
     );
     expect(actual).toEqual(
-      "#### Internal previews\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [test/markdown.md](https://github.com/dotnet/docs/blob/undefined/test/markdown.md) | [test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n"
+      `#### Internal previews\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [test/markdown.md](https://github.com/dotnet/docs/blob/${context.sha}/test/markdown.md) | [test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n`
     );
   });
 
@@ -144,7 +145,7 @@ ${PREVIEW_TABLE_END}`;
       ""
     );
     expect(actual).toEqual(
-      "#### Internal previews\n\n<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/undefined/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/undefined/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [3/three.md](https://github.com/dotnet/docs/blob/undefined/3/three.md) | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/undefined/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/undefined/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n"
+      `#### Internal previews\n\n<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/${context.sha}/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/${context.sha}/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [3/three.md](https://github.com/dotnet/docs/blob/${context.sha}/3/three.md) | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/${context.sha}/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/${context.sha}/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n`
     );
   });
 
