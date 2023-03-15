@@ -87,7 +87,10 @@ function tryUpdatePullRequestBody(token) {
                 return;
             }
             else {
-                console.log(pr.files);
+                try {
+                    console.log(JSON.stringify(pr));
+                }
+                catch (_c) { }
             }
             if (isPullRequestModifyingMarkdownFiles(pr) == false) {
                 console.log("No updated markdown files...");

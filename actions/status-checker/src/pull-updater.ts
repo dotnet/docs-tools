@@ -27,7 +27,9 @@ export async function tryUpdatePullRequestBody(token: string) {
       console.log("No files changed at all...");
       return;
     } else {
-      console.log(pr.files);
+      try {
+        console.log(JSON.stringify(pr));
+      } catch {}
     }
 
     if (isPullRequestModifyingMarkdownFiles(pr) == false) {
