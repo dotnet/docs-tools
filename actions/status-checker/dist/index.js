@@ -69,7 +69,7 @@ const WorkflowInput_1 = __nccwpck_require__(6741);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 function tryUpdatePullRequestBody(token) {
-    var _a;
+    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const prNumber = github_1.context.payload.number;
@@ -94,7 +94,7 @@ function tryUpdatePullRequestBody(token) {
                 return;
             }
             const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
-            const markdownTable = buildMarkdownPreviewTable(prNumber, files, pr.checksUrl, exceedsMax);
+            const markdownTable = buildMarkdownPreviewTable(prNumber, files, pr.checksUrl, (_d = (_c = (_b = pr.commits) === null || _b === void 0 ? void 0 : _b.edges) === null || _c === void 0 ? void 0 : _c[0].node.commit) === null || _d === void 0 ? void 0 : _d.oid, exceedsMax);
             let updatedBody = "";
             if (pr.body.includes(PREVIEW_TABLE_START) &&
                 pr.body.includes(PREVIEW_TABLE_END)) {
@@ -144,6 +144,7 @@ function getPullRequest(token) {
           body
           checksUrl
           changedFiles
+          state
           files(first: 100) {
             edges {
               node {
@@ -151,6 +152,13 @@ function getPullRequest(token) {
                 changeType
                 deletions
                 path
+              }
+            }
+          }
+          commits(last: 1) {
+            nodes {
+              commit {
+                oid
               }
             }
           }
@@ -203,23 +211,20 @@ function sortByMostChanged(files, descending) {
 function sortAlphabetically(files) {
     return files.sort((a, b) => a.path.localeCompare(b.path));
 }
-function toGitHubLink(file) {
-    // Given: docs/orleans/resources/nuget-packages.md
-    // https://review.learn.microsoft.com/en-us/dotnet/orleans/docs/orleans/resources/nuget-packages.md
+function toGitHubLink(file, commitOid) {
     const owner = github_1.context.repo.owner;
     const repo = github_1.context.repo.repo;
-    const sha = github_1.context.sha;
-    return `https://github.com/${owner}/${repo}/blob/${sha}/${file}`;
+    return !!commitOid
+        ? `https://github.com/${owner}/${repo}/blob/${commitOid}/${file}`
+        : `_${file}_`;
 }
 function toPreviewLink(file, prNumber) {
-    // Given: docs/orleans/resources/nuget-packages.md
-    // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
     const docsPath = WorkflowInput_1.workflowInput.docsPath;
     const path = file.replace(`${docsPath}/`, "").replace(".md", "");
     const urlBasePath = WorkflowInput_1.workflowInput.urlBasePath;
     return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
 }
-function buildMarkdownPreviewTable(prNumber, files, checksUrl, exceedsMax = false) {
+function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceedsMax = false) {
     var _a;
     const links = new Map();
     files.forEach((file) => {
@@ -234,7 +239,7 @@ function buildMarkdownPreviewTable(prNumber, files, checksUrl, exceedsMax = fals
     markdownTable += "| 📄 File | 🔗 Preview link |\n";
     markdownTable += "|:--|:--|\n";
     links.forEach((link, file) => {
-        markdownTable += `| [${file}](${toGitHubLink(file)}) | [${file.replace(".md", "")}](${link}) |\n`;
+        markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${file.replace(".md", "")}](${link}) |\n`;
     });
     if (isCollapsible) {
         markdownTable += "\n</details>\n";
@@ -430,7 +435,7 @@ class WorkflowInput {
     }
     get maxRowCount() {
         const val = (0, core_1.getInput)("max_row_count");
-        return parseInt(val || "50");
+        return parseInt(val || "30");
     }
     constructor() { }
 }

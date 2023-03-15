@@ -2,6 +2,7 @@ import { context } from "@actions/github";
 import { exportedForTesting } from "../src/pull-updater";
 import { describe, expect, it } from "@jest/globals";
 import { WorkflowInput, workflowInput } from "../src/types/WorkflowInput";
+import { PullRequestDetails } from "../src/types/PullRequestDetails";
 
 const {
   appendTable,
@@ -83,10 +84,11 @@ ${PREVIEW_TABLE_END}`;
           changeType: "MODIFIED",
         },
       ],
-      ""
+      "",
+      "oid"
     );
     expect(actual).toEqual(
-      `#### Internal previews\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [test/markdown.md](https://github.com/dotnet/docs/blob/${context.sha}/test/markdown.md) | [test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n`
+      `#### Internal previews\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [test/markdown.md](https://github.com/dotnet/docs/blob/oid/test/markdown.md) | [test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n`
     );
   });
 
@@ -142,10 +144,11 @@ ${PREVIEW_TABLE_END}`;
           changeType: "MODIFIED",
         },
       ],
-      ""
+      "",
+      "oid"
     );
     expect(actual).toEqual(
-      `#### Internal previews\n\n<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/${context.sha}/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/${context.sha}/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [3/three.md](https://github.com/dotnet/docs/blob/${context.sha}/3/three.md) | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/${context.sha}/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/${context.sha}/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n`
+      `#### Internal previews\n\n<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/oid/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/oid/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [3/three.md](https://github.com/dotnet/docs/blob/oid/3/three.md) | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/oid/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/oid/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n`
     );
   });
 
@@ -180,6 +183,7 @@ ${PREVIEW_TABLE_END}`;
       body: "",
       changedFiles: 3,
       checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
+      state: "OPEN",
       files: {
         edges: [
           {
@@ -239,6 +243,7 @@ ${PREVIEW_TABLE_END}`;
     const actual = isPullRequestModifyingMarkdownFiles({
       body: "",
       checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
+      state: "OPEN",
       changedFiles: 2,
       files: {
         edges: [
@@ -269,6 +274,7 @@ ${PREVIEW_TABLE_END}`;
     const actual = isPullRequestModifyingMarkdownFiles({
       body: "",
       checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
+      state: "OPEN",
       changedFiles: 3,
       files: {
         edges: [
@@ -301,6 +307,66 @@ ${PREVIEW_TABLE_END}`;
     });
 
     expect(actual).toBeTruthy();
+  });
+
+  it("The PullRequestDetails object correctly represents JSON values", () => {
+    const json = `{
+      "data": {
+        "repository": {
+          "pullRequest": {
+            "body": "test body",
+            "checksUrl": "https://github.com/dotnet/docs/pull/34601/checks",
+            "changedFiles": 3,
+            "state": "OPEN",
+            "files": {
+              "edges": [
+                {
+                  "node": {
+                    "additions": 1,
+                    "changeType": "MODIFIED",
+                    "deletions": 0,
+                    "path": "docs/core/extensions/httpclient-http3.md"
+                  }
+                },
+                {
+                  "node": {
+                    "additions": 317,
+                    "changeType": "ADDED",
+                    "deletions": 0,
+                    "path": "docs/fundamentals/networking/quic/quic-overview.md"
+                  }
+                },
+                {
+                  "node": {
+                    "additions": 4,
+                    "changeType": "MODIFIED",
+                    "deletions": 0,
+                    "path": "docs/fundamentals/toc.yml"
+                  }
+                }
+              ]
+            },
+            "commits": {
+              "edges": [
+                {
+                  "node": {
+                    "commit": {
+                      "oid": "a1dd55dcf59070e36f2bd5e64a41eca9bdb3544a"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }`;
+    const { data } = JSON.parse(json);
+    const pr: PullRequestDetails = data;
+
+    expect(pr).toBeDefined();
+    expect(pr.repository.pullRequest.changedFiles).toBe(3);
+    expect(pr.repository.pullRequest.commits?.edges[0].node.commit.oid).toBe("a1dd55dcf59070e36f2bd5e64a41eca9bdb3544a");
   });
 });
 
