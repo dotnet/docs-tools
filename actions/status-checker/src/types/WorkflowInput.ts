@@ -25,7 +25,7 @@ export class WorkflowInput {
 
   get maxRowCount(): number {
     const val = getInput("max_row_count");
-    return parseInt(val || "50");
+    return parseInt(val || "30");
   }
 
   constructor() {}
