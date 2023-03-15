@@ -1,16 +1,23 @@
+import { context } from "@actions/github";
 import { exportedForTesting } from "../src/pull-updater";
 import { describe, expect, it } from "@jest/globals";
+import { WorkflowInput, workflowInput } from "../src/types/WorkflowInput";
+import { PullRequestDetails } from "../src/types/PullRequestDetails";
 
 const {
   appendTable,
   buildMarkdownPreviewTable,
   getModifiedMarkdownFiles,
-  isFileModified,
+  isFilePreviewable,
   isPullRequestModifyingMarkdownFiles,
   PREVIEW_TABLE_END,
   PREVIEW_TABLE_START,
   replaceExistingTable,
 } = exportedForTesting;
+
+beforeAll(() => {
+  process.env["GITHUB_REPOSITORY"] = "dotnet/docs";
+});
 
 describe("pull-updater", () => {
   it("appendTable correctly appends table", () => {
@@ -20,6 +27,9 @@ describe("pull-updater", () => {
     expect(actual).toEqual(`...
 
 ${PREVIEW_TABLE_START}
+
+<hr />
+
 [table]
 ${PREVIEW_TABLE_END}`);
   });
@@ -36,6 +46,8 @@ testing...1, 2, 3!`;
 
     expect(actual).toEqual(`...${PREVIEW_TABLE_START}
 
+<hr />
+
 [updated-table]
 
 ${PREVIEW_TABLE_END}
@@ -49,6 +61,9 @@ testing...1, 2, 3!`);
     let expectedBody = `...
 
 ${PREVIEW_TABLE_START}
+
+<hr />
+
 [table]
 ${PREVIEW_TABLE_END}`;
 
@@ -57,6 +72,9 @@ ${PREVIEW_TABLE_END}`;
     expectedBody = `...
 
 ${PREVIEW_TABLE_START}
+
+<hr />
+
 [updated-table]
 ${PREVIEW_TABLE_END}`;
 
@@ -64,18 +82,90 @@ ${PREVIEW_TABLE_END}`;
   });
 
   it("buildMarkdownPreviewTable builds preview table correctly", () => {
-    setInput("docs-path", "docs");
-    setInput("url-base-path", "dotnet");
+    setInput("DOCS_PATH", "docs");
+    setInput("URL_BASE_PATH", "dotnet");
 
-    const actual = buildMarkdownPreviewTable(7, ["test/markdown.md"]);
+    const actual = buildMarkdownPreviewTable(
+      7,
+      [
+        {
+          additions: 1,
+          deletions: 1,
+          path: "test/markdown.md",
+          changeType: "MODIFIED",
+        },
+      ],
+      "",
+      "oid"
+    );
     expect(actual).toEqual(
-      "#### Internal previews\n\n| 📄 File(s) | 🔗 Preview link(s) |\n|:--|:--|\n| _test/markdown.md_ | [Preview: test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n"
+      `#### Internal previews\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [test/markdown.md](https://github.com/dotnet/docs/blob/oid/test/markdown.md) | [test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n`
     );
   });
 
-  it("isFileModified returns false when no file change types match", () => {
+  it("options are correctly constructed with expected values from import", () => {
+    setInput("COLLAPSIBLE_AFTER", "7");
+    setInput("DOCS_PATH", "test/path");
+    setInput("URL_BASE_PATH", "foundation");
+
+    const opts: WorkflowInput = workflowInput;
+
+    expect(opts).toBeDefined();
+    expect(opts.collapsibleAfter).toBe(7);
+    expect(opts.docsPath).toBe("test/path");
+    expect(opts.urlBasePath).toBe("foundation");
+  });
+
+  it("buildMarkdownPreviewTable builds preview table correctly with collapsible HTML elements.", () => {
+    setInput("COLLAPSIBLE_AFTER", "3");
+    setInput("DOCS_PATH", "docs");
+    setInput("URL_BASE_PATH", "dotnet");
+
+    const actual = buildMarkdownPreviewTable(
+      7,
+      [
+        {
+          additions: 1,
+          deletions: 1,
+          path: "1/one.md",
+          changeType: "MODIFIED",
+        },
+        {
+          additions: 1,
+          deletions: 1,
+          path: "2/two.md",
+          changeType: "MODIFIED",
+        },
+        {
+          additions: 1,
+          deletions: 1,
+          path: "3/three.md",
+          changeType: "MODIFIED",
+        },
+        {
+          additions: 1,
+          deletions: 1,
+          path: "4/four.md",
+          changeType: "MODIFIED",
+        },
+        {
+          additions: 1,
+          deletions: 1,
+          path: "5/five.md",
+          changeType: "MODIFIED",
+        },
+      ],
+      "",
+      "oid"
+    );
+    expect(actual).toEqual(
+      `#### Internal previews\n\n<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/oid/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/oid/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [3/three.md](https://github.com/dotnet/docs/blob/oid/3/three.md) | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/oid/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/oid/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n`
+    );
+  });
+
+  it("isFilePreviewable returns false when no file change types match", () => {
     expect(
-      isFileModified({
+      isFilePreviewable({
         node: {
           deletions: 1,
           additions: 1,
@@ -86,9 +176,9 @@ ${PREVIEW_TABLE_END}`;
     ).toBe(false);
   });
 
-  it("isFileModified returns true when file change types match", () => {
+  it("isFilePreviewable returns true when file change types match", () => {
     expect(
-      isFileModified({
+      isFilePreviewable({
         node: {
           deletions: 1,
           additions: 1,
@@ -100,9 +190,11 @@ ${PREVIEW_TABLE_END}`;
   });
 
   it("getModifiedMarkdownFiles gets only modified files", () => {
-    const actual = getModifiedMarkdownFiles({
+    const { files, exceedsMax } = getModifiedMarkdownFiles({
       body: "",
       changedFiles: 3,
+      checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
+      state: "OPEN",
       files: {
         edges: [
           {
@@ -123,8 +215,8 @@ ${PREVIEW_TABLE_END}`;
           },
           {
             node: {
-              deletions: 0,
-              additions: 1,
+              deletions: 5,
+              additions: 17,
               changeType: "MODIFIED",
               path: "path/to/modified-file.md",
             },
@@ -141,12 +233,28 @@ ${PREVIEW_TABLE_END}`;
       },
     });
 
-    expect(actual).toEqual(["path/to/modified-file.md"]);
+    expect(exceedsMax).toBe(false);
+    expect(files).toEqual([
+      {
+        additions: 17,
+        deletions: 5,
+        path: "path/to/modified-file.md",
+        changeType: "MODIFIED",
+      },
+      {
+        additions: 1,
+        deletions: 1,
+        path: "path/to/renamed-file.md",
+        changeType: "RENAMED",
+      },
+    ]);
   });
 
   it("isPullRequestModifyingMarkdownFiles returns false when no modified .md files", () => {
     const actual = isPullRequestModifyingMarkdownFiles({
       body: "",
+      checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
+      state: "OPEN",
       changedFiles: 2,
       files: {
         edges: [
@@ -154,7 +262,7 @@ ${PREVIEW_TABLE_END}`;
             node: {
               deletions: 1,
               additions: 1,
-              changeType: "RENAMED",
+              changeType: "COPIED",
               path: "path/to/renamed-file.md",
             },
           },
@@ -176,6 +284,8 @@ ${PREVIEW_TABLE_END}`;
   it("isPullRequestModifyingMarkdownFiles returns true when modified .md files", () => {
     const actual = isPullRequestModifyingMarkdownFiles({
       body: "",
+      checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
+      state: "OPEN",
       changedFiles: 3,
       files: {
         edges: [
@@ -209,7 +319,71 @@ ${PREVIEW_TABLE_END}`;
 
     expect(actual).toBeTruthy();
   });
+
+  it("The PullRequestDetails object correctly represents JSON values", () => {
+    const json = `{
+      "data": {
+        "repository": {
+          "pullRequest": {
+            "body": "test body",
+            "checksUrl": "https://github.com/dotnet/docs/pull/34601/checks",
+            "changedFiles": 3,
+            "state": "OPEN",
+            "files": {
+              "edges": [
+                {
+                  "node": {
+                    "additions": 1,
+                    "changeType": "MODIFIED",
+                    "deletions": 0,
+                    "path": "docs/core/extensions/httpclient-http3.md"
+                  }
+                },
+                {
+                  "node": {
+                    "additions": 317,
+                    "changeType": "ADDED",
+                    "deletions": 0,
+                    "path": "docs/fundamentals/networking/quic/quic-overview.md"
+                  }
+                },
+                {
+                  "node": {
+                    "additions": 4,
+                    "changeType": "MODIFIED",
+                    "deletions": 0,
+                    "path": "docs/fundamentals/toc.yml"
+                  }
+                }
+              ]
+            },
+            "commits": {
+              "edges": [
+                {
+                  "node": {
+                    "commit": {
+                      "oid": "a1dd55dcf59070e36f2bd5e64a41eca9bdb3544a"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }`;
+    const { data } = JSON.parse(json);
+    const pr: PullRequestDetails = data;
+
+    expect(pr).toBeDefined();
+    expect(pr.repository.pullRequest.changedFiles).toBe(3);
+    expect(pr.repository.pullRequest.commits?.edges[0].node.commit.oid).toBe(
+      "a1dd55dcf59070e36f2bd5e64a41eca9bdb3544a"
+    );
+  });
 });
 
-const setInput = (name: string, value: string) =>
-  (process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] = value);
+const setInput = (name: string, value: string) => {
+  const key = `INPUT_${name.replace(/ /g, "_").toUpperCase()}`;
+  process.env[key] = value;
+};

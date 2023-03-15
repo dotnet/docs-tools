@@ -1,9 +1,9 @@
-import { getInput } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { FileChange } from "./types/FileChange";
 import { Pull } from "./types/Pull";
 import { PullRequestDetails } from "./types/PullRequestDetails";
 import { NodeOf } from "./types/NodeOf";
+import { workflowInput } from "./types/WorkflowInput";
 
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
@@ -27,7 +27,9 @@ export async function tryUpdatePullRequestBody(token: string) {
       console.log("No files changed at all...");
       return;
     } else {
-      console.log(pr.files);
+      try {
+        console.log(JSON.stringify(pr));
+      } catch {}
     }
 
     if (isPullRequestModifyingMarkdownFiles(pr) == false) {
@@ -35,10 +37,14 @@ export async function tryUpdatePullRequestBody(token: string) {
       return;
     }
 
-    const modifiedMarkdownFiles = getModifiedMarkdownFiles(pr);
+    const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
+    const commitOid = context.payload.pull_request?.head.sha;
     const markdownTable = buildMarkdownPreviewTable(
       prNumber,
-      modifiedMarkdownFiles
+      files,
+      pr.checksUrl,
+      commitOid,
+      exceedsMax
     );
 
     let updatedBody = "";
@@ -73,6 +79,12 @@ export async function tryUpdatePullRequestBody(token: string) {
   }
 }
 
+/**
+ * Returns the {PullRequestDetails} that correspond to
+ * the contextual GitHub Action workflow run.
+ * @param token The GITHUB_TOKEN value to obtain an instance of octokit with.
+ * @returns A {Promise} of {PullRequestDetails}.
+ */
 async function getPullRequest(token: string): Promise<PullRequestDetails> {
   const octokit = getOctokit(token);
   return await octokit.graphql<PullRequestDetails>({
@@ -80,7 +92,9 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
       repository(name: $name, owner: $owner) {
         pullRequest(number: $number) {
           body
+          checksUrl
           changedFiles
+          state
           files(first: 100) {
             edges {
               node {
@@ -88,6 +102,13 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
                 changeType
                 deletions
                 path
+              }
+            }
+          }
+          commits(last: 1) {
+            nodes {
+              commit {
+                oid
               }
             }
           }
@@ -100,11 +121,12 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
   });
 }
 
-function isFileModified(_: NodeOf<FileChange>) {
+function isFilePreviewable(_: NodeOf<FileChange>) {
   return (
     _.node.changeType == "ADDED" ||
     _.node.changeType == "CHANGED" ||
-    _.node.changeType == "MODIFIED"
+    _.node.changeType == "MODIFIED" ||
+    _.node.changeType == "RENAMED"
   );
 }
 
@@ -114,50 +136,112 @@ function isPullRequestModifyingMarkdownFiles(pr: Pull): boolean {
     pr.changedFiles > 0 &&
     pr.files &&
     pr.files.edges &&
-    pr.files.edges.some((_) => isFileModified(_) && _.node.path.endsWith(".md"))
+    pr.files.edges.some(
+      (_) => isFilePreviewable(_) && _.node.path.endsWith(".md")
+    )
   );
 }
 
-function getModifiedMarkdownFiles(pr: Pull): string[] {
-  return pr.files.edges
+/**
+ * Gets the modified markdown files using the following filtering rules:
+ * -  It's a markdown file, that isn't an "include", and is considered previewable.
+ * -  Files are sorted by most changes in descending order, a max number of files are returned.
+ * -  The remaining files are then sorted alphabetically.
+ */
+function getModifiedMarkdownFiles(pr: Pull): {
+  files: FileChange[];
+  exceedsMax: boolean;
+} {
+  const modifiedFiles = pr.files.edges
     .filter(
       (_) =>
         _.node.path.endsWith(".md") &&
         _.node.path.includes("includes/") === false &&
-        isFileModified(_)
+        isFilePreviewable(_)
     )
-    .map((_) => _.node.path);
+    .map((_) => _.node);
+
+  const exceedsMax = modifiedFiles.length > workflowInput.maxRowCount;
+  const mostChanged = sortByMostChanged(modifiedFiles, true);
+  const sorted = sortAlphabetically(
+    mostChanged.slice(0, workflowInput.maxRowCount)
+  );
+
+  return { files: sorted, exceedsMax };
 }
 
-function buildMarkdownPreviewTable(prNumber: number, files: string[]): string {
-  // Given: docs/orleans/resources/nuget-packages.md
-  // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
+function sortByMostChanged(
+  files: FileChange[],
+  descending?: boolean
+): FileChange[] {
+  return files.sort((a, b) => {
+    const aChanges = a.additions + a.deletions;
+    const bChanges = b.additions + b.deletions;
 
-  const docsPath = getInput("docs-path");
-  const urlBasePath = getInput("url-base-path");
+    return descending ? bChanges - aChanges : aChanges - bChanges;
+  });
+}
 
-  const toLink = (file: string): string => {
-    const path = file.replace(`${docsPath}/`, "").replace(".md", "");
-    return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
-  };
+function sortAlphabetically(files: FileChange[]): FileChange[] {
+  return files.sort((a, b) => a.path.localeCompare(b.path));
+}
 
+function toGitHubLink(
+  file: string,
+  commitOid: string | undefined | null
+): string {
+  const owner = context.repo.owner;
+  const repo = context.repo.repo;
+
+  return !!commitOid
+    ? `https://github.com/${owner}/${repo}/blob/${commitOid}/${file}`
+    : `_${file}_`;
+}
+
+function toPreviewLink(file: string, prNumber: number): string {
+  const docsPath = workflowInput.docsPath;
+  const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+  const urlBasePath = workflowInput.urlBasePath;
+
+  return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
+}
+
+function buildMarkdownPreviewTable(
+  prNumber: number,
+  files: FileChange[],
+  checksUrl: string,
+  commitOid: string | undefined | null,
+  exceedsMax: boolean = false
+): string {
   const links = new Map<string, string>();
-  files
-    .sort((a, b) => a.localeCompare(b))
-    .forEach((file) => {
-      links.set(file, toLink(file));
-    });
+  files.forEach((file) => {
+    links.set(file.path, toPreviewLink(file.path, prNumber));
+  });
 
   let markdownTable = "#### Internal previews\n\n";
-  markdownTable += "| 📄 File(s) | 🔗 Preview link(s) |\n";
+  const isCollapsible = (workflowInput.collapsibleAfter ?? 10) < links.size;
+  if (isCollapsible) {
+    markdownTable +=
+      "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
+  }
+
+  markdownTable += "| 📄 File | 🔗 Preview link |\n";
   markdownTable += "|:--|:--|\n";
 
   links.forEach((link, file) => {
-    markdownTable += `| _${file}_ | [Preview: ${file.replace(
-      ".md",
-      ""
-    )}](${link}) |\n`;
+    markdownTable += `| [${file}](${toGitHubLink(
+      file,
+      commitOid
+    )}) | [${file.replace(".md", "")}](${link}) |\n`;
   });
+
+  if (isCollapsible) {
+    markdownTable += "\n</details>\n";
+  }
+
+  if (exceedsMax /* include footnote when we're truncating... */) {
+    markdownTable += `\nThis table shows preview links for the ${workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
+  }
 
   return markdownTable;
 }
@@ -176,6 +260,8 @@ function replaceExistingTable(body: string, table: string) {
 
   return `${start}
 
+<hr />
+
 ${table}
 
 ${tail}`;
@@ -185,6 +271,9 @@ function appendTable(body: string, table: string) {
   return `${body}
 
 ${PREVIEW_TABLE_START}
+
+<hr />
+
 ${table}
 ${PREVIEW_TABLE_END}`;
 }
@@ -193,7 +282,7 @@ export const exportedForTesting = {
   appendTable,
   buildMarkdownPreviewTable,
   getModifiedMarkdownFiles,
-  isFileModified,
+  isFilePreviewable,
   isPullRequestModifyingMarkdownFiles,
   PREVIEW_TABLE_END,
   PREVIEW_TABLE_START,

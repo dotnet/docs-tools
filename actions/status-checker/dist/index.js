@@ -20,10 +20,11 @@ const wait_1 = __nccwpck_require__(5817);
 const status_checker_1 = __nccwpck_require__(6430);
 const core_1 = __nccwpck_require__(2186);
 const pull_updater_1 = __nccwpck_require__(8791);
+const WorkflowInput_1 = __nccwpck_require__(6741);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const token = (0, core_1.getInput)("repo-token");
+            const token = WorkflowInput_1.workflowInput.repoToken;
             // Wait 60 seconds before checking status check result.
             yield (0, wait_1.wait)(60000);
             console.log("Waited 60 seconds.");
@@ -63,12 +64,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
-const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
+const WorkflowInput_1 = __nccwpck_require__(6741);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 function tryUpdatePullRequestBody(token) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const prNumber = github_1.context.payload.number;
@@ -86,14 +87,18 @@ function tryUpdatePullRequestBody(token) {
                 return;
             }
             else {
-                console.log(pr.files);
+                try {
+                    console.log(JSON.stringify(pr));
+                }
+                catch (_c) { }
             }
             if (isPullRequestModifyingMarkdownFiles(pr) == false) {
                 console.log("No updated markdown files...");
                 return;
             }
-            const modifiedMarkdownFiles = getModifiedMarkdownFiles(pr);
-            const markdownTable = buildMarkdownPreviewTable(prNumber, modifiedMarkdownFiles);
+            const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
+            const commitOid = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha;
+            const markdownTable = buildMarkdownPreviewTable(prNumber, files, pr.checksUrl, commitOid, exceedsMax);
             let updatedBody = "";
             if (pr.body.includes(PREVIEW_TABLE_START) &&
                 pr.body.includes(PREVIEW_TABLE_END)) {
@@ -127,6 +132,12 @@ function tryUpdatePullRequestBody(token) {
     });
 }
 exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
+/**
+ * Returns the {PullRequestDetails} that correspond to
+ * the contextual GitHub Action workflow run.
+ * @param token The GITHUB_TOKEN value to obtain an instance of octokit with.
+ * @returns A {Promise} of {PullRequestDetails}.
+ */
 function getPullRequest(token) {
     return __awaiter(this, void 0, void 0, function* () {
         const octokit = (0, github_1.getOctokit)(token);
@@ -135,7 +146,9 @@ function getPullRequest(token) {
       repository(name: $name, owner: $owner) {
         pullRequest(number: $number) {
           body
+          checksUrl
           changedFiles
+          state
           files(first: 100) {
             edges {
               node {
@@ -143,6 +156,13 @@ function getPullRequest(token) {
                 changeType
                 deletions
                 path
+              }
+            }
+          }
+          commits(last: 1) {
+            nodes {
+              commit {
+                oid
               }
             }
           }
@@ -155,46 +175,82 @@ function getPullRequest(token) {
         });
     });
 }
-function isFileModified(_) {
+function isFilePreviewable(_) {
     return (_.node.changeType == "ADDED" ||
         _.node.changeType == "CHANGED" ||
-        _.node.changeType == "MODIFIED");
+        _.node.changeType == "MODIFIED" ||
+        _.node.changeType == "RENAMED");
 }
 function isPullRequestModifyingMarkdownFiles(pr) {
     return (pr &&
         pr.changedFiles > 0 &&
         pr.files &&
         pr.files.edges &&
-        pr.files.edges.some((_) => isFileModified(_) && _.node.path.endsWith(".md")));
+        pr.files.edges.some((_) => isFilePreviewable(_) && _.node.path.endsWith(".md")));
 }
+/**
+ * Gets the modified markdown files using the following filtering rules:
+ * -  It's a markdown file, that isn't an "include", and is considered previewable.
+ * -  Files are sorted by most changes in descending order, a max number of files are returned.
+ * -  The remaining files are then sorted alphabetically.
+ */
 function getModifiedMarkdownFiles(pr) {
-    return pr.files.edges
+    const modifiedFiles = pr.files.edges
         .filter((_) => _.node.path.endsWith(".md") &&
         _.node.path.includes("includes/") === false &&
-        isFileModified(_))
-        .map((_) => _.node.path);
+        isFilePreviewable(_))
+        .map((_) => _.node);
+    const exceedsMax = modifiedFiles.length > WorkflowInput_1.workflowInput.maxRowCount;
+    const mostChanged = sortByMostChanged(modifiedFiles, true);
+    const sorted = sortAlphabetically(mostChanged.slice(0, WorkflowInput_1.workflowInput.maxRowCount));
+    return { files: sorted, exceedsMax };
 }
-function buildMarkdownPreviewTable(prNumber, files) {
-    // Given: docs/orleans/resources/nuget-packages.md
-    // https://review.learn.microsoft.com/en-us/dotnet/orleans/resources/nuget-packages?branch=pr-en-us-34443
-    const docsPath = (0, core_1.getInput)("docs-path");
-    const urlBasePath = (0, core_1.getInput)("url-base-path");
-    const toLink = (file) => {
-        const path = file.replace(`${docsPath}/`, "").replace(".md", "");
-        return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
-    };
+function sortByMostChanged(files, descending) {
+    return files.sort((a, b) => {
+        const aChanges = a.additions + a.deletions;
+        const bChanges = b.additions + b.deletions;
+        return descending ? bChanges - aChanges : aChanges - bChanges;
+    });
+}
+function sortAlphabetically(files) {
+    return files.sort((a, b) => a.path.localeCompare(b.path));
+}
+function toGitHubLink(file, commitOid) {
+    const owner = github_1.context.repo.owner;
+    const repo = github_1.context.repo.repo;
+    return !!commitOid
+        ? `https://github.com/${owner}/${repo}/blob/${commitOid}/${file}`
+        : `_${file}_`;
+}
+function toPreviewLink(file, prNumber) {
+    const docsPath = WorkflowInput_1.workflowInput.docsPath;
+    const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+    const urlBasePath = WorkflowInput_1.workflowInput.urlBasePath;
+    return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
+}
+function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceedsMax = false) {
+    var _a;
     const links = new Map();
-    files
-        .sort((a, b) => a.localeCompare(b))
-        .forEach((file) => {
-        links.set(file, toLink(file));
+    files.forEach((file) => {
+        links.set(file.path, toPreviewLink(file.path, prNumber));
     });
     let markdownTable = "#### Internal previews\n\n";
-    markdownTable += "| 📄 File(s) | 🔗 Preview link(s) |\n";
+    const isCollapsible = ((_a = WorkflowInput_1.workflowInput.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < links.size;
+    if (isCollapsible) {
+        markdownTable +=
+            "<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n";
+    }
+    markdownTable += "| 📄 File | 🔗 Preview link |\n";
     markdownTable += "|:--|:--|\n";
     links.forEach((link, file) => {
-        markdownTable += `| _${file}_ | [Preview: ${file.replace(".md", "")}](${link}) |\n`;
+        markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${file.replace(".md", "")}](${link}) |\n`;
     });
+    if (isCollapsible) {
+        markdownTable += "\n</details>\n";
+    }
+    if (exceedsMax /* include footnote when we're truncating... */) {
+        markdownTable += `\nThis table shows preview links for the ${WorkflowInput_1.workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
+    }
     return markdownTable;
 }
 function replaceExistingTable(body, table) {
@@ -225,7 +281,7 @@ exports.exportedForTesting = {
     appendTable,
     buildMarkdownPreviewTable,
     getModifiedMarkdownFiles,
-    isFileModified,
+    isFilePreviewable,
     isPullRequestModifyingMarkdownFiles,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
@@ -352,6 +408,43 @@ function isSuccessStatus(token) {
     });
 }
 exports.isSuccessStatus = isSuccessStatus;
+
+
+/***/ }),
+
+/***/ 6741:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.workflowInput = exports.WorkflowInput = void 0;
+const core_1 = __nccwpck_require__(2186);
+class WorkflowInput {
+    get collapsibleAfter() {
+        const val = parseInt((0, core_1.getInput)("collapsible_after", { required: false }) || "10");
+        return val || 10;
+    }
+    get docsPath() {
+        const val = (0, core_1.getInput)("docs_path", { required: true });
+        return val || "docs";
+    }
+    get urlBasePath() {
+        const val = (0, core_1.getInput)("url_base_path", { required: true });
+        return val || "dotnet";
+    }
+    get repoToken() {
+        const val = (0, core_1.getInput)("repo_token", { required: true });
+        return val;
+    }
+    get maxRowCount() {
+        const val = (0, core_1.getInput)("max_row_count");
+        return parseInt(val || "30");
+    }
+    constructor() { }
+}
+exports.WorkflowInput = WorkflowInput;
+exports.workflowInput = new WorkflowInput();
 
 
 /***/ }),
