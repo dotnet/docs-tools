@@ -33,7 +33,8 @@ static class Program
         //   }
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] { "--orphaned-articles", "--articles-directory=../../../../../../testrepo2/docs", "--delete=false" };
+        args = new[] { "--relative-links", "--articles-directory=c:\\users\\gewarren\\docs\\docs", "url-base-path=/dotnet" };
+        //args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\docs\\docs\\core\\docker", "--delete=false" };
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
@@ -161,7 +162,8 @@ static class Program
             docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?({docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
 
             // Gather media file names.
-            docFxRepo.ImageRefs = GetMediaFiles(options.MediaDirectory);
+            if (docFxRepo.ImageRefs is null)
+                docFxRepo.ImageRefs = GetMediaFiles(options.MediaDirectory);
 
             Console.WriteLine($"\nSearching the '{options.MediaDirectory}' directory recursively for orphaned .png/.jpg/.gif/.svg files...\n");
 
@@ -202,7 +204,8 @@ static class Program
             docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?({docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
 
             // Gather media file names.
-            docFxRepo.ImageRefs = GetMediaFiles(options.MediaDirectory);
+            if (docFxRepo.ImageRefs is null)
+                docFxRepo.ImageRefs = GetMediaFiles(options.MediaDirectory);
 
             Console.WriteLine($"\nCataloging the images in the '{options.MediaDirectory}' directory...\n");
 
@@ -360,6 +363,12 @@ static class Program
             // Get the absolute path to the base directory for this docset.
             string rootDirectory = docFxRepo.GetDocsetAbsolutePath(options.ArticlesDirectory);
 
+            if (rootDirectory is null)
+            {
+                Console.WriteLine($"\nThe docfx.json file for {options.ArticlesDirectory} is invalid.");
+                return;
+            }
+
             if (String.IsNullOrEmpty(options.UrlBasePath))
             {
                 Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
@@ -433,6 +442,15 @@ static class Program
         // Strip preceding / off urlBasePath, if it exists.
         urlBasePath = urlBasePath.TrimStart('/');
 
+        List<string> regexes = new List<string>()
+            {
+                @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?)\)",                                    // [link text](/docsetName/some other text)
+                "<img[^>]*?src[ ]*=[ ]*\"(/" + urlBasePath + "/([^>]*?.(png|gif|jpg|svg)))[ ]*\"",  // <img src="/azure/mydocs/media/pic3.png">
+                @"\[.*\]:[ ]*(/" + urlBasePath + @"/(.*\.(png|gif|jpg|svg)))",                      // [0]: /azure/mydocs/media/pic1.png
+                @"imageSrc:[ ]*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))",                 // imageSrc: /azure/mydocs/media/pic1.png
+                @":::image[^:]*source=""(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))""[^:]*:::" // :::image type="complex" source="/azure/mydocs/media/pic1.png" alt-text="Screenshot.":::
+            };
+
         foreach (var linkingFile in linkingFiles)
         {
             // Read the whole file up front because we might change the file mid-flight.
@@ -443,64 +461,21 @@ static class Program
             // ![VisualizerIcon](/test-repo/debugger/dbg-tips.png)
             // For more information, see [this page](/test-repo/debugger/dbg-tips).
 
-            // Find links that look like [link text](/docsetName/some other text)
-            string pattern1 = @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?)\)";
-
-            foreach (Match match in Regex.Matches(originalFileText, pattern1, RegexOptions.IgnoreCase))
+            foreach (var regex in regexes)
             {
-                // Get the first capture group, which is the part of the path after the docset name.
-                string siteRelativePath = match.Groups[2].Value;
+                // Regex ignores case.
+                foreach (Match match in Regex.Matches(originalFileText, regex, RegexOptions.IgnoreCase))
+                {
+                    // Get the first capture group, which is the part of the path after the docset name.
+                    string siteRelativePath = match.Groups[2].Value;
 
-                // If the path contains a ?, ignore this link as replacing it might not be ideal.
-                // For example, if the link is to a specific version like "?view=vs-2015".
-                if (siteRelativePath.IndexOf('?') >= 0)
-                    continue;
+                    // If the path contains a ?, ignore this link as replacing it might not be ideal.
+                    // For example, if the link is to a specific version like "?view=vs-2015".
+                    if (siteRelativePath.IndexOf('?') >= 0)
+                        continue;
 
-                ReplaceLinkText(siteRelativePath, rootDirectory, linkingFile, match.Groups[0].Value, match.Groups[1].Value);
-            }
-
-            // Find links that look like <img src="/azure/mydocs/media/pic3.png">
-            string pattern2 = "<img[^>]*?src[ ]*=[ ]*\"(/" + urlBasePath + "/([^>]*?.(png|gif|jpg|svg)))[ ]*\"";
-
-            foreach (Match match in Regex.Matches(originalFileText, pattern2, RegexOptions.IgnoreCase))
-            {
-                // Get the first capture group, which is the part of the path after the docset name.
-                string siteRelativePath = match.Groups[2].Value;
-
-                ReplaceLinkText(siteRelativePath, rootDirectory, linkingFile, match.Groups[0].Value, match.Groups[1].Value);
-            }
-
-            // Find links that look like [0]: /azure/mydocs/media/pic1.png
-            string pattern3 = @"\[.*\]:[ ]*(/" + urlBasePath + @"/(.*\.(png|gif|jpg|svg)))";
-
-            foreach (Match match in Regex.Matches(originalFileText, pattern3, RegexOptions.IgnoreCase))
-            {
-                // Get the first capture group, which is the part of the path after the docset name.
-                string siteRelativePath = match.Groups[2].Value;
-
-                ReplaceLinkText(siteRelativePath, rootDirectory, linkingFile, match.Groups[0].Value, match.Groups[1].Value);
-            }
-
-            // Find links that look like imageSrc: /azure/mydocs/media/pic1.png
-            string pattern4 = @"imageSrc:[ ]*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))";
-
-            foreach (Match match in Regex.Matches(originalFileText, pattern4, RegexOptions.IgnoreCase))
-            {
-                // Get the first capture group, which is the part of the path after the docset name.
-                string siteRelativePath = match.Groups[2].Value;
-
-                ReplaceLinkText(siteRelativePath, rootDirectory, linkingFile, match.Groups[0].Value, match.Groups[1].Value);
-            }
-
-            // Find links that look like :::image type="complex" source="/azure/mydocs/media/pic1.png" alt-text="Screenshot.":::
-            string pattern5 = @":::image[^:]*source=""(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))""[^:]*:::";
-
-            foreach (Match match in Regex.Matches(originalFileText, pattern5, RegexOptions.IgnoreCase))
-            {
-                // Get the first capture group, which is the part of the path after the docset name.
-                string siteRelativePath = match.Groups[2].Value;
-
-                ReplaceLinkText(siteRelativePath, rootDirectory, linkingFile, match.Groups[0].Value, match.Groups[1].Value);
+                    ReplaceLinkText(siteRelativePath, rootDirectory, linkingFile, match.Groups[0].Value, match.Groups[1].Value);
+                }
             }
         }
     }
@@ -524,36 +499,15 @@ static class Program
         // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
         absolutePath = Path.GetFullPath(absolutePath);
 
-        FileInfo file = new FileInfo(absolutePath);
-        if (String.IsNullOrEmpty(file.Extension) || !string.Equals(file.Extension, ".md") || !string.Equals(file.Extension, ".yml"))
+        // Get the actual casing of the file on the file system.
+        try
         {
-            // Look for a file of this name in the same directory to obtain its extension.
-            try
-            {
-                FileInfo[] files = file.Directory.GetFiles(file.Name + ".*");
-                if (files.Length > 0)
-                {
-                    // Since site-relative image links still require a file extension,
-                    // and this link didn't include an extension, favor a non-image extension first.
-                    if (files.Any(f => f.Extension == ".md"))
-                        absolutePath = files.First(f => f.Extension == ".md").FullName;
-                    else if (files.Any(f => f.Extension == ".yml"))
-                        absolutePath = files.First(f => f.Extension == ".yml").FullName;
-                    else
-                        absolutePath = files[0].FullName;
-                }
-            }
-            catch (DirectoryNotFoundException)
-            {
-                // This can happen if files from a different repo map to the same docset.
-                // For example, the C# language specification: [C# Language Specification](/dotnet/csharp/language-reference/language-specification/introduction)
-                return;
-            }
+            absolutePath = GetActualCaseForFilePath(absolutePath);
         }
-
-        // Check that the link is valid in the local repo.
-        if (!File.Exists(absolutePath))
+        catch (FileNotFoundException)
         {
+            // This can happen if files from a different repo map to the same docset.
+            // For example, the C# language specification: [C# Language Specification](/dotnet/csharp/language-reference/language-specification/introduction)
             return;
         }
 
@@ -562,8 +516,8 @@ static class Program
             // Determine the file-relative path to absolutePath.
             string fileRelativePath = Path.GetRelativePath(linkingFile.DirectoryName, absolutePath);
 
-            // Replace backslashes with forward slashes.
-            fileRelativePath = fileRelativePath.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            // Replace any backslashes with forward slashes.
+            fileRelativePath = fileRelativePath.Replace('\\', '/');
 
             if (fileRelativePath != null)
             {
@@ -647,15 +601,8 @@ static class Program
                         if (fullPath != null)
                         {
                             // Increment the count for this INCLUDE file in our dictionary
-                            try
-                            {
-                                // TODO - is this okay to have in a Parallel.ForEach loop?
-                                includeFiles[fullPath.ToLower()]++;
-                            }
-                            catch (KeyNotFoundException)
-                            {
-                                // No need to do anything.
-                            }
+                            if (includeFiles.ContainsKey(fullPath))
+                                includeFiles[fullPath]++;
                         }
                     }
                 }
@@ -703,7 +650,9 @@ static class Program
     {
         DirectoryInfo dir = new DirectoryInfo(inputDirectory);
 
-        Dictionary<string, int> includeFiles = new Dictionary<string, int>();
+        // Create the dictionary with a case-insensitive comparer,
+        // because links in Markdown don't have to match the actual file path casing.
+        Dictionary<string, int> includeFiles = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
 
         if (String.Compare(dir.Name, "includes", true) == 0 || String.Compare(dir.Name, "_shared", true) == 0)
         {
@@ -711,7 +660,7 @@ static class Program
 
             foreach (var file in dir.EnumerateFiles("*.md"))
             {
-                includeFiles.Add(file.FullName.ToLower(), 0);
+                includeFiles.Add(file.FullName, 0);
             }
         }
 
@@ -724,7 +673,7 @@ static class Program
 
                 foreach (var file in subDirectory.EnumerateFiles("*.md"))
                 {
-                    includeFiles.Add(file.FullName.ToLower(), 0);
+                    includeFiles.Add(file.FullName, 0);
                 }
             }
         }
@@ -745,22 +694,22 @@ static class Program
 
         foreach (var file in dir.EnumerateFiles("*.cs"))
         {
-            snippetFiles.Add(file.FullName.ToLower());
+            snippetFiles.Add(file.FullName);
         }
         foreach (var file in dir.EnumerateFiles("*.vb"))
         {
-            snippetFiles.Add(file.FullName.ToLower());
+            snippetFiles.Add(file.FullName);
         }
 
         foreach (var subDirectory in dir.EnumerateDirectories("*", SearchOption.AllDirectories))
         {
             foreach (var file in subDirectory.EnumerateFiles("*.cs"))
             {
-                snippetFiles.Add(file.FullName.ToLower());
+                snippetFiles.Add(file.FullName);
             }
             foreach (var file in subDirectory.EnumerateFiles("*.vb"))
             {
-                snippetFiles.Add(file.FullName.ToLower());
+                snippetFiles.Add(file.FullName);
             }
         }
 
@@ -778,7 +727,7 @@ static class Program
         foreach (var slnFile in dir.EnumerateFiles("*.sln", SearchOption.AllDirectories))
         {
             SolutionFile solutionFile = SolutionFile.Parse(slnFile.FullName);
-            List<string> projectFiles = solutionFile.ProjectsInOrder.Select(p => Path.GetDirectoryName(p.AbsolutePath).ToLowerInvariant()).Distinct().ToList();
+            List<string> projectFiles = solutionFile.ProjectsInOrder.Select(p => Path.GetDirectoryName(p.AbsolutePath)).Distinct().ToList();
 
             solutionFiles.Add((slnFile.FullName, projectFiles));
         }
@@ -832,6 +781,7 @@ static class Program
 
                     string regex = @"(\(|"")([^\)""\n]*\/" + snippetFileName + @")(#\w*)?(\?\w*=(\d|,|-)*)?(\)|"")";
 
+                    // Ignores case.
                     foreach (Match match in Regex.Matches(File.ReadAllText(markdownFile.FullName), regex, RegexOptions.IgnoreCase))
                     {
                         if (!(match is null) && match.Length > 0)
@@ -902,7 +852,7 @@ static class Program
                     // Search for a reference that includes the project directory name.
                     string regex = @"(\(|"")([^\)""\n]*" + projectDir.Name + @")\/[^\)""\n]*(\)|"")";
 
-                    // Loop through all the matches in the file.
+                    // Loop through all the matches in the file; ignores case.
                     MatchCollection matches = Regex.Matches(File.ReadAllText(markdownFile.FullName), regex, RegexOptions.IgnoreCase);
                     foreach (Match match in matches)
                     {
@@ -1069,7 +1019,7 @@ static class Program
 
         Parallel.ForEach(markdownFiles.Where(IsArticleFile), markdownFile =>
         //foreach (var markdownFile in markdownFiles)
-        { 
+        {
             // Ignore TOC files.
             if (String.Compare(markdownFile.Name, "TOC.md", true) == 0)
                 return; //continue;
@@ -1124,11 +1074,14 @@ static class Program
         // href: ide/managing-external-tools.md
         // # [Managing External Tools](ide/managing-external-tools.md)
 
+        string regexSafeFilename = linkedFile.Name.Replace(".", "\\.");
+
         string linkRegEx = tocFile.Extension.ToLower() == ".yml" ?
-            @"href:\s*(" + linkedFile.Name + @"|.+?\/" + linkedFile.Name + ")" :
-            @"\]\(\s*<?\s*(\/?" + linkedFile.Name + @"|[^\)]+\/" + linkedFile.Name + ")";
+            @"href:\s*(" + regexSafeFilename + @"|.+?\/" + regexSafeFilename + ")" :
+            @"\]\(\s*<?\s*(\/?" + regexSafeFilename + @"|[^\)]+\/" + regexSafeFilename + ")";
 
         // For each link that contains the file name...
+        // Regex ignores case.
         foreach (Match match in Regex.Matches(text, linkRegEx, RegexOptions.IgnoreCase))
         {
             // For debugging only.
@@ -1158,7 +1111,7 @@ static class Program
 
                 if (fullPath != null)
                 {
-                    // See if our constructed path matches the actual file we think it is
+                    // See if our constructed path matches the actual file we think it is (ignores case).
                     if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
                     {
                         return true;
@@ -1166,9 +1119,9 @@ static class Program
                     else
                     {
                         // If we get here, the file name matched but the full path did not.
-                        Console.WriteLine("\nNot a proper match:");
-                        Console.WriteLine($"Full path to referenced file is '{fullPath}'.");
-                        Console.WriteLine($"Path to orphaned file candidate is '{linkedFile.FullName}'.");
+                        //Console.WriteLine("\nNot a proper match:");
+                        //Console.WriteLine($"Full path to referenced file is '{fullPath}'.");
+                        //Console.WriteLine($"Path to orphaned file candidate is '{linkedFile.FullName}'.");
                     }
                 }
             }
@@ -1201,6 +1154,7 @@ static class Program
                     @"\]\(<?(([^\)])*?" + linkedFile.Name + @")";
 
             // For each link that contains the file name...
+            // Regex ignores case.
             foreach (Match match in Regex.Matches(fileContents, linkRegEx, RegexOptions.IgnoreCase))
             {
                 // Get the file-relative path to the linked file.
@@ -1228,7 +1182,7 @@ static class Program
                     fullPath = Path.GetFullPath(fullPath);
                     if (fullPath != null)
                     {
-                        // See if our constructed path matches the actual file we think it is
+                        // See if our constructed path matches the actual file we think it is; ignores case.
                         if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
                         {
                             // File is linked from another file.
@@ -1255,7 +1209,7 @@ static class Program
 
     #region Popular files
     /// <summary>
-    /// Finds topics that appear more than once, either in one TOC.md file, or multiple TOC.md files.
+    /// Finds topics that appear more than once, either in one TOC file, or across multiple TOC files.
     /// </summary>
     private static void ListPopularFiles(List<FileInfo> tocFiles, List<FileInfo> markdownFiles)
     {
@@ -1300,6 +1254,66 @@ static class Program
 
     #region Generic helper methods
     /// <summary>
+    /// Gets the actual (case-sensitive) file path on the file system for a specified case-insensitive file path.
+    /// </summary>
+    private static string GetActualCaseForFilePath(string pathAndFileName)
+    {
+        string directory = Path.GetDirectoryName(pathAndFileName);
+        string directoryCaseSensitive = GetDirectoryCaseSensitive(directory);
+        string pattern = $"{Path.GetFileName(pathAndFileName)}.*";
+        string resultFileName;
+
+        if (directoryCaseSensitive is null)
+            throw new FileNotFoundException($"File not found: {pathAndFileName}.", pathAndFileName);
+
+        // Enumerate all files in the directory, using the file name as a pattern.
+        // This lists all case variants of the filename, even on file systems that are case sensitive.
+        IEnumerable<string> foundFiles = Directory.EnumerateFiles(
+            directoryCaseSensitive, 
+            pattern, 
+            new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive });
+
+        if (foundFiles.Any())
+        {
+            resultFileName = foundFiles.First();
+        }
+        else
+        {
+            throw new FileNotFoundException($"File not found: {pathAndFileName}.", pathAndFileName);
+        }
+
+        return resultFileName;
+    }
+
+    /// <summary>
+    /// Gets the actual (case-sensitive) directory path on the file system for a specified case-insensitive directory path.
+    /// </summary>
+    private static string GetDirectoryCaseSensitive(string directory)
+    {
+        var directoryInfo = new DirectoryInfo(directory);
+        if (directoryInfo.Exists)
+        {
+            return directory;
+        }
+
+        if (directoryInfo.Parent == null)
+        {
+            return null;
+        }
+
+        var parent = GetDirectoryCaseSensitive(directoryInfo.Parent.FullName);
+        if (parent == null)
+        {
+            return null;
+        }
+
+        return new DirectoryInfo(parent)
+            .GetDirectories(directoryInfo.Name, new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive })
+            .FirstOrDefault()?
+            .FullName;
+    }
+
+    /// <summary>
     /// Looks for the specified file in the specified directory, and if not found,
     /// in all parent directories up to the disk root directory.
     /// </summary>
@@ -1311,11 +1325,11 @@ static class Program
         {
             while (dir.GetFiles(fileName, SearchOption.TopDirectoryOnly).Length == 0)
             {
-                dir = dir.Parent;
-
                 // Loop exit condition.
-                if (dir == dir.Root)
+                if (dir.FullName == dir.Root.FullName)
                     return null;
+
+                dir = dir.Parent;
             }
 
             return dir.GetFiles(fileName, SearchOption.TopDirectoryOnly)[0];
@@ -1509,7 +1523,7 @@ static class Program
 
         SearchOption searchOption = searchRecursively ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
 
-        Dictionary<string, List<string>> mediaFiles = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, List<string>> mediaFiles = new Dictionary<string, List<string>>(StringComparer.InvariantCultureIgnoreCase);
 
         string[] fileExtensions = new string[] { "*.png", "*.jpg", "*.gif", "*.svg" };
 
@@ -1517,7 +1531,7 @@ static class Program
         {
             foreach (var file in dir.EnumerateFiles(extension, searchOption))
             {
-                mediaFiles.Add(file.FullName.ToLower(), new List<string>());
+                mediaFiles.Add(file.FullName, new List<string>());
             }
         }
 

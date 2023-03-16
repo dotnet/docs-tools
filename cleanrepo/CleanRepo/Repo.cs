@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,7 +19,7 @@ class DocFxRepo
     internal string UrlBasePath { get; set; }
     public DirectoryInfo DocFxDirectory { get; private set; }
 
-    internal Dictionary<string, List<string>> ImageRefs = new Dictionary<string, List<string>>();
+    internal Dictionary<string, List<string>> ImageRefs = null;
     internal readonly List<string> ImageLinkRegExes = new List<string>
     {
         @"\]\((.*?(\.(png|jpg|gif|svg))+)", // ![hello](media/how-to/xamarin.png)
@@ -51,6 +52,10 @@ class DocFxRepo
             if (_allTocFiles == null)
             {
                 _allTocFiles = DocFxDirectory.EnumerateFiles("toc.*", SearchOption.AllDirectories).ToList();
+
+                // Add other TOC files for case-sensitive OSs.
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    _allTocFiles.AddRange(DocFxDirectory.EnumerateFiles("TOC.*", SearchOption.AllDirectories));
             }
             return _allTocFiles;
         }
@@ -195,7 +200,7 @@ class DocFxRepo
             string line;
             while ((line = sr.ReadLine()) != null)
             {
-                if (line.Contains($"\"{imageFilePath}\""))
+                if (line.Contains($"\"{imageFilePath}\"", StringComparison.InvariantCultureIgnoreCase))
                 {
                     return true;
                 }
@@ -618,7 +623,7 @@ class DocFxRepo
         string fileText = File.ReadAllText(redirectsFile.FullName);
 
         // Load the sources and targets into a dictionary for easier look up.
-        Dictionary<string, string> redirectsLookup = new Dictionary<string, string>(RedirectionFile.redirections.Count);
+        Dictionary<string, string> redirectsLookup = new Dictionary<string, string>(RedirectionFile.redirections.Count, StringComparer.InvariantCultureIgnoreCase);
         foreach (Redirect redirect in RedirectionFile.redirections)
         {
             string fullPath = null;
@@ -633,6 +638,8 @@ class DocFxRepo
                 fullPath = Path.Combine(rootPath, redirect.source_path_from_root.Substring(1));
             }
 
+            // Path.GetFullPath doesn't require the file or directory to exist,
+            // so this works on case-sensitive file systems too.
             redirectsLookup.Add(Path.GetFullPath(fullPath), redirect.redirect_url);
         }
 
@@ -668,7 +675,7 @@ class DocFxRepo
             while (redirectsLookup.ContainsKey(normalizedTargetPath))
             {
                 // Avoid an infinite loop by checking that this isn't the same key/value pair.
-                if (String.Equals(redirectsLookup[normalizedTargetPath], currentTarget))
+                if (String.Equals(redirectsLookup[normalizedTargetPath], currentTarget, StringComparison.InvariantCultureIgnoreCase))
                 {
                     Console.WriteLine($"\nWARNING: {normalizedTargetPath} REDIRECTS TO ITSELF. PLEASE FIND A DIFFERENT REDIRECT URL.\n");
                     break;
@@ -731,7 +738,8 @@ class DocFxRepo
 
     internal void ReplaceRedirectedLinks(IList<Redirect> redirects, List<FileInfo> linkingFiles)
     {
-        Dictionary<string, Redirect> redirectLookup = Enumerable.ToDictionary<Redirect, string>(redirects, r => r.source_path_absolute);
+        Dictionary<string, Redirect> redirectLookup = 
+            Enumerable.ToDictionary(redirects, r => r.source_path_absolute, StringComparer.InvariantCultureIgnoreCase);
 
         // For each file...
         foreach (var linkingFile in linkingFiles)
@@ -747,6 +755,7 @@ class DocFxRepo
                 @"\]\(<?([^\)]*\.md)(#[\w-]+)?>?\)";
 
             // For each link in the file...
+            // Regex ignores case.
             foreach (Match match in Regex.Matches(text, linkRegEx, RegexOptions.IgnoreCase))
             {
                 // Get the file-relative path to the linked file.
