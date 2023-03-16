@@ -1057,9 +1057,9 @@ static class Program
         Dictionary<string, int> filesToKeep = new Dictionary<string, int>();
 
         bool IsArticleFile(FileInfo file) =>
-            !file.FullName.Contains("\\includes\\") &&
-            !file.FullName.Contains("\\_shared\\") &&
-            !file.FullName.Contains("\\misc\\") &&
+            !file.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}") &&
+            !file.FullName.Contains($"{Path.DirectorySeparatorChar}_shared{Path.DirectorySeparatorChar}") &&
+            !file.FullName.Contains($"{Path.DirectorySeparatorChar}misc{Path.DirectorySeparatorChar}") &&
             String.Compare(file.Name, "TOC.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             String.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0;
 
@@ -1268,7 +1268,7 @@ static class Program
         foreach (var markdownFile in markdownFiles)
         {
             // If the file is in the Includes directory, ignore it
-            if (markdownFile.FullName.Contains("\\includes\\"))
+            if (markdownFile.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}"))
                 continue;
 
             foreach (var tocFile in tocFiles)
@@ -1482,8 +1482,8 @@ static class Program
         {
             foreach (string ignoreDir in dirsToIgnore)
             {
-                string dirWithSlashes = String.Concat("\\", ignoreDir, "\\");
-                files = files.Where(f => !f.DirectoryName.Contains(dirWithSlashes, StringComparison.InvariantCultureIgnoreCase));
+                string dirWithSeparators = $"{Path.DirectorySeparatorChar}{ignoreDir}{Path.DirectorySeparatorChar}";
+                files = files.Where(f => !f.DirectoryName.Contains(dirWithSeparators, StringComparison.InvariantCultureIgnoreCase));
             }
         }
 
