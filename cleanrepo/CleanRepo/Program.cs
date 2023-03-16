@@ -8,8 +8,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -89,9 +87,7 @@ static class Program
                 Console.WriteLine("\nDo you want to delete orphans (y or n)?");
                 var info = Console.ReadKey();
                 if (info.KeyChar == 'y' || info.KeyChar == 'Y')
-                {
                     options.Delete = true;
-                }
             }
         }
 
@@ -121,9 +117,7 @@ static class Program
             List<FileInfo> markdownFiles = GetMarkdownFiles(options.ArticlesDirectory, "snippets");
 
             if (docFxRepo.AllTocFiles is null || markdownFiles is null)
-            {
                 return;
-            }
 
             ListOrphanedArticles(docFxRepo.AllTocFiles, markdownFiles, options.Delete.Value);
         }
@@ -553,9 +547,7 @@ static class Program
         var files = GetAllMarkdownFiles(inputDirectory, out DirectoryInfo rootDirectory);
 
         if (files is null)
-        {
             return;
-        }
 
         // Gather up all the include references and increment the count for that include file in the Dictionary.
         //foreach (var markdownFile in files)
@@ -628,9 +620,7 @@ static class Program
             foreach (var includeFile in includeFiles)
             {
                 if (includeFile.Value == 0)
-                {
                     File.Delete(includeFile.Key);
-                }
             }
         }
 
@@ -742,9 +732,7 @@ static class Program
         var files = GetAllMarkdownFiles(inputDirectory, out DirectoryInfo rootDirectory);
 
         if (files is null)
-        {
             return;
-        }
 
         Console.WriteLine($"Checking {snippetFiles.Count} snippet files.");
 
@@ -828,9 +816,7 @@ static class Program
                     output.AppendLine(Path.GetFullPath(snippetFile));
 
                     if (deleteOrphanedSnippets)
-                    {
                         File.Delete(snippetFile);
-                    }
                 }
             }
             else
@@ -905,9 +891,7 @@ static class Program
                     // The snippet file and its project directory is orphaned (not used anywhere).
                     // Set reference count to 0;
                     if (!snippetDirectories.ContainsKey(projectDir.FullName))
-                    {
                         snippetDirectories.Add(projectDir.FullName, 0);
-                    }
                 }
             }
         }
@@ -940,9 +924,7 @@ static class Program
             {
                 dirSlnOutput.AppendLine(directory);
                 if (deleteOrphanedSnippets)
-                {
                     Directory.Delete(directory, true);
-                }
             }
         }
 
@@ -1060,9 +1042,7 @@ static class Program
                 }
             }
             else
-            {
                 Console.WriteLine($"\nDeleted {orphanedFiles.Count} files.");
-            }
         }
     }
 
@@ -1113,9 +1093,7 @@ static class Program
                 {
                     // See if our constructed path matches the actual file we think it is (ignores case).
                     if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
-                    {
                         return true;
-                    }
                     else
                     {
                         // If we get here, the file name matched but the full path did not.
@@ -1137,9 +1115,7 @@ static class Program
     private static void CheckFileLinks(List<FileInfo> linkedFiles, FileInfo linkingFile, ref Dictionary<string, int> filesToKeep)
     {
         if (!File.Exists(linkingFile.FullName))
-        {
             return;
-        }
 
         string fileContents = File.ReadAllText(linkingFile.FullName);
 
@@ -1228,9 +1204,7 @@ static class Program
             foreach (var tocFile in tocFiles)
             {
                 if (IsFileLinkedFromFile(markdownFile, tocFile))
-                {
                     topics[markdownFile.FullName]++;
-                }
             }
         }
 
@@ -1246,9 +1220,7 @@ static class Program
 
         // Only write the StringBuilder to the console if we found a topic referenced from more than one TOC file.
         if (found)
-        {
             Console.Write(output.ToString());
-        }
     }
     #endregion
 
@@ -1269,18 +1241,14 @@ static class Program
         // Enumerate all files in the directory, using the file name as a pattern.
         // This lists all case variants of the filename, even on file systems that are case sensitive.
         IEnumerable<string> foundFiles = Directory.EnumerateFiles(
-            directoryCaseSensitive, 
-            pattern, 
+            directoryCaseSensitive,
+            pattern,
             new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive });
 
         if (foundFiles.Any())
-        {
             resultFileName = foundFiles.First();
-        }
         else
-        {
             throw new FileNotFoundException($"File not found: {pathAndFileName}.", pathAndFileName);
-        }
 
         return resultFileName;
     }
@@ -1292,20 +1260,14 @@ static class Program
     {
         var directoryInfo = new DirectoryInfo(directory);
         if (directoryInfo.Exists)
-        {
             return directory;
-        }
 
         if (directoryInfo.Parent == null)
-        {
             return null;
-        }
 
         var parent = GetDirectoryCaseSensitive(directoryInfo.Parent.FullName);
         if (parent == null)
-        {
             return null;
-        }
 
         return new DirectoryInfo(parent)
             .GetDirectories(directoryInfo.Name, new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive })
@@ -1424,9 +1386,7 @@ static class Program
     private static bool IsFileLinkedFromFile(FileInfo linkedFile, FileInfo linkingFile)
     {
         if (!File.Exists(linkingFile.FullName))
-        {
             return false;
-        }
 
         foreach (var line in File.ReadAllLines(linkingFile.FullName))
         {
@@ -1536,9 +1496,7 @@ static class Program
         }
 
         if (mediaFiles.Count == 0)
-        {
             Console.WriteLine("\nNo .png/.jpg/.gif/.svg files were found!");
-        }
 
         return mediaFiles;
     }
@@ -1583,10 +1541,8 @@ static class Program
             {
                 dir = dir.Parent;
 
-                if (dir == dir?.Root)
-                {
+                if (String.Equals(dir.FullName, dir?.Root.FullName))
                     return null;
-                }
             }
         }
         catch (DirectoryNotFoundException)
