@@ -182,7 +182,7 @@ class DocFxRepo
         // First remove the directory path to the docfx.json file.
         imageFilePath = imageFilePath.Substring(DocFxDirectory.FullName.Length);
 
-        imageFilePath = ConvertImagePathSrcToDest(imageFilePath.TrimStart('\\'));
+        imageFilePath = ConvertImagePathSrcToDest(imageFilePath.TrimStart(Path.DirectorySeparatorChar));
 
         // Replace backslashes with forward slashes.
         imageFilePath = imageFilePath.Replace('\\', '/');
