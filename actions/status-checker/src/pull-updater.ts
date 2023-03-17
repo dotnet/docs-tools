@@ -28,7 +28,7 @@ export async function tryUpdatePullRequestBody(token: string) {
       return;
     } else {
       try {
-        console.log(JSON.stringify(pr));
+        console.log(JSON.stringify(pr, undefined, 2));
       } catch {}
     }
 
@@ -260,7 +260,7 @@ function replaceExistingTable(body: string, table: string) {
 
   return `${start}
 
-<hr />
+---
 
 ${table}
 
@@ -272,7 +272,7 @@ function appendTable(body: string, table: string) {
 
 ${PREVIEW_TABLE_START}
 
-<hr />
+---
 
 ${table}
 ${PREVIEW_TABLE_END}`;

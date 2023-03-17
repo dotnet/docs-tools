@@ -28,7 +28,7 @@ describe("pull-updater", () => {
 
 ${PREVIEW_TABLE_START}
 
-<hr />
+---
 
 [table]
 ${PREVIEW_TABLE_END}`);
@@ -46,7 +46,7 @@ testing...1, 2, 3!`;
 
     expect(actual).toEqual(`...${PREVIEW_TABLE_START}
 
-<hr />
+---
 
 [updated-table]
 
@@ -62,7 +62,7 @@ testing...1, 2, 3!`);
 
 ${PREVIEW_TABLE_START}
 
-<hr />
+---
 
 [table]
 ${PREVIEW_TABLE_END}`;
@@ -73,7 +73,7 @@ ${PREVIEW_TABLE_END}`;
 
 ${PREVIEW_TABLE_START}
 
-<hr />
+---
 
 [updated-table]
 ${PREVIEW_TABLE_END}`;

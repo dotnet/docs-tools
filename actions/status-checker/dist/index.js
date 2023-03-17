@@ -88,7 +88,7 @@ function tryUpdatePullRequestBody(token) {
             }
             else {
                 try {
-                    console.log(JSON.stringify(pr));
+                    console.log(JSON.stringify(pr, undefined, 2));
                 }
                 catch (_c) { }
             }
@@ -238,7 +238,7 @@ function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceed
     const isCollapsible = ((_a = WorkflowInput_1.workflowInput.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < links.size;
     if (isCollapsible) {
         markdownTable +=
-            "<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n";
+            "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
     }
     markdownTable += "| 📄 File | 🔗 Preview link |\n";
     markdownTable += "|:--|:--|\n";
@@ -266,6 +266,8 @@ function replaceExistingTable(body, table) {
     const tail = body.substring(endIndex);
     return `${start}
 
+---
+
 ${table}
 
 ${tail}`;
@@ -274,6 +276,9 @@ function appendTable(body, table) {
     return `${body}
 
 ${PREVIEW_TABLE_START}
+
+---
+
 ${table}
 ${PREVIEW_TABLE_END}`;
 }
