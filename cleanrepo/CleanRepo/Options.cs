@@ -32,7 +32,7 @@ class Options
     [Option("orphaned-images", HelpText = "Find orphaned .png, .gif, .jpg, or .svg files.")]
     public bool FindOrphanedImages { get; set; }
 
-    [Option("catalog-images", HelpText = "Map images to the markdown/YAML files that reference them.")]
+    [Option("catalog-images", Default = false, HelpText = "Map images to the markdown/YAML files that reference them.")]
     public bool CatalogImages { get; set; }
 
     [Option("orphaned-snippets", HelpText = "Find orphaned .cs and .vb files.")]
