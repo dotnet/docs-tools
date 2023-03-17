@@ -743,10 +743,11 @@ static class Program
         // Keep track of which directories are referenced/unreferenced.
         Dictionary<string, int> snippetDirectories = new Dictionary<string, int>();
 
-        foreach (var snippetFile in snippetFiles)
+        //foreach (var snippetFile in snippetFiles)
+        Parallel.ForEach(snippetFiles, snippetFile =>
         {
             FileInfo fi = new FileInfo(snippetFile);
-            string snippetFileName = fi.Name;
+            string regexSnippetFileName = fi.Name.Replace(".", "\\.");
 
             bool foundSnippetReference = false;
 
@@ -767,10 +768,11 @@ static class Program
                     // [!code-csharp[Hi](./code/code.cs?highlight=1,6)]
                     // [!code-csharp[FxCop.Usage#1](./code/code.cs?range=3-6)]
 
-                    string regex = @"(\(|"")([^\)""\n]*\/" + snippetFileName + @")(#\w*)?(\?\w*=(\d|,|-)*)?(\)|"")";
+                    string regex = @"(\(|"")([^\)""\n]*\/" + regexSnippetFileName + @")(#\w*)?(\?\w*=(\d|,|-)*)?(\)|"")";
 
                     // Ignores case.
-                    foreach (Match match in Regex.Matches(File.ReadAllText(markdownFile.FullName), regex, RegexOptions.IgnoreCase))
+                    string fileText = File.ReadAllText(markdownFile.FullName);
+                    foreach (Match match in Regex.Matches(fileText, regex, RegexOptions.IgnoreCase))
                     {
                         if (!(match is null) && match.Length > 0)
                         {
@@ -827,7 +829,7 @@ static class Program
 
                 // If we've already determined this project directory is orphaned or unorphaned, move on.
                 if (snippetDirectories.ContainsKey(projectDir.FullName))
-                    continue;
+                    return; // continue;
 
                 foreach (FileInfo markdownFile in files)
                 {
@@ -839,7 +841,8 @@ static class Program
                     string regex = @"(\(|"")([^\)""\n]*" + projectDir.Name + @")\/[^\)""\n]*(\)|"")";
 
                     // Loop through all the matches in the file; ignores case.
-                    MatchCollection matches = Regex.Matches(File.ReadAllText(markdownFile.FullName), regex, RegexOptions.IgnoreCase);
+                    string fileText = File.ReadAllText(markdownFile.FullName);
+                    MatchCollection matches = Regex.Matches(fileText, regex, RegexOptions.IgnoreCase);
                     foreach (Match match in matches)
                     {
                         if (!(match is null) && match.Length > 0)
@@ -894,7 +897,7 @@ static class Program
                         snippetDirectories.Add(projectDir.FullName, 0);
                 }
             }
-        }
+        });
 
         // Output info for non-project snippets.
         Console.WriteLine($"\nFound {countOfOrphans} orphaned snippet files:\n");
