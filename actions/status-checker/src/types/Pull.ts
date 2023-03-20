@@ -1,4 +1,3 @@
-import { Commit } from "./Commit";
 import { FileChange } from "./FileChange";
 import { NodeOf } from "./NodeOf";
 import { PullRequestState } from "./PullRequestState";
@@ -10,8 +9,5 @@ export type Pull = {
   readonly state: PullRequestState;
   readonly files: {
     readonly edges: NodeOf<FileChange>[];
-  };
-  readonly commits?: {
-    readonly edges: NodeOf<Commit>[];
   };
 };

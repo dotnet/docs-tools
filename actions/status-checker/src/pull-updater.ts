@@ -105,13 +105,6 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
               }
             }
           }
-          commits(last: 1) {
-            nodes {
-              commit {
-                oid
-              }
-            }
-          }
         }
       }
     }`,
@@ -200,7 +193,19 @@ function toGitHubLink(
 
 function toPreviewLink(file: string, prNumber: number): string {
   const docsPath = workflowInput.docsPath;
-  const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+
+  let path = file.replace(`${docsPath}/`, "").replace(".md", "");
+  const opaqueLeadingUrlSegments: string[] =
+    workflowInput.opaqueLeadingUrlSegments;
+
+  for (let i = 0; i < opaqueLeadingUrlSegments.length; i++) {
+    const segment = `${opaqueLeadingUrlSegments[i]}/`;
+    if (path.startsWith(segment)) {
+      path = path.replace(segment, "");
+      break;
+    }
+  }
+
   const urlBasePath = workflowInput.urlBasePath;
 
   return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
@@ -287,4 +292,5 @@ export const exportedForTesting = {
   PREVIEW_TABLE_END,
   PREVIEW_TABLE_START,
   replaceExistingTable,
+  toPreviewLink,
 };

@@ -30,7 +30,7 @@ function run() {
             console.log("Waited 60 seconds.");
             // When the status is passed, try to update the PR body.
             const isSuccess = yield (0, status_checker_1.isSuccessStatus)(token);
-            if (isSuccess) {
+            if (isSuccess && WorkflowInput_1.workflowInput.mode === "preview") {
                 yield (0, pull_updater_1.tryUpdatePullRequestBody)(token);
             }
             else {
@@ -159,13 +159,6 @@ function getPullRequest(token) {
               }
             }
           }
-          commits(last: 1) {
-            nodes {
-              commit {
-                oid
-              }
-            }
-          }
         }
       }
     }`,
@@ -224,7 +217,15 @@ function toGitHubLink(file, commitOid) {
 }
 function toPreviewLink(file, prNumber) {
     const docsPath = WorkflowInput_1.workflowInput.docsPath;
-    const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+    let path = file.replace(`${docsPath}/`, "").replace(".md", "");
+    const opaqueLeadingUrlSegments = WorkflowInput_1.workflowInput.opaqueLeadingUrlSegments;
+    for (let i = 0; i < opaqueLeadingUrlSegments.length; i++) {
+        const segment = `${opaqueLeadingUrlSegments[i]}/`;
+        if (path.startsWith(segment)) {
+            path = path.replace(segment, "");
+            break;
+        }
+    }
     const urlBasePath = WorkflowInput_1.workflowInput.urlBasePath;
     return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
 }
@@ -291,6 +292,7 @@ exports.exportedForTesting = {
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
     replaceExistingTable,
+    toPreviewLink,
 };
 
 
@@ -445,6 +447,20 @@ class WorkflowInput {
     get maxRowCount() {
         const val = (0, core_1.getInput)("max_row_count");
         return parseInt(val || "30");
+    }
+    get mode() {
+        const val = (0, core_1.getInput)("mode");
+        return val === "warning" ? "warning" : "preview";
+    }
+    get opaqueLeadingUrlSegments() {
+        const val = (0, core_1.getInput)("opaque_leading_url_segments");
+        if (val) {
+            if (val.includes(",")) {
+                return val.split(",").map((v) => v.trim());
+            }
+            return [val.trim()];
+        }
+        return [];
     }
     constructor() { }
 }
