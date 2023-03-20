@@ -30,7 +30,7 @@ function run() {
             console.log("Waited 60 seconds.");
             // When the status is passed, try to update the PR body.
             const isSuccess = yield (0, status_checker_1.isSuccessStatus)(token);
-            if (isSuccess) {
+            if (isSuccess && WorkflowInput_1.workflowInput.mode === "preview") {
                 yield (0, pull_updater_1.tryUpdatePullRequestBody)(token);
             }
             else {
@@ -88,7 +88,7 @@ function tryUpdatePullRequestBody(token) {
             }
             else {
                 try {
-                    console.log(JSON.stringify(pr));
+                    console.log(JSON.stringify(pr, undefined, 2));
                 }
                 catch (_c) { }
             }
@@ -159,13 +159,6 @@ function getPullRequest(token) {
               }
             }
           }
-          commits(last: 1) {
-            nodes {
-              commit {
-                oid
-              }
-            }
-          }
         }
       }
     }`,
@@ -224,7 +217,15 @@ function toGitHubLink(file, commitOid) {
 }
 function toPreviewLink(file, prNumber) {
     const docsPath = WorkflowInput_1.workflowInput.docsPath;
-    const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+    let path = file.replace(`${docsPath}/`, "").replace(".md", "");
+    const opaqueLeadingUrlSegments = WorkflowInput_1.workflowInput.opaqueLeadingUrlSegments;
+    for (let i = 0; i < opaqueLeadingUrlSegments.length; i++) {
+        const segment = `${opaqueLeadingUrlSegments[i]}/`;
+        if (path.startsWith(segment)) {
+            path = path.replace(segment, "");
+            break;
+        }
+    }
     const urlBasePath = WorkflowInput_1.workflowInput.urlBasePath;
     return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
 }
@@ -238,7 +239,7 @@ function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceed
     const isCollapsible = ((_a = WorkflowInput_1.workflowInput.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < links.size;
     if (isCollapsible) {
         markdownTable +=
-            "<details><summary><strong>Toggle Expand/Collapse</strong></summary><br/>\n\n";
+            "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
     }
     markdownTable += "| 📄 File | 🔗 Preview link |\n";
     markdownTable += "|:--|:--|\n";
@@ -266,6 +267,8 @@ function replaceExistingTable(body, table) {
     const tail = body.substring(endIndex);
     return `${start}
 
+---
+
 ${table}
 
 ${tail}`;
@@ -274,6 +277,9 @@ function appendTable(body, table) {
     return `${body}
 
 ${PREVIEW_TABLE_START}
+
+---
+
 ${table}
 ${PREVIEW_TABLE_END}`;
 }
@@ -286,6 +292,7 @@ exports.exportedForTesting = {
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
     replaceExistingTable,
+    toPreviewLink,
 };
 
 
@@ -440,6 +447,20 @@ class WorkflowInput {
     get maxRowCount() {
         const val = (0, core_1.getInput)("max_row_count");
         return parseInt(val || "30");
+    }
+    get mode() {
+        const val = (0, core_1.getInput)("mode");
+        return val === "warning" ? "warning" : "preview";
+    }
+    get opaqueLeadingUrlSegments() {
+        const val = (0, core_1.getInput)("opaque_leading_url_segments");
+        if (val) {
+            if (val.includes(",")) {
+                return val.split(",").map((v) => v.trim());
+            }
+            return [val.trim()];
+        }
+        return [];
     }
     constructor() { }
 }

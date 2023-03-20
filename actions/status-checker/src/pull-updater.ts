@@ -28,7 +28,7 @@ export async function tryUpdatePullRequestBody(token: string) {
       return;
     } else {
       try {
-        console.log(JSON.stringify(pr));
+        console.log(JSON.stringify(pr, undefined, 2));
       } catch {}
     }
 
@@ -102,13 +102,6 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
                 changeType
                 deletions
                 path
-              }
-            }
-          }
-          commits(last: 1) {
-            nodes {
-              commit {
-                oid
               }
             }
           }
@@ -200,7 +193,19 @@ function toGitHubLink(
 
 function toPreviewLink(file: string, prNumber: number): string {
   const docsPath = workflowInput.docsPath;
-  const path = file.replace(`${docsPath}/`, "").replace(".md", "");
+
+  let path = file.replace(`${docsPath}/`, "").replace(".md", "");
+  const opaqueLeadingUrlSegments: string[] =
+    workflowInput.opaqueLeadingUrlSegments;
+
+  for (let i = 0; i < opaqueLeadingUrlSegments.length; i++) {
+    const segment = `${opaqueLeadingUrlSegments[i]}/`;
+    if (path.startsWith(segment)) {
+      path = path.replace(segment, "");
+      break;
+    }
+  }
+
   const urlBasePath = workflowInput.urlBasePath;
 
   return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
@@ -260,7 +265,7 @@ function replaceExistingTable(body: string, table: string) {
 
   return `${start}
 
-<hr />
+---
 
 ${table}
 
@@ -272,7 +277,7 @@ function appendTable(body: string, table: string) {
 
 ${PREVIEW_TABLE_START}
 
-<hr />
+---
 
 ${table}
 ${PREVIEW_TABLE_END}`;
@@ -287,4 +292,5 @@ export const exportedForTesting = {
   PREVIEW_TABLE_END,
   PREVIEW_TABLE_START,
   replaceExistingTable,
+  toPreviewLink,
 };
