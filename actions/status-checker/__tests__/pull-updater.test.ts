@@ -1,4 +1,3 @@
-import { context } from "@actions/github";
 import { exportedForTesting } from "../src/pull-updater";
 import { describe, expect, it } from "@jest/globals";
 import { WorkflowInput, workflowInput } from "../src/types/WorkflowInput";
@@ -13,6 +12,7 @@ const {
   PREVIEW_TABLE_END,
   PREVIEW_TABLE_START,
   replaceExistingTable,
+  toPreviewLink,
 } = exportedForTesting;
 
 beforeAll(() => {
@@ -356,17 +356,6 @@ ${PREVIEW_TABLE_END}`;
                   }
                 }
               ]
-            },
-            "commits": {
-              "edges": [
-                {
-                  "node": {
-                    "commit": {
-                      "oid": "a1dd55dcf59070e36f2bd5e64a41eca9bdb3544a"
-                    }
-                  }
-                }
-              ]
             }
           }
         }
@@ -377,9 +366,27 @@ ${PREVIEW_TABLE_END}`;
 
     expect(pr).toBeDefined();
     expect(pr.repository.pullRequest.changedFiles).toBe(3);
-    expect(pr.repository.pullRequest.commits?.edges[0].node.commit.oid).toBe(
-      "a1dd55dcf59070e36f2bd5e64a41eca9bdb3544a"
-    );
+  });
+
+  it("toPreviewLink correctly handles opaque leading URL segments", () => {
+    setInput("opaque_leading_url_segments", "framework,test");
+    setInput("docs_path", "dotnet-desktop-guide");
+    setInput("url_base_path", "dotnet/desktop");
+
+    const expectedPreviewLinks = [
+      "https://review.learn.microsoft.com/en-us/dotnet/desktop/wpf/controls/popup-placement-behavior?branch=pr-en-us-1",
+      "https://review.learn.microsoft.com/en-us/dotnet/desktop/wpf/controls/index?branch=pr-en-us-1",
+      "https://review.learn.microsoft.com/en-us/dotnet/desktop/one?branch=pr-en-us-1",
+    ];
+    const actualPreviewLinks = [
+      "dotnet-desktop-guide/framework/wpf/controls/popup-placement-behavior.md",
+      "dotnet-desktop-guide/wpf/controls/index.md",
+      "dotnet-desktop-guide/test/one.md",
+    ].map((file) => toPreviewLink(file, 1));
+
+    expect(actualPreviewLinks[0]).toBe(expectedPreviewLinks[0]);
+    expect(actualPreviewLinks[1]).toBe(expectedPreviewLinks[1]);
+    expect(actualPreviewLinks[2]).toBe(expectedPreviewLinks[2]);
   });
 });
 

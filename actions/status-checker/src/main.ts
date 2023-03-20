@@ -14,7 +14,7 @@ async function run(): Promise<void> {
 
     // When the status is passed, try to update the PR body.
     const isSuccess = await isSuccessStatus(token);
-    if (isSuccess) {
+    if (isSuccess && workflowInput.mode === "preview") {
       await tryUpdatePullRequestBody(token);
     } else {
       console.log("Unsuccessful status detected.");
