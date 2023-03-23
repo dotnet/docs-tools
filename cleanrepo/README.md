@@ -6,23 +6,23 @@ This command-line tool helps you clean up a DocFx-based content repo. It can:
 - Find and delete orphaned image (.png, .jpg, .gif, .svg) files.
 - Map images to the files that reference them.
 - Find and delete orphaned "shared" markdown files (includes).
-- Find and delete orphaned snippet (.cs and .vb) files.
+- Find and delete orphaned snippet (.cs, .vb, .cpp, and .fs) files.
 - Find and replace links to redirected files.
-- Remove daisy chains (or hops) within a redirection file.
+- Remove daisy chains (or hops) within the redirection files for the docset.
 - Replace site-relative links with file-relative links (includes image links).
 
 ## Usage
 
 | Command | Description |
 | - | - |
-| --orphaned-articles | Use this option to find orphaned articles. |
+| --orphaned-articles | Find orphaned .md articles. |
 | --orphaned-images | Find orphaned .png, .gif, .svg, or .jpg files.<br/>**Note:** The tool does not know if images are referenced in a code sample project, so we recommend not running this option on a directory that contains samples. |
-| --orphaned-snippets | Find orphaned .cs and .vb files. |
+| --orphaned-snippets | Find orphaned .cs, .vb, .cpp, and .fs files. |
 | --orphaned-includes | Find orphaned INCLUDE files. |
 | --catalog-images | Map images to the markdown/YAML files that reference them. This option generates a JSON file with the output. |
 | --replace-redirects | Find backlinks to redirected files and replace with new target. |
-| --remove-hops | Remove daisy chains within a single redirection file. |
-| --relative-links | Replace site-relative links with file-relative links.  You must also specify the docset name for the repo. |
+| --remove-hops | Remove daisy chains within the redirection files for the docset. |
+| --relative-links | Replace site-relative links with file-relative links. |
 
 ## Usage examples
 

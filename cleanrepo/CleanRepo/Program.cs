@@ -31,8 +31,7 @@ static class Program
         //   }
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] { "--relative-links", "--articles-directory=c:\\users\\gewarren\\docs\\docs", "url-base-path=/dotnet" };
-        //args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\docs\\docs\\core\\docker", "--delete=false" };
+        args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\concepts" };
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
@@ -241,7 +240,7 @@ static class Program
             ListOrphanedIncludes(options.IncludesDirectory, includeFiles, options.Delete.Value);
         }
 
-        // Find orphaned .cs and .vb files
+        // Find orphaned snippet files
         if (options.FindOrphanedSnippets)
         {
             if (String.IsNullOrEmpty(options.SnippetsDirectory))
@@ -262,15 +261,18 @@ static class Program
                 return;
             }
 
-            Console.WriteLine($"\nSearching the '{options.SnippetsDirectory}' directory recursively for orphaned .cs and .vb files.");
+            Console.WriteLine($"\nSearching the '{options.SnippetsDirectory}' directory recursively for orphaned snippet files.");
 
-            // Get all .cs and .vb files.
-            List<string> snippetFiles = GetSnippetFiles(options.SnippetsDirectory);
+            // Get all snippet files.
+            List<(string, string)> snippetFiles = GetSnippetFiles(options.SnippetsDirectory);
             if (snippetFiles.Count == 0)
             {
-                Console.WriteLine("\nNo .cs or .vb files were found.");
+                Console.WriteLine("\nNo files with matching extensions were found.");
                 return;
             }
+
+            // Associate snippet files to a project (where applicable).
+            AddProjectInfo(ref snippetFiles);
 
             // Catalog all the solution files and the project (directories) they reference.
             List<(string, List<string>)> solutionFiles = GetSolutionFiles(options.SnippetsDirectory);
@@ -674,37 +676,64 @@ static class Program
 
     #region Orphaned snippets
     /// <summary>
-    /// Returns a list of *.cs and *.vb files in the current directory, and optionally subdirectories.
+    /// Returns a list of *.cs, *.vb, *.fs, and *.cpp files in the specified directory and its subdirectories.
     /// </summary>
-    private static List<string> GetSnippetFiles(string inputDirectory)
+    private static List<(string, string)> GetSnippetFiles(string inputDirectory)
     {
-        DirectoryInfo dir = new DirectoryInfo(inputDirectory);
+        List<string> fileExtensions = new() { ".cs", ".vb", ".fs", ".cpp" };
 
-        List<string> snippetFiles = new List<string>();
+        var dir = new DirectoryInfo(inputDirectory);
+        var snippetFiles = new List<(string, string)>();
 
-        foreach (var file in dir.EnumerateFiles("*.cs"))
+        foreach (var extension in fileExtensions)
         {
-            snippetFiles.Add(file.FullName);
-        }
-        foreach (var file in dir.EnumerateFiles("*.vb"))
-        {
-            snippetFiles.Add(file.FullName);
+            foreach (var file in dir.EnumerateFiles($"*{extension}"))
+            {
+                snippetFiles.Add((file.FullName, null));
+            }
         }
 
         foreach (var subDirectory in dir.EnumerateDirectories("*", SearchOption.AllDirectories))
         {
-            foreach (var file in subDirectory.EnumerateFiles("*.cs"))
+            foreach (var extension in fileExtensions)
             {
-                snippetFiles.Add(file.FullName);
-            }
-            foreach (var file in subDirectory.EnumerateFiles("*.vb"))
-            {
-                snippetFiles.Add(file.FullName);
+                foreach (var file in subDirectory.EnumerateFiles($"*{extension}"))
+                {
+                    snippetFiles.Add((file.FullName, null));
+                }
             }
         }
 
         return snippetFiles;
     }
+
+    /// <summary>
+    /// Adds an associated project file to each applicable snippet file in the specified list.
+    /// </summary>
+    private static void AddProjectInfo(ref List<(string, string)> snippetFiles)
+    {
+        //foreach (var snippetFile in snippetFiles)
+        for (int i = 0; i < snippetFiles.Count; i++)
+        {
+            string filePath = snippetFiles[i].Item1;
+            var fi = new FileInfo(filePath);
+
+            string projExtension = GetProjectExtension(filePath);
+
+            DirectoryInfo projectDir = GetDirectory(new DirectoryInfo(fi.DirectoryName), $"*{projExtension}");
+            if (projectDir != null)
+                snippetFiles[i] = (filePath, projectDir.FullName);
+        }
+    }
+
+    private static string GetProjectExtension(string filePath) => Path.GetExtension(filePath) switch
+    {
+        ".cs" => ".csproj",
+        ".vb" => ".vbproj",
+        ".fs" => ".fsproj",
+        ".cpp" => ".vcxproj",
+        _ => throw new ArgumentException($"Unexpected file extension.", filePath)
+    };
 
     /// <summary>
     /// Builds a list of solution files and all the (unique) project directories they reference (using full paths).
@@ -725,8 +754,10 @@ static class Program
         return solutionFiles;
     }
 
-    private static void ListOrphanedSnippets(string inputDirectory, List<string> snippetFiles,
-        List<(string, List<string>)> solutionFiles, bool deleteOrphanedSnippets)
+    private static void ListOrphanedSnippets(string inputDirectory,
+        List<(string, string)> snippetFiles,
+        List<(string, List<string>)> solutionFiles,
+        bool deleteOrphanedSnippets)
     {
         // Get all files that could possibly link to the snippet files
         var files = GetAllMarkdownFiles(inputDirectory, out DirectoryInfo rootDirectory);
@@ -741,113 +772,139 @@ static class Program
         StringBuilder output = new StringBuilder();
 
         // Keep track of which directories are referenced/unreferenced.
-        Dictionary<string, int> snippetDirectories = new Dictionary<string, int>();
+        Dictionary<string, int> projectDirectories = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
 
-        //foreach (var snippetFile in snippetFiles)
-        Parallel.ForEach(snippetFiles, snippetFile =>
+        foreach (var snippetFile in snippetFiles)
         {
-            FileInfo fi = new FileInfo(snippetFile);
+            FileInfo fi = new FileInfo(snippetFile.Item1);
             string regexSnippetFileName = fi.Name.Replace(".", "\\.");
 
             bool foundSnippetReference = false;
 
             // Check if there's a .csproj or .vbproj file in its ancestry.
-            bool partOfProject = false;
-            DirectoryInfo projectDir = GetDirectory(new DirectoryInfo(fi.DirectoryName), "*.??proj");
-            if (projectDir != null)
-                partOfProject = true;
-
-            if (!partOfProject)
+            bool isPartOfProject = false;
+            string projectPath = snippetFile.Item2;
+            if (projectPath is not null)
             {
-                foreach (FileInfo markdownFile in files)
+                // It's part of a project.
+                isPartOfProject = true;
+
+                // Add the project directory to the list of project directories.
+                // Initialize it with 0 references.
+                if (!projectDirectories.ContainsKey(projectPath))
+                    projectDirectories.Add(projectPath, 0);
+            }
+
+
+            // If we've already determined this project directory isn't orphaned,
+            // move on to the next snippet file.
+            if (projectPath is not null && projectDirectories.ContainsKey(projectPath) && (projectDirectories[projectPath] > 0))
+                continue;
+
+            // First try to find a reference to the actual snippet file.
+            foreach (FileInfo markdownFile in files)
+            {
+                // Matches the following types of snippet syntax:
+                // :::code language="csharp" source="snippets/EventCounters/MinimalEventCounterSource.cs":::
+                // [!code-csharp[Violation#1](../code-quality/codesnippet/ca1010.cs)]
+                // [!code-csharp[Violation#1](../code-quality/codesnippet/ca1010.cs#snippet1)]
+                // [!code-csharp[Hi](./code/code.cs?highlight=1,6)]
+                // [!code-csharp[FxCop.Usage#1](./code/code.cs?range=3-6)]
+
+                string regex = @"(\(|"")([^\)""\n]*\/" + regexSnippetFileName + @")(#\w*)?(\?\w*=(\d|,|-)*)?(\)|"")";
+
+                // Ignores case.
+                string fileText = File.ReadAllText(markdownFile.FullName);
+                foreach (Match match in Regex.Matches(fileText, regex, RegexOptions.IgnoreCase))
                 {
-                    // Matches the following types of snippet syntax:
-                    // :::code language="csharp" source="snippets/EventCounters/MinimalEventCounterSource.cs":::
-                    // [!code-csharp[Violation#1](../code-quality/codesnippet/ca1010.cs)]
-                    // [!code-csharp[Violation#1](../code-quality/codesnippet/ca1010.cs#snippet1)]
-                    // [!code-csharp[Hi](./code/code.cs?highlight=1,6)]
-                    // [!code-csharp[FxCop.Usage#1](./code/code.cs?range=3-6)]
-
-                    string regex = @"(\(|"")([^\)""\n]*\/" + regexSnippetFileName + @")(#\w*)?(\?\w*=(\d|,|-)*)?(\)|"")";
-
-                    // Ignores case.
-                    string fileText = File.ReadAllText(markdownFile.FullName);
-                    foreach (Match match in Regex.Matches(fileText, regex, RegexOptions.IgnoreCase))
+                    if (!(match is null) && match.Length > 0)
                     {
-                        if (!(match is null) && match.Length > 0)
+                        string relativePath = match.Groups[2].Value.Trim();
+
+                        if (relativePath != null)
                         {
-                            string relativePath = match.Groups[2].Value.Trim();
+                            string fullPath;
 
-                            if (relativePath != null)
+                            // Path could start with a tilde e.g. ~/snippets/ca1010.cs
+                            if (relativePath.StartsWith("~/"))
                             {
-                                string fullPath;
+                                fullPath = Path.Combine(rootDirectory.FullName, relativePath.TrimStart('~', '/'));
+                            }
+                            else
+                            {
+                                // Construct the full path to the referenced snippet file
+                                fullPath = Path.Combine(markdownFile.DirectoryName, relativePath);
+                            }
 
-                                // Path could start with a tilde e.g. ~/snippets/ca1010.cs
-                                if (relativePath.StartsWith("~/"))
+                            // Clean up the path.
+                            fullPath = Path.GetFullPath(fullPath);
+
+                            if (String.Equals(snippetFile.Item1, fullPath, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                // This snippet file is not orphaned.
+                                foundSnippetReference = true;
+
+                                // Mark its directory as not orphaned.
+                                if (projectPath is not null)
                                 {
-                                    fullPath = Path.Combine(rootDirectory.FullName, relativePath.TrimStart('~', '/'));
-                                }
-                                else
-                                {
-                                    // Construct the full path to the referenced snippet file
-                                    fullPath = Path.Combine(markdownFile.DirectoryName, relativePath);
+                                    if (!projectDirectories.ContainsKey(projectPath))
+                                        projectDirectories.Add(projectPath, 1);
+                                    else
+                                        projectDirectories[projectPath]++;
                                 }
 
-                                // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
-                                fullPath = Path.GetFullPath(fullPath);
-
-                                if (String.Equals(snippetFile, fullPath, StringComparison.InvariantCultureIgnoreCase))
-                                {
-                                    // This snippet file is not orphaned.
-                                    foundSnippetReference = true;
-                                    break;
-                                }
+                                break;
                             }
                         }
                     }
-
-                    if (foundSnippetReference)
-                        break;
-                    // else check the next Markdown file.
                 }
 
-                if (!foundSnippetReference)
-                {
-                    // The snippet file is orphaned (not used anywhere).
-                    countOfOrphans++;
-                    output.AppendLine(Path.GetFullPath(snippetFile));
-
-                    if (deleteOrphanedSnippets)
-                        File.Delete(snippetFile);
-                }
+                if (foundSnippetReference)
+                    break;
+                // else check the next Markdown file.
             }
-            else
+
+            if (!foundSnippetReference && !isPartOfProject)
             {
-                // The code file is part of a project.
-                // If any descendants of the project file directory
-                // are referenced, then don't delete anything in the project file directory.
+                // The snippet file is orphaned (not used anywhere).
+                countOfOrphans++;
+                output.AppendLine(Path.GetFullPath(snippetFile.Item1));
 
-                // If we've already determined this project directory is orphaned or unorphaned, move on.
-                if (snippetDirectories.ContainsKey(projectDir.FullName))
-                    return; // continue;
+                if (deleteOrphanedSnippets)
+                    File.Delete(snippetFile.Item1);
+            }
+        }
 
-                foreach (FileInfo markdownFile in files)
+        // Output info for non-project snippets.
+        Console.WriteLine($"\nFound {countOfOrphans} orphaned snippet files:\n");
+        Console.WriteLine(output.ToString());
+
+        // For any directories that still have 0 references, check if *any* files in 
+        // the directory are referenced. If not, delete the project directory.
+        foreach (var projectPath in projectDirectories.Where(kvp => kvp.Value == 0).Select(kvp => kvp.Key))
+        {
+            bool foundDirectoryReference = false;
+
+            var projectDirInfo = new DirectoryInfo(projectPath);
+
+            string[] projectDirRegexes = {
+                        @"\((([^\)\n]+?\/)?" + projectDirInfo.Name + @")\/[^\)\n]+?\)", // [!code-csharp[Vn#1](../code-quality/ca1010.cs)]
+                        @"""(([^""\n]+?\/)?" + projectDirInfo.Name + @")\/[^""\n]+?"""  // :::code language="csharp" source="snippets/CounterSource.cs":::
+                    };
+
+            foreach (FileInfo markdownFile in files)
+            {
+                string fileText = File.ReadAllText(markdownFile.FullName);
+
+                foreach (var regex in projectDirRegexes)
                 {
-                    // Matches the following types of snippet syntax:
-                    // :::code language="csharp" source="snippets/EventCounters/MinimalEventCounterSource.cs":::
-                    // [!code-csharp[Violation#1](../code-quality/codesnippet/CSharp/ca1010.cs)]
-
-                    // Search for a reference that includes the project directory name.
-                    string regex = @"(\(|"")([^\)""\n]*" + projectDir.Name + @")\/[^\)""\n]*(\)|"")";
-
                     // Loop through all the matches in the file; ignores case.
-                    string fileText = File.ReadAllText(markdownFile.FullName);
                     MatchCollection matches = Regex.Matches(fileText, regex, RegexOptions.IgnoreCase);
                     foreach (Match match in matches)
                     {
                         if (!(match is null) && match.Length > 0)
                         {
-                            string relativePath = match.Groups[2].Value.Trim();
+                            string relativePath = match.Groups[1].Value.Trim();
 
                             if (relativePath != null)
                             {
@@ -864,49 +921,38 @@ static class Program
                                     fullPath = Path.Combine(markdownFile.DirectoryName, relativePath);
                                 }
 
-                                // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
+                                // Clean up the path.
                                 fullPath = Path.GetFullPath(fullPath);
 
-                                if (String.Equals(projectDir.FullName, fullPath, StringComparison.InvariantCultureIgnoreCase))
+                                // Check if the full path for the link matches the project directory we're looking for.
+                                if (String.Equals(projectPath, fullPath, StringComparison.InvariantCultureIgnoreCase))
                                 {
-                                    // This snippet file is not orphaned.
-                                    foundSnippetReference = true;
+                                    // This directory is not orphaned.
+                                    foundDirectoryReference = true;
 
-                                    // Add the project directory to the known list of directories to keep (saves searching again).
-                                    if (!snippetDirectories.ContainsKey(projectDir.FullName))
-                                        snippetDirectories.Add(projectDir.FullName, 1);
-                                    else
-                                        snippetDirectories[projectDir.FullName]++;
+                                    // Increment the reference count.
+                                    projectDirectories[projectPath]++;
 
                                     break;
                                 }
                             }
                         }
                     }
-
-                    if (foundSnippetReference)
+                    if (foundDirectoryReference)
                         break;
-                    // else check the next Markdown file.
+                    // else check the next regex pattern.
                 }
 
-                if (!foundSnippetReference)
-                {
-                    // The snippet file and its project directory is orphaned (not used anywhere).
-                    // Set reference count to 0;
-                    if (!snippetDirectories.ContainsKey(projectDir.FullName))
-                        snippetDirectories.Add(projectDir.FullName, 0);
-                }
+                if (foundDirectoryReference)
+                    break;
+                // else check the next Markdown file.
             }
-        });
-
-        // Output info for non-project snippets.
-        Console.WriteLine($"\nFound {countOfOrphans} orphaned snippet files:\n");
-        Console.WriteLine(output.ToString());
+        }
 
         StringBuilder dirSlnOutput = new StringBuilder("The following project directories are orphaned:\n\n");
 
         // Delete orphaned directories.
-        IEnumerable<string> directoriesToDelete = snippetDirectories.Where(kvp => kvp.Value == 0).Select(kvp => kvp.Key);
+        IEnumerable<string> directoriesToDelete = projectDirectories.Where(kvp => kvp.Value == 0).Select(kvp => kvp.Key);
 
         foreach (var directory in directoriesToDelete)
         {
@@ -941,7 +987,7 @@ static class Program
 
             foreach (var projectDir in solutionFile.Item2)
             {
-                if (snippetDirectories.TryGetValue(projectDir, out int refCount))
+                if (projectDirectories.TryGetValue(projectDir, out int refCount))
                 {
                     if (refCount > 0)
                     {
