@@ -35,7 +35,7 @@ class Options
     [Option("catalog-images", Default = false, HelpText = "Map images to the markdown/YAML files that reference them.")]
     public bool CatalogImages { get; set; }
 
-    [Option("orphaned-snippets", HelpText = "Find orphaned .cs and .vb files.")]
+    [Option("orphaned-snippets", HelpText = "Find orphaned .cs, .vb, .fs, and .cpp files.")]
     public bool FindOrphanedSnippets { get; set; }
 
     [Option("orphaned-includes", HelpText = "Find orphaned INCLUDE files.")]
