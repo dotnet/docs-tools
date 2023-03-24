@@ -7,12 +7,14 @@ internal sealed class EnvironmentVariableReader
         var githubToken = CoalesceEnvVar(("ImportOptions__ApiKeys__GitHubToken", "GitHubKey"));
         var ospoKey = CoalesceEnvVar(("ImportOptions__ApiKeys__OSPOKey", "OSPOKey"));
         var questKey = CoalesceEnvVar(("ImportOptions__ApiKeys__QuestKey", "QuestKey"));
+        var oauthPrivateKey = CoalesceEnvVar(("ImportOptions__ApiKeys__SequesterPrivateKey", "SequesterPrivateKey"));
 
         return new ApiKeys()
         {
             GitHubToken = githubToken,
             OSPOKey = ospoKey,
-            QuestKey = questKey
+            QuestKey = questKey,
+            SequesterPrivateKey = oauthPrivateKey
         };
     }
 

@@ -30,11 +30,23 @@ public class EnumerateIssues
                     name
                   }
                 }
-                projectsV2 {
-                  totalCount
-                }
-                projectItems {
-                  totalCount
+                projectItems(first: 25) {
+                  ... on ProjectV2ItemConnection {
+                    nodes {
+                      ... on ProjectV2Item {
+                        fieldValueByName(name:"Size") {
+                          ... on ProjectV2ItemFieldSingleSelectValue {
+                            name
+                          }
+                        }
+                        project {
+                          ... on ProjectV2 {
+                            title
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
                 bodyHTML
                 body

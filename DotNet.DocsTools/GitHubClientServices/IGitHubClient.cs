@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using GitHubJwt;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace DotNetDocs.Tools.GitHubCommunications;
 
@@ -71,4 +73,58 @@ public interface IGitHubClient : IDisposable
     /// </remarks>
     public static IGitHubClient CreateGitHubClient(string token) => 
         new GitHubClient(token);
+
+    public static async Task<IGitHubClient> CreateGitHubAppClient(int appID, string oauthPrivateKey)
+    {
+        var privateKeySource = new PlainStringPrivateKeySource(oauthPrivateKey);
+        var generator = new GitHubJwtFactory(
+            privateKeySource,
+            new GitHubJwtFactoryOptions
+            {
+                AppIntegrationId = appID,
+                ExpirationSeconds = 8 * 60 // 600 is apparently too high
+            });
+
+        // TODO: Refactor because of additional HttpClient:
+
+        var token = generator.CreateEncodedJwtToken();
+
+        using var tokenClient = new HttpClient();
+        tokenClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        tokenClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Sequester", "1.0"));
+
+        // https://api.github.com/installation/repositories
+        using var response = await tokenClient.GetAsync("https://api.github.com/app/installations");
+
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException($"REST request failed for app installations");
+        var jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var installationId = jsonDocument.RootElement[0].GetProperty("id").GetInt32();
+
+        var tokenUrl = $"https://api.github.com/app/installations/{installationId}/access_tokens";
+        using var emptyPacket = new StringContent("");
+        using var tokenResponse = await tokenClient.PostAsync(tokenUrl, emptyPacket);
+        if (!tokenResponse.IsSuccessStatusCode)
+            throw new InvalidOperationException($"REST request failed for app installations");
+        jsonDocument = await JsonDocument.ParseAsync(await tokenResponse.Content.ReadAsStreamAsync());
+
+        var oauthToken = jsonDocument.RootElement.GetProperty("token").GetString() ??
+            throw new ArgumentNullException("oauth token not found");
+
+        return new GitHubClient(oauthToken);
+    }
+    public sealed class PlainStringPrivateKeySource : IPrivateKeySource
+    {
+        private readonly string _key;
+
+        public PlainStringPrivateKeySource(string key)
+        {
+            _key = key;
+        }
+
+        public TextReader GetPrivateKeyReader()
+        {
+            return new StringReader(_key);
+        }
+    }
 }

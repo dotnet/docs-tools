@@ -1,10 +1,14 @@
-﻿internal class Program
+﻿using DotNetDocs.Tools.GitHubCommunications;
+using Quest2GitHub.Options;
+
+internal class Program
 {
     /// <summary>
     /// Process issue updates in Azure DevOps - Quest
     /// </summary>
     /// <param name="org">The GitHub organization</param>
     /// <param name="repo">The GutHub repository names.</param>
+    /// <param name="appid">The GitHub App ID</param>
     /// <param name="issue">The issue number. If null, process all open issues.</param>
     /// <param name="questConfigPath">The config path. If null, use the config file in the root folder of the repository.</param>
     /// <param name="branch">The optional branch to use. Defaults to "main" otherwise.</param>
@@ -17,6 +21,7 @@
     private static async Task<int> Main(
         string org,
         string repo,
+        int? appid = null,
         int? issue = null,
         int? duration = 5,
         string? questConfigPath = null,
@@ -55,18 +60,12 @@
                     $"Unable to load Quest import configuration options.");
             }
 
+            // TODO: Read from config file
+            importOptions.AppId = appid ?? 0;
+
             bool singleIssue = (issue is not null && issue.Value != -1);
 
-            using var serviceWorker = new QuestGitHubService(
-                importOptions.ApiKeys!.GitHubToken,
-                importOptions.ApiKeys.OSPOKey,
-                importOptions.ApiKeys.QuestKey,
-                importOptions.AzureDevOps.Org,
-                importOptions.AzureDevOps.Project,
-                importOptions.AzureDevOps.AreaPath,
-                importOptions.ImportTriggerLabel,
-                importOptions.ImportedLabel,
-                !singleIssue);
+            using var serviceWorker = await CreateService(importOptions, !singleIssue);
 
             if (singleIssue)
             {
@@ -84,7 +83,26 @@
             Console.Error.WriteLine(ex.ToString());
             return 1;
         }
-
         return 0;
+    }
+
+    private static async Task<QuestGitHubService> CreateService(ImportOptions options, bool bulkImport)
+    {
+        ArgumentNullException.ThrowIfNull(options.ApiKeys, nameof(options));
+
+        IGitHubClient gitHubClient = (options.AppId != 0) 
+            ? await IGitHubClient.CreateGitHubAppClient(options.AppId, options.ApiKeys.SequesterPrivateKey)
+            : IGitHubClient.CreateGitHubClient(options.ApiKeys.GitHubToken);
+
+        return new QuestGitHubService(
+                gitHubClient,
+                options.ApiKeys.OSPOKey,
+                options.ApiKeys.QuestKey,
+                options.AzureDevOps.Org,
+                options.AzureDevOps.Project,
+                options.AzureDevOps.AreaPath,
+                options.ImportTriggerLabel,
+                options.ImportedLabel,
+                !bulkImport);
     }
 }

@@ -111,6 +111,7 @@ public static class ImportOptionsExtensions
             {
                 ApiKeys = new()
                 {
+                    SequesterPrivateKey = "",
                     GitHubToken = "",
                     OSPOKey = "",
                     QuestKey = ""

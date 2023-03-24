@@ -13,6 +13,7 @@
   </ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="GitHubJwt" Version="0.0.5" />
 		<PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
 		<PackageReference Include="Polly.Extensions.Http" Version="3.0.0" />
 	</ItemGroup>

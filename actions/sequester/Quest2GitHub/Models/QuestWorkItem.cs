@@ -160,6 +160,14 @@ public class QuestWorkItem
                 Value = "Closed",
             });
         }
+
+        // Size mapping:
+
+        // "Tiny" => 1
+        // "small" => 3
+        // "Medium" => 5
+        // "Large" => 8
+        // "X-Large" => 13
         JsonElement result = default;
         try
         {
