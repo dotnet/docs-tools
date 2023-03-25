@@ -8,7 +8,6 @@ internal class Program
     /// </summary>
     /// <param name="org">The GitHub organization</param>
     /// <param name="repo">The GutHub repository names.</param>
-    /// <param name="appid">The GitHub App ID</param>
     /// <param name="issue">The issue number. If null, process all open issues.</param>
     /// <param name="questConfigPath">The config path. If null, use the config file in the root folder of the repository.</param>
     /// <param name="branch">The optional branch to use. Defaults to "main" otherwise.</param>
@@ -21,7 +20,6 @@ internal class Program
     private static async Task<int> Main(
         string org,
         string repo,
-        int? appid = null,
         int? issue = null,
         int? duration = 5,
         string? questConfigPath = null,
@@ -60,9 +58,6 @@ internal class Program
                     $"Unable to load Quest import configuration options.");
             }
 
-            // TODO: Read from config file
-            importOptions.AppId = appid ?? 0;
-
             bool singleIssue = (issue is not null && issue.Value != -1);
 
             using var serviceWorker = await CreateService(importOptions, !singleIssue);
@@ -90,8 +85,8 @@ internal class Program
     {
         ArgumentNullException.ThrowIfNull(options.ApiKeys, nameof(options));
 
-        IGitHubClient gitHubClient = (options.AppId != 0) 
-            ? await IGitHubClient.CreateGitHubAppClient(options.AppId, options.ApiKeys.SequesterPrivateKey)
+        IGitHubClient gitHubClient = (options.ApiKeys.SequesterAppID != 0) 
+            ? await IGitHubClient.CreateGitHubAppClient(options.ApiKeys.SequesterAppID, options.ApiKeys.SequesterPrivateKey)
             : IGitHubClient.CreateGitHubClient(options.ApiKeys.GitHubToken);
 
         return new QuestGitHubService(

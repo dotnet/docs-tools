@@ -1,7 +1,4 @@
-﻿using Quest2GitHub.AzureDevOpsCommunications;
-using System.IO;
-
-namespace Quest2GitHub.Models;
+﻿namespace Quest2GitHub.Models;
 
 public class QuestWorkItem
 {

@@ -114,7 +114,8 @@ public static class ImportOptionsExtensions
                     SequesterPrivateKey = "",
                     GitHubToken = "",
                     OSPOKey = "",
-                    QuestKey = ""
+                    QuestKey = "",
+                    SequesterAppID = 0
                 }
             };
         }

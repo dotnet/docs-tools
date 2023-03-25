@@ -42,9 +42,4 @@ public sealed record class ImportOptions
     /// <a href="https://github.com/ikatyang/emoji-cheat-sheet"></a>
     /// </remarks>
     public required string ImportedLabel { get; init; } = ":pushpin: seQUESTered";
-
-    /// <summary>
-    /// The GitHub APP id for use as a GitHub ap
-    /// </summary>
-    public int AppId { get; set; } = 0;
 }
