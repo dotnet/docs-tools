@@ -297,6 +297,8 @@ public class QuestGitHubService : IDisposable
                 Value = ghIssue.IsOpen ? "Active" : "Closed",
             });
 
+            // TODO: Update to the latest iteration in the GH issue.
+            // TODO: Update the size from the configured size in the GH issue and the latest iteration.
             // Update to the current sprint when an item is closed, or reopened:
             patchDocument.Add(new JsonPatchDocument
             {

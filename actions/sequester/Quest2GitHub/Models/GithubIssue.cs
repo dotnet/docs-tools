@@ -220,14 +220,20 @@ public class GithubIssue
         {
             foreach (var projectItem in issueNode.Descendent("projectItems", "nodes").EnumerateArray())
             {
-                var projectTitle = projectItem.Descendent("project", "title").GetString();
-                // size may or may not have been set yet:
-                var sizeNode = projectItem.Descendent("fieldValueByName", "name");
-
-                var size = (sizeNode.ValueKind is JsonValueKind.String) ? sizeNode.GetString() : null;
-                if ((projectTitle is not null) && (size is not null))
+                if (projectItem.ValueKind == JsonValueKind.Object)
                 {
-                    storyPoints.Add(new StoryPointSize(projectTitle, size));
+                    // TODO: MAUI uses one sprint project per year, with a field for the month.
+                    // Modify the code to store the optional month in the tuple field.
+                    // Consider: Store YYYY, Month, Size as a threeple.
+                    var projectTitle = projectItem.Descendent("project", "title").GetString();
+                    // size may or may not have been set yet:
+                    var sizeNode = projectItem.Descendent("fieldValueByName", "name");
+
+                    var size = (sizeNode.ValueKind is JsonValueKind.String) ? sizeNode.GetString() : null;
+                    if ((projectTitle is not null) && (size is not null))
+                    {
+                        storyPoints.Add(new StoryPointSize(projectTitle, size));
+                    }
                 }
             }
         }

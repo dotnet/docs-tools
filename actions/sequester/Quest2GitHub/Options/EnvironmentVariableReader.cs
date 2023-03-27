@@ -7,9 +7,10 @@ internal sealed class EnvironmentVariableReader
         var githubToken = CoalesceEnvVar(("ImportOptions__ApiKeys__GitHubToken", "GitHubKey"));
         var ospoKey = CoalesceEnvVar(("ImportOptions__ApiKeys__OSPOKey", "OSPOKey"));
         var questKey = CoalesceEnvVar(("ImportOptions__ApiKeys__QuestKey", "QuestKey"));
-        var oauthPrivateKey = CoalesceEnvVar(("ImportOptions__ApiKeys__SequesterPrivateKey", "SequesterPrivateKey"));
-
-        var appIDString = CoalesceEnvVar(("ImportOptions__ApiKeys__SequesterAppID", "SequesterAppID"));
+        // These keys are used when the app is run as an org enabled action. They are optional. 
+        // If missing, the action runs using repo-only rights.
+        var oauthPrivateKey = CoalesceEnvVar(("ImportOptions__ApiKeys__SequesterPrivateKey", "SequesterPrivateKey"), false);
+        var appIDString = CoalesceEnvVar(("ImportOptions__ApiKeys__SequesterAppID", "SequesterAppID"), false);
         if (!int.TryParse(appIDString, out int appID)) appID = 0;
 
         return new ApiKeys()
@@ -22,7 +23,7 @@ internal sealed class EnvironmentVariableReader
         };
     }
 
-    static string CoalesceEnvVar((string preferredKey, string fallbackKey) keys)
+    static string CoalesceEnvVar((string preferredKey, string fallbackKey) keys, bool required = true)
     {
         var (preferredKey, fallbackKey) = keys;
 
@@ -30,7 +31,7 @@ internal sealed class EnvironmentVariableReader
         if (string.IsNullOrWhiteSpace(value))
         {
             value = Environment.GetEnvironmentVariable(fallbackKey);
-            if (string.IsNullOrWhiteSpace(value))
+            if (string.IsNullOrWhiteSpace(value) && required)
             {
                 throw new Exception(
                     $"Missing env var, checked for both: {preferredKey} and {fallbackKey}.");
