@@ -13,7 +13,7 @@ public abstract class GitHubClientBase : IGitHubClient, IDisposable
     private const string ProductVersion = "2.0";
     private const string RESTendpoint = "https://api.github.com/repos";
     private static readonly Uri graphQLUri = new("https://api.github.com/graphql");
-    private readonly HttpClient _client = new HttpClient();
+    private readonly HttpClient _client = new();
     private readonly AsyncRetryPolicy _retryPolicy;
    
     internal GitHubClientBase()
