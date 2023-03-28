@@ -10,6 +10,7 @@ internal class GitHubAppClient : GitHubClientBase, IGitHubClient, IDisposable
     private readonly string _oauthPrivateKey;
 
     private Task regenerateTask = default!;
+    private CancellationTokenSource? _tokenSource;
 
     public sealed class PlainStringPrivateKeySource : IPrivateKeySource
     {
@@ -45,12 +46,24 @@ internal class GitHubAppClient : GitHubClientBase, IGitHubClient, IDisposable
 
         timeout = timeout - TimeSpan.FromMinutes(5);
         // Don't await. Fire and store:
-        regenerateTask = RegenerateTokenAfter(timeout);
+        _tokenSource = new CancellationTokenSource();
+        CancellationToken ct = _tokenSource.Token;
+        regenerateTask = RegenerateTokenAfter(timeout, ct);
     }
 
-    private async Task RegenerateTokenAfter(TimeSpan duration)
+    private async Task RegenerateTokenAfter(TimeSpan duration, CancellationToken token)
     {
         await Task.Delay(duration);
+        if (token.IsCancellationRequested)
+        {
+            return;
+        }
         await GenerateTokenAsync();
+    }
+
+    public override void Dispose()
+    {
+        _tokenSource?.Cancel();
+        base.Dispose();
     }
 }

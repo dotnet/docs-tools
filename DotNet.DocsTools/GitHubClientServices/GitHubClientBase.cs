@@ -94,5 +94,5 @@ public abstract class GitHubClientBase : IGitHubClient, IDisposable
         return jsonDocument;
     }
 
-    public void Dispose() => _client?.Dispose();
+    public virtual void Dispose() => _client?.Dispose();
 }

@@ -1,4 +1,7 @@
-﻿namespace Quest2GitHub.Models;
+﻿using Org.BouncyCastle.Asn1.Mozilla;
+using System.Xml.Linq;
+
+namespace Quest2GitHub.Models;
 
 /// <summary>
 /// Simple record type for a GitHub label
@@ -35,6 +38,17 @@ public class GithubIssue
             login
             ... on User {
               name
+            }
+          }
+          timelineItems(last: 5) {
+            nodes {
+              ... on ClosedEvent {
+                closer {
+                  ... on PullRequest {
+                    url
+                  }
+                }
+              }
             }
           }
           projectItems(first: 25) {
@@ -151,7 +165,15 @@ public class GithubIssue
 
     public required DateTime UpdatedAt { get; init; }
 
+    /// <summary>
+    /// Pairs of Project name, story point size values
+    /// </summary>
     public required IEnumerable<StoryPointSize> ProjectStoryPoints { get; init; }
+
+    /// <summary>
+    /// The Closing PR (if the issue is closed)
+    /// </summary>
+    public required string? ClosingPRUrl { get; init; }
 
     /// <summary>
     /// Retrieve an issue
@@ -237,6 +259,13 @@ public class GithubIssue
                 }
             }
         }
+        var closedEvent = issueNode.Descendent("timelineItems", "nodes").EnumerateArray()
+            .FirstOrDefault(t =>
+            (t.TryGetProperty("closer", out var closer) &&
+            closer.ValueKind == JsonValueKind.Object));
+        string? closingPR = (closedEvent.ValueKind == JsonValueKind.Object) 
+            ? closedEvent.Descendent("closer", "url").GetString() 
+            : default;
 
         return new GithubIssue
         {
@@ -256,7 +285,8 @@ public class GithubIssue
             Labels = labels.ToArray(),
             Comments = comments.ToArray(),
             UpdatedAt = udpateTime,
-            ProjectStoryPoints = storyPoints
+            ProjectStoryPoints = storyPoints,
+            ClosingPRUrl = closingPR,
         };
     }
 
