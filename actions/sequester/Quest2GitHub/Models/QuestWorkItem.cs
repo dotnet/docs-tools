@@ -57,7 +57,7 @@ public class QuestWorkItem
     /// <remarks>
     /// This is retrieved from /Microsoft.VSTS.Scheduling.StoryPoints
     /// </remarks>
-    public required int StoryPoints { get; init; }
+    public required int? StoryPoints { get; init; }
     
     /// <summary>
     /// Create a work item object from the ID
@@ -246,7 +246,8 @@ public class QuestWorkItem
         var areaPath = fields.GetProperty("System.AreaPath").GetString()!;
         var iterationPath = fields.GetProperty("System.IterationPath").GetString();
         var assignedNode = fields.Descendent("System.AssignedTo", "id");
-        var storyPoints = fields.GetProperty("Microsoft.VSTS.Scheduling.StoryPoints").GetDouble();
+        int? storyPoints = fields.TryGetProperty("Microsoft.VSTS.Scheduling.StoryPoints", out var storyPointNode) ?
+            (int)double.Truncate(storyPointNode.GetDouble()) : null;
         var assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
             assignedNode.GetString() : null;
         return new QuestWorkItem
@@ -258,7 +259,7 @@ public class QuestWorkItem
             AreaPath = areaPath,
             IterationPath = iterationPath,
             AssignedToId = (assignedID is not null) ? new Guid(assignedID) : null,
-            StoryPoints = (int)double.Truncate(storyPoints)
+            StoryPoints = storyPoints
         };
     }
 
