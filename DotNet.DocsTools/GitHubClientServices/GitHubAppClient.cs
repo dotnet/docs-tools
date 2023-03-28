@@ -12,15 +12,6 @@ internal class GitHubAppClient : GitHubClientBase, IGitHubClient, IDisposable
     private Task regenerateTask = default!;
     private CancellationTokenSource? _tokenSource;
 
-    public sealed class PlainStringPrivateKeySource : IPrivateKeySource
-    {
-        private readonly string _key;
-
-        public PlainStringPrivateKeySource(string key) => _key = key;
-
-        public TextReader GetPrivateKeyReader() => new StringReader(_key);
-    }
-
     internal GitHubAppClient(int appID, string oauthPrivateKey) =>
         (_appID, _oauthPrivateKey) = (appID, oauthPrivateKey);
 
@@ -67,3 +58,14 @@ internal class GitHubAppClient : GitHubClientBase, IGitHubClient, IDisposable
         base.Dispose();
     }
 }
+
+file sealed class PlainStringPrivateKeySource : IPrivateKeySource
+{
+    private readonly string _key;
+
+    public PlainStringPrivateKeySource(string key) => _key = key;
+
+    public TextReader GetPrivateKeyReader() => new StringReader(_key);
+}
+
+

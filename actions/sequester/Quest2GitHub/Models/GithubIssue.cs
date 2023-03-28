@@ -259,11 +259,13 @@ public class GithubIssue
                 }
             }
         }
+        // Timeline events are in order, so the last PR is the most recent closing PR
         var closedEvent = issueNode.Descendent("timelineItems", "nodes").EnumerateArray()
-            .FirstOrDefault(t =>
+            .LastOrDefault(t =>
             (t.TryGetProperty("closer", out var closer) &&
             closer.ValueKind == JsonValueKind.Object));
-        string? closingPR = (closedEvent.ValueKind == JsonValueKind.Object) 
+        // check state. If re-opened, don't reference the (not correct) closing PR
+        string? closingPR = ((closedEvent.ValueKind == JsonValueKind.Object) && !isOpen ) 
             ? closedEvent.Descendent("closer", "url").GetString() 
             : default;
 
