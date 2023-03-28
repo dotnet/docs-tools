@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using DotNet.DocsTools.GitHubClientServices;
+using System.Text.Json;
 
 namespace DotNetDocs.Tools.GitHubCommunications;
 
@@ -25,18 +26,6 @@ public interface IGitHubClient : IDisposable
     Task<JsonElement> PostGraphQLRequestAsync(GraphQLPacket queryText);
 
     /// <summary>
-    /// Send markdown to convert to HTML
-    /// </summary>
-    /// <param name="markdownText">The text to convert to HTML</param>
-    /// <returns>The HTML content, as a string</returns>
-    /// <remarks>
-    /// This method posts a request to the GitHub markdown
-    /// endpoint, requesting to convert from markdown to HTML.
-    /// If the request succeeds, the respons is the HTML text.
-    /// </remarks>
-    //Task<string> PostMarkdownRESTRequestAsync(string markdownText);
-
-    /// <summary>
     /// Execute a GET request to the REST repository endpoint.
     /// </summary>
     /// <param name="restPath">The remaining folder paths of the request.</param>
@@ -47,17 +36,6 @@ public interface IGitHubClient : IDisposable
     /// JSONdocument.
     /// </remarks>
     Task<JsonDocument> GetReposRESTRequestAsync(params string[] restPath);
-
-    /// <summary>
-    /// Retrieve the content from a (usually raw) URL.
-    /// </summary>
-    /// <param name="link">The URL to retrieve.</param>
-    /// <returns>An async enumerable for each line in the content at the URL.</returns>
-    /// <remarks>
-    /// This isn't GitHub API specific, but was moved into this class to reuse
-    /// the same HttpClient instance.
-    /// </remarks>
-    //IAsyncEnumerable<string> GetContentAsync(string link);
 
     /// <summary>
     /// Create a default GitHub client.
@@ -71,4 +49,18 @@ public interface IGitHubClient : IDisposable
     /// </remarks>
     public static IGitHubClient CreateGitHubClient(string token) => 
         new GitHubClient(token);
+
+    /// <summary>
+    /// Create a GitHub app authorized GitHub client.
+    /// </summary>
+    /// <param name="appID">The GitHub app ID</param>
+    /// <param name="oauthPrivateKey">The private key for the GitHub app oauth</param>
+    /// <returns>The GitHub client.</returns>
+    public static async Task<IGitHubClient> CreateGitHubAppClient(int appID, string oauthPrivateKey)
+    {
+        var client = new GitHubAppClient(appID, oauthPrivateKey);
+        await client.GenerateTokenAsync();
+
+        return client;
+    }
 }

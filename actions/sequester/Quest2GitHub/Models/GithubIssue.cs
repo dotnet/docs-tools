@@ -1,4 +1,7 @@
-﻿namespace Quest2GitHub.Models;
+﻿using Org.BouncyCastle.Asn1.Mozilla;
+using System.Xml.Linq;
+
+namespace Quest2GitHub.Models;
 
 /// <summary>
 /// Simple record type for a GitHub label
@@ -6,6 +9,13 @@
 /// <param name="name">The text of the label</param>
 /// <param name="nodeID">the unique node ID for this label</param>
 public record GitHubLabel(string name, string nodeID);
+
+/// <summary>
+/// Record type to store a project name / story point size pair
+/// </summary>
+/// <param name="ProjectName">The name of the GitHub org project</param>
+/// <param name="Size">The value of the "size" special field</param>
+public record StoryPointSize(string ProjectName, string Size);
 
 /// <summary>
 /// Model for a GitHub issue
@@ -30,11 +40,34 @@ public class GithubIssue
               name
             }
           }
-          projectsV2 {
-            totalCount
+          timelineItems(last: 5) {
+            nodes {
+              ... on ClosedEvent {
+                closer {
+                  ... on PullRequest {
+                    url
+                  }
+                }
+              }
+            }
           }
-          projectItems {
-            totalCount
+          projectItems(first: 25) {
+            ... on ProjectV2ItemConnection {
+              nodes {
+                ... on ProjectV2Item {
+                  fieldValueByName(name:"Size") {
+                    ... on ProjectV2ItemFieldSingleSelectValue {
+                      name
+                    }
+                  }
+                  project {
+                    ... on ProjectV2 {
+                      title
+                    }
+                  }
+                }
+              }
+            }
           }
           bodyHTML
           body
@@ -130,16 +163,17 @@ public class GithubIssue
     /// </remarks>
     public required string LinkText { get; init; }
 
-    /// <summary>
-    /// Has this issue been added to a project?
-    /// </summary>
-    /// <remarks>
-    /// This includes closed projects. At this point
-    /// I haven't found an API to find only open projects.
-    /// </remarks>
-    public required bool InProjects { get; init; }
-
     public required DateTime UpdatedAt { get; init; }
+
+    /// <summary>
+    /// Pairs of Project name, story point size values
+    /// </summary>
+    public required IEnumerable<StoryPointSize> ProjectStoryPoints { get; init; }
+
+    /// <summary>
+    /// The Closing PR (if the issue is closed)
+    /// </summary>
+    public required string? ClosingPRUrl { get; init; }
 
     /// <summary>
     /// Retrieve an issue
@@ -151,7 +185,6 @@ public class GithubIssue
     /// <returns>That task that will produce the issue
     /// when the task is completed.
     /// </returns>
-
     public static async Task<GithubIssue> QueryIssue(IGitHubClient client, 
         string ghOrganization, string ghRepository, int ghIssueNumber)
     {
@@ -189,8 +222,6 @@ public class GithubIssue
         bool isOpen = issueNode.Descendent("state").GetString() is "OPEN";
         var bodyText = issueNode.Descendent("bodyHTML").GetString();
         var bodyMarkdown = issueNode.Descendent("body").GetString();
-        var numberProjects = issueNode.Descendent("projectsV2", "totalCount").GetInt32() +
-            issueNode.Descendent("projectItems", "totalCount").GetInt32();
         DateTime udpateTime = issueNode.TryGetProperty("updatedAt"u8, out var updated) ? updated.GetDateTime() : DateTime.Now;
 
         var assignees = from item in issueNode.Descendent("assignees").GetProperty("nodes").EnumerateArray()
@@ -204,6 +235,39 @@ public class GithubIssue
                             element.GetString()! : "Ghost",
                          item.GetProperty("bodyHTML").GetString()
                        );
+
+        var projectData = issueNode.Descendent("projectItems", "nodes");
+        var storyPoints = new List<StoryPointSize>();
+        if (projectData.ValueKind is JsonValueKind.Array)
+        {
+            foreach (var projectItem in issueNode.Descendent("projectItems", "nodes").EnumerateArray())
+            {
+                if (projectItem.ValueKind == JsonValueKind.Object)
+                {
+                    // TODO: MAUI uses one sprint project per year, with a field for the month.
+                    // Modify the code to store the optional month in the tuple field.
+                    // Consider: Store YYYY, Month, Size as a threeple.
+                    var projectTitle = projectItem.Descendent("project", "title").GetString();
+                    // size may or may not have been set yet:
+                    var sizeNode = projectItem.Descendent("fieldValueByName", "name");
+
+                    var size = (sizeNode.ValueKind is JsonValueKind.String) ? sizeNode.GetString() : null;
+                    if ((projectTitle is not null) && (size is not null))
+                    {
+                        storyPoints.Add(new StoryPointSize(projectTitle, size));
+                    }
+                }
+            }
+        }
+        // Timeline events are in order, so the last PR is the most recent closing PR
+        var closedEvent = issueNode.Descendent("timelineItems", "nodes").EnumerateArray()
+            .LastOrDefault(t =>
+            (t.TryGetProperty("closer", out var closer) &&
+            closer.ValueKind == JsonValueKind.Object));
+        // check state. If re-opened, don't reference the (not correct) closing PR
+        string? closingPR = ((closedEvent.ValueKind == JsonValueKind.Object) && !isOpen ) 
+            ? closedEvent.Descendent("closer", "url").GetString() 
+            : default;
 
         return new GithubIssue
         {
@@ -222,8 +286,9 @@ public class GithubIssue
             Assignees = assignees.ToArray(),
             Labels = labels.ToArray(),
             Comments = comments.ToArray(),
-            InProjects = numberProjects > 0,
             UpdatedAt = udpateTime,
+            ProjectStoryPoints = storyPoints,
+            ClosingPRUrl = closingPR,
         };
     }
 
@@ -260,10 +325,10 @@ public class GithubIssue
         return $$"""
         Issue Number: {{IssueNumber}} - {{Title}}
         {{BodyHtml}}
-        Added to a project: {{InProjects}}
         Open: {{IsOpen}}
         Assignees: {{String.Join(", ", Assignees)}}
         Labels: {{String.Join(", ", Labels.Select(l => l.name))}}
+        Sizes: {{String.Join("\n", from sp in ProjectStoryPoints select $"Project: {sp.ProjectName},  Size: {sp.Size}")}}
         Comments:
         {{String.Join("\n\n", from c in Comments select $"Author: {c.author}\nText:\n{c.bodyHTML}")}}
         """;

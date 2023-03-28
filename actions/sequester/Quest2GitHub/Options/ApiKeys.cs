@@ -47,4 +47,28 @@ public sealed record class ApiKeys
     /// </code>
     /// </remarks>
     public required string QuestKey { get; init; }
+
+    /// <summary>
+    /// The OAuth Private key to authenticate this app
+    /// </summary>
+    /// <remarks>
+    /// Assign this from an environment variable with the following key, <c>ImportOptions__ApiKeys__SequesterPrivateKey</c>:
+    /// <code>
+    /// env:
+    ///   ImportOptions__ApiKeys__SequesterPrivateKey: ${{ secrets.SEQUESTER_PRIVATEKEY }}
+    /// </code>
+    /// </remarks>
+    public required string SequesterPrivateKey { get; init; }
+
+    /// <summary>
+    /// The Sequester GitHub App ID
+    /// </summary>
+    /// <remarks>
+    /// Assign this from an environment variable with the following key, <c>ImportOptions__ApiKeys__SequesterAppID</c>:
+    /// <code>
+    /// env:
+    ///   ImportOptions__ApiKeys__SequesterAppID: ${{ secrets.SEQUESTER_APPID }}
+    /// </code>
+    /// </remarks>
+    public required int SequesterAppID { get; init; }
 }

@@ -1,4 +1,7 @@
-﻿internal class Program
+﻿using DotNetDocs.Tools.GitHubCommunications;
+using Quest2GitHub.Options;
+
+internal class Program
 {
     /// <summary>
     /// Process issue updates in Azure DevOps - Quest
@@ -57,16 +60,7 @@
 
             bool singleIssue = (issue is not null && issue.Value != -1);
 
-            using var serviceWorker = new QuestGitHubService(
-                importOptions.ApiKeys!.GitHubToken,
-                importOptions.ApiKeys.OSPOKey,
-                importOptions.ApiKeys.QuestKey,
-                importOptions.AzureDevOps.Org,
-                importOptions.AzureDevOps.Project,
-                importOptions.AzureDevOps.AreaPath,
-                importOptions.ImportTriggerLabel,
-                importOptions.ImportedLabel,
-                !singleIssue);
+            using var serviceWorker = await CreateService(importOptions, !singleIssue);
 
             if (singleIssue)
             {
@@ -84,7 +78,26 @@
             Console.Error.WriteLine(ex.ToString());
             return 1;
         }
-
         return 0;
+    }
+
+    private static async Task<QuestGitHubService> CreateService(ImportOptions options, bool bulkImport)
+    {
+        ArgumentNullException.ThrowIfNull(options.ApiKeys, nameof(options));
+
+        IGitHubClient gitHubClient = (options.ApiKeys.SequesterAppID != 0) 
+            ? await IGitHubClient.CreateGitHubAppClient(options.ApiKeys.SequesterAppID, options.ApiKeys.SequesterPrivateKey)
+            : IGitHubClient.CreateGitHubClient(options.ApiKeys.GitHubToken);
+
+        return new QuestGitHubService(
+                gitHubClient,
+                options.ApiKeys.OSPOKey,
+                options.ApiKeys.QuestKey,
+                options.AzureDevOps.Org,
+                options.AzureDevOps.Project,
+                options.AzureDevOps.AreaPath,
+                options.ImportTriggerLabel,
+                options.ImportedLabel,
+                !bulkImport);
     }
 }

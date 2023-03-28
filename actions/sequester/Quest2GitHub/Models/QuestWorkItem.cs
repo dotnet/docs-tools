@@ -1,7 +1,4 @@
-﻿using Quest2GitHub.AzureDevOpsCommunications;
-using System.IO;
-
-namespace Quest2GitHub.Models;
+﻿namespace Quest2GitHub.Models;
 
 public class QuestWorkItem
 {
@@ -53,6 +50,14 @@ public class QuestWorkItem
     /// This is retrieved as /fields/System.State
     /// </remarks>
     public required string? State { get; init; }
+
+    /// <summary>
+    /// The story point value.
+    /// </summary>
+    /// <remarks>
+    /// This is retrieved from /Microsoft.VSTS.Scheduling.StoryPoints
+    /// </remarks>
+    public required int StoryPoints { get; init; }
     
     /// <summary>
     /// Create a work item object from the ID
@@ -160,6 +165,22 @@ public class QuestWorkItem
                 Value = "Closed",
             });
         }
+
+        // Size mapping:
+
+        // "Tiny" => 1
+        // "small" => 3
+        // "Medium" => 5
+        // "Large" => 8
+        // "X-Large" => 13
+
+        // TODO:  
+        // 1. Read the project / size pairs. 
+        // 2. Find the *latest* sprint project.
+        // 3. Set the iteration to the latest sprint.
+        // 4. Set the size based on the size field.
+        // 5. Change the iteration code above to use the latest iteration
+        // for the issue.
         JsonElement result = default;
         try
         {
@@ -225,6 +246,7 @@ public class QuestWorkItem
         var areaPath = fields.GetProperty("System.AreaPath").GetString()!;
         var iterationPath = fields.GetProperty("System.IterationPath").GetString();
         var assignedNode = fields.Descendent("System.AssignedTo", "id");
+        var storyPoints = fields.GetProperty("Microsoft.VSTS.Scheduling.StoryPoints").GetDouble();
         var assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
             assignedNode.GetString() : null;
         return new QuestWorkItem
@@ -235,7 +257,8 @@ public class QuestWorkItem
             Description = description,
             AreaPath = areaPath,
             IterationPath = iterationPath,
-            AssignedToId = (assignedID is not null) ? new Guid(assignedID) : null
+            AssignedToId = (assignedID is not null) ? new Guid(assignedID) : null,
+            StoryPoints = (int)double.Truncate(storyPoints)
         };
     }
 

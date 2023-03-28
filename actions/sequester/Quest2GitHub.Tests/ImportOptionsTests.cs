@@ -107,7 +107,7 @@ public class ImportOptionsTests
         {
             ApiKeys = new()
             {
-                GitHubToken = "", OSPOKey = " ", QuestKey = " "
+                GitHubToken = "", OSPOKey = " ", QuestKey = " ", SequesterPrivateKey = " ", SequesterAppID = 0
             }
         };
 

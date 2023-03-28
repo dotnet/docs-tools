@@ -26,7 +26,7 @@ public class QuestGitHubService : IDisposable
     /// <summary>
     /// Initialize the service.
     /// </summary>
-    /// <param name="ghKey">GitHub personal access token</param>
+    /// <param name="client">GitHub client</param>
     /// <param name="ospoKey">MS Open Source Programs Office personal access token</param>
     /// <param name="azdoKey">Azure Dev Ops personal access token</param>
     /// <param name="questOrg">The Azure Dev ops organization</param>
@@ -35,8 +35,12 @@ public class QuestGitHubService : IDisposable
     /// <param name="importTriggerLabel">The text of the label that triggers an import</param>
     /// <param name="importedLabel">The text of the label that indicates an issue has been imported</param>
     /// <param name="bulkImport">True if this run is doing a bulk import.</param>
+    /// <remarks>
+    /// The OAuth token takes precendence over the github token, if both are 
+    /// present.
+    /// </remarks>
     public QuestGitHubService(
-        string ghKey,
+        IGitHubClient client,
         string ospoKey,
         string azdoKey,
         string questOrg,
@@ -46,7 +50,7 @@ public class QuestGitHubService : IDisposable
         string importedLabel,
         bool bulkImport)
     {
-        _ghClient = IGitHubClient.CreateGitHubClient(ghKey);
+        _ghClient = client;
         _ospoClient = new OspoClient(ospoKey, bulkImport);
         _azdoClient = new QuestClient(azdoKey, questOrg, questProject);
         _areaPath = areaPath;
@@ -88,7 +92,8 @@ public class QuestGitHubService : IDisposable
 
             if (item.Labels.Any(l => (l.nodeID == _importTriggerLabel?.nodeID) || (l.nodeID == _importedLabel?.nodeID)))
             {
-                Console.WriteLine($"{item.IssueNumber}: {item.Title}");
+                // Console.WriteLine($"{item.IssueNumber}: {item.Title}");
+                Console.WriteLine(item);
                 var questItem = await FindLinkedWorkItem(item);
                 if (dryRun is false)
                 {
@@ -292,6 +297,8 @@ public class QuestGitHubService : IDisposable
                 Value = ghIssue.IsOpen ? "Active" : "Closed",
             });
 
+            // TODO: Update to the latest iteration in the GH issue.
+            // TODO: Update the size from the configured size in the GH issue and the latest iteration.
             // Update to the current sprint when an item is closed, or reopened:
             patchDocument.Add(new JsonPatchDocument
             {
