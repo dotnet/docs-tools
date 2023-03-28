@@ -81,7 +81,7 @@ public abstract class GitHubClientBase : IGitHubClient, IDisposable
     {
         var url = RESTendpoint;
         foreach (var component in restPath)
-            url += "/" + component;
+            url += %"/{component}";
         // Default single page result is 30, specify max items per page (100)
         url += "?per_page=100";
         var result = await _retryPolicy.ExecuteAndCaptureAsync(
