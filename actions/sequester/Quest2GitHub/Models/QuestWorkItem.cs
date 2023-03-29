@@ -91,7 +91,8 @@ public class QuestWorkItem
         OspoClient ospoClient,
         string path,
         string? requestLabelNodeId,
-        QuestIteration currentIteration)
+        QuestIteration currentIteration,
+        IEnumerable<QuestIteration> allIterations)
     {
         var areaPath = $"""{questClient.QuestProject}\{path}""";
 
@@ -136,12 +137,35 @@ public class QuestWorkItem
             Value = assigneeID
         };
         patchDocument.Add(assignPatch);
-        patchDocument.Add(new JsonPatchDocument
+        var iterationSize = issue.LatestStoryPointSize();
+        var iteration = iterationSize?.ProjectIteration(allIterations);
+        if (iteration is not null)
         {
-            Operation = Op.Add,
-            Path = "/fields/System.IterationPath",
-            Value = currentIteration.Path,
-        });
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.IterationPath",
+                Value = iteration.Path,
+            });
+        }
+        else
+        { // default to the current iteration:
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.IterationPath",
+                Value = currentIteration.Path,
+            });
+        }
+        if (iterationSize?.QuestStoryPoint() is not null)
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
+                Value = iterationSize.QuestStoryPoint(),
+            });
+        }
 
         /* This is ignored by Azure DevOps. It uses the PAT of the 
          * account running the code.
@@ -164,23 +188,21 @@ public class QuestWorkItem
                 Path = "/fields/System.State",
                 Value = "Closed",
             });
+
+            if (issue.ClosingPRUrl is not null)
+            {
+                patchDocument.Add(new JsonPatchDocument
+                {
+                    Operation = Op.Add,
+                    Path = "/relations/-",
+                    Value = new Relation
+                    {
+                        Url = issue.ClosingPRUrl,
+                        Attributes = { ["name"] = "pull request" }
+                    }
+                }); ;
+            }
         }
-
-        // Size mapping:
-
-        // "Tiny" => 1
-        // "small" => 3
-        // "Medium" => 5
-        // "Large" => 8
-        // "X-Large" => 13
-
-        // TODO:  
-        // 1. Read the project / size pairs. 
-        // 2. Find the *latest* sprint project.
-        // 3. Set the iteration to the latest sprint.
-        // 4. Set the size based on the size field.
-        // 5. Change the iteration code above to use the latest iteration
-        // for the issue.
         JsonElement result = default;
         try
         {

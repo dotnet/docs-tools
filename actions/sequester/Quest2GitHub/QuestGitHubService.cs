@@ -1,4 +1,6 @@
-﻿namespace Quest2GitHub;
+﻿using DotNetDocs.Tools.GitHubObjects;
+
+namespace Quest2GitHub;
 
 /// <summary>
 /// This class manages the top level workflows to synchronize
@@ -99,11 +101,11 @@ public class QuestGitHubService : IDisposable
                 {
                     if (questItem != null)
                     {
-                        await UpdateWorkItem(questItem, item, currentIteration);
+                        await UpdateWorkItem(questItem, item, currentIteration, _allIterations);
                     }
                     else
                     {
-                        questItem = await LinkIssue(organization, repository, item, currentIteration);
+                        questItem = await LinkIssue(organization, repository, item, currentIteration, _allIterations);
                     }
                 }
                 totalImport++;
@@ -156,13 +158,13 @@ public class QuestGitHubService : IDisposable
         {
             if (questItem is null)
             {
-                questItem = await LinkIssue(gitHubOrganization, gitHubRepository, ghIssue, currentIteration);
+                questItem = await LinkIssue(gitHubOrganization, gitHubRepository, ghIssue, currentIteration, _allIterations);
             }
             else if (questItem is not null)
             {
                 // This allows a human to force a manual update: just add the trigger label.
                 // Note that it updates even if the item is closed.
-                await UpdateWorkItem(questItem, ghIssue, currentIteration);
+                await UpdateWorkItem(questItem, ghIssue, currentIteration, _allIterations);
 
             }
             // Next, if the item is already linked, consider any updates.
@@ -173,7 +175,7 @@ public class QuestGitHubService : IDisposable
         }
         else if (sequestered && (questItem is not null))
         {
-            await UpdateWorkItem(questItem, ghIssue, currentIteration);
+            await UpdateWorkItem(questItem, ghIssue, currentIteration, _allIterations);
         }
     }
 
@@ -215,7 +217,8 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private async Task<QuestWorkItem?> LinkIssue(string organization, string repo, GithubIssue ghIssue, QuestIteration currentIteration)
+    private async Task<QuestWorkItem?> LinkIssue(string organization, string repo, GithubIssue ghIssue, QuestIteration currentIteration, 
+        IEnumerable<QuestIteration> allIterations)
     {
         var workItem = LinkedQuestId(ghIssue);
         if (workItem == null)
@@ -228,7 +231,7 @@ public class QuestGitHubService : IDisposable
             await mutation.PerformMutation("ignored", null, _importTriggerLabel?.nodeID);
 
             // Create work item:
-            var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.nodeID, currentIteration);
+            var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.nodeID, currentIteration, allIterations);
 
             // Add Tagged comment to GH Issue description.
             var updatedBody = $"""
@@ -259,7 +262,8 @@ public class QuestGitHubService : IDisposable
         }
     }
 
-    private async Task<QuestWorkItem?> UpdateWorkItem(QuestWorkItem questItem, GithubIssue ghIssue, QuestIteration currentIteration)
+    private async Task<QuestWorkItem?> UpdateWorkItem(QuestWorkItem questItem, GithubIssue ghIssue, QuestIteration currentIteration,
+        IEnumerable<QuestIteration> allIterations)
     {
         var ghAssigneeEmailAddress = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
         AzDoIdentity? questAssigneeID = default;
@@ -297,15 +301,41 @@ public class QuestGitHubService : IDisposable
                 Value = ghIssue.IsOpen ? "Active" : "Closed",
             });
 
-            // TODO: Update to the latest iteration in the GH issue.
-            // TODO: Update the size from the configured size in the GH issue and the latest iteration.
-            // Update to the current sprint when an item is closed, or reopened:
-            patchDocument.Add(new JsonPatchDocument
+            if (!ghIssue.IsOpen && (ghIssue.ClosingPRUrl is not null))
             {
-                Operation = Op.Add,
-                Path = "/fields/System.IterationPath",
-                Value = currentIteration.Path,
-            });
+                // TODO: Get configured, resiliency for not configured.
+               patchDocument.Add(new JsonPatchDocument
+               {
+                   Operation = Op.Add,
+                   Path = "/relations/-",
+                   Value = new Relation
+                   {
+                       Url = ghIssue.ClosingPRUrl,
+                       Attributes = { ["name"] = "GitHub Pull Request" }
+                   }
+               });
+            }
+
+            var iterationSize = ghIssue.LatestStoryPointSize();
+            var iteration = iterationSize?.ProjectIteration(allIterations);
+            if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
+            {
+                patchDocument.Add(new JsonPatchDocument
+                {
+                    Operation = Op.Add,
+                    Path = "/fields/System.IterationPath",
+                    Value = iteration.Path,
+                });
+            }
+            if ((iterationSize?.QuestStoryPoint() is not null) && (iterationSize.QuestStoryPoint() != questItem.StoryPoints))
+            {
+                patchDocument.Add(new JsonPatchDocument
+                {
+                    Operation = Op.Add,
+                    Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
+                    Value = iterationSize.QuestStoryPoint(),
+                });
+            }
 
             // When the issue is opened or closed, 
             // update the description. That picks up any new

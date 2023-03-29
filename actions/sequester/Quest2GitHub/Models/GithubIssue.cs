@@ -264,7 +264,9 @@ public class GithubIssue
                             if (fieldName == "Size") size = fieldValue.GetString();
                         }
                     }
-                    if ((projectTitle is not null) && (size is not null))
+                    if ((projectTitle is not null) && 
+                        (size is not null) &&
+                        projectTitle.ToLower().Contains("sprint"))
                     {
                         string[] components = projectTitle.Split(' ');
                         int yearIndex = (sprintMonth is null) ? 2 : 1;
