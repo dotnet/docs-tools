@@ -34,15 +34,18 @@ export class WorkflowInput {
     return val === "warning" ? "warning" : "preview";
   }
 
-  get opaqueLeadingUrlSegments(): string[] {
+  get opaqueLeadingUrlSegments(): Map<string, string> {
     const val = getInput("opaque_leading_url_segments");
     if (val) {
-      if (val.includes(",")) {
-        return val.split(",").map((v) => v.trim());
-      }
-      return [val.trim()];
+      const map = new Map<string, string>();
+      const pairs = val.split(",");
+      pairs.forEach((pair) => {
+        const [key, value] = pair.split(":");
+        map.set(key.trim(), value.trim());
+      });
+      return map;
     }
-    return [];
+    return new Map();
   }
 
   constructor() {}

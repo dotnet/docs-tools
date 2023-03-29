@@ -219,15 +219,18 @@ function toPreviewLink(file, prNumber) {
     const docsPath = WorkflowInput_1.workflowInput.docsPath;
     let path = file.replace(`${docsPath}/`, "").replace(".md", "");
     const opaqueLeadingUrlSegments = WorkflowInput_1.workflowInput.opaqueLeadingUrlSegments;
-    for (let i = 0; i < opaqueLeadingUrlSegments.length; i++) {
-        const segment = `${opaqueLeadingUrlSegments[i]}/`;
+    let queryString = "";
+    for (let [key, query] of opaqueLeadingUrlSegments) {
+        const segment = `${key}/`;
         if (path.startsWith(segment)) {
             path = path.replace(segment, "");
+            queryString = query;
             break;
         }
     }
     const urlBasePath = WorkflowInput_1.workflowInput.urlBasePath;
-    return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
+    const qs = queryString ? `&${queryString}` : "";
+    return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}${qs}`;
 }
 function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceedsMax = false) {
     var _a;
@@ -455,12 +458,15 @@ class WorkflowInput {
     get opaqueLeadingUrlSegments() {
         const val = (0, core_1.getInput)("opaque_leading_url_segments");
         if (val) {
-            if (val.includes(",")) {
-                return val.split(",").map((v) => v.trim());
-            }
-            return [val.trim()];
+            const map = new Map();
+            const pairs = val.split(",");
+            pairs.forEach((pair) => {
+                const [key, value] = pair.split(":");
+                map.set(key.trim(), value.trim());
+            });
+            return map;
         }
-        return [];
+        return new Map();
     }
     constructor() { }
 }
