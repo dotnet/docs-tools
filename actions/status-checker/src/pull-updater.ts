@@ -195,20 +195,23 @@ function toPreviewLink(file: string, prNumber: number): string {
   const docsPath = workflowInput.docsPath;
 
   let path = file.replace(`${docsPath}/`, "").replace(".md", "");
-  const opaqueLeadingUrlSegments: string[] =
+  const opaqueLeadingUrlSegments: Map<string, string> =
     workflowInput.opaqueLeadingUrlSegments;
 
-  for (let i = 0; i < opaqueLeadingUrlSegments.length; i++) {
-    const segment = `${opaqueLeadingUrlSegments[i]}/`;
+  let queryString = "";
+  for (let [key, query] of opaqueLeadingUrlSegments) {
+    const segment = `${key}/`;
     if (path.startsWith(segment)) {
       path = path.replace(segment, "");
+      queryString = query;
       break;
     }
   }
 
   const urlBasePath = workflowInput.urlBasePath;
+  const qs = queryString ? `&${queryString}` : "";
 
-  return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}`;
+  return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}${qs}`;
 }
 
 function buildMarkdownPreviewTable(

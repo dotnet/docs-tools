@@ -107,13 +107,37 @@ ${PREVIEW_TABLE_END}`;
     setInput("COLLAPSIBLE_AFTER", "7");
     setInput("DOCS_PATH", "test/path");
     setInput("URL_BASE_PATH", "foundation");
+    setInput(
+      "opaque_leading_url_segments",
+      "net:view=netdesktop-7.0,framework:view=netframeworkdesktop-4.8"
+    );
 
     const opts: WorkflowInput = workflowInput;
 
     expect(opts).toBeDefined();
     expect(opts.collapsibleAfter).toBe(7);
     expect(opts.docsPath).toBe("test/path");
-    expect(opts.urlBasePath).toBe("foundation");
+
+    const compareMaps = <T1, T2>(
+      expected: Map<T1, T2>,
+      actual: Map<T1, T2>
+    ) => {
+      expect(expected).toBeDefined();
+      expect(actual).toBeDefined();
+
+      expect(expected.size).toBe(actual.size);
+
+      for (let [key, value] of expected) {
+        expect(actual.has(key));
+        expect(actual.get(key)).toBe(value);
+      }
+    };
+
+    var map: Map<string, string> = new Map();
+    map.set("net", "view=netdesktop-7.0");
+    map.set("framework", "view=netframeworkdesktop-4.8");
+
+    compareMaps(map, opts.opaqueLeadingUrlSegments);
   });
 
   it("buildMarkdownPreviewTable builds preview table correctly with collapsible HTML elements.", () => {
@@ -369,14 +393,14 @@ ${PREVIEW_TABLE_END}`;
   });
 
   it("toPreviewLink correctly handles opaque leading URL segments", () => {
-    setInput("opaque_leading_url_segments", "framework,test");
+    setInput("opaque_leading_url_segments", "framework:id=77,test:uid=foo");
     setInput("docs_path", "dotnet-desktop-guide");
     setInput("url_base_path", "dotnet/desktop");
 
     const expectedPreviewLinks = [
-      "https://review.learn.microsoft.com/en-us/dotnet/desktop/wpf/controls/popup-placement-behavior?branch=pr-en-us-1",
+      "https://review.learn.microsoft.com/en-us/dotnet/desktop/wpf/controls/popup-placement-behavior?branch=pr-en-us-1&id=77",
       "https://review.learn.microsoft.com/en-us/dotnet/desktop/wpf/controls/index?branch=pr-en-us-1",
-      "https://review.learn.microsoft.com/en-us/dotnet/desktop/one?branch=pr-en-us-1",
+      "https://review.learn.microsoft.com/en-us/dotnet/desktop/one?branch=pr-en-us-1&uid=foo",
     ];
     const actualPreviewLinks = [
       "dotnet-desktop-guide/framework/wpf/controls/popup-placement-behavior.md",
