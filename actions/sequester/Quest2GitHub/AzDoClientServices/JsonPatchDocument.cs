@@ -78,8 +78,7 @@ public class Relation
     public required string Url { get; init; }
 
     [JsonPropertyName("attributes")]
-    public IDictionary<string, object> Attributes{ get; } = new Dictionary<string, object>();
-
+    public IDictionary<string, object> Attributes{ get; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 }
 /// <summary>
 /// The fields required to Assign to an identity
