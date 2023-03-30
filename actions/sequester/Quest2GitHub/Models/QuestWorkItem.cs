@@ -1,10 +1,10 @@
-﻿using DotNetDocs.Tools.GitHubObjects;
-using Microsoft.DotnetOrg.Ospo;
-
-namespace Quest2GitHub.Models;
+﻿namespace Quest2GitHub.Models;
 
 public class QuestWorkItem
 {
+
+    private static bool? linkedGitHubRepo;
+
     /// <summary>
     /// The Work item ID
     /// </summary>
@@ -250,6 +250,8 @@ public class QuestWorkItem
 
     internal async Task<QuestWorkItem?> AddClosingPR(QuestClient azdoClient, string closingPRUrl)
     {
+        if (linkedGitHubRepo is false) return default;
+
         List<JsonPatchDocument> patchDocument = new()
         {
             new JsonPatchDocument
@@ -267,10 +269,12 @@ public class QuestWorkItem
         {
             var jsonDocument = await azdoClient.PatchWorkItem(Id, patchDocument);
             var newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
+            linkedGitHubRepo = true;
             return newItem;
         } catch (InvalidOperationException ex)
         {
             Console.WriteLine("Can't add closing PR. The GitHub repo is likely not configured as linked in Quest.");
+            linkedGitHubRepo = false;
             return null;
         }
     }
