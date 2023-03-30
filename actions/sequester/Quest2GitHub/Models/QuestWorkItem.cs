@@ -2,7 +2,9 @@
 
 public class QuestWorkItem
 {
-
+    // Keep track of failures to upate the closing PR.
+    // For any given run, if the REST call to add a closing PR
+    // fails, stop sending invalid requests.
     private static bool? linkedGitHubRepo;
 
     /// <summary>
