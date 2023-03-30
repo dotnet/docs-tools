@@ -301,21 +301,6 @@ public class QuestGitHubService : IDisposable
                 Value = ghIssue.IsOpen ? "Active" : "Closed",
             });
 
-            if (!ghIssue.IsOpen && (ghIssue.ClosingPRUrl is not null))
-            {
-                // TODO: Get configured, resiliency for not configured.
-               patchDocument.Add(new JsonPatchDocument
-               {
-                   Operation = Op.Add,
-                   Path = "/relations/-",
-                   Value = new Relation
-                   {
-                       Url = ghIssue.ClosingPRUrl,
-                       Attributes = { ["name"] = "GitHub Pull Request" }
-                   }
-               });
-            }
-
             var iterationSize = ghIssue.LatestStoryPointSize();
             var iteration = iterationSize?.ProjectIteration(allIterations);
             if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
@@ -349,13 +334,17 @@ public class QuestGitHubService : IDisposable
             });
 
         }
+        QuestWorkItem? newItem = default;
         if (patchDocument.Any())
         {
             var jsonDocument = await _azdoClient.PatchWorkItem(questItem.Id, patchDocument);
-            var newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
-            return newItem;
+            newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
         }
-        return null;
+        if (!ghIssue.IsOpen && (ghIssue.ClosingPRUrl is not null))
+        {
+            newItem = await questItem.AddClosingPR(_azdoClient, ghIssue.ClosingPRUrl) ?? newItem;
+        }
+        return newItem;
     }
 
     private async Task<QuestWorkItem?> FindLinkedWorkItem(GithubIssue issue)

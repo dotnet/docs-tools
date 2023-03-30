@@ -1,4 +1,7 @@
-﻿namespace Quest2GitHub.Models;
+﻿using DotNetDocs.Tools.GitHubObjects;
+using Microsoft.DotnetOrg.Ospo;
+
+namespace Quest2GitHub.Models;
 
 public class QuestWorkItem
 {
@@ -188,27 +191,13 @@ public class QuestWorkItem
                 Path = "/fields/System.State",
                 Value = "Closed",
             });
-
-            if (issue.ClosingPRUrl is not null)
-            {
-                patchDocument.Add(new JsonPatchDocument
-                {
-                    Operation = Op.Add,
-                    Path = "/relations/-",
-                    Value = new Relation
-                    {
-                        Url = issue.ClosingPRUrl,
-                        Attributes = { ["name"] = "pull request" }
-                    }
-                }); ;
-            }
         }
         JsonElement result = default;
+        QuestWorkItem? newItem = default;
         try
         {
             result = await questClient.CreateWorkItem(patchDocument);
-            var newItem = WorkItemFromJson(result);
-            return newItem;
+            newItem = WorkItemFromJson(result);
         } catch (InvalidOperationException)
         {
             Console.WriteLine(result.ToString());
@@ -220,8 +209,14 @@ public class QuestWorkItem
 
             // Yes, this could throw again. IF so, it's a new error.
             result = await questClient.CreateWorkItem(patchDocument);
-            return WorkItemFromJson(result);
+            newItem = WorkItemFromJson(result);
         }
+        // Add the closing PR in a separate request. 
+        if (issue.ClosingPRUrl is not null)
+        {
+            newItem = await newItem.AddClosingPR(questClient, issue.ClosingPRUrl) ?? newItem;
+        }
+        return newItem;
     }
 
     public static string BuildDescriptionFromIssue(GithubIssue issue, string? requestLabelNodeId)
@@ -253,12 +248,39 @@ public class QuestWorkItem
         return body.ToString();
     }
 
-    /// <summary>
-    /// Construct a work item from the JSON document.
-    /// </summary>
-    /// <param name="root">The root element.</param>
-    /// <returns>The Quest work item.</returns>
-    public static QuestWorkItem WorkItemFromJson(JsonElement root)
+    internal async Task<QuestWorkItem?> AddClosingPR(QuestClient azdoClient, string closingPRUrl)
+    {
+        List<JsonPatchDocument> patchDocument = new()
+        {
+            new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/relations/-",
+                Value = new Relation
+                {
+                    Url = closingPRUrl,
+                    Attributes = { ["name"] = "GitHub Pull Request" }
+                }
+            }
+        };
+        try
+        {
+            var jsonDocument = await azdoClient.PatchWorkItem(Id, patchDocument);
+            var newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
+            return newItem;
+        } catch (InvalidOperationException ex)
+        {
+            Console.WriteLine("Can't add closing PR. The GitHub repo is likely not configured as linked in Quest.");
+            return null;
+        }
+    }
+
+/// <summary>
+/// Construct a work item from the JSON document.
+/// </summary>
+/// <param name="root">The root element.</param>
+/// <returns>The Quest work item.</returns>
+public static QuestWorkItem WorkItemFromJson(JsonElement root)
     {
         var id = root.GetProperty("id").GetInt32();
         var fields = root.GetProperty("fields");
