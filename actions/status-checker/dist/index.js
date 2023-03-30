@@ -109,6 +109,8 @@ function tryUpdatePullRequestBody(token) {
                 // Append preview table to bottom.
                 updatedBody = appendTable(pr.body, markdownTable);
             }
+            console.log("Proposed PR body:");
+            console.log(updatedBody);
             const octokit = (0, github_1.getOctokit)(token);
             const response = yield octokit.rest.pulls.update({
                 owner: github_1.context.repo.owner,

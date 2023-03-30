@@ -59,6 +59,9 @@ export async function tryUpdatePullRequestBody(token: string) {
       updatedBody = appendTable(pr.body, markdownTable);
     }
 
+    console.log("Proposed PR body:");
+    console.log(updatedBody);
+
     const octokit = getOctokit(token);
     const response = await octokit.rest.pulls.update({
       owner: context.repo.owner,
