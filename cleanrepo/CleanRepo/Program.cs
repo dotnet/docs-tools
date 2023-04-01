@@ -31,7 +31,7 @@ static class Program
         //   }
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\concepts" };
+        args = new[] { "--remove-hops" };
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
@@ -408,6 +408,14 @@ static class Program
                 Console.WriteLine($"'{options.DocFxDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
+
+            if (String.IsNullOrEmpty(options.UrlBasePath))
+            {
+                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
+                options.UrlBasePath = Console.ReadLine();
+            }
+
+            docFxRepo.UrlBasePath = options.UrlBasePath;
 
             docFxRepo.RemoveAllRedirectHops();
 
