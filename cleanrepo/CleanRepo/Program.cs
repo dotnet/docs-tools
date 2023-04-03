@@ -31,7 +31,7 @@ static class Program
         //   }
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] { "--remove-hops" };
+        args = new[] { "--orphaned-articles" };
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
@@ -1109,12 +1109,13 @@ static class Program
 
         // Example links .yml/.md:
         // href: ide/managing-external-tools.md
+        // href: "wfc-exe-tool.md"
         // # [Managing External Tools](ide/managing-external-tools.md)
 
         string regexSafeFilename = linkedFile.Name.Replace(".", "\\.");
 
         string linkRegEx = tocFile.Extension.ToLower() == ".yml" ?
-            @"href:\s*(" + regexSafeFilename + @"|.+?\/" + regexSafeFilename + ")" :
+            @"href:\s*""?(" + regexSafeFilename + @"|[^""\s]+?\/" + regexSafeFilename + ")" :
             @"\]\(\s*<?\s*(\/?" + regexSafeFilename + @"|[^\)]+\/" + regexSafeFilename + ")";
 
         // For each link that contains the file name...
