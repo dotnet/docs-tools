@@ -1,0 +1,199 @@
+[
+  // Results:
+  //  0 = RETURN_GOOD
+  //  1 = RETURN_NOPROJ
+  //  2 = RETURN_TOOMANY
+  //  3 = RETURN_SLN_NO_PROJ
+
+  // Item Types:
+  //  Edit
+  //  Create
+  //  Delete
+  //
+  //  Edit and Add should take the same code path in the tool
+  //  as there isn't a difference between them.
+
+  // GOOD items
+  {
+    "Name": "Edit - Single file find project C#",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/normal/csharp_project/app1.csproj"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/normal/csharp_project/Program.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Edit - Single file find project VB",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/normal/vb_project/app1.vbproj"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/normal/vb_project/Program.vb"
+      }
+    ]
+  },
+  {
+    "Name": "Delete - Files from diff projs, find sln",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/solutions/lots-o-projects/linq-snippets.sln"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/solutions/lots-o-projects/extensions/somefile.cs"
+      },
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/solutions/lots-o-projects/set-operators/somefile.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Create - New proj, find sln",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/solutions/lots-o-projects/linq-snippets.sln"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Create",
+        "Path": "snippets/good/solutions/lots-o-projects/partition/partition.csproj"
+      },
+      {
+        "ItemType": "Create",
+        "Path": "snippets/good/solutions/lots-o-projects/partition/Program.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Edit - find sln",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/solutions/single-project/linq-snippets.sln"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/solutions/single-project/set-operators/Planet.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Delete - All files, artifact remains in folder",
+    "ExpectedResults": null,
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/normal/deleted_code/someProject.csproj"
+      },
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/normal/deleted_code/codefile.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Create - Solution found, just .proj file",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/bad/sln_odd_proj/file.sln"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Create",
+        "Path": "snippets/bad/sln_odd_proj/some_code/project1.proj"
+      }
+    ]
+  },
+
+  // BAD items
+  {
+    "Name": "Edit - Project missing",
+    "ExpectedResults": [
+      {
+        "ResultCode": 1,
+        "DiscoveredProject": ""
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/bad/nullablepatternmatching/Program.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Create - Too many projects (child folder)",
+    "ExpectedResults": [
+      {
+        "ResultCode": 2,
+        "DiscoveredProject": "snippets/bad/patternmatching/patternmatching.csproj"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Create",
+        "Path": "snippets/bad/patternmatching/childfolder/Program.cs"
+      },
+      {
+        "ItemType": "Create",
+        "Path": "snippets/bad/patternmatching/childfolder/other.csproj"
+      }
+    ]
+  },
+  {
+    "Name": "Create - Too many projects (same folder)",
+    "ExpectedResults": [
+      {
+        "ResultCode": 2,
+        "DiscoveredProject": "snippets/bad/samefolder/project1.csproj"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/bad/samefolder/project2.vbproj"
+      },
+      {
+        "ItemType": "Create",
+        "Path": "snippets/bad/samefolder/project1.csproj"
+      }
+    ]
+  },
+  {
+    "Name": "Edit - Solution found, no project",
+    "ExpectedResults": [
+      {
+        "ResultCode": 3,
+        "DiscoveredProject": "snippets/bad/sln_no_proj/file.sln"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/bad/sln_no_proj/some_code/Planet.cs"
+      }
+    ]
+  }
+]
