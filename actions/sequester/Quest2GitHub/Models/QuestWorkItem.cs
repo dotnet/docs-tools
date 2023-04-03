@@ -2,6 +2,11 @@
 
 public class QuestWorkItem
 {
+    // Keep track of failures to upate the closing PR.
+    // For any given run, if the REST call to add a closing PR
+    // fails, stop sending invalid requests.
+    private static bool? linkedGitHubRepo;
+
     /// <summary>
     /// The Work item ID
     /// </summary>
@@ -91,7 +96,8 @@ public class QuestWorkItem
         OspoClient ospoClient,
         string path,
         string? requestLabelNodeId,
-        QuestIteration currentIteration)
+        QuestIteration currentIteration,
+        IEnumerable<QuestIteration> allIterations)
     {
         var areaPath = $"""{questClient.QuestProject}\{path}""";
 
@@ -136,12 +142,35 @@ public class QuestWorkItem
             Value = assigneeID
         };
         patchDocument.Add(assignPatch);
-        patchDocument.Add(new JsonPatchDocument
+        var iterationSize = issue.LatestStoryPointSize();
+        var iteration = iterationSize?.ProjectIteration(allIterations);
+        if (iteration is not null)
         {
-            Operation = Op.Add,
-            Path = "/fields/System.IterationPath",
-            Value = currentIteration.Path,
-        });
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.IterationPath",
+                Value = iteration.Path,
+            });
+        }
+        else
+        { // default to the current iteration:
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.IterationPath",
+                Value = currentIteration.Path,
+            });
+        }
+        if (iterationSize?.QuestStoryPoint() is not null)
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
+                Value = iterationSize.QuestStoryPoint(),
+            });
+        }
 
         /* This is ignored by Azure DevOps. It uses the PAT of the 
          * account running the code.
@@ -165,28 +194,12 @@ public class QuestWorkItem
                 Value = "Closed",
             });
         }
-
-        // Size mapping:
-
-        // "Tiny" => 1
-        // "small" => 3
-        // "Medium" => 5
-        // "Large" => 8
-        // "X-Large" => 13
-
-        // TODO:  
-        // 1. Read the project / size pairs. 
-        // 2. Find the *latest* sprint project.
-        // 3. Set the iteration to the latest sprint.
-        // 4. Set the size based on the size field.
-        // 5. Change the iteration code above to use the latest iteration
-        // for the issue.
         JsonElement result = default;
+        QuestWorkItem? newItem = default;
         try
         {
             result = await questClient.CreateWorkItem(patchDocument);
-            var newItem = WorkItemFromJson(result);
-            return newItem;
+            newItem = WorkItemFromJson(result);
         } catch (InvalidOperationException)
         {
             Console.WriteLine(result.ToString());
@@ -198,8 +211,14 @@ public class QuestWorkItem
 
             // Yes, this could throw again. IF so, it's a new error.
             result = await questClient.CreateWorkItem(patchDocument);
-            return WorkItemFromJson(result);
+            newItem = WorkItemFromJson(result);
         }
+        // Add the closing PR in a separate request. 
+        if (issue.ClosingPRUrl is not null)
+        {
+            newItem = await newItem.AddClosingPR(questClient, issue.ClosingPRUrl) ?? newItem;
+        }
+        return newItem;
     }
 
     public static string BuildDescriptionFromIssue(GithubIssue issue, string? requestLabelNodeId)
@@ -231,12 +250,43 @@ public class QuestWorkItem
         return body.ToString();
     }
 
-    /// <summary>
-    /// Construct a work item from the JSON document.
-    /// </summary>
-    /// <param name="root">The root element.</param>
-    /// <returns>The Quest work item.</returns>
-    public static QuestWorkItem WorkItemFromJson(JsonElement root)
+    internal async Task<QuestWorkItem?> AddClosingPR(QuestClient azdoClient, string closingPRUrl)
+    {
+        if (linkedGitHubRepo is false) return default;
+
+        List<JsonPatchDocument> patchDocument = new()
+        {
+            new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/relations/-",
+                Value = new Relation
+                {
+                    Url = closingPRUrl,
+                    Attributes = { ["name"] = "GitHub Pull Request" }
+                }
+            }
+        };
+        try
+        {
+            var jsonDocument = await azdoClient.PatchWorkItem(Id, patchDocument);
+            var newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
+            linkedGitHubRepo = true;
+            return newItem;
+        } catch (InvalidOperationException ex)
+        {
+            Console.WriteLine("Can't add closing PR. The GitHub repo is likely not configured as linked in Quest.");
+            linkedGitHubRepo = false;
+            return null;
+        }
+    }
+
+/// <summary>
+/// Construct a work item from the JSON document.
+/// </summary>
+/// <param name="root">The root element.</param>
+/// <returns>The Quest work item.</returns>
+public static QuestWorkItem WorkItemFromJson(JsonElement root)
     {
         var id = root.GetProperty("id").GetInt32();
         var fields = root.GetProperty("fields");

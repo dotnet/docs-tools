@@ -1,7 +1,4 @@
-﻿using Org.BouncyCastle.Asn1.Mozilla;
-using System.Xml.Linq;
-
-namespace Quest2GitHub.Models;
+﻿namespace Quest2GitHub.Models;
 
 /// <summary>
 /// Simple record type for a GitHub label
@@ -13,9 +10,10 @@ public record GitHubLabel(string name, string nodeID);
 /// <summary>
 /// Record type to store a project name / story point size pair
 /// </summary>
-/// <param name="ProjectName">The name of the GitHub org project</param>
+/// <param name="CalendarYear">The calendar year</param>
+/// <param name="Month">The 3 character month code</param>
 /// <param name="Size">The value of the "size" special field</param>
-public record StoryPointSize(string ProjectName, string Size);
+public record StoryPointSize(int CalendarYear, string Month, string Size);
 
 /// <summary>
 /// Model for a GitHub issue
@@ -55,9 +53,16 @@ public class GithubIssue
             ... on ProjectV2ItemConnection {
               nodes {
                 ... on ProjectV2Item {
-                  fieldValueByName(name:"Size") {
-                    ... on ProjectV2ItemFieldSingleSelectValue {
-                      name
+                  fieldValues(first:10) {
+                    nodes {
+                      ... on ProjectV2ItemFieldSingleSelectValue {
+                        field {
+                          ... on ProjectV2FieldCommon {
+                            name
+                          }
+                        }
+                        name
+                      }
                     }
                   }
                   project {
@@ -244,17 +249,31 @@ public class GithubIssue
             {
                 if (projectItem.ValueKind == JsonValueKind.Object)
                 {
-                    // TODO: MAUI uses one sprint project per year, with a field for the month.
                     // Modify the code to store the optional month in the tuple field.
                     // Consider: Store YYYY, Month, Size as a threeple.
                     var projectTitle = projectItem.Descendent("project", "title").GetString();
                     // size may or may not have been set yet:
-                    var sizeNode = projectItem.Descendent("fieldValueByName", "name");
-
-                    var size = (sizeNode.ValueKind is JsonValueKind.String) ? sizeNode.GetString() : null;
-                    if ((projectTitle is not null) && (size is not null))
+                    string? size = default;
+                    string? sprintMonth = default;
+                    foreach(var field in projectItem.Descendent("fieldValues", "nodes").EnumerateArray())
                     {
-                        storyPoints.Add(new StoryPointSize(projectTitle, size));
+                        if (field.TryGetProperty("name", out var fieldValue))
+                        {
+                            var fieldName = field.Descendent("field", "name").GetString();
+                            if (fieldName == "Sprint") sprintMonth = fieldValue.GetString();
+                            if (fieldName == "Size") size = fieldValue.GetString();
+                        }
+                    }
+                    if ((projectTitle is not null) && 
+                        (size is not null) &&
+                        projectTitle.ToLower().Contains("sprint"))
+                    {
+                        string[] components = projectTitle.Split(' ');
+                        int yearIndex = (sprintMonth is null) ? 2 : 1;
+                        // Should be in a project variable named "Sprint", take substring 0,3
+                        var Month = sprintMonth ?? components[1].Substring(0, 3);
+                        int.TryParse(components[yearIndex], out var year); 
+                        storyPoints.Add(new StoryPointSize(year, Month.Substring(0,3), size));
                     }
                 }
             }
@@ -331,7 +350,7 @@ public class GithubIssue
         Open: {{IsOpen}}
         Assignees: {{String.Join(", ", Assignees)}}
         Labels: {{String.Join(", ", Labels.Select(l => l.name))}}
-        Sizes: {{String.Join("\n", from sp in ProjectStoryPoints select $"Project: {sp.ProjectName},  Size: {sp.Size}")}}
+        Sizes: {{String.Join("\n", from sp in ProjectStoryPoints select $"Month, Year: {sp.Month}, {sp.CalendarYear}  Size: {sp.Size}")}}
         Comments:
         {{String.Join("\n\n", from c in Comments select $"Author: {c.author}\nText:\n{c.bodyHTML}")}}
         """;

@@ -69,6 +69,17 @@ public class JsonPatchDocument
     public object? Value { get; init; }
 }
 
+public class Relation
+{
+    [JsonPropertyName("rel")]
+    public string RelationName { get; init; } = "ArtifactLink";
+
+    [JsonPropertyName("url")]
+    public required string Url { get; init; }
+
+    [JsonPropertyName("attributes")]
+    public IDictionary<string, object> Attributes{ get; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+}
 /// <summary>
 /// The fields required to Assign to an identity
 /// </summary>
