@@ -43,11 +43,26 @@ public static class IssueExtensions
     {
         // Old form: Content\CY_2023\03
         // New form: Content\Gallium\FY24Q1\07
+        string month = storyPoints.Month;
+        int calendarYear = storyPoints.CalendarYear;
 
-        var oldPattern = $"""CY_{storyPoints.CalendarYear:D4}\{Months[storyPoints.Month]:D2}""";
-        int fy = ((Months[storyPoints.Month] > 5 ? storyPoints.CalendarYear + 1 : storyPoints.CalendarYear)) % 100;
-        int q = ((((Months[storyPoints.Month]-1) / 3) + 2) % 4) + 1; // Yeah, this is weird. But, it does convert the current month to the FY quarter
-        var newPattern = $"""FY{fy:D2}Q{q:D1}\{Months[storyPoints.Month]:D2}""";
+        return ProjectIteration(month, calendarYear, iterations);
+    }
+
+
+    /// <summary>
+    /// Return the project iteration based on the calendar year and month
+    /// </summary>
+    /// <param name="month">The 3 letter abbreviation for the current month</param>
+    /// <param name="calendarYear">The calendar year</param>
+    /// <param name="iterations">All iterations</param>
+    /// <returns>The current iteration</returns>
+    public static QuestIteration? ProjectIteration(string month, int calendarYear, IEnumerable<QuestIteration> iterations)
+    { 
+        var oldPattern = $"""CY_{calendarYear:D4}\{Months[month]:D2}""";
+        int fy = ((Months[month] > 5 ? calendarYear + 1 : calendarYear)) % 100;
+        int q = ((((Months[month]-1) / 3) + 2) % 4) + 1; // Yeah, this is weird. But, it does convert the current month to the FY quarter
+        var newPattern = $"""FY{fy:D2}Q{q:D1}\{Months[month]:D2}""";
 
         foreach(var iteration in iterations)
         {

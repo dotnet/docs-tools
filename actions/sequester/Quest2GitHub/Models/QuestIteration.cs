@@ -2,19 +2,15 @@
 
 public class QuestIteration
 {
-    private const string PathTeam = "Content";
-    private const string YearPrefix = "CY_";
     public required Guid Id { get; init; }
     public required string Name { get; init; }
     public required string Path { get; init; }
 
-    // Path format is "Content\\CY_YYYY\\MM MMM" (CY is calendar year)
-    // For example: "Content\\CY_2023\\03 Mar"
-    public static string CurrentIterationPath()
+    public static QuestIteration? CurrentIteration(IEnumerable<QuestIteration> iterations)
     {
-        var currentYear = DateTime.Now.ToString("yyyy");
-        var sprintName = DateTime.Now.ToString("MM MMM");
-        return $"Content\\CY_{currentYear}\\{sprintName}";
+        var currentYear = int.Parse(DateTime.Now.ToString("yyyy"));
+        var currentMonth = DateTime.Now.ToString("MMM");
+        return IssueExtensions.ProjectIteration(currentMonth, currentYear, iterations);
     }
 
 }

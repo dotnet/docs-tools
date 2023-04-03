@@ -34,15 +34,22 @@ public class EnumerateIssues
                   ... on ProjectV2ItemConnection {
                     nodes {
                       ... on ProjectV2Item {
-                        fieldValueByName(name:"Size") {
-                          ... on ProjectV2ItemFieldSingleSelectValue {
-                            name
+                        fieldValues(first:10) {
+                          nodes {
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              field {
+                                ... on ProjectV2FieldCommon {
+                                  name
+                                }
+                              }
+                              name
+                            }
                           }
                         }
-                        project {
-                          ... on ProjectV2 {
-                            title
-                          }
+                      }
+                      project {
+                        ... on ProjectV2 {
+                          title
                         }
                       }
                     }

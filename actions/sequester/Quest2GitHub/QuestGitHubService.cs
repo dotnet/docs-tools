@@ -1,6 +1,4 @@
-﻿using DotNetDocs.Tools.GitHubObjects;
-
-namespace Quest2GitHub;
+﻿namespace Quest2GitHub;
 
 /// <summary>
 /// This class manages the top level workflows to synchronize
@@ -77,9 +75,7 @@ public class QuestGitHubService : IDisposable
         {
             _allIterations = await retrieveIterationLabels();
         }
-        var currentIterationPath = QuestIteration.CurrentIterationPath();
-        Console.WriteLine($"Current sprint path: {currentIterationPath}");
-        var currentIteration = _allIterations.Single(sprint => sprint.Path == currentIterationPath);
+        var currentIteration = QuestIteration.CurrentIteration(_allIterations);
 
         var iter = new EnumerateIssues();
 
@@ -134,9 +130,7 @@ public class QuestGitHubService : IDisposable
         {
             _allIterations = await retrieveIterationLabels();
         }
-        var currentIterationPath = QuestIteration.CurrentIterationPath();
-        Console.WriteLine($"Current sprint path: {currentIterationPath}");
-        var currentIteration = _allIterations.Single(sprint => sprint.Path == currentIterationPath);
+        var currentIteration = QuestIteration.CurrentIteration(_allIterations);
 
         //Retrieve the GitHub issue.
         var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
