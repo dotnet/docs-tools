@@ -2,7 +2,7 @@
   "profiles": {
     "LocateProjects": {
       "commandName": "Project",
-      "commandLineArgs": "--owner dotnet --repo docs-desktop --pullrequest 1058 C:\\Users\\wiwagn\\source\\GitHub\\dotnet\\docs-desktop"
+      "commandLineArgs": "--owner dotnet --repo docs-desktop --pullrequest 1058 C:\\code\\Work\\dotnet\\docs-desktop"
     }
   }
 }
