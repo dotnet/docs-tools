@@ -1,8 +1,15 @@
 {
   "profiles": {
-    "LocateProjects": {
+    "Test via GitHub": {
       "commandName": "Project",
-      "commandLineArgs": "--sourcepath C:\\code\\Work\\dotnet\\docs-desktop --owner dotnet --repo docs-desktop --pullrequest 1058",
+      "commandLineArgs": "--sourcepath C:\\\\code\\\\Work\\\\dotnet\\\\docs-desktop --owner dotnet --repo docs-desktop --pullrequest 1058",
+      "environmentVariables": {
+        "LocateExts": ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml;.csproj;.fsproj;.vbproj;.vcxproj;.sln"
+      }
+    },
+    "Test via Local Tests": {
+      "commandName": "Project",
+      "commandLineArgs": "--dryrun-test-id \"Edit - Project missing\" --sourcepath C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations --owner nah --repo nah --pullrequest 1 --dryrun-test-date-file C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations\\data.json",
       "environmentVariables": {
         "LocateExts": ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml;.csproj;.fsproj;.vbproj;.vcxproj;.sln"
       }

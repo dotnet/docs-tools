@@ -71,6 +71,10 @@ namespace LocateProjects;
 
 class Program
 {
+    const string OUTPUT_ERROR_1_NOPROJ = "ERROR: Project missing. A project (and optionally a solution file) must be in this directory or one of the parent directories to validate and build this code.";
+    const string OUTPUT_ERROR_2_TOOMANY = "ERROR: Too many projects found. A single project or solution must exist in this directory or one of the parent directories.";
+    const string OUTPUT_ERROR_3_SLNNOPROJ = "ERROR: Solution found, but missing project. A project is required to compile this code.";
+
     /// <summary>
     /// LocateProjects: Find all projects and solutions requiring a build.
     /// </summary>
@@ -84,17 +88,69 @@ class Program
     /// solutions that should be built. If nothing but the rootdir is specified,
     /// it will output all solutions, and all projects that are not part of a solution.
     /// </remarks>
-    static async Task<int> Main(string sourcepath, int? pullrequest = default, string? owner=default, string? repo=default)
+    static async Task<int> Main(string sourcepath, int? pullrequest = default, string? owner=default, string? repo=default, string? dryrunTestId=default, string? dryrunTestDateFile=default)
     {
         if ((pullrequest.HasValue) &&
             !string.IsNullOrEmpty(owner) &&
             !string.IsNullOrEmpty(repo))
         {
-            var key = CommandLineUtility.GetEnvVariable("GitHubKey", "You must store your GitHub key in the 'GitHubKey' environment variable", null);
+            IEnumerable<DiscoveryResult> projects;
 
-            var prBuild = new PullRequestProjectList(owner, repo, pullrequest.Value, sourcepath);
-            await foreach (var path in prBuild.GenerateBuildList(key))
-                Console.WriteLine(path);
+            // Normal github PR
+            if (string.IsNullOrEmpty(dryrunTestId))
+            {
+                var key = CommandLineUtility.GetEnvVariable("GitHubKey", "You must store your GitHub key in the 'GitHubKey' environment variable", null);
+
+                List<DiscoveryResult> localResults = new();
+                await foreach (var item in new PullRequestProjectList(owner, repo, pullrequest.Value, sourcepath).GenerateBuildList(key))
+                    localResults.Add(item);
+
+                projects = localResults;
+            }
+
+            // NOT a normal github PR and instead is a test
+            else if (string.IsNullOrEmpty(dryrunTestDateFile))
+                throw new ArgumentNullException("The dryrun Test DataFile must be set.");
+            else
+                projects = new TestingProjectList(dryrunTestId, dryrunTestDateFile, sourcepath).GenerateBuildList();
+
+            Console.WriteLine("Processing results...");
+
+            // ERROR no project
+            bool first = false;
+            foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_NOPROJ))
+            {
+                if (!first) { Console.WriteLine(OUTPUT_ERROR_1_NOPROJ); first = true; }
+                Console.WriteLine($"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_1_NOPROJ}");
+            }
+
+            // ERROR too many projects
+            first = false;
+            foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_TOOMANY))
+            {
+                if (!first) { Console.WriteLine(OUTPUT_ERROR_2_TOOMANY); first = true; }
+                Console.WriteLine($"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_2_TOOMANY}");
+            }
+
+            // ERROR solution but no proj
+            first = false;
+            foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_SLN))
+            {
+                if (!first) { Console.WriteLine(OUTPUT_ERROR_3_SLNNOPROJ); first = true; }
+                Console.WriteLine($"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_3_SLNNOPROJ}");
+            }
+
+            // NO ERROR output each item
+            foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_GOOD))
+                Console.WriteLine(project);
+
+            Console.WriteLine("Gathering unique projects to test");
+
+            // Gather the files to be tested:
+            foreach (var item in projects.Where(p => p.Code == DiscoveryResult.RETURN_GOOD).Select(p => p.DiscoveredFile).Distinct())
+            {
+                Console.WriteLine($"TEST: {item}");
+            }
         }
         else
         {
