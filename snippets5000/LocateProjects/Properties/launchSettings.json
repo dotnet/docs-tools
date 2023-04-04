@@ -2,7 +2,10 @@
   "profiles": {
     "LocateProjects": {
       "commandName": "Project",
-      "commandLineArgs": "--owner dotnet --repo docs-desktop --pullrequest 1058 C:\\code\\Work\\dotnet\\docs-desktop"
+      "commandLineArgs": "--sourcepath C:\\code\\Work\\dotnet\\docs-desktop --owner dotnet --repo docs-desktop --pullrequest 1058",
+      "environmentVariables": {
+        "LocateExts": ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml;.csproj;.fsproj;.vbproj;.vcxproj;.sln"
+      }
     }
   }
 }

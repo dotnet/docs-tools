@@ -1,5 +1,7 @@
 ﻿using DotNetDocs.Tools.Utility;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PullRequestSimulations")]
+
 namespace LocateProjects;
 
 // Notes on turning this spike into a fully functioning tool for our 
@@ -72,34 +74,31 @@ class Program
     /// <summary>
     /// LocateProjects: Find all projects and solutions requiring a build.
     /// </summary>
-    /// <param name="framework">true if this should build oldstyle framework projects</param>
-    /// <param name="pullrequest">If available, the number of the pull request being built</param>
-    /// <param name="owner">If available, the owner organization of the repository</param>
-    /// <param name="repo">If available, the name of the repository</param>
-    /// <param name="argument">The rootdir containing the local source tree</param>
+    /// <param name="sourcepath">The directory containing the local source tree.</param>
+    /// <param name="pullrequest">If available, the number of the pull request being built.</param>
+    /// <param name="owner">If available, the owner organization of the repository.</param>
+    /// <param name="repo">If available, the name of the repository.</param>
     /// <returns>0 on success. Otherwise, a non-zero error code.</returns>
     /// <remarks>
     /// The output from standard out is the list of all projects and 
     /// solutions that should be built. If nothing but the rootdir is specified,
     /// it will output all solutions, and all projects that are not part of a solution.
     /// </remarks>
-    static async Task<int> Main(string argument, bool framework = false, int? pullrequest = default, string? owner=default, string? repo=default)
+    static async Task<int> Main(string sourcepath, int? pullrequest = default, string? owner=default, string? repo=default)
     {
         if ((pullrequest.HasValue) &&
             !string.IsNullOrEmpty(owner) &&
             !string.IsNullOrEmpty(repo))
         {
-            var key = CommandLineUtility.GetEnvVariable("GitHubKey",
-            "You must store your GitHub key in the 'GitHubKey' environment variable",
-            "");
+            var key = CommandLineUtility.GetEnvVariable("GitHubKey", "You must store your GitHub key in the 'GitHubKey' environment variable", null);
 
-            var prBuild = new PullRequestProjectList(owner, repo, pullrequest.Value, argument);
+            var prBuild = new PullRequestProjectList(owner, repo, pullrequest.Value, sourcepath);
             await foreach (var path in prBuild.GenerateBuildList(key))
                 Console.WriteLine(path);
         }
         else
         {
-            var fullBuild = new FullBuildProjectList(argument);
+            var fullBuild = new FullBuildProjectList(sourcepath);
             foreach (var path in fullBuild.GenerateBuildList())
                 Console.WriteLine(path);
         }

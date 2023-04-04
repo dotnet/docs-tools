@@ -46,7 +46,7 @@ public partial class LocalTests
             if (item.ItemType != ChangeItemType.Delete)
                 Assert.IsTrue(File.Exists(Path.GetFullPath(Path.Combine(CurrentFolder, item.Path))));
 
-            Logic.Test(CurrentFolder, item.Path, System.Array.Empty<string>(), out Logic.Result? resultItem);
+            PullRequestProjectList.Test(CurrentFolder, item.Path, System.Array.Empty<string>(), out DiscoveryResult? resultItem);
 
             if (!resultItem.HasValue)
             {

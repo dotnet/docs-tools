@@ -9,7 +9,7 @@ public class PullRequest
 
     public ChangeItem[] Items { get; set; }
 
-    public DiscoveryResult[] ExpectedResults { get; set; }
+    public ExpectedResult[] ExpectedResults { get; set; }
 
     public PullRequest() { }
 
@@ -34,12 +34,12 @@ public struct ChangeItem
     }
 }
 
-public struct DiscoveryResult
+public struct ExpectedResult
 {
     public int ResultCode { get; init; }
     public string DiscoveredProject { get; init; }
 
-    public DiscoveryResult(int resultCode, string discoveredProject)
+    public ExpectedResult(int resultCode, string discoveredProject)
     {
         ResultCode = resultCode;
         DiscoveredProject = discoveredProject;
