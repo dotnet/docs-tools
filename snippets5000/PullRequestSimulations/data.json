@@ -98,6 +98,49 @@
     ]
   },
   {
+    "Name": "Edit - three distinct projects",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/deeper-path/three_projs/vb/project.vbproj"
+      },
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/deeper-path/three_projs/cs/project.csproj"
+      },
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/deeper-path/three_projs/cpp/project.vcxproj"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/deeper-path/three_projs/vb/Form1.Designer.vb"
+      },
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/deeper-path/three_projs/vb/Form1.vb"
+      },
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/deeper-path/three_projs/cs/Form1.Designer.cs"
+      },
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/deeper-path/three_projs/cs/Form1.cs"
+      },
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/deeper-path/three_projs/cpp/Student.h"
+      },
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/deeper-path/three_projs/cpp/MyForm.cpp"
+      }
+    ]
+  },
+  {
     "Name": "Delete - All files, artifact remains in folder",
     "ExpectedResults": null,
     "Items": [

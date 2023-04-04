@@ -21,6 +21,7 @@ public partial class LocalTests
         Directory.SetCurrentDirectory(CurrentFolder);
         Requests = PullRequest.LoadTests("data.json");
         Logger.LogMessage($"Current Folder is: {CurrentFolder}");
+        Environment.SetEnvironmentVariable("LocateExts", ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml;.csproj;.fsproj;.vbproj;.vcxproj;.sln");
     }
 
     public void RunTest(string name)
@@ -46,7 +47,9 @@ public partial class LocalTests
             if (item.ItemType != ChangeItemType.Delete)
                 Assert.IsTrue(File.Exists(Path.GetFullPath(Path.Combine(CurrentFolder, item.Path))));
 
-            PullRequestProjectList.Test(CurrentFolder, item.Path, System.Array.Empty<string>(), out DiscoveryResult? resultItem);
+            var extensions = Environment.GetEnvironmentVariable("LocateExts")?.Split(';') ?? throw new Exception("Unable to get extensions");
+
+            PullRequestProjectList.Test(CurrentFolder, item.Path, extensions, out DiscoveryResult? resultItem);
 
             if (!resultItem.HasValue)
             {
