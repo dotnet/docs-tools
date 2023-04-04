@@ -112,6 +112,39 @@
     ]
   },
   {
+    "Name": "Delete - All files, folder gone",
+    "ExpectedResults": null,
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/normal/deleted_code_nothing_exists/someProject.csproj"
+      },
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/normal/deleted_code_nothing_exists/codefile.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Delete - All files for child project, solution found",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/solutions/lots-o-projects/linq-snippets.sln"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/solutions/lots-o-projects/folder1/folder2/partition.csproj"
+      },
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/solutions/lots-o-projects/folder1/folder2/Program.cs"
+      }
+    ]
+  },
+  {
     "Name": "Create - Solution found, just .proj file",
     "ExpectedResults": [
       {
