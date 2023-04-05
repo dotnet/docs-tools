@@ -4,6 +4,7 @@ import { Pull } from "./types/Pull";
 import { PullRequestDetails } from "./types/PullRequestDetails";
 import { NodeOf } from "./types/NodeOf";
 import { workflowInput } from "./types/WorkflowInput";
+import { getHeadingTextFrom } from "./file-heading-extractor";
 
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
@@ -39,7 +40,7 @@ export async function tryUpdatePullRequestBody(token: string) {
 
     const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
     const commitOid = context.payload.pull_request?.head.sha;
-    const markdownTable = buildMarkdownPreviewTable(
+    const markdownTable = await buildMarkdownPreviewTable(
       prNumber,
       files,
       pr.checksUrl,
@@ -217,13 +218,13 @@ function toPreviewLink(file: string, prNumber: number): string {
   return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}${qs}`;
 }
 
-function buildMarkdownPreviewTable(
+async function buildMarkdownPreviewTable(
   prNumber: number,
   files: FileChange[],
   checksUrl: string,
   commitOid: string | undefined | null,
   exceedsMax: boolean = false
-): string {
+): Promise<string> {
   const links = new Map<string, string>();
   files.forEach((file) => {
     links.set(file.path, toPreviewLink(file.path, prNumber));
@@ -239,19 +240,21 @@ function buildMarkdownPreviewTable(
   markdownTable += "| 📄 File | 🔗 Preview link |\n";
   markdownTable += "|:--|:--|\n";
 
-  links.forEach((link, file) => {
+  for (const [file, link] of links) {
+    const heading = await getHeadingTextFrom(file);
+    const previewTitle = heading || file.replace(".md", "");
     markdownTable += `| [${file}](${toGitHubLink(
       file,
       commitOid
-    )}) | [${file.replace(".md", "")}](${link}) |\n`;
-  });
+    )}) | [${previewTitle}](${link}) |\n`;
+  }
 
   if (isCollapsible) {
     markdownTable += "\n</details>\n";
   }
 
   if (exceedsMax /* include footnote when we're truncating... */) {
-    markdownTable += `\nThis table shows preview links for the ${workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
+    markdownTable += `\n> **Note**\n> This table shows preview links for the ${workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
   }
 
   return markdownTable;
