@@ -81,11 +81,11 @@ ${PREVIEW_TABLE_END}`;
     expect(actual).toEqual(expectedBody);
   });
 
-  it("buildMarkdownPreviewTable builds preview table correctly", () => {
+  it("buildMarkdownPreviewTable builds preview table correctly", async () => {
     setInput("DOCS_PATH", "docs");
     setInput("URL_BASE_PATH", "dotnet");
 
-    const actual = buildMarkdownPreviewTable(
+    const actual = await buildMarkdownPreviewTable(
       7,
       [
         {
@@ -140,12 +140,12 @@ ${PREVIEW_TABLE_END}`;
     compareMaps(map, opts.opaqueLeadingUrlSegments);
   });
 
-  it("buildMarkdownPreviewTable builds preview table correctly with collapsible HTML elements.", () => {
+  it("buildMarkdownPreviewTable builds preview table correctly with collapsible HTML elements.", async () => {
     setInput("COLLAPSIBLE_AFTER", "3");
     setInput("DOCS_PATH", "docs");
     setInput("URL_BASE_PATH", "dotnet");
 
-    const actual = buildMarkdownPreviewTable(
+    const actual = await buildMarkdownPreviewTable(
       7,
       [
         {
@@ -163,7 +163,7 @@ ${PREVIEW_TABLE_END}`;
         {
           additions: 1,
           deletions: 1,
-          path: "3/three.md",
+          path: "__tests__/3/three.md",
           changeType: "MODIFIED",
         },
         {
@@ -183,7 +183,7 @@ ${PREVIEW_TABLE_END}`;
       "oid"
     );
     expect(actual).toEqual(
-      `#### Internal previews\n\n<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/oid/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/oid/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [3/three.md](https://github.com/dotnet/docs/blob/oid/3/three.md) | [3/three](https://review.learn.microsoft.com/en-us/dotnet/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/oid/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/oid/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n`
+      `#### Internal previews\n\n<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/oid/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/oid/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [__tests__/3/three.md](https://github.com/dotnet/docs/blob/oid/__tests__/3/three.md) | [THREE](https://review.learn.microsoft.com/en-us/dotnet/__tests__/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/oid/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/oid/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n`
     );
   });
 

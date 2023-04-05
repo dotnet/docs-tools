@@ -1,6 +1,60 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 3767:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getHeadingTextFrom = void 0;
+const fs_1 = __nccwpck_require__(7147);
+const promises_1 = __nccwpck_require__(3292);
+const h1regex = /^# (?<h1>.+)/gim;
+function getHeadingTextFrom(path) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!(0, fs_1.existsSync)(path)) {
+            console.log(`The file '${path}' doesn't exist.`);
+            return null;
+        }
+        const content = yield (0, promises_1.readFile)(path, "utf-8");
+        if (!!content) {
+            try {
+                let result = null;
+                let match;
+                while ((match = h1regex.exec(content)) !== null) {
+                    // This is necessary to avoid infinite loops with zero-width matches
+                    if (match.index === h1regex.lastIndex) {
+                        h1regex.lastIndex++;
+                    }
+                    result = ((_a = match.groups) === null || _a === void 0 ? void 0 : _a.h1) || null;
+                }
+                return result;
+            }
+            catch (error) {
+                if (error) {
+                    console.log(error.toString());
+                }
+            }
+        }
+        return null;
+    });
+}
+exports.getHeadingTextFrom = getHeadingTextFrom;
+
+
+/***/ }),
+
 /***/ 3109:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -66,6 +120,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
 const github_1 = __nccwpck_require__(5438);
 const WorkflowInput_1 = __nccwpck_require__(6741);
+const file_heading_extractor_1 = __nccwpck_require__(3767);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 function tryUpdatePullRequestBody(token) {
@@ -98,7 +153,7 @@ function tryUpdatePullRequestBody(token) {
             }
             const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
             const commitOid = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha;
-            const markdownTable = buildMarkdownPreviewTable(prNumber, files, pr.checksUrl, commitOid, exceedsMax);
+            const markdownTable = yield buildMarkdownPreviewTable(prNumber, files, pr.checksUrl, commitOid, exceedsMax);
             let updatedBody = "";
             if (pr.body.includes(PREVIEW_TABLE_START) &&
                 pr.body.includes(PREVIEW_TABLE_END)) {
@@ -236,28 +291,32 @@ function toPreviewLink(file, prNumber) {
 }
 function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceedsMax = false) {
     var _a;
-    const links = new Map();
-    files.forEach((file) => {
-        links.set(file.path, toPreviewLink(file.path, prNumber));
+    return __awaiter(this, void 0, void 0, function* () {
+        const links = new Map();
+        files.forEach((file) => {
+            links.set(file.path, toPreviewLink(file.path, prNumber));
+        });
+        let markdownTable = "#### Internal previews\n\n";
+        const isCollapsible = ((_a = WorkflowInput_1.workflowInput.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < links.size;
+        if (isCollapsible) {
+            markdownTable +=
+                "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
+        }
+        markdownTable += "| 📄 File | 🔗 Preview link |\n";
+        markdownTable += "|:--|:--|\n";
+        for (const [file, link] of links) {
+            const heading = yield (0, file_heading_extractor_1.getHeadingTextFrom)(file);
+            const previewTitle = heading || file.replace(".md", "");
+            markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${link}) |\n`;
+        }
+        if (isCollapsible) {
+            markdownTable += "\n</details>\n";
+        }
+        if (exceedsMax /* include footnote when we're truncating... */) {
+            markdownTable += `\n> **Note**\n> This table shows preview links for the ${WorkflowInput_1.workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
+        }
+        return markdownTable;
     });
-    let markdownTable = "#### Internal previews\n\n";
-    const isCollapsible = ((_a = WorkflowInput_1.workflowInput.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < links.size;
-    if (isCollapsible) {
-        markdownTable +=
-            "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
-    }
-    markdownTable += "| 📄 File | 🔗 Preview link |\n";
-    markdownTable += "|:--|:--|\n";
-    links.forEach((link, file) => {
-        markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${file.replace(".md", "")}](${link}) |\n`;
-    });
-    if (isCollapsible) {
-        markdownTable += "\n</details>\n";
-    }
-    if (exceedsMax /* include footnote when we're truncating... */) {
-        markdownTable += `\nThis table shows preview links for the ${WorkflowInput_1.workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
-    }
-    return markdownTable;
 }
 function replaceExistingTable(body, table) {
     const startIndex = body.indexOf(PREVIEW_TABLE_START);
@@ -10140,6 +10199,14 @@ module.exports = require("events");
 
 "use strict";
 module.exports = require("fs");
+
+/***/ }),
+
+/***/ 3292:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs/promises");
 
 /***/ }),
 
