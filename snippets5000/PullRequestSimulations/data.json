@@ -155,6 +155,29 @@
     ]
   },
   {
+    "Name": "Delete - All files, artifact remains in folder and snippets file",
+    "ExpectedResults": [
+      {
+        "ResultCode": 1,
+        "DiscoveredProject": ""
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/normal/deleted_code/someProject.csproj"
+      },
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/normal/deleted_code/codefile.cs"
+      },
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/normal/deleted_code/snippets.5000.json"
+      }
+    ]
+  },
+  {
     "Name": "Delete - All files, folder gone",
     "ExpectedResults": null,
     "Items": [
