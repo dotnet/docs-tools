@@ -684,7 +684,7 @@ static class Program
 
     #region Orphaned snippets
     /// <summary>
-    /// Returns a list of *.cs, *.vb, *.fs, and *.cpp files in the specified directory and its subdirectories.
+    /// Returns a list of code files in the specified directory and its subdirectories.
     /// </summary>
     private static List<(string, string)> GetSnippetFiles(string inputDirectory)
     {
