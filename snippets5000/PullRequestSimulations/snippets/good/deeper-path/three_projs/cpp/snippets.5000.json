@@ -1,3 +1,11 @@
 {
-    
+  "host": "dotnet",
+  "expectederrors": [
+    {
+      "file": "snippets\\good\\deeper-path\\three_projs\\cpp\\project.vcxproj",
+      "line": 33,
+      "column": 3,
+      "error": "MSB4019"
+    }
+  ]
 }

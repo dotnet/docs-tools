@@ -1,8 +1,10 @@
 ﻿using DotNetDocs.Tools.Utility;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PullRequestSimulations")]
 
@@ -78,7 +80,7 @@ class Program
     const string OUTPUT_ERROR_1_NOPROJ = "ERROR: Project missing. A project (and optionally a solution file) must be in this directory or one of the parent directories to validate and build this code.";
     const string OUTPUT_ERROR_2_TOOMANY = "ERROR: Too many projects found. A single project or solution must exist in this directory or one of the parent directories.";
     const string OUTPUT_ERROR_3_SLNNOPROJ = "ERROR: Solution found, but missing project. A project is required to compile this code.";
-    const string OUTPUT_GOOD = "GOOD";
+    const string OUTPUT_GOOD = "GOOD: Passed structural tests.";
     const string SNIPPETS_FILE_NAME = "snippets.5000.json";
 
     const int EXITCODE_GOOD = 0;
@@ -247,7 +249,7 @@ class Program
                 }
                 else if (config.Host == "custom")
                 {
-                    if (config.Command != null)
+                    if (config.Command is not null)
                     {
                         foreach (var key in expansionVariables.Keys)
                             config.Command = config.Command.Replace($"{{{key}}}", expansionVariables[key]);
@@ -258,53 +260,59 @@ class Program
                     {
                         Console.WriteLine($"{Log(2)}Mode is custom but command isn't set");
                         config.RunOutput = "Invalid snippets file, missing command for custom action";
-                        config.RunExitCode = EXITCODE_BAD;
+                        config.RunConsideredGood = false;
                         exitCode = EXITCODE_BAD;
                     }
                 }
                 else
                 {
                     Console.WriteLine($"{Log(2)}Mode is invalid... nothing to do");
+                    config.RunConsideredGood = false;
                     exitCode = EXITCODE_BAD;
                 }
 
                 config.RunTargetFile = projectPath;
 
                 // Run the batch file to do the compile.
-                Console.WriteLine($"{Log(2)}Contents of {FANCY_BATCH_FILENAME}:");
-                foreach (var line in File.ReadAllLines(FANCY_BATCH_FILENAME))
-                    Console.WriteLine($"{Log(4)}{line}");
-
-                ProcessStartInfo processInfo = new ProcessStartInfo(FANCY_BATCH_FILENAME)
+                if (config.RunConsideredGood)
                 {
-                    WorkingDirectory = Path.GetDirectoryName(projectPath),
-                    RedirectStandardError = true,
-                    RedirectStandardOutput = true,
-                };
+                    Console.WriteLine($"{Log(2)}Contents of {FANCY_BATCH_FILENAME}:");
+                    foreach (var line in File.ReadAllLines(FANCY_BATCH_FILENAME))
+                        Console.WriteLine($"{Log(4)}{line}");
 
-                Process process = new Process()
-                {
-                    StartInfo = processInfo,
+                    ProcessStartInfo processInfo = new ProcessStartInfo(FANCY_BATCH_FILENAME)
+                    {
+                        WorkingDirectory = Path.GetDirectoryName(projectPath),
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                    };
 
-                };
-                process.ErrorDataReceived += Process_ErrorDataReceived;
-                process.OutputDataReceived += Process_ErrorDataReceived;
+                    Process process = new Process()
+                    {
+                        StartInfo = processInfo,
 
-                // Capture the results of the output
-                void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e) =>
-                    config.RunOutput += $"{e.Data}\r\n";
+                    };
+                    process.ErrorDataReceived += Process_ErrorDataReceived;
+                    process.OutputDataReceived += Process_ErrorDataReceived;
 
-                // Start the process
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
+                    // Capture the results of the output
+                    void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e) =>
+                        config.RunOutput += $"{e.Data}\r\n";
 
-                await process.WaitForExitAsync();
+                    // Start the process
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
 
-                // Capture exit code and log output
-                config.RunExitCode = process.ExitCode;
-                Console.WriteLine($"{Log(2)}Output: \r\n{config.RunOutput}");
+                    await process.WaitForExitAsync();
 
+                    // Capture exit code and log output
+                    config.RunExitCode = process.ExitCode;
+                    config.RunConsideredGood = config.RunExitCode == 0;
+
+                    config.RunOutput = config.RunOutput.Trim();
+                    Console.WriteLine($"{Log(2)}Output: \r\n{Log(4)}{config.RunOutput.Replace("\n", $"\n{Log(4)}")}\r\n");
+                }
                 compiledProjects.Add(config);
 
                 counter++;
@@ -312,45 +320,87 @@ class Program
 
             Console.WriteLine();
 
+            // Build a list of items that actually ran and had an error code
             SnippetsConfigFile[] failedProjects = compiledProjects.Where(p => p.RunExitCode != 0).ToArray();
 
-            if (failedProjects.Length == 0)
-            {
-                if (exitCode != EXITCODE_GOOD)
-                    Console.WriteLine("All builds completed, but some may not have been run or were incorrectly configured");
-                else
-                    Console.WriteLine("All builds successful");
-            }
-
+            first = false;
             // Process all of the results and ignore any known errors
             foreach (var config in failedProjects)
             {
-                Console.WriteLine($"Processing failed compile: {config.RunTargetFile}");
-                string? errorCode = null;
-                string? errorLine = null;
+                if (!first)
+                {
+                    Console.WriteLine($"\r\nSome projects failed to compile...");
+                    first = true;
+                }
+
+                List<(string ErrorCode, string ErrorLine)> everyError = new();
+                Console.WriteLine($"\r\nProcessing failure: {config.RunTargetFile}");
 
                 foreach (var line in config.RunOutput.Split('\n'))
                 {
                     Match match = Regex.Match(line, ": (?:Solution file error|error) ([^:]*)");
 
                     if (match.Success)
-                    {
-                        errorCode = match.Groups[1].Value;
-                        errorLine = line;
-                        break;
-                    }
+                        everyError.Add((match.Groups[1].Value, line));
                 }
 
-                if (errorCode is null)
-                {
+                if (everyError.Count == 0)
                     Console.WriteLine($"{Log(2)}Unable to find error from output");
-                }
                 else
                 {
-                    // TODO Now we're in the other powershell script
-                    Console.WriteLine($"{Log(2)}Found error code: {errorCode} on line\r\n{Log(2)}{errorLine}");
-                }
+                    everyError = everyError.Distinct().ToList();
 
+                    int errorsSkipped = 0;
+                    foreach (var (errorCode, errorLine) in everyError)
+                    {
+                        Console.WriteLine($"\r\n{Log(2)}Found error code: {errorCode} on line\r\n{Log(4)}{errorLine!}");
+
+                        Match match = Regex.Match(errorLine!, "(^.*)\\((\\d*),(\\d*)\\)");
+
+                        if (match.Success)
+                        {
+                            string file = match.Groups[1].Value.Replace($"D:\\a\\{repo}\\{repo}\\", "");//.Replace('\\', '/');
+                            int lineNumber = int.Parse(match.Groups[2].Value);
+                            int column = int.Parse(match.Groups[3].Value);
+                            bool errorSkipped = false;
+
+                            // Skippable error, only need to find one. LINQ is more expressive then a foreach + if check
+                            foreach (var _ in from error in config.ExpectedErrors
+                                              where error.Error == errorCode
+                                                    && file.EndsWith(config.ExpectedErrors[0].File, StringComparison.OrdinalIgnoreCase)
+                                                    && error.Line == lineNumber
+                                              select new { })
+                            {
+                                Console.WriteLine($"{Log(4)}Skipping this error");
+                                errorSkipped = true;
+                                break;
+                            }
+
+                            if (errorSkipped)
+                                errorsSkipped++;
+                            else
+                                Console.WriteLine($"::error file={file},line={lineNumber},col={column}::{errorLine}");
+
+                        }
+                        else
+                            Console.WriteLine($"{Log(2)}Unable to parse error line and column");
+                    }
+
+                    // Mark this as successful because every error was skipped
+                    config.RunConsideredGood = errorsSkipped == everyError.Count;
+                }
+            }
+
+            first = false;
+            foreach (var item in compiledProjects.Where(p => !p.RunConsideredGood))
+            {
+                if (!first)
+                {
+                    Console.WriteLine($"\r\nCompile targets with unresolved issues:");
+                    first = true;
+                }
+                Console.WriteLine($"{Log(2)}{item.RunTargetFile}");
+                exitCode = EXITCODE_BAD;
             }
 
             return exitCode;

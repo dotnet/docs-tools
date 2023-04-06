@@ -26,13 +26,15 @@ Sample snippets.5000.json file
         public string? Command { get; set; }
 
         [JsonPropertyName("expectederrors")]
-        public ExpectedError[]? ExpectedErrors { get; set; }
+        public ExpectedError[] ExpectedErrors { get; set; } = Array.Empty<ExpectedError>();
 
         public string RunOutput { get; set; } = string.Empty;
 
         public string? RunTargetFile { get; set; }
 
         public int RunExitCode { get; set; }
+
+        public bool RunConsideredGood { get; set; } = true;
 
         public static SnippetsConfigFile Load(string file)
         {
@@ -41,19 +43,17 @@ Sample snippets.5000.json file
             return JsonSerializer.Deserialize<SnippetsConfigFile>(System.IO.File.ReadAllText(file), options)!;
         }
 
-        public class ExpectedError
-        {
-            [JsonPropertyName("file")]
-            public string? File { get; set; }
-
-            [JsonPropertyName("line")]
-            public int Line { get; set; }
-            
-            [JsonPropertyName("column")]
-            public int Column { get; set; }
-            
-            [JsonPropertyName("error")]
-            public string? Error { get; set; }
-        }
+        /// <summary>
+        /// An expected error as defined in the JSON config file.
+        /// </summary>
+        /// <param name="File">The file containing the compiler error.</param>
+        /// <param name="Line">The line of the compiler error.</param>
+        /// <param name="Column">The column of the compiler error.</param>
+        /// <param name="Error">The error identifier.</param>
+        public record ExpectedError(
+            [property: JsonPropertyName("file")] string File,
+            [property: JsonPropertyName("line")] int Line,
+            [property: JsonPropertyName("column")] int Column,
+            [property: JsonPropertyName("error")] string Error);
     }
 }
