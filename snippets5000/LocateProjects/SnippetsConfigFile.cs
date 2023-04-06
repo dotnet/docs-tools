@@ -36,6 +36,8 @@ Sample snippets.5000.json file
 
         public bool RunConsideredGood { get; set; } = true;
 
+        public bool RunErrorIsStructural { get; set; } = false;
+
         public static SnippetsConfigFile Load(string file)
         {
             JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true, Converters = { new JsonStringEnumConverter() }, ReadCommentHandling = JsonCommentHandling.Skip };

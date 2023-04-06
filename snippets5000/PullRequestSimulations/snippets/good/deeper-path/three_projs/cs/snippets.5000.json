@@ -9,7 +9,7 @@
     {
       "file": "snippets\\good\\deeper-path\\three_projs\\cs\\program.cs",
       "line": 19,
-      "error": "CSa0103"
+      "error": "CS0103"
     }
   ]
 }
