@@ -31,7 +31,7 @@ static class Program
         //   }
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] { "--orphaned-articles" };
+        args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_cfx\\cfx_wf_gettingstarted" };
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
@@ -684,11 +684,11 @@ static class Program
 
     #region Orphaned snippets
     /// <summary>
-    /// Returns a list of *.cs, *.vb, *.fs, and *.cpp files in the specified directory and its subdirectories.
+    /// Returns a list of code files in the specified directory and its subdirectories.
     /// </summary>
     private static List<(string, string)> GetSnippetFiles(string inputDirectory)
     {
-        List<string> fileExtensions = new() { ".cs", ".vb", ".fs", ".cpp" };
+        List<string> fileExtensions = new() { ".cs", ".vb", ".fs", ".cpp", ".xaml" };
 
         var dir = new DirectoryInfo(inputDirectory);
         var snippetFiles = new List<(string, string)>();
@@ -740,6 +740,7 @@ static class Program
         ".vb" => ".vbproj",
         ".fs" => ".fsproj",
         ".cpp" => ".vcxproj",
+        ".xaml" => ".*proj",
         _ => throw new ArgumentException($"Unexpected file extension.", filePath)
     };
 
