@@ -14,10 +14,13 @@ async function run(): Promise<void> {
 
     // When the status is passed, try to update the PR body.
     const isSuccess = await isSuccessStatus(token);
-    if (isSuccess && workflowInput.mode === "preview") {
-      await tryUpdatePullRequestBody(token);
+    if (isSuccess) {
+      console.log("✅ Build status is good...");
     } else {
-      console.log("Unsuccessful status detected.");
+      console.log("❌ Build status has warnings or errors!");
+    }
+    if (workflowInput.mode === "preview") {
+      await tryUpdatePullRequestBody(token);
     }
   } catch (error: unknown) {
     const e = error as Error;

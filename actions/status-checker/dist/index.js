@@ -84,11 +84,14 @@ function run() {
             console.log("Waited 60 seconds.");
             // When the status is passed, try to update the PR body.
             const isSuccess = yield (0, status_checker_1.isSuccessStatus)(token);
-            if (isSuccess && WorkflowInput_1.workflowInput.mode === "preview") {
-                yield (0, pull_updater_1.tryUpdatePullRequestBody)(token);
+            if (isSuccess) {
+                console.log("✅ Build status is good...");
             }
             else {
-                console.log("Unsuccessful status detected.");
+                console.log("❌ Build status has warnings or errors!");
+            }
+            if (WorkflowInput_1.workflowInput.mode === "preview") {
+                yield (0, pull_updater_1.tryUpdatePullRequestBody)(token);
             }
         }
         catch (error) {
