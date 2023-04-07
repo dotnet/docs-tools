@@ -11,7 +11,9 @@ namespace LocateProjects
         public const int RETURN_GOOD = 0;
         public const int RETURN_NOPROJ = 1;
         public const int RETURN_TOOMANY = 2;
-        public const int RETURN_SLN = 3;
+        public const int RETURN_SLN_NOPROJ = 3;
+
+        public const int RETURN_TEMP_SLNFOUND = 99;
 
         public readonly int Code { get; init; }
         public readonly string InputFile { get; init; }

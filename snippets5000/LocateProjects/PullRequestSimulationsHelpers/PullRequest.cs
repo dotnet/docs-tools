@@ -11,6 +11,8 @@ public class PullRequest
 
     public ExpectedResult[] ExpectedResults { get; set; }
 
+    public int CountOfEmptyResults { get; set; }
+
     public PullRequest() { }
 
     public static PullRequest[] LoadTests(string file)

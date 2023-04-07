@@ -21,7 +21,7 @@ public partial class LocalTests
         Directory.SetCurrentDirectory(CurrentFolder);
         Requests = PullRequest.LoadTests("data.json");
         Logger.LogMessage($"Current Folder is: {CurrentFolder}");
-        Environment.SetEnvironmentVariable("LocateExts", ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml;.csproj;.fsproj;.vbproj;.vcxproj;.sln");
+
     }
 
     public void RunTest(string name)
@@ -31,14 +31,17 @@ public partial class LocalTests
 
         if (testItem.ExpectedResults != null)
         {
-            Logger.LogMessage($"Expected results:");
+            Logger.LogMessage($"Expected result:");
 
             foreach (var result in testItem.ExpectedResults)
                 Logger.LogMessage($"  {result.ResultCode}|{result.DiscoveredProject}");
         }
         else
-            Logger.LogMessage($"No results expected");
+            Logger.LogMessage($"Expected result items? No");
 
+        Logger.LogMessage($"Empty results expected: {testItem.CountOfEmptyResults}");
+
+        int emptyErrors = 0;
 
         foreach (var item in testItem.Items)
         {
@@ -47,15 +50,12 @@ public partial class LocalTests
             if (item.ItemType != ChangeItemType.Delete)
                 Assert.IsTrue(File.Exists(Path.GetFullPath(Path.Combine(CurrentFolder, item.Path))));
 
-            var extensions = Environment.GetEnvironmentVariable("LocateExts")?.Split(';') ?? throw new Exception("Unable to get extensions");
 
-            PullRequestProjectList.Test(CurrentFolder, item.Path, extensions, out DiscoveryResult? resultItem);
+            PullRequestProjectList.Test(CurrentFolder, item.Path, out DiscoveryResult? resultItem);
 
             if (!resultItem.HasValue)
-            {
-                Logger.LogMessage($"  No result, is expected? {testItem.ExpectedResults == null}");
-                Assert.IsNull(testItem.ExpectedResults);
-            }
+                emptyErrors++;
+
             else
             {
                 Logger.LogMessage($"  {resultItem.Value.Code}|{resultItem.Value.DiscoveredFile}");
@@ -63,5 +63,7 @@ public partial class LocalTests
                 Assert.IsTrue(testItem.ExpectedResults.Where(r => r.ResultCode == resultItem.Value.Code && resultItem.Value.DiscoveredFile.EndsWith(r.DiscoveredProject, StringComparison.InvariantCultureIgnoreCase)).Count() == 1);
             }
         }
+
+        Assert.AreEqual(emptyErrors, testItem.CountOfEmptyResults, $"  Expected {testItem.CountOfEmptyResults} empty results, but got {emptyErrors}");
     }
 }

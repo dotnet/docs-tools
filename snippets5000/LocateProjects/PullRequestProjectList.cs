@@ -1,6 +1,7 @@
 ﻿using DotNetDocs.Tools.Utility;
 using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.GraphQLQueries;
+using System.Text.RegularExpressions;
 
 namespace LocateProjects;
 
@@ -12,7 +13,7 @@ namespace LocateProjects;
  * - Associate one file in the PR with the folder (so we can report directly in github the error location)
  * 
  * On each file deleted by the PR:
- * - Check if there is already a found project/solution for that heiarchy, if so, PASS
+ * - Check if there is already a found project/solution for that hierarchy, if so, PASS
  * - If not found, check for other code fragments at that folder or below, if so, FAIL
  * 
  * On each folder found
@@ -27,6 +28,29 @@ internal class PullRequestProjectList
     private readonly string _owner;
     private readonly int _prNumber;
     private readonly string _rootDir;
+
+    /// <summary>
+    /// Project extensions (including the solution) that are valid targets to discover.
+    /// </summary>
+    public static string[] EnvExtensionsProjects;
+
+    /// <summary>
+    /// File name extensions that trigger the scanner, such as .cs or .vb.
+    /// </summary>
+    public static string[] EnvExtensionsCodeTriggers;
+
+    /// <summary>
+    /// Additional files that can trigger the scanner, such as snippets.5000.json or global.json
+    /// </summary>
+    public static string[] EnvFileTriggers;
+
+    static PullRequestProjectList()
+    {
+        // Pull global environment variables
+        EnvExtensionsProjects = CommandLineUtility.GetEnvVariable(Program.ENV_EXTENSIONS_PROJECTS_NAME, "", Program.ENV_EXTENSIONS_PROJECTS_DEFAULT).Split(";");
+        EnvExtensionsCodeTriggers = CommandLineUtility.GetEnvVariable(Program.ENV_EXTENSIONS_CODE_TRIGGERS_NAME, "", Program.ENV_EXTENSIONS_CODE_TRIGGERS_DEFAULT).Split(";");
+        EnvFileTriggers = CommandLineUtility.GetEnvVariable(Program.ENV_FILE_TRIGGERS_NAME, "", Program.ENV_FILE_TRIGGERS_DEFAULT).Split(";");
+    }
 
     internal PullRequestProjectList(string owner, string repo, int prNumber, string rootDir)
     {
@@ -48,35 +72,27 @@ internal class PullRequestProjectList
 
     private async IAsyncEnumerable<DiscoveryResult> FindAllSolutionsAndProjects(string key)
     {
-        // Only search for projects to match a file of this extension, generally a code file
-        var includeExtensions = CommandLineUtility.GetEnvVariable("LocateExts", "LocateExts variable does not exist, skipping", "!").Split(';');
-
-        // If there is only one element in the array and it's ! 
-        if (includeExtensions.Length == 1 && includeExtensions[0] == "!")
-            includeExtensions = System.Array.Empty<string>();
-
         var client = IGitHubClient.CreateGitHubClient(key);
         var files = new FilesInPullRequest(client, _owner, _repo, _prNumber);
 
 
         await foreach (var item in files.PerformQuery())
         {
-            Test(_rootDir, item, includeExtensions, out DiscoveryResult? resultValue);
+            Test(_rootDir, item, out DiscoveryResult? resultValue);
 
             if (resultValue != null) yield return resultValue.Value;
         }
     }
 
-    internal static void Test(string _rootDir, string item, string[] includeExtensions, out DiscoveryResult? resultValue)
+    internal static void Test(string _rootDir, string item, out DiscoveryResult? resultValue)
     {
         resultValue = null;
         Directory.SetCurrentDirectory(_rootDir);
-        // Extensions variable does not include two special files we do care about.
-        // Check them here:
-        var file = Path.GetFileName(item);
-        bool specialJsonFile = (file == "snippets.5000.json") || (file == "global.json");
-        if (!specialJsonFile &&
-            ((includeExtensions.Length != 0 && !includeExtensions.Contains(Path.GetExtension(item), System.StringComparer.OrdinalIgnoreCase))))
+        bool specialFileTrigger = EnvFileTriggers.Contains(Path.GetFileName(item), StringComparer.OrdinalIgnoreCase);
+
+        // The file must be in the list of file name triggers or its extension must be one we care about
+        if (!specialFileTrigger &&
+            !EnvExtensionsCodeTriggers.Contains(Path.GetExtension(item), StringComparer.OrdinalIgnoreCase))
             return;
 
         var folders = item.Split("/");
@@ -91,19 +107,15 @@ internal class PullRequestProjectList
         string returnFile = item;
         string returnProj = "";
         bool checkingSln = Path.GetExtension(item) == ".sln";
-        bool checkingProj = Path.GetExtension(item).Contains("proj");
-        // Well, this is ugly:
-        bool moreCodeExists = Directory.Exists(Path.GetDirectoryName(item)) &&
-            Directory.EnumerateFiles(Path.GetDirectoryName(item)!, "*.cs", SearchOption.AllDirectories)
-            .Concat(Directory.EnumerateFiles(Path.GetDirectoryName(item)!, "*.vb", SearchOption.AllDirectories))
-            .Concat(Directory.EnumerateFiles(Path.GetDirectoryName(item)!, "*.fs", SearchOption.AllDirectories))
-            .Concat(Directory.EnumerateFiles(Path.GetDirectoryName(item)!, "*.cpp", SearchOption.AllDirectories))
-            .Concat(Directory.EnumerateFiles(Path.GetDirectoryName(item)!, "*.h", SearchOption.AllDirectories))
-            .Concat(Directory.EnumerateFiles(Path.GetDirectoryName(item)!, "*.xaml", SearchOption.AllDirectories))
-            .Concat(Directory.EnumerateFiles(Path.GetDirectoryName(item)!, "*.razor", SearchOption.AllDirectories))
-            .Concat(Directory.EnumerateFiles(Path.GetDirectoryName(item)!, "*.cshtml", SearchOption.AllDirectories))
-            .Concat(Directory.EnumerateFiles(Path.GetDirectoryName(item)!, "*.vbhtml", SearchOption.AllDirectories))
-            .Any();
+        bool checkingProj = EnvExtensionsProjects.Contains(Path.GetExtension(item), StringComparer.OrdinalIgnoreCase);
+
+        // If the directory of the target file exists, it's not a full delete and we should hunt for any code fragment files
+        // in that directory or a parent.
+        bool moreCodeExists =
+            Directory.Exists(Path.GetDirectoryName(item)) &&
+            EnvExtensionsCodeTriggers.Any(ext => Directory.EnumerateFiles(Path.GetDirectoryName(item)!, $"*{ext}", SearchOption.AllDirectories).Any());
+
+        string? solutionFileContents = null;
 
         var subPath = ".";
         // The important part of this logic is that for any source file that
@@ -135,14 +147,32 @@ internal class PullRequestProjectList
                     // Never found a proj/sln until now
                     if (returnCode == DiscoveryResult.RETURN_NOPROJ)
                     {
-                        returnCode = isFindSLN ? DiscoveryResult.RETURN_SLN : DiscoveryResult.RETURN_GOOD;
+                        returnCode = isFindSLN ? DiscoveryResult.RETURN_TEMP_SLNFOUND : DiscoveryResult.RETURN_GOOD;
                         returnProj = $"{subPath}/{Path.GetFileName(file)}";
+
+                        if (returnCode == DiscoveryResult.RETURN_TEMP_SLNFOUND)
+                            solutionFileContents = File.ReadAllText(Path.Combine(_rootDir, returnProj));
                     }
+
                     // Found a solution earlier, we can find 1 project, no more
-                    else if (!isFindSLN && returnCode == DiscoveryResult.RETURN_SLN)
+                    else if (!isFindSLN && returnCode == DiscoveryResult.RETURN_TEMP_SLNFOUND)
                     {
-                        returnCode = DiscoveryResult.RETURN_GOOD;
+                        //returnCode = DiscoveryResult.RETURN_GOOD;
+                        // Check if file is in solution; default to solution found but project not in it
+                        returnCode = DiscoveryResult.RETURN_SLN_NOPROJ;
+                        string solutionFolder = Path.GetFullPath(Path.GetDirectoryName(Path.Combine(_rootDir, returnProj))!);
+                        string projectPath = Path.GetFullPath(Path.Combine(Path.Combine(_rootDir, subPath), file));
+
+                        foreach (Match match in Regex.Matches(solutionFileContents!, "Project\\(\"{[A-Fa-f0-9\\-]+}\"\\) = \"[^\"]+\", \"([^\"]+)\""))
+                        {
+                            if (projectPath.Equals(Path.GetFullPath(Path.Combine(solutionFolder, match.Groups[1].Value)), StringComparison.OrdinalIgnoreCase))
+                            {
+                                returnCode = DiscoveryResult.RETURN_TEMP_SLNFOUND;
+                                break;
+                            }
+                        }
                     }
+
                     // We already found something, but we found another
                     else if (returnCode == DiscoveryResult.RETURN_GOOD)
                     {
@@ -152,15 +182,12 @@ internal class PullRequestProjectList
                 }
             }
 
-            LoopFiles(Directory.EnumerateFiles(".", "*.sln", SearchOption.TopDirectoryOnly), true);
-            LoopFiles(Directory.EnumerateFiles(".", "*.csproj", SearchOption.TopDirectoryOnly), false);
-            LoopFiles(Directory.EnumerateFiles(".", "*.vbproj", SearchOption.TopDirectoryOnly), false);
-            LoopFiles(Directory.EnumerateFiles(".", "*.fsproj", SearchOption.TopDirectoryOnly), false);
-            LoopFiles(Directory.EnumerateFiles(".", "*.vcxproj", SearchOption.TopDirectoryOnly), false);
+            foreach (string proj in EnvExtensionsProjects)
+                LoopFiles(Directory.EnumerateFiles(".", $"*{proj}", SearchOption.TopDirectoryOnly), proj.Equals(".sln", StringComparison.OrdinalIgnoreCase));
         }
 
-        // If we're actually checking a sln (it was modified/added) we don't want to error
-        if ((checkingSln || specialJsonFile) && returnCode == DiscoveryResult.RETURN_SLN)
+        // If a solution was found, we're good.
+        if (returnCode == DiscoveryResult.RETURN_TEMP_SLNFOUND)
             returnCode = DiscoveryResult.RETURN_GOOD;
 
         if (deletedFile && (returnCode == DiscoveryResult.RETURN_NOPROJ) && !moreCodeExists)

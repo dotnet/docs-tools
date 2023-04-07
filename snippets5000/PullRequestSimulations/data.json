@@ -142,6 +142,7 @@
   },
   {
     "Name": "Delete - All files, artifact remains in folder",
+    "CountOfEmptyResults": 2,
     "ExpectedResults": null,
     "Items": [
       {
@@ -156,6 +157,7 @@
   },
   {
     "Name": "Delete - All files, artifact remains in folder and snippets file",
+    "CountOfEmptyResults": 2,
     "ExpectedResults": [
       {
         "ResultCode": 1,
@@ -179,6 +181,7 @@
   },
   {
     "Name": "Delete - All files, folder gone",
+    "CountOfEmptyResults": 2,
     "ExpectedResults": null,
     "Items": [
       {
@@ -211,10 +214,29 @@
     ]
   },
   {
-    "Name": "Create - Solution found, just .proj file",
+    "Name": "Create - New project, is in old solution",
     "ExpectedResults": [
       {
         "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/solutions/lots-o-projects/linq-snippets.sln"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Create",
+        "Path": "snippets/good/solutions/lots-o-projects/partition/partition.csproj"
+      },
+      {
+        "ItemType": "Create",
+        "Path": "snippets/good/solutions/lots-o-projects/projection/Program.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Create - Solution found, just .proj file",
+    "ExpectedResults": [
+      {
+        "ResultCode": 3,
         "DiscoveredProject": "snippets/bad/sln_odd_proj/file.sln"
       }
     ],
@@ -281,10 +303,29 @@
     ]
   },
   {
-    "Name": "Edit - Solution found, no project",
+    "Name": "Create - New project, is missing from solution",
     "ExpectedResults": [
       {
         "ResultCode": 3,
+        "DiscoveredProject": "snippets/good/solutions/lots-o-projects/linq-snippets.sln"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Create",
+        "Path": "snippets/good/solutions/lots-o-projects/partition_not_in_sln/partition.csproj"
+      },
+      {
+        "ItemType": "Create",
+        "Path": "snippets/good/solutions/lots-o-projects/partition_not_in_sln/Program.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Edit - Solution found, no project",
+    "ExpectedResults": [
+      {
+        "ResultCode": 1,
         "DiscoveredProject": "snippets/bad/sln_no_proj/file.sln"
       }
     ],

@@ -5,81 +5,17 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
+using GitHubJwt;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PullRequestSimulations")]
 
 namespace LocateProjects;
 
-// Notes on turning this spike into a fully functioning tool for our 
-// build system.
-// 
-// Current status:
-//      This spike finds all *.sln files under a given root directory.
-//      In addition, it finds all *.*proj files that are not in the
-//      same folder or a child folder of a *.sln file. That should
-//      be the full list of potential projects to build in any given
-//      configuration.
-//
-// Requirements:  
-//      This program should build a list of all projects / solutions
-//      to build under different conditions and configurations:
-//      - One option is to switch on a full build of the main
-//          branch, or to build those projects affected by a PR.
-//      - Another option should select which environment to build
-//          projects for. Possibilities are:
-//          - .NET Core on unix
-//          - .NET Core on Windows (superset of above, includes desktop
-//          projects)
-//          - .NET Framework projects (new style), Windows only
-//          - .NET Framework old style projects, Windows only.
-//      Open question: Can this tool detect the OS and make that determination?
-//      Or should that be a project switch? Tentative answer: OS can be detected
-//      by this application. If "unix", (from Environment.OSVersion.Platform),
-//      Any of the Windows only projects would not be returned.
-//
-// Assumptions:
-//      - We'll spin up different containers for each of these configurations:
-//          o .NET Core on unix
-//          o .NET Core on Windows
-//          o .NET Framework on Windows
-//      This assumption means that the list of projects is never "everything to
-//      build on all configs and platforms".
-// 
-// Proposed command line:
-//  LocateProjects <rootdir> -f|--framework -p|--pullrequest <ID>
-//      <rootdir>: Required. The root directory of the cloned repo.
-//      -f|--framework: build framework style projects (valid on Windows only).
-//          If this option is not specified, .NET Core projects are built.
-//      -p|--pr <ID>: The Pull request to build. If this option is 
-//          not specified, the main branch is built.
-//          Note that a main branch buid builds *all* applicable
-//          projects. A PR build only builds affected projects on
-//          the current configuration. PR should be a number.
-//
-// Note that this implies the possibility that a container is created
-// where nothing needs to be built. Consider a PR with a .NET Core 
-// desktop WPF application. The .NET Core linux container should not
-// build anything, and the .NET Framework windows container would not
-// build anything.
-//
-// Next set of tasks:
-// 0. Remove hard coded dotnet/samples as the repo. (Make it configured).
-// 1. algorithms and unit tests on determining project and solution types.
-// 2. algorithms and unit tests on projects for target framework(s).
-// 3. Update output to match command line and OS switches.
-
-
-// Error codes per file:
-//   0 - No error
-//   1 - No project/solution file found
-//   2 - More than one project/solution file found
-
-
 class Program
 {
     const string OUTPUT_ERROR_1_NOPROJ = "ERROR: Project missing. A project (and optionally a solution file) must be in this directory or one of the parent directories to validate and build this code.";
     const string OUTPUT_ERROR_2_TOOMANY = "ERROR: Too many projects found. A single project or solution must exist in this directory or one of the parent directories.";
-    const string OUTPUT_ERROR_3_SLNNOPROJ = "ERROR: Solution found, but missing project. A project is required to compile this code.";
+    const string OUTPUT_ERROR_3_SLNNOPROJ = "ERROR: Solution found, but project was found and isn't in the solution.";
     const string OUTPUT_GOOD = "GOOD: Passed structural tests.";
     const string SNIPPETS_FILE_NAME = "snippets.5000.json";
 
@@ -87,6 +23,14 @@ class Program
     const int EXITCODE_BAD = 1;
 
     const string FANCY_BATCH_FILENAME = "snippets5000_runner.bat";
+
+    public const string ENV_EXTENSIONS_PROJECTS_NAME = "ExtensionsProjects";
+    public const string ENV_EXTENSIONS_CODE_TRIGGERS_NAME = "ExtensionsCodeTriggers";
+    public const string ENV_FILE_TRIGGERS_NAME = "FileTriggers";
+
+    public const string ENV_EXTENSIONS_PROJECTS_DEFAULT = ".sln;.csproj;.fsproj;.vbproj;.vcxproj;.proj";
+    public const string ENV_EXTENSIONS_CODE_TRIGGERS_DEFAULT = ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml;.sln;.csproj;.fsproj;.vbproj;.vcxproj;.proj";
+    public const string ENV_FILE_TRIGGERS_DEFAULT = "global.json;snippets.5000.json";
 
     /// <summary>
     /// LocateProjects: Find all projects and solutions requiring a build.
@@ -96,11 +40,6 @@ class Program
     /// <param name="owner">If available, the owner organization of the repository.</param>
     /// <param name="repo">If available, the name of the repository.</param>
     /// <returns>0 on success. Otherwise, a non-zero error code.</returns>
-    /// <remarks>
-    /// The output from standard out is the list of all projects and 
-    /// solutions that should be built. If nothing but the rootdir is specified,
-    /// it will output all solutions, and all projects that are not part of a solution.
-    /// </remarks>
     static async Task<int> Main(string sourcepath, int? pullrequest = default, string? owner=default, string? repo=default, string? dryrunTestId=default, string? dryrunTestDateFile=default)
     {
         int exitCode = EXITCODE_GOOD;
@@ -137,12 +76,12 @@ class Program
             ProcessDiscoveredProjects(projects, out transformedProjects, out projectsToCompile);
 
             // Compile each project
-            exitCode = await CompileProjects(sourcepath, exitCode, transformedProjects, projectsToCompile);
+            await CompileProjects(sourcepath, projectsToCompile, transformedProjects);
 
-            // Start hunting for errors
+            // Clear any known errors from the failed projects
             ProcessFailedProjects(repo, transformedProjects.Where(p => p.RunExitCode != 0));
 
-            // Final results
+            // Final results. List the projects/files that have failed
             bool first = false;
             foreach (var item in transformedProjects.Where(p => !p.RunConsideredGood))
             {
@@ -155,21 +94,29 @@ class Program
                 exitCode = EXITCODE_BAD;
             }
 
+            // There were no errors, log it!
             if (exitCode == 0)
                 Console.WriteLine($"\r\n😀 All builds passing! 😀");
 
             return exitCode;
         }
-        // TODO
+
+
+        // TODO: building the whole repository
         else
         {
             var fullBuild = new FullBuildProjectList(sourcepath);
             foreach (var path in fullBuild.GenerateBuildList())
                 Console.WriteLine(path);
         }
-        return 0;
+
+        return EXITCODE_GOOD;
     }
 
+    // Takes the discovery results from scanning the files in the PR and checks their status. The projects
+    // are all converted into a SnippetsConfigFile object and added to the transformedProjects list, excluding
+    // projects that are good and ready to be compiled. Those compile targets are instead added to the
+    // projectsToCompile array for processing by the next step.
     private static void ProcessDiscoveredProjects(IEnumerable<DiscoveryResult> projects, out List<SnippetsConfigFile> transformedProjects, out string[] projectsToCompile)
     {
         // Results collection
@@ -196,7 +143,7 @@ class Program
         // TODO: I don't think we want this scenario
         // ERROR solution but no proj
         first = false;
-        foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_SLN))
+        foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_SLN_NOPROJ))
         {
             if (!first) { Console.WriteLine(OUTPUT_ERROR_3_SLNNOPROJ); first = true; }
             Console.WriteLine($"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_3_SLNNOPROJ}");
@@ -221,7 +168,9 @@ class Program
         Console.WriteLine("\r\nCompile projects...");
     }
 
-    private static async Task<int> CompileProjects(string sourcePath, int exitCode, List<SnippetsConfigFile> transformedProjects, string[] projectsToCompile)
+    // Compiles all of the projectsToCompile items, adding the results to the transformedProjects list.
+    // If a snippets file is found, it's used to generate the SnippetsConfigFile instance.
+    private static async Task CompileProjects(string sourcePath, string[] projectsToCompile, List<SnippetsConfigFile> transformedProjects)
     {
         // The variables from the code put into a dictionary. Can be used with the custom
         // command line. Emulates the PowerShell ExpandString system.
@@ -275,8 +224,6 @@ class Program
             }
             else if (config.Host == "visualstudio")
             {
-                
-
                 string batchFileContent =
                     $"CALL \"{visualStudioBatchFile}\"\r\n" +
                     $"nuget.exe restore \"{projectPath}\"\r\n" +
@@ -298,14 +245,12 @@ class Program
                     Console.WriteLine($"{Log(2)}Mode is custom but command isn't set");
                     config.RunOutput = "Invalid snippets file, missing command for custom action";
                     config.RunConsideredGood = false;
-                    exitCode = EXITCODE_BAD;
                 }
             }
             else
             {
                 Console.WriteLine($"{Log(2)}Mode is invalid... nothing to do");
                 config.RunConsideredGood = false;
-                exitCode = EXITCODE_BAD;
             }
 
             config.RunTargetFile = projectPath;
@@ -327,8 +272,8 @@ class Program
                 Process process = new Process()
                 {
                     StartInfo = processInfo,
-
                 };
+
                 process.ErrorDataReceived += Process_ErrorDataReceived;
                 process.OutputDataReceived += Process_ErrorDataReceived;
 
@@ -350,15 +295,18 @@ class Program
                 config.RunOutput = config.RunOutput.Trim();
                 Console.WriteLine($"{Log(2)}Output: \r\n{Log(4)}{config.RunOutput.Replace("\n", $"\n{Log(4)}")}\r\n");
             }
+
             transformedProjects.Add(config);
 
             counter++;
         }
 
         Console.WriteLine();
-        return exitCode;
     }
 
+    // After all compiles have finished, this method scans through ones that failed and checks to see
+    // if any of the items have a snippets config setting for the failure. If it does, the "failed" item
+    // is marked as passing.
     private static void ProcessFailedProjects(string repo, IEnumerable<SnippetsConfigFile> failedProjects)
     {
         bool first = false;
@@ -366,6 +314,8 @@ class Program
         // Process all of the results and ignore any known errors
         foreach (var config in failedProjects)
         {
+            if (config.RunErrorIsStructural) continue;
+
             if (!first)
             {
                 Console.WriteLine($"\r\nSome projects failed to compile...");
