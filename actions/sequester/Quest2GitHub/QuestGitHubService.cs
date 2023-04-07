@@ -279,8 +279,8 @@ public class QuestGitHubService : IDisposable
                 new JsonPatchDocument
                 {
                     Operation = Op.Add,
-                    Path = "/fields/System.AssignedTo/id",
-                    Value = null,
+                    Path = "/fields/System.AssignedTo",
+                    Value = questAssigneeID,
                 };
             patchDocument.Add(assignPatch);
         }
