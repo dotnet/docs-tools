@@ -6,6 +6,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Linq;
 using GitHubJwt;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using static Snippets5000.SnippetsConfigFile;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PullRequestSimulations")]
 
@@ -45,6 +48,7 @@ class Program
     static async Task<int> Main(string sourcepath, int? pullrequest = default, string? owner=default, string? repo=default, string? dryrunTestId=default, string? dryrunTestDateFile=default)
     {
         int exitCode = EXITCODE_GOOD;
+        string appStartupFolder = Directory.GetCurrentDirectory();
 
         if ((pullrequest.HasValue) &&
             !string.IsNullOrEmpty(owner) &&
@@ -83,7 +87,8 @@ class Program
 
             // Final results. List the projects/files that have failed
             bool first = false;
-            foreach (var item in transformedProjects.Where(p => !p.RunConsideredGood))
+            var finalFailedProjects = transformedProjects.Where(p => !p.RunConsideredGood).ToArray();
+            foreach (var item in finalFailedProjects)
             {
                 if (!first)
                 {
@@ -94,13 +99,21 @@ class Program
                 exitCode = EXITCODE_BAD;
             }
 
+            // Generate output file
+            if (finalFailedProjects.Length != 0)
+            {
+                Directory.SetCurrentDirectory(appStartupFolder);
+                JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true, ReadCommentHandling = JsonCommentHandling.Skip };
+                using FileStream file = File.Open("output.json", FileMode.Truncate);
+                JsonSerializer.Serialize(file, finalFailedProjects, options);
+            }
+
             // There were no errors, log it!
             if (exitCode == 0)
                 Console.WriteLine($"\r\n😀 All builds passing! 😀");
 
             return exitCode;
         }
-
 
         // TODO: building the whole repository
         else
@@ -322,7 +335,6 @@ class Program
                 first = true;
             }
 
-            List<(string ErrorCode, string ErrorLine)> everyError = new();
             Console.WriteLine($"\r\nProcessing failure: {config.RunTargetFile}");
 
             foreach (var line in config.RunOutput.Split('\n'))
@@ -330,10 +342,10 @@ class Program
                 Match match = Regex.Match(line.Trim(), ": (?:Solution file error|error) ([^:]*)");
 
                 if (match.Success)
-                    everyError.Add((match.Groups[1].Value, line.Trim()));
+                    config.DetectedBuildErrors.Add(new(match.Groups[1].Value, line.Trim(), false));
             }
 
-            if (everyError.Count == 0)
+            if (config.DetectedBuildErrors.Count == 0)
             {
                 /*
                  * This code commented out for now. We've not enabled the ability to bypass structural errors
@@ -369,14 +381,14 @@ class Program
             // Normal MSBUILD errors
             else
             {
-                everyError = everyError.Distinct().ToList();
+                config.DetectedBuildErrors = config.DetectedBuildErrors.Distinct(new DetectedErrorComparer()).ToList();
 
                 int errorsSkipped = 0;
-                foreach (var (errorCode, errorLine) in everyError)
+                foreach (var item in config.DetectedBuildErrors)
                 {
-                    Console.WriteLine($"\r\n{Log(2)}Found error code: {errorCode} on line\r\n{Log(4)}{errorLine!}");
+                    Console.WriteLine($"\r\n{Log(2)}Found error code: {item.ErrorCode} on line\r\n{Log(4)}{item.ErrorLine!}");
 
-                    Match match = Regex.Match(errorLine!, "(^.*)\\((\\d*),(\\d*)\\)");
+                    Match match = Regex.Match(item.ErrorLine!, "(^.*)\\((\\d*),(\\d*)\\)");
 
                     if (match.Success)
                     {
@@ -387,20 +399,21 @@ class Program
 
                         // Skippable error, only need to find one. LINQ is more expressive then a foreach + if check
                         foreach (var _ in from error in config.ExpectedErrors
-                                          where error.Error == errorCode
+                                          where error.Error == item.ErrorCode
                                                 && file.EndsWith(config.ExpectedErrors[0].File, StringComparison.OrdinalIgnoreCase)
                                                 && error.Line == lineNumber
                                           select new { })
                         {
                             Console.WriteLine($"{Log(4)}Skipping this error");
                             errorSkipped = true;
+                            item.IsSkipped = true;
                             break;
                         }
 
                         if (errorSkipped)
                             errorsSkipped++;
                         else
-                            Console.WriteLine($"::error file={file},line={lineNumber},col={column}::{errorLine}");
+                            Console.WriteLine($"::error file={file},line={lineNumber},col={column}::{item.ErrorLine}");
 
                     }
                     else
@@ -408,7 +421,7 @@ class Program
                 }
 
                 // Mark this as successful because every error was skipped
-                config.RunConsideredGood = errorsSkipped == everyError.Count;
+                config.RunConsideredGood = errorsSkipped == config.DetectedBuildErrors.Count;
             }
         }
     }

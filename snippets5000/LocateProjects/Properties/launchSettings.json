@@ -12,7 +12,7 @@
     },
     "Test via Local Tests": {
       "commandName": "Project",
-      "commandLineArgs": "--dryrun-test-id \"Create - New project, is missing from solution\" --sourcepath C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations --owner nah --repo nah --pullrequest 1 --dryrun-test-date-file C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations\\data.json",
+      "commandLineArgs": "--dryrun-test-id \"Edit - find sln\" --sourcepath C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations --owner nah --repo nah --pullrequest 1 --dryrun-test-date-file C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations\\data.json",
       "environmentVariables": {
         "ExtensionsProjs": ".csproj;.fsproj;.vbproj;.vcxproj;.sln",
         "ExtensionsCodeTriggers": ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml",
