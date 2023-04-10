@@ -1,12 +1,6 @@
 ﻿using DotNetDocs.Tools.Utility;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Linq;
-using GitHubJwt;
-using System.Text.Json.Serialization;
 using System.Text.Json;
 using static Snippets5000.SnippetsConfigFile;
 
@@ -104,7 +98,7 @@ class Program
             {
                 Directory.SetCurrentDirectory(appStartupFolder);
                 JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true, ReadCommentHandling = JsonCommentHandling.Skip };
-                using FileStream file = File.Open("output.json", FileMode.Truncate);
+                using FileStream file = File.Open("output.json", FileMode.Create);
                 JsonSerializer.Serialize(file, finalFailedProjects, options);
             }
 
