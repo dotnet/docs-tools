@@ -27,8 +27,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub.UnitTests", "actions
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarkdownLinksVerifier.UnitTests", "actions\docs-verifier\tests\MarkdownLinksVerifier\MarkdownLinksVerifier.UnitTests.csproj", "{602603B4-6207-43DC-8FAF-272B6AAB6EAA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocateProjects", "snippets5000\LocateProjects\LocateProjects.csproj", "{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.DocsTools", "DotNet.DocsTools\DotNet.DocsTools.csproj", "{2FAA5126-248D-4B18-ADF0-5D7751028A90}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IssueCloser", "IssueCloser\IssueCloser.csproj", "{5051D4FB-D8E5-4EAB-8C50-78E62CB8B8DA}"
@@ -75,6 +73,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		ThirdPartyNotices.md = ThirdPartyNotices.md
 		whatsnew.Dockerfile = whatsnew.Dockerfile
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snippets5000", "snippets5000\Snippets5000\Snippets5000.csproj", "{713E0DB5-FF4C-415A-A3CC-42FCDC5BB307}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -130,10 +130,6 @@ Global
 		{602603B4-6207-43DC-8FAF-272B6AAB6EAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{602603B4-6207-43DC-8FAF-272B6AAB6EAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{602603B4-6207-43DC-8FAF-272B6AAB6EAA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EC78B418-EA30-4F8A-85B7-AAA4BAEDBCB4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2FAA5126-248D-4B18-ADF0-5D7751028A90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2FAA5126-248D-4B18-ADF0-5D7751028A90}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2FAA5126-248D-4B18-ADF0-5D7751028A90}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -186,6 +182,10 @@ Global
 		{DCA6CCA3-423E-43A8-8D41-A54837E63F48}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCA6CCA3-423E-43A8-8D41-A54837E63F48}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DCA6CCA3-423E-43A8-8D41-A54837E63F48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{713E0DB5-FF4C-415A-A3CC-42FCDC5BB307}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{713E0DB5-FF4C-415A-A3CC-42FCDC5BB307}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{713E0DB5-FF4C-415A-A3CC-42FCDC5BB307}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{713E0DB5-FF4C-415A-A3CC-42FCDC5BB307}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
