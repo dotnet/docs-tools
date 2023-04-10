@@ -1,0 +1,24 @@
+{
+  "profiles": {
+    "Test via GitHub": {
+      "commandName": "Project",
+      "commandLineArgs": "--sourcepath C:\\\\code\\\\Work\\\\dotnet\\\\docs-desktop --owner dotnet --repo docs-desktop --pullrequest 1058",
+      "environmentVariables": {
+        "ExtensionsProjs": ".csproj;.fsproj;.vbproj;.vcxproj;.sln",
+        "ExtensionsCodeTriggers": ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml",
+        "FileTriggers": "global.json;snippets.5000.json",
+        "VS_DEVCMD": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat"
+      }
+    },
+    "Test via Local Tests": {
+      "commandName": "Project",
+      "commandLineArgs": "--dryrun-test-id \"Edit - find sln\" --sourcepath C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations --owner nah --repo nah --pullrequest 1 --dryrun-test-date-file C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations\\data.json",
+      "environmentVariables": {
+        "ExtensionsProjs": ".csproj;.fsproj;.vbproj;.vcxproj;.sln",
+        "ExtensionsCodeTriggers": ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml",
+        "FileTriggers": "global.json;snippets.5000.json",
+        "VS_DEVCMD": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat"
+      }
+    }
+  }
+}

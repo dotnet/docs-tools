@@ -1,0 +1,15 @@
+{
+  "host": "dotnet",
+  "expectederrors": [
+    {
+      "file": "snippets\\good\\deeper-path\\three_projs\\cs\\Program.cs",
+      "line": 19,
+      "error": "CS0201"
+    },
+    {
+      "file": "snippets\\good\\deeper-path\\three_projs\\cs\\program.cs",
+      "line": 19,
+      "error": "CS0103"
+    }
+  ]
+}
