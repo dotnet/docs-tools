@@ -50,7 +50,7 @@ public sealed class OspoClient : IDisposable
 
     public async Task<OspoLink?> GetAsync(string gitHubLogin)
     {
-        if (_useAllCache)
+        if ((_useAllCache) || (_allLinks is not null))
         {
             _allLinks = _allLinks ?? await GetAllAsync();
             return _allLinks.LinkByLogin.GetValueOrDefault(gitHubLogin); 
