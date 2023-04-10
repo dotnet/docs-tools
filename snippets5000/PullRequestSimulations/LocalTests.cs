@@ -26,9 +26,9 @@ public partial class LocalTests
         Logger.LogMessage("Running " + name);
         PullRequest testItem = Requests.Where(p => p.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase)).First();
 
-        if (testItem.ExpectedResults != null)
+        if (testItem.ExpectedResults != null && testItem.ExpectedResults.Length != 0)
         {
-            Logger.LogMessage($"Expected result:");
+            Logger.LogMessage($"Expected result(s):");
 
             foreach (var result in testItem.ExpectedResults)
                 Logger.LogMessage($"  {result.ResultCode}|{result.DiscoveredProject}");

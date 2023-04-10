@@ -3,54 +3,47 @@ using System.Text.Json;
 
 namespace PullRequestSimulations;
 
-public class PullRequest
+/// <summary>
+/// A data type for the data.json file. Represents a pull request from GitHub
+/// </summary>
+public struct PullRequest
 {
-    public string Name { get; set; }
+    /// <summary>
+    /// The name.
+    /// </summary>
+    [JsonRequired]
+    public string Name { get; init; }
 
-    public ChangeItem[] Items { get; set; }
+    /// <summary>
+    /// The change request items, such as adding a file.
+    /// </summary>
+    [JsonRequired]
+    public ChangeItem[] Items { get; init; } = Array.Empty<ChangeItem>();
 
-    public ExpectedResult[] ExpectedResults { get; set; }
+    /// <summary>
+    /// The scanner results this PR should produce.
+    /// </summary>
+    public ExpectedResult[]? ExpectedResults { get; init; } = Array.Empty<ExpectedResult>();
 
-    public int CountOfEmptyResults { get; set; }
+    /// <summary>
+    /// How many items in this PR won't produce a scanner result.
+    /// </summary>
+    public int CountOfEmptyResults { get; init; } = 0;
 
+    /// <summary>
+    /// Creates the default implementation of this object.
+    /// </summary>
     public PullRequest() { }
 
+    /// <summary>
+    /// Loads an array of pull requests from the specified JSON file.
+    /// </summary>
+    /// <param name="file">The file to load.</param>
+    /// <returns>An array of pull requests.</returns>
     public static PullRequest[] LoadTests(string file)
     {
         JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true, Converters = { new JsonStringEnumConverter() }, ReadCommentHandling = JsonCommentHandling.Skip };
 
-        return JsonSerializer.Deserialize<PullRequest[]>(System.IO.File.ReadAllText(file), options)!;
+        return JsonSerializer.Deserialize<PullRequest[]>(File.ReadAllText(file), options)!;
     }
-}
-
-public struct ChangeItem
-{
-    public ChangeItemType ItemType { get; init; }
-
-    public string Path { get; init; }
-
-    public ChangeItem(ChangeItemType itemType, string path)
-    {
-        ItemType = itemType;
-        Path = path;
-    }
-}
-
-public struct ExpectedResult
-{
-    public int ResultCode { get; init; }
-    public string DiscoveredProject { get; init; }
-
-    public ExpectedResult(int resultCode, string discoveredProject)
-    {
-        ResultCode = resultCode;
-        DiscoveredProject = discoveredProject;
-    }
-}
-
-public enum ChangeItemType
-{
-    Create,
-    Edit,
-    Delete
 }
