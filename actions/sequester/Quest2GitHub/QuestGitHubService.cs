@@ -69,6 +69,8 @@ public class QuestGitHubService : IDisposable
     /// <returns></returns>
     public async Task ProcessIssues(string organization, string repository, int duration, bool dryRun)
     {
+        // Trigger the OSPO bulk import before making any edits to any issue:
+        await _ospoClient.GetAllAsync();
         if ((_importTriggerLabel is null) || (_importedLabel is null))
             await retrieveLabelIDs(organization, repository);
         if (_allIterations is null)
@@ -124,6 +126,9 @@ public class QuestGitHubService : IDisposable
     /// <returns>A task representing the current operation</returns>
     public async Task ProcessIssue(string gitHubOrganization, string gitHubRepository, int issueNumber)
     {
+        // Trigger the OSPO bulk import before making any edits to any issue:
+        await _ospoClient.GetAllAsync();
+
         if ((_importTriggerLabel == null) || (_importedLabel == null))
             await retrieveLabelIDs(gitHubOrganization, gitHubRepository);
         if (_allIterations is null)

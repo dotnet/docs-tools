@@ -50,7 +50,7 @@ public sealed class OspoClient : IDisposable
 
     public async Task<OspoLink?> GetAsync(string gitHubLogin)
     {
-        if (_useAllCache)
+        if ((_useAllCache) || (_allLinks is not null))
         {
             _allLinks = _allLinks ?? await GetAllAsync();
             return _allLinks.LinkByLogin.GetValueOrDefault(gitHubLogin); 
@@ -65,6 +65,10 @@ public sealed class OspoClient : IDisposable
             $"people/links/github/{gitHubLogin}", JsonSerializerOptionsDefaults.Shared);
             return link;
         });
+        if (result.Outcome == OutcomeType.Failure)
+        {
+            throw new InvalidOperationException("OSPO REST API failure. Check access token rights");
+        }
 
         return result.Result;
     }
@@ -86,6 +90,12 @@ public sealed class OspoClient : IDisposable
             linkSet.Initialize();
             return linkSet;
         });
+
+        if (result.Outcome == OutcomeType.Failure)
+        {
+            throw new InvalidOperationException("OSPO REST API failure. Check access token rights");
+        }
+
         _allLinks = result.Result;
         return result.Result;
     }
