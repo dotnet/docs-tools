@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-	  <ProjectReference Include="..\LocateProjects\Snippets5000.csproj" />
+	  <ProjectReference Include="..\Snippets5000\Snippets5000.csproj" />
 	  <ProjectReference Include="..\PullRequestSimulations.Generators\PullRequestSimulations.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" PrivateAssets="All" />
   </ItemGroup>
 
