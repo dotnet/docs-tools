@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using System.Text.Json;
 
-namespace LocateProjects;
+namespace Snippets5000;
 
 /*
 Sample snippets.5000.json file

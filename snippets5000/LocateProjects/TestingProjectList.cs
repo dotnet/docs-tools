@@ -2,7 +2,7 @@
 using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.GraphQLQueries;
 
-namespace LocateProjects;
+namespace Snippets5000;
 
 /// <summary>
 /// This class is used to process an item from the data.json file in the MSTest project, simulating a GitHub PR.

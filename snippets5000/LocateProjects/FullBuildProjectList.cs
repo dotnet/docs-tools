@@ -1,4 +1,4 @@
-﻿namespace LocateProjects;
+﻿namespace Snippets5000;
 
 internal class FullBuildProjectList
 {

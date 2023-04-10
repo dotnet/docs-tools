@@ -3,7 +3,7 @@ using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.RegularExpressions;
 
-namespace LocateProjects;
+namespace Snippets5000;
 
 /*
  *

@@ -9,7 +9,7 @@ using GitHubJwt;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PullRequestSimulations")]
 
-namespace LocateProjects;
+namespace Snippets5000;
 
 class Program
 {
