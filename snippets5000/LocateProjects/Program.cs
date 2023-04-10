@@ -39,6 +39,8 @@ class Program
     /// <param name="pullrequest">If available, the number of the pull request being built.</param>
     /// <param name="owner">If available, the owner organization of the repository.</param>
     /// <param name="repo">If available, the name of the repository.</param>
+    /// <param name="dryrunTestId">The test id from data.json to simulate a pull request.</param>
+    /// <param name="dryrunTestDateFile">The json file defining all the tests that can be referenced by <paramref name="dryrunTestId"/>. Usually data.json.</param>
     /// <returns>0 on success. Otherwise, a non-zero error code.</returns>
     static async Task<int> Main(string sourcepath, int? pullrequest = default, string? owner=default, string? repo=default, string? dryrunTestId=default, string? dryrunTestDateFile=default)
     {
@@ -71,9 +73,7 @@ class Program
             Console.WriteLine("\r\nOutput all items found, grouped by status...");
 
             // Start processing all of the discovered projects
-            List<SnippetsConfigFile> transformedProjects;
-            string[] projectsToCompile;
-            ProcessDiscoveredProjects(projects, out transformedProjects, out projectsToCompile);
+            ProcessDiscoveredProjects(projects, out List<SnippetsConfigFile> transformedProjects, out string[] projectsToCompile);
 
             // Compile each project
             await CompileProjects(sourcepath, projectsToCompile, transformedProjects);
@@ -174,7 +174,7 @@ class Program
     {
         // The variables from the code put into a dictionary. Can be used with the custom
         // command line. Emulates the PowerShell ExpandString system.
-        Dictionary<string, string> expansionVariables = new Dictionary<string, string>(3);
+        Dictionary<string, string> expansionVariables = new(3);
 
         string visualStudioBatchFile = CommandLineUtility.GetEnvVariable("VS_DEVCMD", "", "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\Tools\\VsDevCmd.bat");
 
@@ -262,14 +262,14 @@ class Program
                 foreach (var line in File.ReadAllLines(FANCY_BATCH_FILENAME))
                     Console.WriteLine($"{Log(4)}{line}");
 
-                ProcessStartInfo processInfo = new ProcessStartInfo(FANCY_BATCH_FILENAME)
+                ProcessStartInfo processInfo = new(FANCY_BATCH_FILENAME)
                 {
                     WorkingDirectory = Path.GetDirectoryName(projectPath),
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
                 };
 
-                Process process = new Process()
+                Process process = new()
                 {
                     StartInfo = processInfo,
                 };
@@ -419,5 +419,5 @@ class Program
     /// </summary>
     /// <param name="level">How many spaces to add.</param>
     private static string Log(int level) =>
-        new string(' ', level);
+        new(' ', level);
 }

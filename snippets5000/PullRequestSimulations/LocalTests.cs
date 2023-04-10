@@ -6,10 +6,11 @@ namespace PullRequestSimulations;
 [TestClass]
 public partial class LocalTests
 {
+    //Disable these warnings. These are set via the Init method when the test framework initializes itself.
+    #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     PullRequest[] Requests;
     string CurrentFolder;
-
-    public TestContext TestContext { get; set; }
+    #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     [TestInitialize]
     public void Init()

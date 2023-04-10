@@ -12,7 +12,7 @@ public struct PullRequest
     /// The name.
     /// </summary>
     [JsonRequired]
-    public string Name { get; init; }
+    public string Name { get; init; } = "";
 
     /// <summary>
     /// The change request items, such as adding a file.
@@ -28,7 +28,7 @@ public struct PullRequest
     /// <summary>
     /// How many items in this PR won't produce a scanner result.
     /// </summary>
-    public int CountOfEmptyResults { get; init; } = 0;
+    public int CountOfEmptyResults { get; init; } = default;
 
     /// <summary>
     /// Creates the default implementation of this object.
@@ -42,7 +42,7 @@ public struct PullRequest
     /// <returns>An array of pull requests.</returns>
     public static PullRequest[] LoadTests(string file)
     {
-        JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true, Converters = { new JsonStringEnumConverter() }, ReadCommentHandling = JsonCommentHandling.Skip };
+        JsonSerializerOptions options = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() }, ReadCommentHandling = JsonCommentHandling.Skip };
 
         return JsonSerializer.Deserialize<PullRequest[]>(File.ReadAllText(file), options)!;
     }
