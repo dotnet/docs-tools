@@ -75,6 +75,7 @@ internal class Program
         }
         catch (Exception ex)
         {
+            Console.Error.WriteLine($"::  -- {ex.Message} -- ");
             Console.Error.WriteLine(ex.ToString());
             return 1;
         }
@@ -98,6 +99,6 @@ internal class Program
                 options.AzureDevOps.AreaPath,
                 options.ImportTriggerLabel,
                 options.ImportedLabel,
-                !bulkImport);
+                bulkImport);
     }
 }
