@@ -183,7 +183,9 @@ class Program
         // command line. Emulates the PowerShell ExpandString system.
         Dictionary<string, string> expansionVariables = new(3);
 
-        string visualStudioBatchFile = CommandLineUtility.GetEnvVariable("VS_DEVCMD", "", "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\Tools\\VsDevCmd.bat");
+        // EnvVar is wrong on the github runners!??
+        //string visualStudioBatchFile = CommandLineUtility.GetEnvVariable("VS_DEVCMD", "", "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\Tools\\VsDevCmd.bat");
+        string visualStudioBatchFile = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\Tools\\VsDevCmd.bat";
 
         int counter = 1;
         foreach (var item in projectsToCompile)
