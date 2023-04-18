@@ -16,10 +16,7 @@ public static class RedirectionsVerifier
     public static async Task<bool> WriteResultsAsync(
         TextWriter writer, string sourcePath, IEnumerable<Redirection> redirections)
     {
-        if (writer is null)
-        {
-            throw new ArgumentNullException(nameof(writer));
-        }
+        ArgumentNullException.ThrowIfNull(writer, nameof(writer));
 
         List<Redirection> foundRedirections =
             redirections.Where(redirection => redirection.MatchesSourcePath(sourcePath)).ToList();
