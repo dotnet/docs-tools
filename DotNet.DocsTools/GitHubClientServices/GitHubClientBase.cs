@@ -11,7 +11,7 @@ public abstract class GitHubClientBase : IGitHubClient, IDisposable
 {
     private const string ProductID = "DotNetDocs.Tools";
     private const string ProductVersion = "2.0";
-    private const string RESTendpoint = "https://api.github.com/repos";
+    private const string REST_endpoint = "https://api.github.com/repos";
     private static readonly Uri graphQLUri = new("https://api.github.com/graphql");
     private readonly HttpClient _client = new();
     private readonly AsyncRetryPolicy _retryPolicy;
@@ -53,11 +53,11 @@ public abstract class GitHubClientBase : IGitHubClient, IDisposable
             throw new InvalidOperationException($"REST request failed for app installations");
         var jsonDocument = await JsonDocument.ParseAsync(await tokenResponse.Content.ReadAsStreamAsync());
 
-        var oauthToken = jsonDocument.RootElement.GetProperty("token").GetString() ??
-            throw new ArgumentNullException("oauth token not found");
+        var oAuthToken = jsonDocument.RootElement.GetProperty("token").GetString() ??
+            throw new ArgumentException("oAuth token not found");
         var expiration = jsonDocument.RootElement.GetProperty("expires_at").GetString();
         var duration = (expiration is not null) ? DateTime.Parse(expiration) - DateTime.Now : TimeSpan.FromMinutes(50);
-        return (oauthToken, duration);
+        return (oAuthToken, duration);
     }
 
     async Task<JsonElement> IGitHubClient.PostGraphQLRequestAsync(GraphQLPacket queryText)
@@ -79,7 +79,7 @@ public abstract class GitHubClientBase : IGitHubClient, IDisposable
 
     async Task<JsonDocument> IGitHubClient.GetReposRESTRequestAsync(params string[] restPath)
     {
-        var url = RESTendpoint;
+        var url = REST_endpoint;
         foreach (var component in restPath)
             url += $"/{component}";
         // Default single page result is 30, specify max items per page (100)
@@ -94,5 +94,9 @@ public abstract class GitHubClientBase : IGitHubClient, IDisposable
         return jsonDocument;
     }
 
-    public virtual void Dispose() => _client?.Dispose();
+    public virtual void Dispose()
+    {
+        _client?.Dispose();
+        GC.SuppressFinalize(this);
+    }
 }
