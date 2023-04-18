@@ -37,9 +37,9 @@ class Program
     /// <param name="owner">If available, the owner organization of the repository.</param>
     /// <param name="repo">If available, the name of the repository.</param>
     /// <param name="dryrunTestId">The test id from data.json to simulate a pull request.</param>
-    /// <param name="dryrunTestDateFile">The json file defining all the tests that can be referenced by <paramref name="dryrunTestId"/>. Usually data.json.</param>
+    /// <param name="dryrunTestDataFile">The json file defining all the tests that can be referenced by <paramref name="dryrunTestId"/>. Usually data.json.</param>
     /// <returns>0 on success. Otherwise, a non-zero error code.</returns>
-    static async Task<int> Main(string sourcepath, int? pullrequest = default, string? owner=default, string? repo=default, string? dryrunTestId=default, string? dryrunTestDateFile=default)
+    static async Task<int> Main(string sourcepath, int? pullrequest = default, string? owner=default, string? repo=default, string? dryrunTestId=default, string? dryrunTestDataFile=default)
     {
         int exitCode = EXITCODE_GOOD;
         string appStartupFolder = Directory.GetCurrentDirectory();
@@ -63,10 +63,10 @@ class Program
             }
 
             // NOT a normal github PR and instead is a test
-            else if (string.IsNullOrEmpty(dryrunTestDateFile))
-                throw new ArgumentNullException("The dryrun Test DataFile must be set");
+            else if (string.IsNullOrEmpty(dryrunTestDataFile))
+                throw new ArgumentNullException(nameof(dryrunTestDataFile), "The dryrun Test DataFile must be set");
             else
-                projects = new TestingProjectList(dryrunTestId, dryrunTestDateFile, sourcepath).GenerateBuildList();
+                projects = new TestingProjectList(dryrunTestId, dryrunTestDataFile, sourcepath).GenerateBuildList();
 
             Console.WriteLine("\r\nOutput all items found, grouped by status...");
 
