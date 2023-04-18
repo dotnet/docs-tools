@@ -17,7 +17,7 @@ inputs:
     description: 'The branch to target. Assign from github.ref_name. Example, "main".'
     default: 'main'
   duration:
-    description: 'How many days updates to process. Issues must have been updated in that many recent days for processing.`
+    description: 'How many days updates to process. Issues must have been updated in that many recent days for processing.'
     default: '5'
 
 runs:
