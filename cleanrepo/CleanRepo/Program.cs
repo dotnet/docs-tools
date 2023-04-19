@@ -227,15 +227,17 @@ static class Program
             }
 
             Console.WriteLine($"\nSearching the '{options.IncludesDirectory}' directory recursively for orphaned .md files " +
-                $"in directories named 'includes' or '_shared'.");
+                $"in directories or subdirectories of a directory named 'includes'.");
 
             Dictionary<string, int> includeFiles = GetIncludeFiles(options.IncludesDirectory);
 
             if (includeFiles.Count == 0)
             {
-                Console.WriteLine("\nNo .md files were found in any directory named 'includes' or '_shared'.");
+                Console.WriteLine("\nNo .md files were found in any directories or subdirectories of a directory named 'includes'.");
                 return;
             }
+            else
+                Console.WriteLine($"\nChecking {includeFiles.Count} include files.");
 
             ListOrphanedIncludes(options.IncludesDirectory, includeFiles, options.Delete.Value);
         }
@@ -568,9 +570,9 @@ static class Program
                 // Example include references:
                 // [!INCLUDE [DotNet Restore Note](../includes/dotnet-restore-note.md)]
                 // [!INCLUDE[DotNet Restore Note](~/includes/dotnet-restore-note.md)]
-                // [!INCLUDE [temp](../_shared/assign-to-sprint.md)]
+                // [!INCLUDE [temp](../dir1/includes/assign-to-sprint.md)]
 
-                // An include file referenced from another include file won't have "includes" or "_shared" in the path.
+                // An include file referenced from another include file won't have "includes" in the path.
                 // E.g. [!INCLUDE [P2S FAQ All](vpn-gateway-faq-p2s-all-include.md)]
 
                 // RegEx pattern to match
@@ -642,38 +644,56 @@ static class Program
     }
 
     /// <summary>
-    /// Returns a collection of *.md files in the current directory, and optionally subdirectories,
-    /// if the directory name is 'includes' or '_shared'.
+    /// Returns a collection of *.md files in the current directory or its subdirectories
+    /// that have an ancestor directory named "includes".
     /// </summary>
     /// <returns></returns>
     private static Dictionary<string, int> GetIncludeFiles(string inputDirectory)
     {
+        const string includesDirectoryName = "includes";
+
         DirectoryInfo dir = new DirectoryInfo(inputDirectory);
 
         // Create the dictionary with a case-insensitive comparer,
         // because links in Markdown don't have to match the actual file path casing.
         Dictionary<string, int> includeFiles = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
 
-        if (String.Compare(dir.Name, "includes", true) == 0 || String.Compare(dir.Name, "_shared", true) == 0)
+        // Determine if this directory or one of its ancestors is named "includes".
+        bool startDirIsIncludesDir = false;
+        DirectoryInfo dirIterator = dir;
+        while (dirIterator != null)
         {
-            // This is a folder that is likely to contain "include"-type files, i.e. files that aren't in the TOC.
+            if (String.Compare(dirIterator.Name, includesDirectoryName, true) == 0)
+            {
+                startDirIsIncludesDir = true;
+                break;
+            }
 
-            foreach (var file in dir.EnumerateFiles("*.md"))
+            dirIterator = dirIterator.Parent;
+        }
+
+        if (startDirIsIncludesDir)
+        {
+            foreach (var file in dir.EnumerateFiles("*.md", SearchOption.AllDirectories))
             {
                 includeFiles.Add(file.FullName, 0);
             }
         }
-
-        // Search in subdirectories.
-        foreach (var subDirectory in dir.EnumerateDirectories("*", SearchOption.AllDirectories))
+        else
         {
-            if (String.Compare(subDirectory.Name, "includes", true) == 0 || String.Compare(subDirectory.Name, "_shared", true) == 0)
+            foreach (var subdirectory in dir.EnumerateDirectories(includesDirectoryName, SearchOption.AllDirectories))
             {
-                // This is a folder that is likely to contain "include"-type files, i.e. files that aren't in the TOC.
-
-                foreach (var file in subDirectory.EnumerateFiles("*.md"))
+                foreach (var file in subdirectory.EnumerateFiles("*.md", SearchOption.AllDirectories))
                 {
-                    includeFiles.Add(file.FullName, 0);
+                    try
+                    {
+                        includeFiles.Add(file.FullName, 0);
+                    }
+                    catch (ArgumentException)
+                    {
+                        // System.ArgumentException: An item with the same key has already been added.
+                        // This can happen if an "includes" directory has an ancestor named "includes".
+                    }
                 }
             }
         }
@@ -1048,7 +1068,6 @@ static class Program
 
         bool IsArticleFile(FileInfo file) =>
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}") &&
-            !file.FullName.Contains($"{Path.DirectorySeparatorChar}_shared{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}misc{Path.DirectorySeparatorChar}") &&
             String.Compare(file.Name, "TOC.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             String.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0;
