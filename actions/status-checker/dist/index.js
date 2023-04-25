@@ -19,7 +19,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getHeadingTextFrom = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const promises_1 = __nccwpck_require__(3292);
-const h1regex = /^# (?<h1>.+)/gim;
+const h1regex = /^# (?<h1>.+)$/gim;
 function getHeadingTextFrom(path) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {

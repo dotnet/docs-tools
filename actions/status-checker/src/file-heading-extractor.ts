@@ -1,7 +1,7 @@
 import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 
-const h1regex: RegExp = /^# (?<h1>.+)/gim;
+const h1regex: RegExp = /^# (?<h1>.+)$/gim;
 
 export async function getHeadingTextFrom(path: string): Promise<string | null> {
   if (!existsSync(path)) {
