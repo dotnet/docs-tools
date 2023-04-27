@@ -141,10 +141,7 @@ public class QuestWorkItem
             From = default,
             Value = assigneeID
         };
-        if (assigneeID is not null)
-        {
-            patchDocument.Add(assignPatch);
-        }
+        patchDocument.Add(assignPatch);
         var iterationSize = issue.LatestStoryPointSize();
         var iteration = iterationSize?.ProjectIteration(allIterations);
         if (iteration is not null)
