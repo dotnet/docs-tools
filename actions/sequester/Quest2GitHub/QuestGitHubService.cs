@@ -300,27 +300,6 @@ public class QuestGitHubService : IDisposable
                 Value = ghIssue.IsOpen ? "Active" : "Closed",
             });
 
-            var iterationSize = ghIssue.LatestStoryPointSize();
-            var iteration = iterationSize?.ProjectIteration(allIterations);
-            if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
-            {
-                patchDocument.Add(new JsonPatchDocument
-                {
-                    Operation = Op.Add,
-                    Path = "/fields/System.IterationPath",
-                    Value = iteration.Path,
-                });
-            }
-            if ((iterationSize?.QuestStoryPoint() is not null) && (iterationSize.QuestStoryPoint() != questItem.StoryPoints))
-            {
-                patchDocument.Add(new JsonPatchDocument
-                {
-                    Operation = Op.Add,
-                    Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
-                    Value = iterationSize.QuestStoryPoint(),
-                });
-            }
-
             // When the issue is opened or closed, 
             // update the description. That picks up any new
             // labels and comments.
@@ -331,7 +310,26 @@ public class QuestGitHubService : IDisposable
                 From = default,
                 Value = QuestWorkItem.BuildDescriptionFromIssue(ghIssue, null)
             });
-
+        }
+        var iterationSize = ghIssue.LatestStoryPointSize();
+        var iteration = iterationSize?.ProjectIteration(allIterations);
+        if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.IterationPath",
+                Value = iteration.Path,
+            });
+        }
+        if ((iterationSize?.QuestStoryPoint() is not null) && (iterationSize.QuestStoryPoint() != questItem.StoryPoints))
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
+                Value = iterationSize.QuestStoryPoint(),
+            });
         }
         QuestWorkItem? newItem = default;
         if (patchDocument.Any())
