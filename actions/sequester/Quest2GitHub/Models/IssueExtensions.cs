@@ -60,7 +60,7 @@ public static class IssueExtensions
     public static QuestIteration? ProjectIteration(string month, int calendarYear, IEnumerable<QuestIteration> iterations)
     { 
         var oldPattern = $"""CY_{calendarYear:D4}\{Months[month]:D2}""";
-        int fy = ((Months[month] > 5 ? calendarYear + 1 : calendarYear)) % 100;
+        int fy = ((Months[month] > 6 ? calendarYear + 1 : calendarYear)) % 100;
         int q = ((((Months[month]-1) / 3) + 2) % 4) + 1; // Yeah, this is weird. But, it does convert the current month to the FY quarter
         var newPattern = $"""FY{fy:D2}Q{q:D1}\{Months[month]:D2}""";
 
