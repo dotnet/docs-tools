@@ -19,7 +19,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getHeadingTextFrom = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const promises_1 = __nccwpck_require__(3292);
-const h1regex = /^# (?<h1>.+)/gim;
+const h1regex = /^# (?<h1>.+)$/gim;
 function getHeadingTextFrom(path) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -31,12 +31,8 @@ function getHeadingTextFrom(path) {
         if (!!content) {
             try {
                 let result = null;
-                let match;
-                while ((match = h1regex.exec(content)) !== null) {
-                    // This is necessary to avoid infinite loops with zero-width matches
-                    if (match.index === h1regex.lastIndex) {
-                        h1regex.lastIndex++;
-                    }
+                const match = h1regex.exec(content);
+                if (match && match.groups) {
                     result = ((_a = match.groups) === null || _a === void 0 ? void 0 : _a.h1) || null;
                 }
                 return result;

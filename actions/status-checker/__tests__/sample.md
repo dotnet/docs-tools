@@ -153,3 +153,11 @@ $$I = \int \rho R^{2} dV$$
 
 And note that you can backslash-escape any punctuation characters
 which you wish to be displayed literally, ex.: \`foo\`, \*bar\*, etc.
+
+```dockerfile
+RUN dotnet restore -a $TARGETARCH
+
+# Copy everything else and build app.
+COPY aspnetapp/. .
+RUN dotnet publish -a $TARGETARCH --self-contained false --no-restore -o /app
+```

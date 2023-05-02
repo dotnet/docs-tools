@@ -1,7 +1,7 @@
 import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 
-const h1regex: RegExp = /^# (?<h1>.+)/gim;
+const h1regex: RegExp = /^# (?<h1>.+)$/gim;
 
 export async function getHeadingTextFrom(path: string): Promise<string | null> {
   if (!existsSync(path)) {
@@ -13,13 +13,8 @@ export async function getHeadingTextFrom(path: string): Promise<string | null> {
   if (!!content) {
     try {
       let result: string | null = null;
-      let match;
-      while ((match = h1regex.exec(content)) !== null) {
-        // This is necessary to avoid infinite loops with zero-width matches
-        if (match.index === h1regex.lastIndex) {
-          h1regex.lastIndex++;
-        }
-
+      const match = h1regex.exec(content);
+      if (match && match.groups) {
         result = match.groups?.h1 || null;
       }
 
