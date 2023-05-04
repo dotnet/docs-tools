@@ -47,14 +47,19 @@ public class Program
         var configService = new ConfigurationService();
         var whatsNewConfig = await configService.GetConfiguration(input);
         var pageGenService = new PageGenerationService(whatsNewConfig);
-        await pageGenService.WriteMarkdownFile();
 
-        var tocService = new TocUpdateService(whatsNewConfig);
-        await tocService.UpdateWhatsNewToc();
+        var markdownFile = (true) ? "docs/ide/whats-new-visual-studio-docs.md" : null;
+        await pageGenService.WriteMarkdownFile(markdownFile);
 
-         var indexService = new IndexUpdateService(whatsNewConfig);
-        await indexService.UpdateWhatsNewLandingPage();
+        if (false)
+        {
+            var tocService = new TocUpdateService(whatsNewConfig);
+            await tocService.UpdateWhatsNewToc();
 
+            var indexService = new IndexUpdateService(whatsNewConfig);
+            await indexService.UpdateWhatsNewLandingPage();
+        }
         whatsNewConfig.OspoClient.Dispose();
+        whatsNewConfig.GitHubClient.Dispose();
     }
 }
