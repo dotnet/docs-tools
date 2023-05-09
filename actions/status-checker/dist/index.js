@@ -19,7 +19,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getHeadingTextFrom = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const promises_1 = __nccwpck_require__(3292);
-const h1regex = /^# (?<h1>.+)$/gim;
+const h1regex = /^# (?<h1>.*$)/gim;
 function getHeadingTextFrom(path) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -35,13 +35,20 @@ function getHeadingTextFrom(path) {
                 if (match && match.groups) {
                     result = ((_a = match.groups) === null || _a === void 0 ? void 0 : _a.h1) || null;
                 }
+                console.log(`Found ${result} from '${path}' contents.`);
                 return result;
             }
             catch (error) {
                 if (error) {
                     console.log(error.toString());
                 }
+                else {
+                    console.log(`Unknown error reading content for '${path}'.`);
+                }
             }
+        }
+        else {
+            console.log(`Unable to read content for '${path}'.`);
         }
         return null;
     });
@@ -251,8 +258,26 @@ function getModifiedMarkdownFiles(pr) {
         .map((_) => _.node);
     const exceedsMax = modifiedFiles.length > WorkflowInput_1.workflowInput.maxRowCount;
     const mostChanged = sortByMostChanged(modifiedFiles, true);
-    const sorted = sortAlphabetically(mostChanged.slice(0, WorkflowInput_1.workflowInput.maxRowCount));
+    const byChangeType = sortByChangeType(mostChanged, true);
+    const sorted = sortAlphabetically(byChangeType.slice(0, WorkflowInput_1.workflowInput.maxRowCount));
     return { files: sorted, exceedsMax };
+}
+const changeTypeOrder = [
+    "ADDED",
+    "MODIFIED",
+    "CHANGED",
+    "RENAMED",
+    "COPIED",
+    "DELETED",
+];
+function sortByChangeType(files, descending) {
+    return files.sort((a, b) => {
+        return descending
+            ? changeTypeOrder.indexOf(b.changeType) -
+                changeTypeOrder.indexOf(a.changeType)
+            : changeTypeOrder.indexOf(a.changeType) -
+                changeTypeOrder.indexOf(b.changeType);
+    });
 }
 function sortByMostChanged(files, descending) {
     return files.sort((a, b) => {

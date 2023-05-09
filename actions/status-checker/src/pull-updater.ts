@@ -5,6 +5,7 @@ import { PullRequestDetails } from "./types/PullRequestDetails";
 import { NodeOf } from "./types/NodeOf";
 import { workflowInput } from "./types/WorkflowInput";
 import { getHeadingTextFrom } from "./file-heading-extractor";
+import { ChangeType } from "./types/ChangeType";
 
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
@@ -160,11 +161,34 @@ function getModifiedMarkdownFiles(pr: Pull): {
 
   const exceedsMax = modifiedFiles.length > workflowInput.maxRowCount;
   const mostChanged = sortByMostChanged(modifiedFiles, true);
+  const byChangeType = sortByChangeType(mostChanged, true);
   const sorted = sortAlphabetically(
-    mostChanged.slice(0, workflowInput.maxRowCount)
+    byChangeType.slice(0, workflowInput.maxRowCount)
   );
 
   return { files: sorted, exceedsMax };
+}
+
+const changeTypeOrder: ChangeType[] = [
+  "ADDED",
+  "MODIFIED",
+  "CHANGED",
+  "RENAMED",
+  "COPIED",
+  "DELETED",
+];
+
+function sortByChangeType(
+  files: FileChange[],
+  descending?: boolean
+): FileChange[] {
+  return files.sort((a, b) => {
+    return descending
+      ? changeTypeOrder.indexOf(b.changeType) -
+          changeTypeOrder.indexOf(a.changeType)
+      : changeTypeOrder.indexOf(a.changeType) -
+          changeTypeOrder.indexOf(b.changeType);
+  });
 }
 
 function sortByMostChanged(
