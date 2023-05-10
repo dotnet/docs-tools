@@ -36,11 +36,11 @@ To install the GitHub actions:
 - [X] Update the label block in Quest when an issue is closed. That way, any "OKR" labels get added when the work item is completed. This would be a simplified version of updating all labels when labels are added or removed.
 - [ ] Integrate with Repoman. That tool already performs a number of actions on different events in the repo. The code underlying these events could be ported there.
 - [ ] Encapsulate services into their own projects/packages, and share them as needed.
-- [X] Use DI where applicable, enabling `IHttpClientFactory`, Polly (for transiant fault handling), `IOptions<T>` pattern, and easier testing.
+- [X] Use DI where applicable, enabling `IHttpClientFactory`, Polly (for transient fault handling), `IOptions<T>` pattern, and easier testing.
 
 ## Triggers
 
-The GitHub action runs as a cron job, or from a manual trigger. In batch mode, it processes all issues updated in the last 5 days. You can specify the look-back time t increase or decrease that time. You can also specify a single issue to process.
+The GitHub action runs as a cron job, or from a manual trigger. In batch mode, it processes all issues updated in the last 5 days. You can specify the look-back time to increase or decrease that time. You can also specify a single issue to process.
 
 There are no plans to update the GitHub issue when changes are made in the Quest User Story. Any employee working in Quest has the expectation that their comments or updates are internal and secure. Automatically propagating that text to a public location creates the risk of publicly disclosing internal information.
 
@@ -125,10 +125,10 @@ If the GitHub issue has the `seQuestered` label, and is linked to a Quest User S
 > - GitHub supports up to 10 assignees on an issue. The first assignee is transferred to Quest.
 > - Some FTEs are not assigned as users in Quest. If a GH issue is assigned to a Microsoft employee who isn't a Quest user, that issue is transferred as "unassigned".
 
-If the GitHub issue CLOSED, and is linked to a Quest User story, the following occurs:
+If the GitHub issue is CLOSED, and is linked to a Quest User story, the following occurs:
 
 - The Quest user story state is changed to complete.
-- The description and labels are imported to reflected any discussion.
+- The description and labels are imported to reflect any discussion.
 
 ## Org project integration
 
