@@ -733,12 +733,12 @@ class DocFxRepo
             string text = File.ReadAllText(linkingFile.FullName);
 
             if (linkingFile.Extension.ToLower() == ".yml")
-                FindLinks(ymlRegex, redirectLookup, linkingFile, ref foundOldLink, output, ref text);
+                FindAndReplaceLinks(ymlRegex, redirectLookup, linkingFile, ref foundOldLink, output, ref text);
             else // Markdown file.
             {
                 foreach (var mdRegex in mdRegexes)
                 {
-                    FindLinks(mdRegex, redirectLookup, linkingFile, ref foundOldLink, output, ref text);
+                    FindAndReplaceLinks(mdRegex, redirectLookup, linkingFile, ref foundOldLink, output, ref text);
 
                 }
             }
@@ -748,7 +748,7 @@ class DocFxRepo
         }
     }
 
-    private void FindLinks(string regexPattern, Dictionary<string, Redirect> redirectLookup, FileInfo linkingFile, ref bool foundOldLink, StringBuilder output, ref string text)
+    private void FindAndReplaceLinks(string regexPattern, Dictionary<string, Redirect> redirectLookup, FileInfo linkingFile, ref bool foundOldLink, StringBuilder output, ref string text)
     {
         // For each link in the file...
         // Regex ignores case.
