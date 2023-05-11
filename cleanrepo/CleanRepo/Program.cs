@@ -450,7 +450,8 @@ static class Program
 
         List<string> regexes = new List<string>()
             {
-                @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?)\)",                                    // [link text](/docsetName/some other text)
+                @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?)\)",                                    // [link text](/basepath/some other text)
+                @"\]:\s(/" + urlBasePath + @"/([^\s]*))",                                           // [ref link]: /basepath/some other text
                 "<img[^>]*?src[ ]*=[ ]*\"(/" + urlBasePath + "/([^>]*?.(png|gif|jpg|svg)))[ ]*\"",  // <img src="/azure/mydocs/media/pic3.png">
                 @"\[.*\]:[ ]*(/" + urlBasePath + @"/(.*\.(png|gif|jpg|svg)))",                      // [0]: /azure/mydocs/media/pic1.png
                 @"imageSrc:[ ]*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))",                 // imageSrc: /azure/mydocs/media/pic1.png
@@ -1203,57 +1204,73 @@ static class Program
 
         foreach (var linkedFile in linkedFiles)
         {
-            string linkRegEx = linkingFile.Extension.ToLower() == ".yml" ?
-                    @"href:(.*?" + linkedFile.Name + ")" :
-                    @"\]\(<?(([^\)])*?" + linkedFile.Name + @")";
-
-            // For each link that contains the file name...
-            // Regex ignores case.
-            foreach (Match match in Regex.Matches(fileContents, linkRegEx, RegexOptions.IgnoreCase))
+            List<string> mdRegexes = new List<string>()
             {
-                // Get the file-relative path to the linked file.
-                string relativePath = match.Groups[1].Value.Trim();
+                @"\]\(<?(([^\)])*?" + linkedFile.Name + @")",
+                @"\]:\s" + linkedFile.Name
+            };
 
-                // Remove any quotation marks
-                relativePath = relativePath.Replace("\"", "");
+            string ymlRegex = @"href:(.*?" + linkedFile.Name + ")";
 
-                if (relativePath != null)
+            if (linkingFile.Extension.ToLower() == ".yml")
+                FindMatches(linkingFile, filesToKeep, fileContents, linkedFile, ymlRegex);
+            else // Markdown file.
+            {
+                foreach (var mdRegex in mdRegexes)
                 {
-                    string fullPath;
-                    try
-                    {
-                        // Construct the full path to the referenced file
-                        fullPath = Path.Combine(linkingFile.DirectoryName, relativePath);
-                    }
-                    catch (ArgumentException e)
-                    {
-                        Console.WriteLine($"\nCaught exception while constructing full path " +
-                            $"for '{relativePath}' in '{linkingFile.FullName}': {e.Message}");
-                        throw;
-                    }
+                    FindMatches(linkingFile, filesToKeep, fileContents, linkedFile, mdRegex);
+                }
+            }
+        }
+    }
 
-                    // This cleans up the path by replacing forward slashes with back slashes, removing extra dots, etc.
-                    fullPath = Path.GetFullPath(fullPath);
-                    if (fullPath != null)
+    private static void FindMatches(FileInfo linkingFile, Dictionary<string, int> filesToKeep, string fileContents, FileInfo linkedFile, string linkRegEx)
+    {
+        // For each link that contains the file name...
+        foreach (Match match in Regex.Matches(fileContents, linkRegEx, RegexOptions.IgnoreCase))
+        {
+            // Get the file-relative path to the linked file.
+            string relativePath = match.Groups[1].Value.Trim();
+
+            // Remove any quotation marks
+            relativePath = relativePath.Replace("\"", "");
+
+            if (relativePath != null)
+            {
+                string fullPath;
+                try
+                {
+                    // Construct the full path to the referenced file
+                    fullPath = Path.Combine(linkingFile.DirectoryName, relativePath);
+                }
+                catch (ArgumentException e)
+                {
+                    Console.WriteLine($"\nCaught exception while constructing full path " +
+                        $"for '{relativePath}' in '{linkingFile.FullName}': {e.Message}");
+                    throw;
+                }
+
+                // This cleans up the path by replacing forward slashes with back slashes, removing extra dots, etc.
+                fullPath = Path.GetFullPath(fullPath);
+                if (fullPath != null)
+                {
+                    // See if our constructed path matches the actual file we think it is; ignores case.
+                    if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
                     {
-                        // See if our constructed path matches the actual file we think it is; ignores case.
-                        if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
+                        // File is linked from another file.
+                        if (filesToKeep.ContainsKey(linkedFile.FullName))
                         {
-                            // File is linked from another file.
-                            if (filesToKeep.ContainsKey(linkedFile.FullName))
-                            {
-                                // Increment the count of links to this file.
-                                filesToKeep[linkedFile.FullName]++;
-                            }
-                            else
-                            {
-                                filesToKeep.Add(linkedFile.FullName, 1);
-                            }
+                            // Increment the count of links to this file.
+                            filesToKeep[linkedFile.FullName]++;
                         }
                         else
                         {
-                            // This link did not match the full file name.
+                            filesToKeep.Add(linkedFile.FullName, 1);
                         }
+                    }
+                    else
+                    {
+                        // This link did not match the full file name.
                     }
                 }
             }

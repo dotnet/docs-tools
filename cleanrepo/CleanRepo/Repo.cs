@@ -715,6 +715,15 @@ class DocFxRepo
         Dictionary<string, Redirect> redirectLookup =
             Enumerable.ToDictionary(redirects, r => r.source_path_absolute, StringComparer.InvariantCultureIgnoreCase);
 
+        List<string> mdRegexes = new List<string>()
+            {
+                @"\]\(<?([^\)]*\.md)(#[\w-]+)?>?\)",
+                @"\]:\s(.*\.md)(#[\w-]+)?"
+            };
+
+        // Matches link with optional #bookmark on the end.
+        string ymlRegex = @"href:(.*\.md)(#[\w-]+)?";
+
         // For each file...
         foreach (var linkingFile in linkingFiles)
         {
@@ -723,88 +732,103 @@ class DocFxRepo
 
             string text = File.ReadAllText(linkingFile.FullName);
 
-            // Matches link with optional #bookmark on the end.
-            string linkRegEx = linkingFile.Extension.ToLower() == ".yml" ?
-                @"href:(.*\.md)(#[\w-]+)?" :
-                @"\]\(<?([^\)]*\.md)(#[\w-]+)?>?\)";
-
-            // For each link in the file...
-            // Regex ignores case.
-            foreach (Match match in Regex.Matches(text, linkRegEx, RegexOptions.IgnoreCase))
+            if (linkingFile.Extension.ToLower() == ".yml")
+                FindAndReplaceLinks(ymlRegex, redirectLookup, linkingFile, ref foundOldLink, output, ref text);
+            else // Markdown file.
             {
-                // Get the file-relative path to the linked file.
-                string relativePath = match.Groups[1].Value.Trim();
-
-                if (relativePath.StartsWith("http"))
+                foreach (var mdRegex in mdRegexes)
                 {
-                    // This could be an absolute URL to a file in the repo, so check.
-                    string httpRegex = @"https?:\/\/learn.microsoft.com\/([A-z][A-z]-[A-z][A-z]\/)?" + UrlBasePath + @"\/";
-                    var httpMatch = Regex.Match(relativePath, httpRegex, RegexOptions.IgnoreCase);
+                    FindAndReplaceLinks(mdRegex, redirectLookup, linkingFile, ref foundOldLink, output, ref text);
 
-                    if (!httpMatch.Success)
-                    {
-                        // The file is in a different repo, so ignore it.
-                        continue;
-                    }
-
-                    // Chop off the https://learn.microsoft.com/BasePathUrl/ part of the path.
-                    relativePath = relativePath.Substring(httpMatch.Value.Length);
-                }
-
-                // Remove any quotation marks
-                relativePath = relativePath.Replace("\"", "");
-
-                string fullPath = null;
-                try
-                {
-                    // Construct the full path to the linked file.
-                    fullPath = Path.Combine(linkingFile.DirectoryName, relativePath);
-                }
-                catch (ArgumentException)
-                {
-                    Console.WriteLine($"Ignoring the link {relativePath} due to possibly invalid format.\n");
-                    continue;
-                }
-
-                // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
-                try
-                {
-                    fullPath = Path.GetFullPath(fullPath);
-                }
-                catch (NotSupportedException)
-                {
-                    //Console.WriteLine($"Found a possibly malformed link '{match.Groups[0].Value}' in '{linkingFile.FullName}'.\n");
-                    break;
-                }
-
-                if (fullPath != null)
-                {
-                    // See if our constructed path matches a source file in the dictionary of redirects.
-                    if (redirectLookup.ContainsKey(fullPath))
-                    {
-                        foundOldLink = true;
-                        output.AppendLine($"'{relativePath}'");
-
-                        string redirectURL = redirectLookup[fullPath].redirect_url;
-
-                        // Add the bookmark back on, in case it applies to the new target.
-                        if (!String.IsNullOrEmpty(match.Groups[2].Value))
-                            redirectURL = redirectURL + match.Groups[2].Value;
-
-                        output.AppendLine($"REPLACING '({relativePath})' with '({redirectURL})'.");
-
-                        // Replace the link.
-                        if (linkingFile.Extension.ToLower() == ".md")
-                            text = text.Replace(match.Groups[0].Value, $"]({redirectURL})");
-                        else // .yml file
-                            text = text.Replace(match.Groups[0].Value, $"href: {redirectURL}");
-                        File.WriteAllText(linkingFile.FullName, text);
-                    }
                 }
             }
 
             if (foundOldLink)
                 Console.WriteLine(output.ToString());
+        }
+    }
+
+    private void FindAndReplaceLinks(string regexPattern, Dictionary<string, Redirect> redirectLookup, FileInfo linkingFile, ref bool foundOldLink, StringBuilder output, ref string text)
+    {
+        // For each link in the file...
+        // Regex ignores case.
+        foreach (Match match in Regex.Matches(text, regexPattern, RegexOptions.IgnoreCase))
+        {
+            // Get the file-relative path to the linked file.
+            string relativePath = match.Groups[1].Value.Trim();
+
+            if (relativePath.StartsWith("http"))
+            {
+                // This could be an absolute URL to a file in the repo, so check.
+                string httpRegex = @"https?:\/\/learn.microsoft.com\/([A-z][A-z]-[A-z][A-z]\/)?" + UrlBasePath + @"\/";
+                var httpMatch = Regex.Match(relativePath, httpRegex, RegexOptions.IgnoreCase);
+
+                if (!httpMatch.Success)
+                {
+                    // The file is in a different repo, so ignore it.
+                    continue;
+                }
+
+                // Chop off the https://learn.microsoft.com/BasePathUrl/ part of the path.
+                relativePath = relativePath.Substring(httpMatch.Value.Length);
+            }
+
+            // Remove any quotation marks
+            relativePath = relativePath.Replace("\"", "");
+
+            string fullPath = null;
+            try
+            {
+                // Construct the full path to the linked file.
+                fullPath = Path.Combine(linkingFile.DirectoryName, relativePath);
+            }
+            catch (ArgumentException)
+            {
+                Console.WriteLine($"Ignoring the link {relativePath} due to possibly invalid format.\n");
+                continue;
+            }
+
+            // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
+            try
+            {
+                fullPath = Path.GetFullPath(fullPath);
+            }
+            catch (NotSupportedException)
+            {
+                //Console.WriteLine($"Found a possibly malformed link '{match.Groups[0].Value}' in '{linkingFile.FullName}'.\n");
+                break;
+            }
+
+            if (fullPath != null)
+            {
+                // See if our constructed path matches a source file in the dictionary of redirects.
+                if (redirectLookup.ContainsKey(fullPath))
+                {
+                    foundOldLink = true;
+                    output.AppendLine($"'{relativePath}'");
+
+                    string redirectURL = redirectLookup[fullPath].redirect_url;
+
+                    // Add the bookmark back on, in case it applies to the new target.
+                    if (!String.IsNullOrEmpty(match.Groups[2].Value))
+                        redirectURL = redirectURL + match.Groups[2].Value;
+
+                    output.AppendLine($"REPLACING '{relativePath}' with '{redirectURL}'.");
+
+                    // Replace the link.
+                    if (linkingFile.Extension.ToLower() == ".md")
+                    {
+                        if (regexPattern.StartsWith(@"\]:"))
+                            text = text.Replace(match.Groups[0].Value, $"]: {redirectURL}");
+                        else
+                            text = text.Replace(match.Groups[0].Value, $"]({redirectURL})");
+                    }
+                    else // .yml file
+                        text = text.Replace(match.Groups[0].Value, $"href: {redirectURL}");
+
+                    File.WriteAllText(linkingFile.FullName, text);
+                }
+            }
         }
     }
     #endregion
