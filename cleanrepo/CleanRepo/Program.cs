@@ -450,7 +450,8 @@ static class Program
 
         List<string> regexes = new List<string>()
             {
-                @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?)\)",                                    // [link text](/docsetName/some other text)
+                @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?)\)",                                    // [link text](/basepath/some other text)
+                @"\]:\s(/" + urlBasePath + @"/([^\s]*))",                                           // [ref link]: /basepath/some other text
                 "<img[^>]*?src[ ]*=[ ]*\"(/" + urlBasePath + "/([^>]*?.(png|gif|jpg|svg)))[ ]*\"",  // <img src="/azure/mydocs/media/pic3.png">
                 @"\[.*\]:[ ]*(/" + urlBasePath + @"/(.*\.(png|gif|jpg|svg)))",                      // [0]: /azure/mydocs/media/pic1.png
                 @"imageSrc:[ ]*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))",                 // imageSrc: /azure/mydocs/media/pic1.png

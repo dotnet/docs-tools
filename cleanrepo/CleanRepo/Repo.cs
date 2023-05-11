@@ -813,13 +813,19 @@ class DocFxRepo
                     if (!String.IsNullOrEmpty(match.Groups[2].Value))
                         redirectURL = redirectURL + match.Groups[2].Value;
 
-                    output.AppendLine($"REPLACING '({relativePath})' with '({redirectURL})'.");
+                    output.AppendLine($"REPLACING '{relativePath}' with '{redirectURL}'.");
 
                     // Replace the link.
                     if (linkingFile.Extension.ToLower() == ".md")
-                        text = text.Replace(match.Groups[0].Value, $"]({redirectURL})");
+                    {
+                        if (regexPattern.StartsWith(@"\]:"))
+                            text = text.Replace(match.Groups[0].Value, $"]: {redirectURL}");
+                        else
+                            text = text.Replace(match.Groups[0].Value, $"]({redirectURL})");
+                    }
                     else // .yml file
                         text = text.Replace(match.Groups[0].Value, $"href: {redirectURL}");
+
                     File.WriteAllText(linkingFile.FullName, text);
                 }
             }
