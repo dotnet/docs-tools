@@ -33,18 +33,14 @@ To install the GitHub actions:
 
 - [ ] Populate the "GitHub Repo" field in Azure DevOps to make reporting by repository easier.
 - [ ] Add Epics (configurable) as a parent of user stories on import.
-- [ ] Update the label block in Quest when an issue is closed. That way, any "OKR" labels get added when the work item is completed. This would be a simplified version of updating all labels when labels are added or removed.
+- [X] Update the label block in Quest when an issue is closed. That way, any "OKR" labels get added when the work item is completed. This would be a simplified version of updating all labels when labels are added or removed.
 - [ ] Integrate with Repoman. That tool already performs a number of actions on different events in the repo. The code underlying these events could be ported there.
 - [ ] Encapsulate services into their own projects/packages, and share them as needed.
-- [ ] Use DI where applicable, enabling `IHttpClientFactory`, Polly (for transiant fault handling), `IOptions<T>` pattern, and easier testing.
+- [X] Use DI where applicable, enabling `IHttpClientFactory`, Polly (for transient fault handling), `IOptions<T>` pattern, and easier testing.
 
 ## Triggers
 
-The GitHub action will run on four events:
-
-- *Issue added to a project*: Adding an issue to a (GitHub) project indicates that the team has agreed to add it to the work backlog. The action will copy the issue to Quest, and add a comment on the GitHub issue that links to the work item.
-- *Assigned to changed*: When an issue is assigned, or it's assignment is changed, the action runs to update the person to whom the issue is assigned.
-- *Completed*: When an issue is closed, close the corresponding Quest work item.
+The GitHub action runs as a cron job, or from a manual trigger. In batch mode, it processes all issues updated in the last 5 days. You can specify the look-back time to increase or decrease that time. You can also specify a single issue to process.
 
 There are no plans to update the GitHub issue when changes are made in the Quest User Story. Any employee working in Quest has the expectation that their comments or updates are internal and secure. Automatically propagating that text to a public location creates the risk of publicly disclosing internal information.
 
@@ -56,7 +52,7 @@ The consuming repository would ideally define the config file. As an example, it
 {
   "AzureDevOps": {
     "Org": "msft-skilling",
-	"Project": "Content",
+    "Project": "Content",
     "AreaPath": "Production\\Digital and App Innovation\\DotNet and more\\dotnet"
   },
   "ImportTriggerLabel": ":world_map: reQUEST",
@@ -85,13 +81,13 @@ env:
 
 The GitHub issue fields don't match the Quest fields. Here's how we'll map them, or populate the required Quest fields:
 
-| GitHub field  | Quest field                                                          |
-|---------------|----------------------------------------------------------------------|
-| Title         | Title                                                                |
-| Description   | Description                                                          |
-| Assigned to   | Assigned to *if FTE*                                                 |
-| Comments      | Initial comments will be appended to the the user story description. |
-| Labels        | Labels are added to the description when a user story is created.    |
+| GitHub field  | Quest field                                                                 |
+|---------------|-----------------------------------------------------------------------------|
+| Title         | Title                                                                       |
+| Description   | Description                                                                 |
+| Assigned to   | Assigned to *if FTE*                                                        |
+| Comments      | Initial comments will be appended to the the user story description.        |
+| Labels        | Labels are added to the description when a user story is created or closed. |
 
 Labels are prefixed with `#` and space characters are replaced with `-` to provide easy search for Quest items with a given label.
 
@@ -99,18 +95,16 @@ There are other Quest fields that don't have GitHub equivalents. They are popula
 
 - State: The state is set to "new" (by default) when a user story is created.
 - Area: Area is configured for each repo. The first pass will set all user stories to the same Area. In future updates, we may use the \*/prod and \*/technology labels to refine areas.
-- Iteration: Iteration is left blank. In future updates, we may map GitHub sprint projects to Quest iterations. That event would assign the associated user story to an iteration.
-- When a GitHub issues is imported into a Quest item, the bot will add a comment on both to link to the associated item:
+- Iteration: Imported issues are assigned to the current iteration unless org-level projects are used. Currently, this feature is only available in the `dotnet` GitHub org.
+- When a GitHub issue is imported into a Quest item, the bot will add a comment on both to link to the associated item:
   - On the GitHub issue:  `Associated WorkItem - nnnnnn` where `nnnnnn` is the Quest work item tag.
   - On the Quest item:  `GitHubOrg/repo#nnnnn`, where `GitHubOrg` is the GitHub organization (e.g. `MicrosoftDocs`), `repo` is the public repository, and `nnnnn` is the issue number.
 
-## Actions performed on each trigger
+## Actions performed on processing an issue
 
-This section briefly describes what will happen when each trigger event occurs for an issue. Because a maintainer may perform actions in different orders, there are a few conditions to check on each action.
+This section briefly describes what will happen when processing an issue.
 
-### Issue added to a project
-
-When an issue is added to a project, AND the issue is open, AND the GitHub issue isn't linked to a Quest User story, the following occurs:
+If an issue is has the `reQuest` label, AND the GitHub issue isn't linked to a Quest User story, the following occurs:
 
 - The issue is copied to a new Quest Work item.
   - All comments are copied into the description.
@@ -118,34 +112,34 @@ When an issue is added to a project, AND the issue is open, AND the GitHub issue
   - A comment is added in the Quest User Story to link to the original GitHub issue.
   - If the issue has already been assigned AND the assignee is an FTE, the Quest User Story is assigned to the same person.
 - A comment is added to the GitHub issue to link to the Quest Work item.
+- The `reQuest` labels is removed, and the `seQuestered` label is added.
 
-If the issue is added to a project, and the GitHub issue is linked to a Quest user story, do nothing.
-
-> **Note**: we could replace the existing description, or add a new comment with the updated description.
-
-### Assignment
-
-If the GitHub issue isn't linked to a Quest User Story, do nothing. If the GitHub issue is linked to a Quest User Story, the following occurs:
+If the GitHub issue has the `seQuestered` label, and is linked to a Quest User Story, the following occurs:
 
 - Update the assigned field in the Quest user story, removing any existing assignees.
+- Update the state field, if necessary.
+- Update the iteration to the current iteration
 
 > **Note**: The differences between GitHub assignees and Azure Dev Ops assignee introduces the potential for tearing:
 >
 > - GitHub supports up to 10 assignees on an issue. The first assignee is transferred to Quest.
 > - Some FTEs are not assigned as users in Quest. If a GH issue is assigned to a Microsoft employee who isn't a Quest user, that issue is transferred as "unassigned".
 
-### Completed
-
-If the GitHub issue isn't linked to a Quest User Story, do nothing. If the GitHub issue is linked to a Quest User story, the following occurs:
+If the GitHub issue is CLOSED, and is linked to a Quest User story, the following occurs:
 
 - The Quest user story state is changed to complete.
+- The description and labels are imported to reflect any discussion.
 
-## Other design considerations
+## Org project integration
 
-This first proof-of-concept has three goals:
+GitHub org-level projects include extra project fields. We've used the "Size" and "Priority" tags to map to the Azure devOps story points and priority, respectively. In addition, where org-level sprint projects are used, the Quest importer looks at the projects an issue is a member of. The Azure DevOps iteration is set to match the most recent GitHub sprint project. In addition, the story points and priority fields are set.
 
-1. Minimize duplicated work by reporting in two systems: public GitHub issues, and internal Quest Work items.
-1. Learn what other events could trigger automated updates.
-1. Learn what other information is useful for Quest users.
+The mapping for story points is as follows:
 
-This initial automation ensures that content developers or M1's aren't spending time duplicating information, but can work in their environment. In doing this, we'll learn if any other information or triggers are useful. For example, teams working in public use GitHub projects to plan iterations. We may find that when an issue is added to a GitHub project, it should be scheduled for an iteration in Quest.
+|GitHub issue Size  | AzDo Story points  |
+|-------------------|--------------------|
+|🦔 Tiny           |  1                 |
+|🐇 Small          |  3                 |
+|🐂 Medium         |  5                 |
+|🦑 Large          |  8                 |
+|🐋 X-Large        | 13                 |
