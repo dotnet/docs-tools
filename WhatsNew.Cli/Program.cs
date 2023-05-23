@@ -23,7 +23,8 @@ public class Program
     /// <returns>The <see cref="Task"/> generating the what's new page.</returns>
     public static async Task Main(
         string? startdate, string? enddate, string owner, string repo,
-        string? branch, string? docset, string? savedir, string? reporoot, string? localconfig)
+        string? branch, string? docset, string? savedir, string? reporoot, string? localconfig,
+        string? savefile)
     {
         var today = DateTime.Now;
         var firstOfMonth = new DateTime(today.Year, today.Month, 1)
@@ -48,10 +49,8 @@ public class Program
         var whatsNewConfig = await configService.GetConfiguration(input);
         var pageGenService = new PageGenerationService(whatsNewConfig);
 
-        var markdownFile = (true) ? "docs/ide/whats-new-visual-studio-docs.md" : null;
-        await pageGenService.WriteMarkdownFile(markdownFile);
-
-        if (false)
+        await pageGenService.WriteMarkdownFile(savefile);
+         if (savefile is null)
         {
             var tocService = new TocUpdateService(whatsNewConfig);
             await tocService.UpdateWhatsNewToc();

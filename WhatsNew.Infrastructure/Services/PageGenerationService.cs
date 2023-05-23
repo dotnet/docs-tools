@@ -48,7 +48,7 @@ public class PageGenerationService
             await using TextWriter stream = new StreamWriter(filePath);
 
             await GenerateHeader(stream);
-            await WriteNewDocInformation(stream, true);
+            await WriteNewDocInformation(stream, false);
             await WriteContributorInformation(stream);
 
             Console.WriteLine($"Created the file \"{filePath}\"");
@@ -59,6 +59,7 @@ public class PageGenerationService
             int sectionsWritten = 0;
             await using TextWriter stream = new StreamWriter(existingMarkdownFile);
             // This might be easier without pattern matching.
+            bool dontTrim = false;
             foreach (var line in lines)
             {
                 if (line.StartsWith("ms.date"))
@@ -67,26 +68,28 @@ public class PageGenerationService
                 }
                 if ((sectionsWritten == 0) && (line.StartsWith("## ")))
                 {
-                    await WriteNewSection(stream);
+                    dontTrim = await WriteNewSection(stream, line);
                     sectionsWritten++;
                 }
                 if (line.StartsWith("## "))
                 {
                     sectionsWritten++;
                 }
-                if (sectionsWritten <= 3)
+                if ((sectionsWritten <= 3) || dontTrim)
                 {
                     await stream.WriteLineAsync(line);
                 }
             }
 
-            async Task WriteNewSection(TextWriter stream)
+            async Task<bool> WriteNewSection(TextWriter stream, string line)
             {
-                await stream.WriteLineAsync($"## {DateTime.Now.AddMonths(-1):MMMM yyyy}");
+                string header = $"## {DateTime.Now.AddMonths(-1):MMMM yyyy}";
+                await stream.WriteLineAsync(header);
                 await stream.WriteLineAsync();
                 await WriteNewDocInformation(stream, true);
                 await WriteContributorInformation(stream);
                 await stream.WriteLineAsync();
+                return header == line;
             }
         }
     }
