@@ -52,7 +52,8 @@ public class PageGenerationService
             await WriteContributorInformation(stream);
 
             Console.WriteLine($"Created the file \"{filePath}\"");
-        } else
+        }
+        else
         {
             // Read the file.
             var lines = await File.ReadAllLinesAsync(existingMarkdownFile);
@@ -194,14 +195,14 @@ public class PageGenerationService
                             // First title wins (it's the newest), but keep checking to issue warnings.
                             try
                             {
-
                                 docLink ??= getDocLink(pr.Source, doc.Key, isRootDirectoryArea);
                                 if (docLink == null)
                                 {
                                     Console.WriteLine($"Title not found for {repo.DocLinkSettings.RelativeLinkPrefix}{doc.Key.Replace("./", string.Empty)} in PR #{pr.PrNumber}");
                                     prs += $"#{pr.PrNumber}";
                                 }
-                            } catch (IOException e)
+                            } 
+                            catch (IOException e)
                             {
                                 Console.WriteLine("PR includes what's new file. Ignoring");
                             }
