@@ -23,7 +23,8 @@ public class Program
     /// <returns>The <see cref="Task"/> generating the what's new page.</returns>
     public static async Task Main(
         string? startdate, string? enddate, string owner, string repo,
-        string? branch, string? docset, string? savedir, string? reporoot, string? localconfig)
+        string? branch, string? docset, string? savedir, string? reporoot, string? localconfig,
+        string? savefile)
     {
         var today = DateTime.Now;
         var firstOfMonth = new DateTime(today.Year, today.Month, 1)
@@ -47,14 +48,17 @@ public class Program
         var configService = new ConfigurationService();
         var whatsNewConfig = await configService.GetConfiguration(input);
         var pageGenService = new PageGenerationService(whatsNewConfig);
-        await pageGenService.WriteMarkdownFile();
 
-        var tocService = new TocUpdateService(whatsNewConfig);
-        await tocService.UpdateWhatsNewToc();
+        await pageGenService.WriteMarkdownFile(savefile);
+         if (savefile is null)
+        {
+            var tocService = new TocUpdateService(whatsNewConfig);
+            await tocService.UpdateWhatsNewToc();
 
-         var indexService = new IndexUpdateService(whatsNewConfig);
-        await indexService.UpdateWhatsNewLandingPage();
-
+            var indexService = new IndexUpdateService(whatsNewConfig);
+            await indexService.UpdateWhatsNewLandingPage();
+        }
         whatsNewConfig.OspoClient.Dispose();
+        whatsNewConfig.GitHubClient.Dispose();
     }
 }

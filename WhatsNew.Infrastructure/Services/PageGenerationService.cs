@@ -38,18 +38,61 @@ public class PageGenerationService
     /// Generates the "What's New" Markdown file for the docset identified by
     /// <see cref="PageGeneratorInput.Owner"/> and <see cref="PageGeneratorInput.Repo"/>.
     /// </summary>
-    public async Task WriteMarkdownFile(TextWriter? textWriter = null)
+    public async Task WriteMarkdownFile(string? existingMarkdownFile= null)
     {
         await ProcessPullRequests();
 
-        var filePath = GetMarkdownFilePath();
-        await using TextWriter stream = textWriter ?? new StreamWriter(filePath);
+        if (existingMarkdownFile is null)
+        {
+            var filePath = GetMarkdownFilePath();
+            await using TextWriter stream = new StreamWriter(filePath);
 
-        await GenerateHeader(stream);
-        WriteNewDocInformation(stream);
-        await WriteContributorInformation(stream);
+            await GenerateHeader(stream);
+            await WriteNewDocInformation(stream, false);
+            await WriteContributorInformation(stream);
 
-        Console.WriteLine($"Created the file \"{filePath}\"");
+            Console.WriteLine($"Created the file \"{filePath}\"");
+        }
+        else
+        {
+            // Read the file.
+            var lines = await File.ReadAllLinesAsync(existingMarkdownFile);
+            int sectionsWritten = 0;
+            await using TextWriter stream = new StreamWriter(existingMarkdownFile);
+            // This might be easier without pattern matching.
+            bool dontTrim = false;
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("ms.date"))
+                {
+                    await stream.WriteLineAsync($"ms.date: {DateTime.Now:MM/dd/yyyy}");
+                }
+                if ((sectionsWritten == 0) && (line.StartsWith("## ")))
+                {
+                    dontTrim = await WriteNewSection(stream, line);
+                    sectionsWritten++;
+                }
+                if (line.StartsWith("## "))
+                {
+                    sectionsWritten++;
+                }
+                if ((sectionsWritten <= 3) || dontTrim)
+                {
+                    await stream.WriteLineAsync(line);
+                }
+            }
+
+            async Task<bool> WriteNewSection(TextWriter stream, string line)
+            {
+                string header = $"## {DateTime.Now.AddMonths(-1):MMMM yyyy}";
+                await stream.WriteLineAsync(header);
+                await stream.WriteLineAsync();
+                await WriteNewDocInformation(stream, true);
+                await WriteContributorInformation(stream);
+                await stream.WriteLineAsync();
+                return header == line;
+            }
+        }
     }
 
     private string GetMarkdownFilePath()
@@ -98,7 +141,7 @@ public class PageGenerationService
         await stream.WriteAsync(sb.ToString());
     }
 
-    private void WriteNewDocInformation(TextWriter stream)
+    private async Task WriteNewDocInformation(TextWriter stream, bool singleFile)
     {
         var repo = _configuration.Repository;
 
@@ -121,8 +164,8 @@ public class PageGenerationService
             // Don't write anything for blank areas.
             if (areaHeading is null)
                 continue;
-            stream.WriteLine($"## {areaHeading}");
-            stream.WriteLine();
+            await stream.WriteLineAsync($"{(singleFile ? "###" : "##")} {areaHeading}");
+            await stream.WriteLineAsync();
 
             writeDocNodes(true);
             writeDocNodes(false);
@@ -133,7 +176,8 @@ public class PageGenerationService
 
                 if (prQuery.Any())
                 {
-                    stream.WriteLine(isNew ? "### New articles" : "### Updated articles");
+                    var header = isNew ? "New articles" : "Updated articles";
+                    stream.WriteLine(singleFile ? $"**{header}**" : $"### {header}");
                     stream.WriteLine();
 
                     foreach (var doc in prQuery)
@@ -149,11 +193,18 @@ public class PageGenerationService
                         foreach (var pr in docPullRequests)
                         {
                             // First title wins (it's the newest), but keep checking to issue warnings.
-                            docLink ??= getDocLink(pr.Source, doc.Key, isRootDirectoryArea);
-                            if (docLink == null)
+                            try
                             {
-                                Console.WriteLine($"Title not found for {repo.DocLinkSettings.RelativeLinkPrefix}{doc.Key.Replace("./", string.Empty)} in PR #{pr.PrNumber}");
-                                prs += $"#{pr.PrNumber}";
+                                docLink ??= getDocLink(pr.Source, doc.Key, isRootDirectoryArea);
+                                if (docLink == null)
+                                {
+                                    Console.WriteLine($"Title not found for {repo.DocLinkSettings.RelativeLinkPrefix}{doc.Key.Replace("./", string.Empty)} in PR #{pr.PrNumber}");
+                                    prs += $"#{pr.PrNumber}";
+                                }
+                            } 
+                            catch (IOException e)
+                            {
+                                Console.WriteLine("PR includes what's new file. Ignoring");
                             }
                         }
                         if (docLink == null)
