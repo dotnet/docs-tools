@@ -39,6 +39,6 @@ class Program
         var checker = new ConflictChecker(iXmlDir, ecmaxmlDir);
         checker.CollectFiles();
         checker.Start();
-
+        checker.SaveToDisk();
     }
 }

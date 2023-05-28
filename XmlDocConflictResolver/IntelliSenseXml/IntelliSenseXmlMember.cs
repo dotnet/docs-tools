@@ -1,13 +1,17 @@
 ﻿using System.Xml.Linq;
+using XmlDocConflictResolver.IntelliSenseXml;
 
 internal class IntelliSenseXmlMember
 {
     private readonly XElement XEMember;
 
+    //public bool Changed = false;
+
     private XElement? _xInheritDoc = null;
     private XElement? XInheritDoc => _xInheritDoc ??= XEMember.Elements("inheritdoc").FirstOrDefault();
 
-    public string Assembly { get; private set; }
+    //public string Assembly { get; private set; }
+    public IntelliSenseXmlFile XmlFile { get; private set; }
 
     private string? _inheritDocCref = null;
     public string InheritDocCref
@@ -60,132 +64,92 @@ internal class IntelliSenseXmlMember
     /// </summary>
     public string Name => _name ??= XmlHelper.GetAttributeValue(XEMember, "name");
 
-    private List<List<IntelliSenseXmlParam>> _params;
-    public List<List<IntelliSenseXmlParam>> Params
+    private List<IntelliSenseXmlParam>? _params;
+    public List<IntelliSenseXmlParam> Params
     {
         get
         {
             if (_params == null)
             {
-                // Max capacity is 2: the original text and the incoming text.
-                _params = new List<List<IntelliSenseXmlParam>>(2);
-
-                List<IntelliSenseXmlParam>? existingParams = 
-                    XEMember.Elements("param").Select(x => new IntelliSenseXmlParam(x)).ToList();
-
-                _params.Add(existingParams);
+                _params = XEMember.Elements("param").Select(x => new IntelliSenseXmlParam(x)).ToList();
             }
             return _params;
         }
     }
 
-    private List<List<IntelliSenseXmlTypeParam>> _typeParams;
-    public List<List<IntelliSenseXmlTypeParam>> TypeParams
+    private List<IntelliSenseXmlTypeParam>? _typeParams;
+    public List<IntelliSenseXmlTypeParam> TypeParams
     {
         get
         {
             if (_typeParams == null)
             {
-                // Max capacity is 2: the original text and the incoming text.
-                _typeParams = new List<List<IntelliSenseXmlTypeParam>>(2);
-
-                List<IntelliSenseXmlTypeParam>? existingTypeParams =
-                    XEMember.Elements("typeparam").Select(x => new IntelliSenseXmlTypeParam(x)).ToList();
-
-                _typeParams.Add(existingTypeParams);
+                _typeParams = XEMember.Elements("typeparam").Select(x => new IntelliSenseXmlTypeParam(x)).ToList();
             }
             return _typeParams;
         }
     }
 
-    private List<List<IntelliSenseXmlException>> _exceptions;
-    public List<List<IntelliSenseXmlException>> Exceptions
+    private List<IntelliSenseXmlException>? _exceptions;
+    public IEnumerable<IntelliSenseXmlException> Exceptions
     {
         get
         {
             if (_exceptions == null)
             {
-                // Max capacity is 2: the original text and the incoming text.
-                _exceptions = new List<List<IntelliSenseXmlException>>(2);
-
-                List<IntelliSenseXmlException>? existingExceptions =
-                    XEMember.Elements("exception").Select(x => new IntelliSenseXmlException(x)).ToList();
-
-                _exceptions.Add(existingExceptions);
+                _exceptions = XEMember.Elements("exception").Select(x => new IntelliSenseXmlException(x)).ToList();
             }
             return _exceptions;
         }
     }
 
-    private List<string?> _summary;
-    public List<string> Summary
+    private string? _summary;
+    public string Summary
     {
         get
         {
             if (_summary == null)
             {
-                // Max capacity is 2: the original text and the incoming text.
-                _summary = new List<string?>(2);
-
                 XElement? xElement = XEMember.Element("summary");
-                if (xElement != null)
-                {
-                    _summary.Add(XmlHelper.GetNodesInPlainText(xElement));
-                }
+                _summary = (xElement != null) ? XmlHelper.GetNodesInPlainText(xElement) : string.Empty;
             }
             return _summary;
         }
+        set { _summary = value; }
     }
 
-    public List<string?> _value;
-    public List<string?> Value
+    public string? _value;
+    public string Value
     {
         get
         {
             if (_value == null)
             {
-                // Max capacity is 2: the original text and the incoming text.
-                _value = new List<string?>(2);
-
                 XElement? xElement = XEMember.Element("value");
-                if (xElement != null)
-                {
-                    _value.Add(XmlHelper.GetNodesInPlainText(xElement));
-                }
+                _value = (xElement != null) ? XmlHelper.GetNodesInPlainText(xElement) : string.Empty;
             }
             return _value;
         }
     }
 
-    private List<string?> _returns;
-    public List<string?> Returns
+    private string? _returns;
+    public string Returns
     {
         get
         {
             if (_returns == null)
             {
-                // Max capacity is 2: the original text and the incoming text.
-                _returns = new List<string?>(2);
-
                 XElement? xElement = XEMember.Element("returns");
-                if (xElement != null)
-                {
-                    _returns.Add(XmlHelper.GetNodesInPlainText(xElement));
-                }
+                _returns = (xElement != null) ? XmlHelper.GetNodesInPlainText(xElement) : string.Empty;
             }
             return _returns;
         }
     }
 
-    public IntelliSenseXmlMember(XElement xeMember, string assembly)
+    public IntelliSenseXmlMember(XElement xeMember, IntelliSenseXmlFile xmlFile)
     {
-        if (string.IsNullOrEmpty(assembly))
-        {
-            throw new ArgumentNullException(nameof(assembly));
-        }
-
         XEMember = xeMember ?? throw new ArgumentNullException(nameof(xeMember));
-        Assembly = assembly.Trim();
+        XmlFile = xmlFile ?? throw new ArgumentNullException(nameof(xmlFile));
     }
 
     public override string ToString()

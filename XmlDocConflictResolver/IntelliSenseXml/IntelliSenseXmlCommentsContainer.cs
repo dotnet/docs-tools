@@ -2,14 +2,18 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 
 internal class IntelliSenseXmlCommentsContainer
 {
     private DirectoryInfo IntelliSenseXmlDir { get; set; }
 
-    // The IntelliSense xml files do not separate types from members, like ECMA xml files do - Everything is a member.
+    // The IntelliSense xml files do not separate types
+    // from members like ECMA xml files - everything is a member.
     public Dictionary<string, IntelliSenseXmlMember> Members = new();
+    public Dictionary<string, IntelliSenseXmlFile> Files = new();
 
     public IntelliSenseXmlCommentsContainer(DirectoryInfo intellisenseXmlDir) => IntelliSenseXmlDir = intellisenseXmlDir;
 
@@ -31,32 +35,26 @@ internal class IntelliSenseXmlCommentsContainer
         }
     }
 
-    internal void LoadIntellisenseXmlFile(XDocument xDoc, string filePath)
+    internal void ParseIntellisenseXmlDoc(XDocument xDoc, string filePath, Encoding fileEncoding)
     {
+        IntelliSenseXmlFile xmlFile = new IntelliSenseXmlFile(xDoc, filePath, fileEncoding);
+        Files.Add(filePath, xmlFile);
+
         if (!TryGetAssemblyName(xDoc, filePath, out string? assembly))
         {
             return;
         }
 
         int totalAdded = 0;
-        if (XmlHelper.TryGetChildElement(xDoc.Root!, "members", out XElement? xeMembers) && xeMembers != null)
+        if (XmlHelper.TryGetChildElement(xDoc.Root!, "members", out XElement? xeMembers) 
+            && xeMembers != null)
         {
             foreach (XElement xeMember in xeMembers.Elements("member"))
             {
-                IntelliSenseXmlMember member = new(xeMember, assembly);
+                IntelliSenseXmlMember member = new(xeMember, xmlFile);
 
-                if (Config.IncludedAssemblies.Any(included => member.Assembly.StartsWith(included, StringComparison.InvariantCultureIgnoreCase)) &&
-                    !Config.ExcludedAssemblies.Any(excluded => member.Assembly.StartsWith(excluded, StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    // No namespaces provided by the user means they want to port everything from that assembly
-                    if (!Config.IncludedNamespaces.Any() ||
-                            (Config.IncludedNamespaces.Any(included => member.Namespace.StartsWith(included, StringComparison.InvariantCultureIgnoreCase)) &&
-                            !Config.ExcludedNamespaces.Any(excluded => member.Namespace.StartsWith(excluded, StringComparison.InvariantCultureIgnoreCase))))
-                    {
-                        totalAdded++;
-                        Members.TryAdd(member.Name, member); // is it OK this encounters duplicates?
-                    }
-                }
+                totalAdded++;
+                Members.TryAdd(member.Name, member);
             }
         }
 
@@ -139,5 +137,54 @@ internal class IntelliSenseXmlCommentsContainer
         }
 
         return true;
+    }
+
+    public void SaveToDisk()
+    {
+        // TODO...
+        List<string> savedFiles = new();
+        foreach (IntelliSenseXmlFile xmlFile in Files.Values.Where(x => x.Changed))
+        {
+            Log.Info(false, $"Saving changes for {xmlFile.FilePath} ... ");
+
+            try
+            {
+                // These settings prevent the addition of the <xml> element on
+                // the first line and will preserve indentation+endlines.
+                XmlWriterSettings xws = new()
+                {
+                    Encoding = xmlFile.FileEncoding,
+                    OmitXmlDeclaration = true,
+                    Indent = true,
+                    CheckCharacters = false
+                };
+
+                using (XmlWriter xw = XmlWriter.Create(xmlFile.FilePath.Replace(".xml", ".docsversion.xml"), xws))
+                {
+                    xmlFile.Xdoc.Save(xw);
+                }
+
+                // Workaround to delete the annoying endline added by XmlWriter.Save
+                string fileData = File.ReadAllText(xmlFile.FilePath);
+                if (!fileData.EndsWith(Environment.NewLine))
+                {
+                    File.WriteAllText(xmlFile.FilePath, fileData + Environment.NewLine, xmlFile.FileEncoding);
+                }
+
+                Log.Success(" [Saved]");
+            }
+            catch (Exception e)
+            {
+                Log.Error("Failed to write to {0}. {1}", xmlFile.FilePath, e.Message);
+                Log.Error(e.StackTrace ?? string.Empty);
+                if (e.InnerException != null)
+                {
+                    Log.Line();
+                    Log.Error(e.InnerException.Message);
+                    Log.Line();
+                    Log.Error(e.InnerException.StackTrace ?? string.Empty);
+                }
+            }
+        }
     }
 }

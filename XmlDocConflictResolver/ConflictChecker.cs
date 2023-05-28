@@ -33,9 +33,16 @@ namespace XmlDocConflictResolver
             foreach (FileInfo fileInfo in IntelliSenseXmlComments.EnumerateFiles())
             {
                 XDocument? xDoc = null;
+                Encoding? encoding = null;
                 try
                 {
-                    xDoc = XDocument.Load(fileInfo.FullName);
+                    var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+                    var utf8Bom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+                    using (StreamReader sr = new(fileInfo.FullName, utf8NoBom, detectEncodingFromByteOrderMarks: true))
+                    {
+                        xDoc = XDocument.Load(sr);
+                        encoding = sr.CurrentEncoding;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -44,7 +51,7 @@ namespace XmlDocConflictResolver
 
                 if (xDoc != null)
                 {
-                    IntelliSenseXmlComments.LoadIntellisenseXmlFile(xDoc, fileInfo.FullName);
+                    IntelliSenseXmlComments.ParseIntellisenseXmlDoc(xDoc, fileInfo.FullName, encoding);
                 }
             }
             Log.Success("Finished looking for IntelliSense xml files.");
@@ -107,5 +114,73 @@ namespace XmlDocConflictResolver
                 //PortMissingCommentsForMember(dMemberToUpdate);
             }
         }
+
+        private void CheckForConflictingTextForMember(IntelliSenseXmlMember ixmlMember)
+        {
+            //bool foundDifferences = false;
+
+            if (DocsComments.Members.TryGetValue(ixmlMember.Name,
+                out DocsMember? ecmaxmlMember) && ecmaxmlMember != null)
+            {
+                if (!ecmaxmlMember.Summary.IsDocsEmpty() &&
+                    String.Compare(ecmaxmlMember.Summary, ixmlMember.Summary) != 0)
+                {
+                    ixmlMember.Summary = ecmaxmlMember.Summary;
+                    ixmlMember.xmlFile.Changed = true;
+                }
+
+                // TODO...
+                //if (isMethod)
+                //{
+                //    mc.Returns = ecmaxmlMember.Returns;
+                //}
+
+                //mc.Remarks = ecmaxmlMember.Remarks;
+                //if (isProperty)
+                //{
+                //    mc.Property = GetPropertyValue(ecmaxmlMember.Value, ecmaxmlMember.Returns);
+                //}
+
+                //foreach (DocsParam tsParam in ecmaxmlMember.Params)
+                //{
+                //    mc.Params.Add(tsParam.Name, tsParam.Value);
+                //}
+
+                //foreach (DocsTypeParam tsTypeParam in ecmaxmlMember.TypeParams)
+                //{
+                //    mc.TypeParams.Add(tsTypeParam.Name, tsTypeParam.Value);
+                //}
+
+                //TryPortMissingSummaryForAPI(dMemberToUpdate, mc.Summary, mc.IsEII);
+                //TryPortMissingRemarksForAPI(dMemberToUpdate, mc.Remarks, mc.IsEII);
+                //TryPortMissingParamsForAPI(dMemberToUpdate, ecmaxmlMember, dInterfacedMember);
+                //TryPortMissingTypeParamsForAPI(dMemberToUpdate, ecmaxmlMember, dInterfacedMember);
+                //TryPortMissingExceptionsForMember(dMemberToUpdate, ecmaxmlMember);
+
+                //if (isProperty)
+                //{
+                //    TryPortMissingPropertyForMember(dMemberToUpdate, mc.Property, mc.IsEII);
+                //}
+                //else if (isMethod)
+                //{
+                //    TryPortMissingReturnsForMember(dMemberToUpdate, mc.Returns, mc.IsEII);
+                //}
+
+                //if (dMemberToUpdate.Changed)
+                //{
+                //    ModifiedAPIs.Add(dMemberToUpdate.DocId);
+                //    ModifiedFiles.Add(dMemberToUpdate.FilePath);
+                //}
+            }
+        }
+
+        public void SaveToDisk() => IntelliSenseXmlComments.SaveToDisk();
+    }
+
+    static class Extensions
+    {
+        // Checks if the passed string is considered "empty" according to the Docs repo rules.
+        public static bool IsDocsEmpty(this string? s) =>
+            string.IsNullOrWhiteSpace(s) || s == ConflictChecker.ToBeAdded;
     }
 }
