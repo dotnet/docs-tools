@@ -121,10 +121,11 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
 
 function isFilePreviewable(_: NodeOf<FileChange>) {
   return (
-    _.node.changeType == "ADDED" ||
-    _.node.changeType == "CHANGED" ||
-    _.node.changeType == "MODIFIED" ||
-    _.node.changeType == "RENAMED"
+    _.node.path.endsWith("README.md") === false &&
+    (_.node.changeType == "ADDED" ||
+      _.node.changeType == "CHANGED" ||
+      _.node.changeType == "MODIFIED" ||
+      _.node.changeType == "RENAMED")
   );
 }
 

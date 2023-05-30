@@ -232,10 +232,11 @@ function getPullRequest(token) {
     });
 }
 function isFilePreviewable(_) {
-    return (_.node.changeType == "ADDED" ||
-        _.node.changeType == "CHANGED" ||
-        _.node.changeType == "MODIFIED" ||
-        _.node.changeType == "RENAMED");
+    return (_.node.path.endsWith("README.md") === false &&
+        (_.node.changeType == "ADDED" ||
+            _.node.changeType == "CHANGED" ||
+            _.node.changeType == "MODIFIED" ||
+            _.node.changeType == "RENAMED"));
 }
 function isPullRequestModifyingMarkdownFiles(pr) {
     return (pr &&
