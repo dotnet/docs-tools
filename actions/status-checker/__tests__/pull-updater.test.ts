@@ -187,6 +187,19 @@ ${PREVIEW_TABLE_END}`;
     );
   });
 
+  it("isFilePreviewable returns false when the file is a README.md", () => {
+    expect(
+      isFilePreviewable({
+        node: {
+          deletions: 1,
+          additions: 1,
+          changeType: "MODIFIED",
+          path: "path/to/README.md",
+        },
+      })
+    ).toBe(false);
+  });
+
   it("isFilePreviewable returns false when no file change types match", () => {
     expect(
       isFilePreviewable({
