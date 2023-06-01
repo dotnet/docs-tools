@@ -20,6 +20,7 @@ public class Program
     /// <param name="savedir">An absolute directory path to which the generated Markdown file should be written.</param>
     /// <param name="reporoot">The path to the repository root folder.</param>
     /// <param name="localconfig">An absolute file path to a local JSON configuration file. For local testing only.</param>
+    /// <param name="savefile">The path to the single markdown file for repos that use one markdown file.</param>
     /// <returns>The <see cref="Task"/> generating the what's new page.</returns>
     public static async Task Main(
         string? startdate, string? enddate, string owner, string repo,
@@ -50,7 +51,7 @@ public class Program
         var pageGenService = new PageGenerationService(whatsNewConfig);
 
         await pageGenService.WriteMarkdownFile(savefile);
-         if (savefile is null)
+         if (string.IsNullOrWhiteSpace(savefile))
         {
             var tocService = new TocUpdateService(whatsNewConfig);
             await tocService.UpdateWhatsNewToc();
