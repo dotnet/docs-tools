@@ -227,48 +227,40 @@ ${PREVIEW_TABLE_END}`;
   });
 
   it("getModifiedMarkdownFiles gets only modified files", () => {
-    const { files, exceedsMax } = getModifiedMarkdownFiles({
-      body: "",
-      changedFiles: 3,
-      checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
-      state: "OPEN",
-      files: {
-        edges: [
-          {
-            node: {
-              deletions: 1,
-              additions: 1,
-              changeType: "RENAMED",
-              path: "path/to/renamed-file.md",
-            },
-          },
-          {
-            node: {
-              deletions: 1,
-              additions: 0,
-              changeType: "DELETED",
-              path: "path/to/deleted-file.md",
-            },
-          },
-          {
-            node: {
-              deletions: 5,
-              additions: 17,
-              changeType: "MODIFIED",
-              path: "path/to/modified-file.md",
-            },
-          },
-          {
-            node: {
-              deletions: 0,
-              additions: 1,
-              changeType: "MODIFIED",
-              path: "includes/modified-file.md",
-            },
-          },
-        ],
+    const { files, exceedsMax } = getModifiedMarkdownFiles([
+      {
+        node: {
+          deletions: 1,
+          additions: 1,
+          changeType: "RENAMED",
+          path: "path/to/renamed-file.md",
+        },
       },
-    });
+      {
+        node: {
+          deletions: 1,
+          additions: 0,
+          changeType: "DELETED",
+          path: "path/to/deleted-file.md",
+        },
+      },
+      {
+        node: {
+          deletions: 5,
+          additions: 17,
+          changeType: "MODIFIED",
+          path: "path/to/modified-file.md",
+        },
+      },
+      {
+        node: {
+          deletions: 0,
+          additions: 1,
+          changeType: "MODIFIED",
+          path: "includes/modified-file.md",
+        },
+      },
+    ]);
 
     expect(exceedsMax).toBe(false);
     expect(files).toEqual([
@@ -288,71 +280,55 @@ ${PREVIEW_TABLE_END}`;
   });
 
   it("isPullRequestModifyingMarkdownFiles returns false when no modified .md files", () => {
-    const actual = isPullRequestModifyingMarkdownFiles({
-      body: "",
-      checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
-      state: "OPEN",
-      changedFiles: 2,
-      files: {
-        edges: [
-          {
-            node: {
-              deletions: 1,
-              additions: 1,
-              changeType: "COPIED",
-              path: "path/to/renamed-file.md",
-            },
-          },
-          {
-            node: {
-              deletions: 1,
-              additions: 0,
-              changeType: "DELETED",
-              path: "path/to/deleted-file.md",
-            },
-          },
-        ],
+    const actual = isPullRequestModifyingMarkdownFiles([
+      {
+        node: {
+          deletions: 1,
+          additions: 1,
+          changeType: "COPIED",
+          path: "path/to/renamed-file.md",
+        },
       },
-    });
+      {
+        node: {
+          deletions: 1,
+          additions: 0,
+          changeType: "DELETED",
+          path: "path/to/deleted-file.md",
+        },
+      },
+    ]);
 
     expect(actual).toBeFalsy();
   });
 
   it("isPullRequestModifyingMarkdownFiles returns true when modified .md files", () => {
-    const actual = isPullRequestModifyingMarkdownFiles({
-      body: "",
-      checksUrl: "https://github.com/dotnet/docs/pull/1/checks",
-      state: "OPEN",
-      changedFiles: 3,
-      files: {
-        edges: [
-          {
-            node: {
-              deletions: 1,
-              additions: 1,
-              changeType: "RENAMED",
-              path: "path/to/renamed-file.md",
-            },
-          },
-          {
-            node: {
-              deletions: 1,
-              additions: 0,
-              changeType: "DELETED",
-              path: "path/to/deleted-file.md",
-            },
-          },
-          {
-            node: {
-              deletions: 0,
-              additions: 1,
-              changeType: "MODIFIED",
-              path: "path/to/modified-file.md",
-            },
-          },
-        ],
+    const actual = isPullRequestModifyingMarkdownFiles([
+      {
+        node: {
+          deletions: 1,
+          additions: 1,
+          changeType: "RENAMED",
+          path: "path/to/renamed-file.md",
+        },
       },
-    });
+      {
+        node: {
+          deletions: 1,
+          additions: 0,
+          changeType: "DELETED",
+          path: "path/to/deleted-file.md",
+        },
+      },
+      {
+        node: {
+          deletions: 0,
+          additions: 1,
+          changeType: "MODIFIED",
+          path: "path/to/modified-file.md",
+        },
+      },
+    ]);
 
     expect(actual).toBeTruthy();
   });

@@ -1,7 +1,7 @@
 import { readFile } from "fs/promises";
 
-const h1RegExp: RegExp = /^# (?<h1>.*$)/gim;
-const titleRegExp: RegExp = /^title:\s*(?<title>.*)$/gim;
+const h1RegExp = /^# (?<h1>.*$)/gim;
+const titleRegExp = /^title:\s*(?<title>.*)$/gim;
 
 export async function getHeadingTextFrom(path: string): Promise<string | null> {
   try {
@@ -11,7 +11,7 @@ export async function getHeadingTextFrom(path: string): Promise<string | null> {
       return null;
     }
 
-    let result: string | null =
+    const result: string | null =
       tryGetRegExpMatch(h1RegExp, "h1", content) ??
       tryGetRegExpMatch(titleRegExp, "title", content);
 
