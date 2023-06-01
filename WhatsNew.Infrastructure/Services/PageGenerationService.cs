@@ -42,7 +42,7 @@ public class PageGenerationService
     {
         await ProcessPullRequests();
 
-        if (existingMarkdownFile is null)
+        if (string.IsNullOrWhiteSpace(existingMarkdownFile))
         {
             var filePath = GetMarkdownFilePath();
             await using TextWriter stream = new StreamWriter(filePath);
