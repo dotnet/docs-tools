@@ -29,7 +29,7 @@ function getHeadingTextFrom(path) {
                 console.log(`Unable to read content for '${path}'.`);
                 return null;
             }
-            let result = (_a = tryGetRegExpMatch(h1RegExp, "h1", content)) !== null && _a !== void 0 ? _a : tryGetRegExpMatch(titleRegExp, "title", content);
+            const result = (_a = tryGetRegExpMatch(h1RegExp, "h1", content)) !== null && _a !== void 0 ? _a : tryGetRegExpMatch(titleRegExp, "title", content);
             console.log(`Found ${result} from '${path}' contents.`);
             return result;
         }
@@ -130,45 +130,59 @@ const file_heading_extractor_1 = __nccwpck_require__(3767);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 function tryUpdatePullRequestBody(token) {
-    var _a, _b;
+    var _a, _b, _c, _d, _e;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const prNumber = github_1.context.payload.number;
             console.log(`Update pull ${prNumber} request body.`);
-            const details = yield getPullRequest(token);
+            let allFiles = [];
+            let details = yield getPullRequest(token, null);
             if (!details) {
                 console.log("Unable to get the pull request from GitHub GraphQL");
             }
-            const pr = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
-            if (!pr) {
+            const pullRequest = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
+            if (!pullRequest) {
                 console.log("Unable to pull request details from object-graph.");
             }
-            if (pr.changedFiles == 0) {
+            if (pullRequest.changedFiles === 0) {
                 console.log("No files changed at all...");
                 return;
             }
             else {
                 try {
-                    console.log(JSON.stringify(pr, undefined, 2));
+                    console.log(JSON.stringify(pullRequest, undefined, 2));
                 }
-                catch (_c) { }
+                catch (_f) { }
             }
-            if (isPullRequestModifyingMarkdownFiles(pr) == false) {
+            allFiles = [...pullRequest.files.edges];
+            while (details.repository.pullRequest.files.pageInfo.hasNextPage) {
+                const cursor = details.repository.pullRequest.files.pageInfo.endCursor;
+                details = yield getPullRequest(token, cursor);
+                if (!details) {
+                    console.log("Unable to get the pull request from GitHub GraphQL");
+                }
+                const moreFiles = (_d = (_c = (_b = details.repository) === null || _b === void 0 ? void 0 : _b.pullRequest) === null || _c === void 0 ? void 0 : _c.files) === null || _d === void 0 ? void 0 : _d.edges;
+                if (!moreFiles) {
+                    console.log("Unable to pull request details from object-graph.");
+                }
+                allFiles = [...allFiles, ...moreFiles];
+            }
+            if (isPullRequestModifyingMarkdownFiles(allFiles) === false) {
                 console.log("No updated markdown files...");
                 return;
             }
-            const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
-            const commitOid = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha;
-            const markdownTable = yield buildMarkdownPreviewTable(prNumber, files, pr.checksUrl, commitOid, exceedsMax);
+            const { files, exceedsMax } = getModifiedMarkdownFiles(allFiles);
+            const commitOid = (_e = github_1.context.payload.pull_request) === null || _e === void 0 ? void 0 : _e.head.sha;
+            const markdownTable = yield buildMarkdownPreviewTable(prNumber, files, pullRequest.checksUrl, commitOid, exceedsMax);
             let updatedBody = "";
-            if (pr.body.includes(PREVIEW_TABLE_START) &&
-                pr.body.includes(PREVIEW_TABLE_END)) {
+            if (pullRequest.body.includes(PREVIEW_TABLE_START) &&
+                pullRequest.body.includes(PREVIEW_TABLE_END)) {
                 // Replace existing preview table.
-                updatedBody = replaceExistingTable(pr.body, markdownTable);
+                updatedBody = replaceExistingTable(pullRequest.body, markdownTable);
             }
             else {
                 // Append preview table to bottom.
-                updatedBody = appendTable(pr.body, markdownTable);
+                updatedBody = appendTable(pullRequest.body, markdownTable);
             }
             console.log("Proposed PR body:");
             console.log(updatedBody);
@@ -201,18 +215,22 @@ exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
  * @param token The GITHUB_TOKEN value to obtain an instance of octokit with.
  * @returns A {Promise} of {PullRequestDetails}.
  */
-function getPullRequest(token) {
+function getPullRequest(token, cursor = null) {
     return __awaiter(this, void 0, void 0, function* () {
         const octokit = (0, github_1.getOctokit)(token);
         return yield octokit.graphql({
-            query: `query getPullRequest($name: String!, $owner: String!, $number: Int!) {
+            query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
       repository(name: $name, owner: $owner) {
         pullRequest(number: $number) {
           body
           checksUrl
           changedFiles
           state
-          files(first: 100) {
+          files(first: 100, after: $cursor) {
+            pageInfo {
+              hasNextPage,
+              endCursor
+            },
             edges {
               node {
                 additions
@@ -228,6 +246,7 @@ function getPullRequest(token) {
             name: github_1.context.repo.repo,
             owner: github_1.context.repo.owner,
             number: github_1.context.payload.number,
+            cursor,
         });
     });
 }
@@ -238,12 +257,10 @@ function isFilePreviewable(_) {
             _.node.changeType == "MODIFIED" ||
             _.node.changeType == "RENAMED"));
 }
-function isPullRequestModifyingMarkdownFiles(pr) {
-    return (pr &&
-        pr.changedFiles > 0 &&
-        pr.files &&
-        pr.files.edges &&
-        pr.files.edges.some((_) => isFilePreviewable(_) && _.node.path.endsWith(".md")));
+function isPullRequestModifyingMarkdownFiles(files) {
+    return (files &&
+        files.length > 0 &&
+        files.some((_) => isFilePreviewable(_) && _.node.path.endsWith(".md")));
 }
 /**
  * Gets the modified markdown files using the following filtering rules:
@@ -251,8 +268,8 @@ function isPullRequestModifyingMarkdownFiles(pr) {
  * -  Files are sorted by most changes in descending order, a max number of files are returned.
  * -  The remaining files are then sorted alphabetically.
  */
-function getModifiedMarkdownFiles(pr) {
-    const modifiedFiles = pr.files.edges
+function getModifiedMarkdownFiles(allFiles) {
+    const modifiedFiles = allFiles
         .filter((_) => _.node.path.endsWith(".md") &&
         _.node.path.includes("includes/") === false &&
         isFilePreviewable(_))
@@ -293,7 +310,7 @@ function sortAlphabetically(files) {
 function toGitHubLink(file, commitOid) {
     const owner = github_1.context.repo.owner;
     const repo = github_1.context.repo.repo;
-    return !!commitOid
+    return commitOid
         ? `https://github.com/${owner}/${repo}/blob/${commitOid}/${file}`
         : `_${file}_`;
 }
@@ -302,7 +319,7 @@ function toPreviewLink(file, prNumber) {
     let path = file.replace(`${docsPath}/`, "").replace(".md", "");
     const opaqueLeadingUrlSegments = WorkflowInput_1.workflowInput.opaqueLeadingUrlSegments;
     let queryString = "";
-    for (let [key, query] of opaqueLeadingUrlSegments) {
+    for (const [key, query] of opaqueLeadingUrlSegments) {
         const segment = `${key}/`;
         if (path.startsWith(segment)) {
             path = path.replace(segment, "");
