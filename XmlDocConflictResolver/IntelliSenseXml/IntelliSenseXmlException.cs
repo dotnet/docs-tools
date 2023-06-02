@@ -32,6 +32,12 @@ internal class IntelliSenseXmlException
             }
             return _value;
         }
+        set
+        {
+            _value = value;
+
+            XEException.Value = value;
+        }
     }
 
     public IntelliSenseXmlException(XElement xeException)

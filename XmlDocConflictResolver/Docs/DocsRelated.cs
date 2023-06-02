@@ -16,11 +16,6 @@ internal class DocsRelated
     public string Value
     {
         get => XmlHelper.GetNodesInPlainText(XERelatedArticle);
-        set
-        {
-            XmlHelper.SaveFormattedAsXml(XERelatedArticle, value);
-            ParentAPI.Changed = true;
-        }
     }
 
     public DocsRelated(IDocsAPI parentAPI, XElement xeRelatedArticle)

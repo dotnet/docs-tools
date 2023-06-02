@@ -1,14 +1,20 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Management.Automation;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using XmlDocConflictResolver;
 
 internal class IntelliSenseXmlCommentsContainer
 {
     private DirectoryInfo IntelliSenseXmlDir { get; set; }
+
+    private readonly string docsVersionSuffix = ".docs.xml";
+    private readonly string mergedVersionSuffix = ".merged.xml";
 
     // The IntelliSense xml files do not separate types
     // from members like ECMA xml files - everything is a member.
@@ -46,7 +52,7 @@ internal class IntelliSenseXmlCommentsContainer
         }
 
         int totalAdded = 0;
-        if (XmlHelper.TryGetChildElement(xDoc.Root!, "members", out XElement? xeMembers) 
+        if (XmlHelper.TryGetChildElement(xDoc.Root!, "members", out XElement? xeMembers)
             && xeMembers != null)
         {
             foreach (XElement xeMember in xeMembers.Elements("member"))
@@ -141,35 +147,42 @@ internal class IntelliSenseXmlCommentsContainer
 
     public void SaveToDisk()
     {
-        // TODO...
         List<string> savedFiles = new();
         foreach (IntelliSenseXmlFile xmlFile in Files.Values.Where(x => x.Changed))
         {
-            Log.Info(false, $"Saving changes for {xmlFile.FilePath} ... ");
+            string docsVersionFileName = xmlFile.FilePath.Replace(".xml", docsVersionSuffix);
+            Log.Info(false, $"Saving changes to '{docsVersionFileName}' ...");
 
             try
             {
-                // These settings prevent the addition of the <xml> element on
-                // the first line and will preserve indentation+endlines.
                 XmlWriterSettings xws = new()
                 {
                     Encoding = xmlFile.FileEncoding,
-                    OmitXmlDeclaration = true,
                     Indent = true,
-                    CheckCharacters = false
+                    CheckCharacters = false,
+                    IndentChars = "    "
                 };
 
-                using (XmlWriter xw = XmlWriter.Create(xmlFile.FilePath.Replace(".xml", ".docsversion.xml"), xws))
+                using (XmlWriter xw = XmlWriter.Create(docsVersionFileName, xws))
                 {
                     xmlFile.Xdoc.Save(xw);
                 }
 
-                // Workaround to delete the annoying endline added by XmlWriter.Save
-                string fileData = File.ReadAllText(xmlFile.FilePath);
-                if (!fileData.EndsWith(Environment.NewLine))
+                // Remove the encoding from the XML declaration.
+                string contents = File.ReadAllText(docsVersionFileName);
+                contents = contents.Replace(@"<?xml version=""1.0"" encoding=""utf-8""?>", @"<?xml version=""1.0""?>");
+
+                // Replace &lt; and &gt;.
+                contents = contents.Replace("&lt;", "<");
+                contents = contents.Replace("&gt;", ">");
+
+                // Add a newline at the end, if necessary.
+                if (!contents.EndsWith(Environment.NewLine))
                 {
-                    File.WriteAllText(xmlFile.FilePath, fileData + Environment.NewLine, xmlFile.FileEncoding);
+                    contents = contents + Environment.NewLine;
                 }
+
+                File.WriteAllText(docsVersionFileName, contents, xmlFile.FileEncoding);
 
                 Log.Success(" [Saved]");
             }
@@ -186,5 +199,70 @@ internal class IntelliSenseXmlCommentsContainer
                 }
             }
         }
+    }
+
+    internal void AddConflictMarkers()
+    {
+        using PowerShell powershell = PowerShell.Create();
+
+        // Foreach IntelliSense XML file that had changes,
+        // create a new file with conflict markers using diff.exe.
+        foreach (IntelliSenseXmlFile xmlFile in Files.Values.Where(x => x.Changed))
+        {
+            Log.Info(false, $"Adding conflict markers to '{xmlFile.FilePath}' ...");
+
+            string modifiedIntelliSenseFile = xmlFile.FilePath.Replace(".xml", docsVersionSuffix);
+            if (!File.Exists(modifiedIntelliSenseFile))
+            {
+                Log.Error($"IntelliSense XML file '{xmlFile.FilePath}' had " +
+                    $"changes but no docs version file '{modifiedIntelliSenseFile}' was found.");
+                continue;
+            }
+
+            // Convert the file paths to Linux file system paths.
+            string originalIntelliSenseFile = xmlFile.FilePath.ConvertToUnixFilePath();
+            modifiedIntelliSenseFile = modifiedIntelliSenseFile.ConvertToUnixFilePath();
+            string mergedFile = originalIntelliSenseFile.Replace(".xml", mergedVersionSuffix);
+
+            string diffCommand = $"diff --unchanged-group-format=\"%=\" --old-group-format=\"\" --new-group-format=\"%>\" --changed-group-format=\"<<<<<<<%c'\\\\12'%<=======%c'\\\\12'%>>>>>>>>%c'\\\\12'\" {originalIntelliSenseFile} {modifiedIntelliSenseFile} > {mergedFile}";
+
+            string scriptPath = "diff_script.sh";
+            File.WriteAllText(scriptPath, diffCommand);
+
+            // TODO: Don't hardcode the path to bash.exe.
+            powershell.AddScript($"& 'C:\\Program Files\\Git\\bin\\bash.exe' {scriptPath}");
+
+            Collection<PSObject> results = powershell.Invoke();
+
+            Log.Success(" [Saved]");
+        }
+    }
+
+    internal void CleanUpFiles()
+    {
+        foreach (IntelliSenseXmlFile xmlFile in Files.Values.Where(x => x.Changed))
+        {
+            // Delete all files that end with docsVersionSuffix.
+            string modifiedIntelliSenseFile = xmlFile.FilePath.Replace(".xml", docsVersionSuffix);
+            if (!File.Exists(modifiedIntelliSenseFile))
+            {
+                Log.Error($"IntelliSense XML file '{xmlFile.FilePath}' had " +
+                    $"changes but no docs version file '{modifiedIntelliSenseFile}' was found.");
+            }
+            else
+                File.Delete(modifiedIntelliSenseFile);
+
+            // "Move" the merged files to the original IntelliSense XML files.
+            string mergedFile = xmlFile.FilePath.Replace(".xml", mergedVersionSuffix);
+            if (!File.Exists(mergedFile))
+            {
+                Log.Error($"IntelliSense XML file '{xmlFile.FilePath}' had " +
+                    $"changes but no merged file '{mergedFile}' was found.");
+            }
+            else
+                File.Move(mergedFile, xmlFile.FilePath, true);
+        }
+
+        Log.Info("Finished cleaning up files.");
     }
 }

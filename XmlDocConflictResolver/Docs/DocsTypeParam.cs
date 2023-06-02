@@ -25,11 +25,6 @@ internal class DocsTypeParam
         {
             return XmlHelper.GetNodesInPlainText(XEDocsTypeParam);
         }
-        set
-        {
-            XmlHelper.SaveFormattedAsXml(XEDocsTypeParam, value);
-            ParentAPI.Changed = true;
-        }
     }
 
     public DocsTypeParam(IDocsAPI parentAPI, XElement xeDocsTypeParam)

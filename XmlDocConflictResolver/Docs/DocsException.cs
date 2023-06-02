@@ -14,7 +14,6 @@ internal class DocsException
     public string Value
     {
         get => XmlHelper.GetNodesInPlainText(XEException);
-        private set => XmlHelper.SaveFormattedAsXml(XEException, value);
     }
 
     public string OriginalValue { get; private set; }
@@ -24,12 +23,6 @@ internal class DocsException
         ParentAPI = parentAPI;
         XEException = xException;
         OriginalValue = Value;
-    }
-
-    public void AppendException(string toAppend)
-    {
-        XmlHelper.AppendFormattedAsXml(XEException, $"\r\n\r\n-or-\r\n\r\n{toAppend}", removeUndesiredEndlines: false);
-        ParentAPI.Changed = true;
     }
 
     public bool WordCountCollidesAboveThreshold(string intelliSenseXmlValue, int threshold)

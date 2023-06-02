@@ -32,6 +32,13 @@ internal class IntelliSenseXmlParam
             }
             return _value;
         }
+        set
+        {
+            _value = value;
+
+            // Update the XML model too.
+            XEParam.Value = _value;
+        }
     }
 
     public IntelliSenseXmlParam(XElement xeParam)

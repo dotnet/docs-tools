@@ -1,5 +1,4 @@
 ﻿using System.Xml.Linq;
-using XmlDocConflictResolver.IntelliSenseXml;
 
 internal class IntelliSenseXmlMember
 {
@@ -50,6 +49,8 @@ internal class IntelliSenseXmlMember
                 string withoutParenthesisAndPrefix = splittedParenthesis[0][2..]; // Exclude the "X:" prefix
                 string[] splittedDots = withoutParenthesisAndPrefix.Split('.', StringSplitOptions.RemoveEmptyEntries);
 
+                // TODO: For nested classes, this needs to be:
+                // _namespace = string.Join('.', splittedDots.Take(splittedDots.Length - 2));
                 _namespace = string.Join('.', splittedDots.Take(splittedDots.Length - 1));
             }
 
@@ -115,7 +116,14 @@ internal class IntelliSenseXmlMember
             }
             return _summary;
         }
-        set { _summary = value; }
+        set
+        {
+            _summary = value;
+
+            // Update the XElement.
+            XElement? xElement = XEMember.Element("summary");
+            if (xElement != null) { xElement.Value = value; }
+        }
     }
 
     public string? _value;
@@ -129,6 +137,14 @@ internal class IntelliSenseXmlMember
                 _value = (xElement != null) ? XmlHelper.GetNodesInPlainText(xElement) : string.Empty;
             }
             return _value;
+        }
+        set
+        {
+            _value = value;
+
+            // Update the XElement.
+            XElement? xElement = XEMember.Element("value");
+            if (xElement != null) { xElement.Value = value; }
         }
     }
 
@@ -144,6 +160,14 @@ internal class IntelliSenseXmlMember
             }
             return _returns;
         }
+        set
+        {
+            _returns = value;
+
+            // Update the XElement.
+            XElement? xElement = XEMember.Element("returns");
+            if (xElement != null) { xElement.Value = value; }
+        }
     }
 
     public IntelliSenseXmlMember(XElement xeMember, IntelliSenseXmlFile xmlFile)
@@ -156,4 +180,6 @@ internal class IntelliSenseXmlMember
     {
         return Name;
     }
+
+    public bool IsType() => Name.StartsWith("T:");
 }

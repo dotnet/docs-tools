@@ -28,6 +28,12 @@ internal class IntelliSenseXmlTypeParam
             }
             return _value;
         }
+        set
+        { 
+            _value = value;
+
+            XETypeParam.Value = value;
+        }
     }
 
     public IntelliSenseXmlTypeParam(XElement xeTypeParam)

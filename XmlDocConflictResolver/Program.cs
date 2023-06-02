@@ -40,5 +40,7 @@ class Program
         checker.CollectFiles();
         checker.Start();
         checker.SaveToDisk();
+        checker.AddConflictMarkers();
+        checker.CleanUpFiles();
     }
 }
