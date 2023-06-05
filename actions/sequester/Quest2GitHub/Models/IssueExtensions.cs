@@ -31,11 +31,11 @@ public static class IssueExtensions
     public static int? QuestStoryPoint(this StoryPointSize storyPointSize) =>
         storyPointSize.Size switch
         {
-            "🦔 Tiny" => 1,
-            "🐇 Small" => 3,
-            "🐂 Medium" => 5,
-            "🦑 Large" => 8,
-            "🐋 X-Large" => 13,
+            "🦔 Tiny (4h)" => 1,
+            "🐇 Small (1d)" => 3,
+            "🐂 Medium (3-5d)" => 5,
+            "🦑 Large (10d)" => 8,
+            "🐋 X-Large (20d)" => 13,
             _ => null,
         };
 
