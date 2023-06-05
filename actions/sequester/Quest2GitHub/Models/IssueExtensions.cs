@@ -30,10 +30,10 @@ public static class IssueExtensions
 
     public static int? QuestStoryPoint(this StoryPointSize storyPointSize)
     {
-        if (storyPointSize.Length < 6)
+        if (storyPointSize.Size.Length < 6)
             return null;
 
-        return storyPointSize.Substring(0, 6) switch
+        return storyPointSize.Size.Substring(0, 6) switch
         {
             "🦔 Tiny" => 1,
             "🐇 Smal" => 3,
