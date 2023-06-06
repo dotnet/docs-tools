@@ -41,7 +41,7 @@ public partial class ProductLineChartJS : ComponentBase
             Title = new OptionsTitle
             {
                 Display = true,
-                Text = "ChartJs.Blazor Line Chart"
+                Text = "Open issues by product area"
             },
             Tooltips = new Tooltips
             {
@@ -131,19 +131,21 @@ public partial class ProductLineChartJS : ComponentBase
                     _chartConfig.Data.Datasets.Clear();
                     foreach (var grouping in _issueSnapshots)
                     {
-                        var color = ColorUtil.RandomColorString();
-                        double[] lineSeries = grouping.DailyCount
-                            .Select(i => (i == -1) ? double.NaN : (double)i)
-                            .ToArray();
-                        _chartConfig.Data.Datasets.Add(
-                            new LineDataset<double>(
-                                lineSeries)
-                            {
-                                Fill = FillingMode.Start,
-                                Label = classifications.ProductWithUnassigned().First(p => p.Label == grouping.Product).DisplayLabel,
-                                BorderColor = color,
-                                BackgroundColor = color
-                            });
+                        if (grouping.DailyCount.Any(i => i != 0 && i !=  -1))
+                        {
+                            double[] lineSeries = grouping.DailyCount
+                                .Select(i => (i == -1) ? double.NaN : (double)i)
+                                .ToArray();
+                            _chartConfig.Data.Datasets.Add(
+                                new LineDataset<double>(
+                                    lineSeries)
+                                {
+                                    Fill = FillingMode.Start,
+                                    Label = classifications.ProductWithUnassigned().First(p => p.Label == grouping.Product).DisplayLabel,
+                                    BorderColor = ProductColor(grouping.Product!),
+                                    BackgroundColor = ProductColor(grouping.Product!)
+                                });
+                        }
                     }
 
                     StateHasChanged();
@@ -153,4 +155,26 @@ public partial class ProductLineChartJS : ComponentBase
     }
 
     private Task OnLoadClick() => LoadSummaryDataAsync();
+
+    private static string ProductColor(string productLabel) =>
+        productLabel switch
+        {
+            ":star2: What's New" => "#ec0f9d",
+            "dotnet-fundamentals/prod" => "#9400d3",
+            "dotnet-core/prod" => "#ff6c7d",
+            "dotnet-architecture/prod" => "#ffae86",
+            "dotnet-csharp/prod" => "#83a349",
+            "dotnet-fsharp/prod" => "#39e4cd",
+            "dotnet-visualbasic/prod" => "#3fac65",
+            "dotnet-api/prod" => "#ffe4bb",
+            "dotnet-desktop/prod" => "#488f31",
+            "dotnet-framework/prod" => "#b4b769",
+            "dotnet/prod" => "#34c999",
+            "azure-dotnet/prod" => "#ddcc90",
+            "dotnet-roslyn-api/prod" => "#57ffff",
+            "dotnet-data/prod" => "#58f4ff",
+            "dotnet-ml/prod" => "#64e7ff",
+            "dotnet-spark/prod" => "#76dbff",
+            _ => "#666600",
+        };
 }

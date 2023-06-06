@@ -132,19 +132,21 @@ public partial class PriorityLineChart: ComponentBase
                     _chartConfig.Data.Datasets.Clear();
                     foreach (var grouping in _issueSnapshots)
                     {
-                        double[] lineSeries = grouping.DailyCount
+                        if (grouping.DailyCount.Any(i => i != 0 && i != -1))
+                        {
+                            double[] lineSeries = grouping.DailyCount
                             .Select(i => (i == -1) ? double.NaN : (double)i)
                             .ToArray();
-                        _chartConfig.Data.Datasets.Add(
-                            new LineDataset<double>(
-                                lineSeries)
-                            {
-                                Fill = FillingMode.Start,
-                                Label = classifications.PriorityWithUnassigned().First(p => p.Label == grouping.Priority).DisplayLabel,
-                                BorderColor = PriorityColor(grouping.Priority!),
-                                BackgroundColor = PriorityColor(grouping.Priority!)
-                            });
-                    }
+                            _chartConfig.Data.Datasets.Add(
+                                new LineDataset<double>(
+                                    lineSeries)
+                                {
+                                    Fill = FillingMode.Start,
+                                    Label = classifications.PriorityWithUnassigned().First(p => p.Label == grouping.Priority).DisplayLabel,
+                                    BorderColor = PriorityColor(grouping.Priority!),
+                                    BackgroundColor = PriorityColor(grouping.Priority!)
+                                });
+                        }                    }
                     StateHasChanged();
                 }
             }
