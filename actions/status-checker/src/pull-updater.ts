@@ -147,7 +147,9 @@ async function getPullRequest(
 
 function isFilePreviewable(_: NodeOf<FileChange>) {
   return (
+    _.node.path.includes("includes/") === false &&
     _.node.path.endsWith("README.md") === false &&
+    _.node.path.endsWith(".md") === true &&
     (_.node.changeType == "ADDED" ||
       _.node.changeType == "CHANGED" ||
       _.node.changeType == "MODIFIED" ||
@@ -176,12 +178,7 @@ function getModifiedMarkdownFiles(allFiles: NodeOf<FileChange>[]): {
   exceedsMax: boolean;
 } {
   const modifiedFiles = allFiles
-    .filter(
-      (_) =>
-        _.node.path.endsWith(".md") &&
-        _.node.path.includes("includes/") === false &&
-        isFilePreviewable(_)
-    )
+    .filter((_) => isFilePreviewable(_))
     .map((_) => _.node);
 
   const exceedsMax = modifiedFiles.length > workflowInput.maxRowCount;

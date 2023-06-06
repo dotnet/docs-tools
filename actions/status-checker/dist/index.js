@@ -251,7 +251,9 @@ function getPullRequest(token, cursor = null) {
     });
 }
 function isFilePreviewable(_) {
-    return (_.node.path.endsWith("README.md") === false &&
+    return (_.node.path.includes("includes/") === false &&
+        _.node.path.endsWith("README.md") === false &&
+        _.node.path.endsWith(".md") === true &&
         (_.node.changeType == "ADDED" ||
             _.node.changeType == "CHANGED" ||
             _.node.changeType == "MODIFIED" ||
@@ -270,9 +272,7 @@ function isPullRequestModifyingMarkdownFiles(files) {
  */
 function getModifiedMarkdownFiles(allFiles) {
     const modifiedFiles = allFiles
-        .filter((_) => _.node.path.endsWith(".md") &&
-        _.node.path.includes("includes/") === false &&
-        isFilePreviewable(_))
+        .filter((_) => isFilePreviewable(_))
         .map((_) => _.node);
     const exceedsMax = modifiedFiles.length > WorkflowInput_1.workflowInput.maxRowCount;
     const mostChanged = sortByMostChanged(modifiedFiles, true);
