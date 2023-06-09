@@ -132,19 +132,21 @@ public partial class ClassificationLineChart: ComponentBase
 
                     foreach (var grouping in _issueSnapshots)
                     {
-                        var color = ColorUtil.RandomColorString();
-                        double[] lineSeries = grouping.DailyCount
+                        if (grouping.DailyCount.Any(i => i != 0 && i != -1))
+                        {
+                            double[] lineSeries = grouping.DailyCount
                             .Select(i => (i == -1) ? double.NaN : (double)i)
                             .ToArray();
-                        _chartConfig.Data.Datasets.Add(
-                            new LineDataset<double>(
-                                lineSeries)
-                            {
-                                Fill = FillingMode.Start,
-                                Label = classifications.ClassificationWithUnassigned().First(p => p.Label == grouping.Classification).DisplayLabel,
-                                BorderColor = color,
-                                BackgroundColor = color
-                            });
+                            _chartConfig.Data.Datasets.Add(
+                                new LineDataset<double>(
+                                    lineSeries)
+                                {
+                                    Fill = FillingMode.Start,
+                                    Label = classifications.ClassificationWithUnassigned().First(p => p.Label == grouping.Classification).DisplayLabel,
+                                    BorderColor = ClassificationColor(grouping.Classification!),
+                                    BackgroundColor = ClassificationColor(grouping.Classification!)
+                                });
+                        }
                     }
                     StateHasChanged();
                 }
@@ -154,4 +156,12 @@ public partial class ClassificationLineChart: ComponentBase
 
     private Task OnLoadClick() => LoadSummaryDataAsync();
 
+    private static string ClassificationColor(string classificationLabel) =>
+        classificationLabel switch
+        {
+            "doc-bug" => "#ff4753",
+            "doc-enhancement" => "#d9009c",
+            "doc-idea" => "#ffa600",
+            _ => "#003fcc",
+        };
 }
