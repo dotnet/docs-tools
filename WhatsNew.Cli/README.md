@@ -21,32 +21,40 @@ Metrics for the "what's new" pages are made available at [aka.ms/whatsnewindocs]
 
 ## Usage
 
-1. Create a GitHub personal access token, as described in [CONTRIBUTING.md](CONTRIBUTING.md).
-1. Install the [.NET SDK 6.0](https://dotnet.microsoft.com/download/dotnet/6.0) or later.
-1. Install the [Azure Artifacts Credential Provider](https://github.com/microsoft/artifacts-credprovider#azure-artifacts-credential-provider).
-1. Run the following command to install the tool from a NuGet package:
+1. Clone the `dotnet/docs-tools` repository.
+1. Generate a PAT per the instructions at [Creating a token](https://help.github.com/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line#creating-a-token). When selecting scopes for the PAT, check the following boxes:
+    - For private repos:
+      - **repo**
+      - **admin:org** > **read:org**
+    - For public repos:
+      - **repo** > **public_repo**
+      - **admin:org** > **read:org**
+1. For private repos in the *MicrosoftDocs* GitHub organization, after generating the PAT, select **Enable SSO** and choose **Authorize** for both **microsoft** and **MicrosoftDocs**.
+1. Store the PAT in an environment variable named `GitHubKey`.
+1. Set up an OSPO personal access token
+   > This step is required for versions 2.0 and above.
+
+   The OSPO personal access token is required to access the OSPO API. This API determines community contributors and Microsoft employee and vendor contributors.
+1. Request a token at [Visual Studio Online](https://ossmsft.visualstudio.com/_usersSettings/tokens). You can disable all scopes *except* read:user profile.
+1. Store the token in an environment variable named "OSPO_KEY".  If you are using the GitHub Action to generate the PR automatically, add the key as a secret in your repository:
+   - Go to **Settings** on your repo.
+   - Select **Secrets**
+   - Add "OSPO_KEY" as a **Repository Secret**.
+1. Install the [.NET SDK 7.0](https://dotnet.microsoft.com/download/dotnet) or later.
+1. build and publish the tool:
 
     ```bash
-    dotnet tool install dotnet-whatsnew -g --add-source https://pkgs.dev.azure.com/mseng/TechnicalContent/_packaging/DotnetDocsTools%40Local/nuget/v3/index.json --interactive
+    cd WhatsNew.Cli
+    dotnet build
+    dotnet publish
     ```
 
-1. Run the appropriate `dotnet whatsnew` command. See the examples below. The location of the generated Markdown file can be specified by setting the `--savedir` option.
+1. Run the appropriate `dotnet whatsnew` command. See the examples below. The location of the generated Markdown file can be specified by setting the `--savedir` option:
 
-### View the tool version
-
-If you already have the tool installed, run the following command to view the version number:
-
-```bash
-dotnet tool list -g
-```
-
-### Update the tool version
-
-If you already have the tool installed and want to update to the latest stable version, run the following command:
-
-```bash
-dotnet tool update dotnet-whatsnew -g --add-source https://pkgs.dev.azure.com/mseng/TechnicalContent/_packaging/DotnetDocsTools%40Local/nuget/v3/index.json --interactive
-```
+   ```bash
+   cd work/visualstudio-docs-pr
+   dotnet ../docs-tools/WhatsNew.Cli/bin/Debug/net7.0/publish/WhatsNew.Cli.dll --owner MicrosoftDocs --repo visualstudio-docs-pr --savefile ./docs/ide/whats-new-visual-studio-docs.md 
+   ```
 
 ### Examples
 
@@ -59,19 +67,19 @@ dotnet whatsnew -h
 **Generate the *dotnet/AspNetCore.Docs* repo's what's new page for the period starting 5/1/2020 and ending 5/31/2020. Process PRs in the *dev* branch.**
 
 ```bash
-dotnet whatsnew --owner dotnet --repo AspNetCore.Docs --branch dev --startdate 2020-05-01 --enddate 2020-05-31
+dotnet WhatsNew.Cli.dll --owner dotnet --repo AspNetCore.Docs --branch dev --startdate 2020-05-01 --enddate 2020-05-31
 ```
 
 **Generate the Cognitive Services docset's what's new page for the period starting 5/1/2020 and ending 5/31/2020. Process PRs in the repository's default branch.**
 
 ```bash
-dotnet whatsnew --owner MicrosoftDocs --repo azure-docs-pr --docset cognitive-services --startdate 2020-05-01 --enddate 2020-05-31
+dotnet WhatsNew.Cli.dll --owner MicrosoftDocs --repo azure-docs-pr --docset cognitive-services --startdate 2020-05-01 --enddate 2020-05-31
 ```
 
 **Generate the *dotnet/docs* repo's what's new page for the period starting 7/1/2020 and ending 7/5/2020. Process PRs in the repository's default branch. Save the generated Markdown file in the */Users/janedoe/docs* directory:**
 
 ```bash
-dotnet whatsnew --owner dotnet --repo docs --startdate 7/1/2020 --enddate 7/5/2020 --savedir /Users/janedoe/docs
+dotnet WhatsNew.Cli.dll --owner dotnet --repo docs --startdate 7/1/2020 --enddate 7/5/2020 --savedir /Users/janedoe/docs
 ```
 
 ## Command line options
@@ -85,6 +93,7 @@ dotnet whatsnew --owner dotnet --repo docs --startdate 7/1/2020 --enddate 7/5/20
 | `startdate` | A range start date in a valid format. For example, "yyyy-MM-dd" or "MM/dd/yyyy". | `--startdate 7/1/2020` |
 | `enddate`  | A range end date in a valid format. For example, "yyyy-MM-dd" or "MM/dd/yyyy". | `--enddate 7/15/2020` |
 | `savedir`   | An absolute directory path to which the generated Markdown file should be written. | `--savedir C:\whatsnew` |
+| `savefile`  | The path to an existing file that should be modified by the tool. | `--savefile ./docs/ide/whats-new-visual-studio-docs.md` |
 | `reporoot`   | An absolute directory path to the root folder of your repository. Default is "./" | `--reporoot C:\source\dotnet\docs`|
 | `localconfig` | An absolute file path for a local JSON configuration file. Intended for local testing only. | `--localconfig C:\configs\.whatsnew.json` |
 

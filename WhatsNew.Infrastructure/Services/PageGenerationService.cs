@@ -66,6 +66,7 @@ public class PageGenerationService
                 if (line.StartsWith("ms.date"))
                 {
                     await stream.WriteLineAsync($"ms.date: {DateTime.Now:MM/dd/yyyy}");
+                    continue;
                 }
                 if ((sectionsWritten == 0) && (line.StartsWith("## ")))
                 {
