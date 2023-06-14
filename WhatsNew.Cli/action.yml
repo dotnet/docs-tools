@@ -22,8 +22,10 @@ inputs:
   enddate:
     description: 'A range end date in a valid format.'
   savedir:
-    description: 'A directory path to which the generated Markdown file should be written.'
+    description: 'A directory path to which the generated Markdown file should be written. Used when a new file is generated each month.'
     required: true
+  savefile:
+    description: 'A file path to which the generated Markdown file should be written. Used when a single file is modified each month.'
   reporoot:
     description: 'The path to the repository root folder.'
 runs:
@@ -44,5 +46,7 @@ runs:
     - ${{ inputs.enddate }}
     - '--savedir'
     - ${{ inputs.savedir }}
+    - '--savefile'
+    - ${{ inputs.savefile }}
     - '--reporoot'
     - ${{ inputs.reporoot }} 

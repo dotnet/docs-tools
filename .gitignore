@@ -410,3 +410,4 @@ GitHub.RepositoryExplorer.Client/Properties/ServiceDependencies/github-explorer 
 GitHub.RepositoryExplorer.Client/Properties/ServiceDependencies/github-explorer - Zip Deploy1/profile.arm.json
 GitHub.RepositoryExplorer.WebApi/Properties/ServiceDependencies/github-explorer-web-api - Web Deploy/profile.arm.json
 GitHub.RepositoryExplorer.WebApi/Properties/ServiceDependencies/github-explorer-web-api - Zip Deploy1/profile.arm.json
+**/launchSettings.json

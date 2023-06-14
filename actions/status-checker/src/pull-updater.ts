@@ -1,6 +1,5 @@
 import { context, getOctokit } from "@actions/github";
 import { FileChange } from "./types/FileChange";
-import { Pull } from "./types/Pull";
 import { PullRequestDetails } from "./types/PullRequestDetails";
 import { NodeOf } from "./types/NodeOf";
 import { workflowInput } from "./types/WorkflowInput";
@@ -15,50 +14,69 @@ export async function tryUpdatePullRequestBody(token: string) {
     const prNumber: number = context.payload.number;
     console.log(`Update pull ${prNumber} request body.`);
 
-    const details = await getPullRequest(token);
+    let allFiles: NodeOf<FileChange>[] = [];
+    let details = await getPullRequest(token, null);
     if (!details) {
       console.log("Unable to get the pull request from GitHub GraphQL");
     }
 
-    const pr = details.repository?.pullRequest;
-    if (!pr) {
+    const pullRequest = details.repository?.pullRequest;
+    if (!pullRequest) {
       console.log("Unable to pull request details from object-graph.");
     }
 
-    if (pr.changedFiles == 0) {
+    if (pullRequest.changedFiles === 0) {
       console.log("No files changed at all...");
       return;
     } else {
       try {
-        console.log(JSON.stringify(pr, undefined, 2));
+        console.log(JSON.stringify(pullRequest, undefined, 2));
       } catch {}
     }
 
-    if (isPullRequestModifyingMarkdownFiles(pr) == false) {
+    allFiles = [...pullRequest.files.edges];
+
+    while (details.repository.pullRequest.files.pageInfo.hasNextPage) {
+      const cursor = details.repository.pullRequest.files.pageInfo.endCursor;
+      details = await getPullRequest(token, cursor);
+
+      if (!details) {
+        console.log("Unable to get the pull request from GitHub GraphQL");
+      }
+
+      const moreFiles = details.repository?.pullRequest?.files?.edges;
+      if (!moreFiles) {
+        console.log("Unable to pull request details from object-graph.");
+      }
+
+      allFiles = [...allFiles, ...moreFiles];
+    }
+
+    if (isPullRequestModifyingMarkdownFiles(allFiles) === false) {
       console.log("No updated markdown files...");
       return;
     }
 
-    const { files, exceedsMax } = getModifiedMarkdownFiles(pr);
+    const { files, exceedsMax } = getModifiedMarkdownFiles(allFiles);
     const commitOid = context.payload.pull_request?.head.sha;
     const markdownTable = await buildMarkdownPreviewTable(
       prNumber,
       files,
-      pr.checksUrl,
+      pullRequest.checksUrl,
       commitOid,
       exceedsMax
     );
 
     let updatedBody = "";
     if (
-      pr.body.includes(PREVIEW_TABLE_START) &&
-      pr.body.includes(PREVIEW_TABLE_END)
+      pullRequest.body.includes(PREVIEW_TABLE_START) &&
+      pullRequest.body.includes(PREVIEW_TABLE_END)
     ) {
       // Replace existing preview table.
-      updatedBody = replaceExistingTable(pr.body, markdownTable);
+      updatedBody = replaceExistingTable(pullRequest.body, markdownTable);
     } else {
       // Append preview table to bottom.
-      updatedBody = appendTable(pr.body, markdownTable);
+      updatedBody = appendTable(pullRequest.body, markdownTable);
     }
 
     console.log("Proposed PR body:");
@@ -90,17 +108,24 @@ export async function tryUpdatePullRequestBody(token: string) {
  * @param token The GITHUB_TOKEN value to obtain an instance of octokit with.
  * @returns A {Promise} of {PullRequestDetails}.
  */
-async function getPullRequest(token: string): Promise<PullRequestDetails> {
+async function getPullRequest(
+  token: string,
+  cursor: string | null = null
+): Promise<PullRequestDetails> {
   const octokit = getOctokit(token);
   return await octokit.graphql<PullRequestDetails>({
-    query: `query getPullRequest($name: String!, $owner: String!, $number: Int!) {
+    query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
       repository(name: $name, owner: $owner) {
         pullRequest(number: $number) {
           body
           checksUrl
           changedFiles
           state
-          files(first: 100) {
+          files(first: 100, after: $cursor) {
+            pageInfo {
+              hasNextPage,
+              endCursor
+            },
             edges {
               node {
                 additions
@@ -116,27 +141,29 @@ async function getPullRequest(token: string): Promise<PullRequestDetails> {
     name: context.repo.repo,
     owner: context.repo.owner,
     number: context.payload.number,
+    cursor,
   });
 }
 
 function isFilePreviewable(_: NodeOf<FileChange>) {
   return (
-    _.node.changeType == "ADDED" ||
-    _.node.changeType == "CHANGED" ||
-    _.node.changeType == "MODIFIED" ||
-    _.node.changeType == "RENAMED"
+    _.node.path.includes("includes/") === false &&
+    _.node.path.endsWith("README.md") === false &&
+    _.node.path.endsWith(".md") === true &&
+    (_.node.changeType == "ADDED" ||
+      _.node.changeType == "CHANGED" ||
+      _.node.changeType == "MODIFIED" ||
+      _.node.changeType == "RENAMED")
   );
 }
 
-function isPullRequestModifyingMarkdownFiles(pr: Pull): boolean {
+function isPullRequestModifyingMarkdownFiles(
+  files: NodeOf<FileChange>[]
+): boolean {
   return (
-    pr &&
-    pr.changedFiles > 0 &&
-    pr.files &&
-    pr.files.edges &&
-    pr.files.edges.some(
-      (_) => isFilePreviewable(_) && _.node.path.endsWith(".md")
-    )
+    files &&
+    files.length > 0 &&
+    files.some((_) => isFilePreviewable(_) && _.node.path.endsWith(".md"))
   );
 }
 
@@ -146,17 +173,12 @@ function isPullRequestModifyingMarkdownFiles(pr: Pull): boolean {
  * -  Files are sorted by most changes in descending order, a max number of files are returned.
  * -  The remaining files are then sorted alphabetically.
  */
-function getModifiedMarkdownFiles(pr: Pull): {
+function getModifiedMarkdownFiles(allFiles: NodeOf<FileChange>[]): {
   files: FileChange[];
   exceedsMax: boolean;
 } {
-  const modifiedFiles = pr.files.edges
-    .filter(
-      (_) =>
-        _.node.path.endsWith(".md") &&
-        _.node.path.includes("includes/") === false &&
-        isFilePreviewable(_)
-    )
+  const modifiedFiles = allFiles
+    .filter((_) => isFilePreviewable(_))
     .map((_) => _.node);
 
   const exceedsMax = modifiedFiles.length > workflowInput.maxRowCount;
@@ -214,7 +236,7 @@ function toGitHubLink(
   const owner = context.repo.owner;
   const repo = context.repo.repo;
 
-  return !!commitOid
+  return commitOid
     ? `https://github.com/${owner}/${repo}/blob/${commitOid}/${file}`
     : `_${file}_`;
 }
@@ -227,7 +249,7 @@ function toPreviewLink(file: string, prNumber: number): string {
     workflowInput.opaqueLeadingUrlSegments;
 
   let queryString = "";
-  for (let [key, query] of opaqueLeadingUrlSegments) {
+  for (const [key, query] of opaqueLeadingUrlSegments) {
     const segment = `${key}/`;
     if (path.startsWith(segment)) {
       path = path.replace(segment, "");
@@ -247,7 +269,7 @@ async function buildMarkdownPreviewTable(
   files: FileChange[],
   checksUrl: string,
   commitOid: string | undefined | null,
-  exceedsMax: boolean = false
+  exceedsMax = false
 ): Promise<string> {
   const links = new Map<string, string>();
   files.forEach((file) => {

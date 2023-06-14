@@ -20,10 +20,12 @@ public class Program
     /// <param name="savedir">An absolute directory path to which the generated Markdown file should be written.</param>
     /// <param name="reporoot">The path to the repository root folder.</param>
     /// <param name="localconfig">An absolute file path to a local JSON configuration file. For local testing only.</param>
+    /// <param name="savefile">The path to the single markdown file for repos that use one markdown file.</param>
     /// <returns>The <see cref="Task"/> generating the what's new page.</returns>
     public static async Task Main(
         string? startdate, string? enddate, string owner, string repo,
-        string? branch, string? docset, string? savedir, string? reporoot, string? localconfig)
+        string? branch, string? docset, string? savedir, string? reporoot, string? localconfig,
+        string? savefile)
     {
         var today = DateTime.Now;
         var firstOfMonth = new DateTime(today.Year, today.Month, 1)
@@ -47,14 +49,17 @@ public class Program
         var configService = new ConfigurationService();
         var whatsNewConfig = await configService.GetConfiguration(input);
         var pageGenService = new PageGenerationService(whatsNewConfig);
-        await pageGenService.WriteMarkdownFile();
 
-        var tocService = new TocUpdateService(whatsNewConfig);
-        await tocService.UpdateWhatsNewToc();
+        await pageGenService.WriteMarkdownFile(savefile);
+         if (string.IsNullOrWhiteSpace(savefile))
+        {
+            var tocService = new TocUpdateService(whatsNewConfig);
+            await tocService.UpdateWhatsNewToc();
 
-         var indexService = new IndexUpdateService(whatsNewConfig);
-        await indexService.UpdateWhatsNewLandingPage();
-
+            var indexService = new IndexUpdateService(whatsNewConfig);
+            await indexService.UpdateWhatsNewLandingPage();
+        }
         whatsNewConfig.OspoClient.Dispose();
+        whatsNewConfig.GitHubClient.Dispose();
     }
 }

@@ -11,4 +11,10 @@ describe("file-heading-extractor", () => {
     const actual = await getHeadingTextFrom(path);
     expect(actual).toBe("The heading");
   });
+
+  it("when calling getHeadingTextFrom correctly returns title value.", async () => {
+    const path = "__tests__/no-heading.md";
+    const actual = await getHeadingTextFrom(path);
+    expect(actual).toBe("Phew, that worked!");
+  });
 });
