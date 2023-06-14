@@ -41,8 +41,5 @@ internal class IntelliSenseXmlParam
         }
     }
 
-    public IntelliSenseXmlParam(XElement xeParam)
-    {
-        XEParam = xeParam;
-    }
+    public IntelliSenseXmlParam(XElement xeParam) => XEParam = xeParam;
 }

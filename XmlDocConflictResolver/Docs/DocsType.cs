@@ -1,176 +1,159 @@
-﻿using System.Text;
-using System.Xml.Linq;
+﻿using System.Xml.Linq;
 
-namespace XmlDocConflictResolver
+namespace XmlDocConflictResolver;
+
+/// <summary>
+/// Represents the root xml element (unique) of a Docs xml file, called Type.
+/// </summary>
+internal class DocsType : DocsAPI
 {
-    /// <summary>
-    /// Represents the root xml element (unique) of a Docs xml file, called Type.
-    /// </summary>
-    internal class DocsType : DocsAPI
+    private string? _typeName;
+    private string? _name;
+    private string? _fullName;
+    private string? _namespace;
+    private string? _baseTypeName;
+    private List<string>? _interfaceNames;
+    private List<DocsTypeSignature>? _typesSignatures;
+
+    public DocsType(string filePath, XDocument xDoc, XElement xeRoot)
+        : base(xeRoot)
     {
-        private string? _typeName;
-        private string? _name;
-        private string? _fullName;
-        private string? _namespace;
-        private string? _baseTypeName;
-        private List<string>? _interfaceNames;
-        private List<DocsTypeSignature>? _typesSignatures;
+        FilePath = filePath;
+        XDoc = xDoc;
+        AssemblyInfos.AddRange(XERoot.Elements("AssemblyInfo").Select(x => new DocsAssemblyInfo(x)));
+    }
 
-        public DocsType(string filePath, XDocument xDoc, XElement xeRoot)
-            : base(xeRoot)
+    public XDocument XDoc { get; set; }
+
+    public override bool Changed { get; set; }
+
+    public string TypeName
+    {
+        get
         {
-            FilePath = filePath;
-            XDoc = xDoc;
-            AssemblyInfos.AddRange(XERoot.Elements("AssemblyInfo").Select(x => new DocsAssemblyInfo(x)));
-        }
-
-        public XDocument XDoc { get; set; }
-
-        public override bool Changed { get; set; }
-
-        public string TypeName
-        {
-            get
+            if (_typeName == null)
             {
-                if (_typeName == null)
+                // TODO - is this correct?
+                // DocId uses ` notation for generic types, but it uses . for nested types
+                // Name uses + for nested types, but it uses &lt;T&gt; for generic types
+                // We need ` notation for generic types and + notation for nested types
+                // Only filename gives us that format, but we have to prepend the namespace
+                if (DocId.Contains('`') || Name.Contains('+'))
                 {
-                    // TODO - is this correct?
-                    // DocId uses ` notation for generic types, but it uses . for nested types
-                    // Name uses + for nested types, but it uses &lt;T&gt; for generic types
-                    // We need ` notation for generic types and + notation for nested types
-                    // Only filename gives us that format, but we have to prepend the namespace
-                    if (DocId.Contains('`') || Name.Contains('+'))
-                    {
-                        _typeName = Namespace + "." + System.IO.Path.GetFileNameWithoutExtension(FilePath);
-                    }
-                    else
-                    {
-                        _typeName = FullName;
-                    }
+                    _typeName = Namespace + "." + System.IO.Path.GetFileNameWithoutExtension(FilePath);
                 }
-                return _typeName;
-            }
-        }
-
-        public string Name
-        {
-            get
-            {
-                if (_name == null)
+                else
                 {
-                    _name = XmlHelper.GetAttributeValue(XERoot, "Name");
+                    _typeName = FullName;
                 }
-                return _name;
             }
+            return _typeName;
         }
+    }
 
-        public string FullName
+    public string Name
+    {
+        get
         {
-            get
+            if (_name == null)
             {
-                if (_fullName == null)
-                {
-                    _fullName = XmlHelper.GetAttributeValue(XERoot, "FullName");
-                }
-                return _fullName;
+                _name = XmlHelper.GetAttributeValue(XERoot, "Name");
             }
+            return _name;
         }
+    }
 
-        public string Namespace
+    public string FullName
+    {
+        get
         {
-            get
+            if (_fullName == null)
             {
-                if (_namespace == null)
-                {
-                    int lastDotPosition = FullName.LastIndexOf('.');
-                    _namespace = lastDotPosition < 0 ? FullName : FullName.Substring(0, lastDotPosition);
-                }
-                return _namespace;
+                _fullName = XmlHelper.GetAttributeValue(XERoot, "FullName");
             }
+            return _fullName;
         }
+    }
 
-        public List<DocsTypeSignature> TypeSignatures
+    public string Namespace
+    {
+        get
         {
-            get
+            if (_namespace == null)
             {
-                if (_typesSignatures == null)
-                {
-                    _typesSignatures = XERoot.Elements("TypeSignature").Select(x => new DocsTypeSignature(x)).ToList();
-                }
-                return _typesSignatures;
+                int lastDotPosition = FullName.LastIndexOf('.');
+                _namespace = lastDotPosition < 0 ? FullName : FullName.Substring(0, lastDotPosition);
             }
+            return _namespace;
         }
+    }
 
-        public XElement? Base
+    public List<DocsTypeSignature> TypeSignatures
+    {
+        get
         {
-            get
+            if (_typesSignatures == null)
             {
-                return XERoot.Element("Base");
+                _typesSignatures = XERoot.Elements("TypeSignature").Select(x => new DocsTypeSignature(x)).ToList();
             }
+            return _typesSignatures;
         }
+    }
 
-        public string BaseTypeName
+    public XElement? Base => XERoot.Element("Base");
+
+    public string BaseTypeName
+    {
+        get
         {
-            get
+            if (Base == null)
             {
-                if (Base == null)
-                {
-                    _baseTypeName = string.Empty;
-                }
-                else if (_baseTypeName == null)
-                {
-                    _baseTypeName = XmlHelper.GetChildElementValue(Base, "BaseTypeName");
-                }
-                return _baseTypeName;
+                _baseTypeName = string.Empty;
             }
-        }
-
-        public XElement? Interfaces
-        {
-            get
+            else if (_baseTypeName == null)
             {
-                return XERoot.Element("Interfaces");
+                _baseTypeName = XmlHelper.GetChildElementValue(Base, "BaseTypeName");
             }
+            return _baseTypeName;
         }
+    }
 
-        public List<string> InterfaceNames
+    public XElement? Interfaces => XERoot.Element("Interfaces");
+
+    public List<string> InterfaceNames
+    {
+        get
         {
-            get
+            if (Interfaces == null)
             {
-                if (Interfaces == null)
-                {
-                    _interfaceNames = new List<string>();
-                }
-                else if (_interfaceNames == null)
-                {
-                    _interfaceNames = Interfaces.Elements("Interface").Select(x => XmlHelper.GetChildElementValue(x, "InterfaceName")).ToList();
-                }
-                return _interfaceNames;
+                _interfaceNames = new List<string>();
             }
-        }
-
-        public override string Summary => GetNodesInPlainText("summary");
-
-        // TODO: param and typeparam are missing from DocsType (e.g. if it's a delegate)?
-
-        /// <summary>
-        /// Only available when the type is a delegate.
-        /// </summary>
-        public override string Returns => GetNodesInPlainText("returns");
-
-        public override string ToString()
-        {
-            return FullName;
-        }
-
-        protected override string GetApiSignatureDocId()
-        {
-            DocsTypeSignature? dts = TypeSignatures.FirstOrDefault(x => x.Language == "DocId");
-            if (dts == null)
+            else if (_interfaceNames == null)
             {
-                throw new FormatException($"DocId TypeSignature not found for {FullName}");
+                _interfaceNames = Interfaces.Elements("Interface").Select(x => XmlHelper.GetChildElementValue(x, "InterfaceName")).ToList();
             }
-            return dts.Value;
+            return _interfaceNames;
         }
+    }
+
+    public override string Summary => GetNodesInPlainText("summary");
+
+    // TODO: param and typeparam are missing from DocsType (e.g. if it's a delegate)?
+
+    /// <summary>
+    /// Only available when the type is a delegate.
+    /// </summary>
+    public override string Returns => GetNodesInPlainText("returns");
+
+    public override string ToString() => FullName;
+
+    protected override string GetApiSignatureDocId()
+    {
+        DocsTypeSignature? dts = TypeSignatures.FirstOrDefault(x => x.Language == "DocId");
+        if (dts == null)
+        {
+            throw new FormatException($"DocId TypeSignature not found for {FullName}");
+        }
+        return dts.Value;
     }
 }

@@ -2,12 +2,13 @@
 
 internal class IntelliSenseXmlMember
 {
-    private readonly XElement XEMember;
+    private readonly XElement _xEMember;
 
     //public bool Changed = false;
 
     private XElement? _xInheritDoc = null;
-    private XElement? XInheritDoc => _xInheritDoc ??= XEMember.Elements("inheritdoc").FirstOrDefault();
+    public XElement? XInheritDoc => 
+        _xInheritDoc ??= _xEMember.Elements("inheritdoc").FirstOrDefault();
 
     //public string Assembly { get; private set; }
     public IntelliSenseXmlFile XmlFile { get; private set; }
@@ -63,7 +64,7 @@ internal class IntelliSenseXmlMember
     /// <summary>
     /// The API DocId.
     /// </summary>
-    public string Name => _name ??= XmlHelper.GetAttributeValue(XEMember, "name");
+    public string Name => _name ??= XmlHelper.GetAttributeValue(_xEMember, "name");
 
     private List<IntelliSenseXmlParam>? _params;
     public List<IntelliSenseXmlParam> Params
@@ -72,7 +73,7 @@ internal class IntelliSenseXmlMember
         {
             if (_params == null)
             {
-                _params = XEMember.Elements("param").Select(x => new IntelliSenseXmlParam(x)).ToList();
+                _params = _xEMember.Elements("param").Select(x => new IntelliSenseXmlParam(x)).ToList();
             }
             return _params;
         }
@@ -85,7 +86,7 @@ internal class IntelliSenseXmlMember
         {
             if (_typeParams == null)
             {
-                _typeParams = XEMember.Elements("typeparam").Select(x => new IntelliSenseXmlTypeParam(x)).ToList();
+                _typeParams = _xEMember.Elements("typeparam").Select(x => new IntelliSenseXmlTypeParam(x)).ToList();
             }
             return _typeParams;
         }
@@ -98,7 +99,7 @@ internal class IntelliSenseXmlMember
         {
             if (_exceptions == null)
             {
-                _exceptions = XEMember.Elements("exception").Select(x => new IntelliSenseXmlException(x)).ToList();
+                _exceptions = _xEMember.Elements("exception").Select(x => new IntelliSenseXmlException(x)).ToList();
             }
             return _exceptions;
         }
@@ -111,7 +112,7 @@ internal class IntelliSenseXmlMember
         {
             if (_summary == null)
             {
-                XElement? xElement = XEMember.Element("summary");
+                XElement? xElement = _xEMember.Element("summary");
                 _summary = (xElement != null) ? XmlHelper.GetNodesInPlainText(xElement) : string.Empty;
             }
             return _summary;
@@ -121,7 +122,7 @@ internal class IntelliSenseXmlMember
             _summary = value;
 
             // Update the XElement.
-            XElement? xElement = XEMember.Element("summary");
+            XElement? xElement = _xEMember.Element("summary");
             if (xElement != null) { xElement.Value = value; }
         }
     }
@@ -133,7 +134,7 @@ internal class IntelliSenseXmlMember
         {
             if (_value == null)
             {
-                XElement? xElement = XEMember.Element("value");
+                XElement? xElement = _xEMember.Element("value");
                 _value = (xElement != null) ? XmlHelper.GetNodesInPlainText(xElement) : string.Empty;
             }
             return _value;
@@ -143,7 +144,7 @@ internal class IntelliSenseXmlMember
             _value = value;
 
             // Update the XElement.
-            XElement? xElement = XEMember.Element("value");
+            XElement? xElement = _xEMember.Element("value");
             if (xElement != null) { xElement.Value = value; }
         }
     }
@@ -155,7 +156,7 @@ internal class IntelliSenseXmlMember
         {
             if (_returns == null)
             {
-                XElement? xElement = XEMember.Element("returns");
+                XElement? xElement = _xEMember.Element("returns");
                 _returns = (xElement != null) ? XmlHelper.GetNodesInPlainText(xElement) : string.Empty;
             }
             return _returns;
@@ -165,21 +166,18 @@ internal class IntelliSenseXmlMember
             _returns = value;
 
             // Update the XElement.
-            XElement? xElement = XEMember.Element("returns");
+            XElement? xElement = _xEMember.Element("returns");
             if (xElement != null) { xElement.Value = value; }
         }
     }
 
     public IntelliSenseXmlMember(XElement xeMember, IntelliSenseXmlFile xmlFile)
     {
-        XEMember = xeMember ?? throw new ArgumentNullException(nameof(xeMember));
+        _xEMember = xeMember ?? throw new ArgumentNullException(nameof(xeMember));
         XmlFile = xmlFile ?? throw new ArgumentNullException(nameof(xmlFile));
     }
 
-    public override string ToString()
-    {
-        return Name;
-    }
+    public override string ToString() => Name;
 
     public bool IsType() => Name.StartsWith("T:");
 }

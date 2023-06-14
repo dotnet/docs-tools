@@ -40,13 +40,7 @@ internal class IntelliSenseXmlException
         }
     }
 
-    public IntelliSenseXmlException(XElement xeException)
-    {
-        XEException = xeException;
-    }
+    public IntelliSenseXmlException(XElement xeException) => XEException = xeException;
 
-    public override string ToString()
-    {
-        return $"{Cref} - {Value}";
-    }
+    public override string ToString() => $"{Cref} - {Value}";
 }

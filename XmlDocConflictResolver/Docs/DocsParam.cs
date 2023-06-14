@@ -2,32 +2,21 @@
 
 internal class DocsParam
 {
-    private readonly XElement XEDocsParam;
+    private readonly XElement _xEDocsParam;
+
     public IDocsAPI ParentAPI
     {
         get; private set;
     }
-    public string Name
-    {
-        get
-        {
-            return XmlHelper.GetAttributeValue(XEDocsParam, "name");
-        }
-    }
-    public string Value
-    {
-        get
-        {
-            return XmlHelper.GetNodesInPlainText(XEDocsParam);
-        }
-    }
+
+    public string Name => XmlHelper.GetAttributeValue(_xEDocsParam, "name");
+    public string Value => XmlHelper.GetNodesInPlainText(_xEDocsParam);
+
     public DocsParam(IDocsAPI parentAPI, XElement xeDocsParam)
     {
         ParentAPI = parentAPI;
-        XEDocsParam = xeDocsParam;
+        _xEDocsParam = xeDocsParam;
     }
-    public override string ToString()
-    {
-        return Name;
-    }
+
+    public override string ToString() => Name;
 }

@@ -5,31 +5,19 @@
 /// </summary>
 internal class DocsTypeParam
 {
-    private readonly XElement XEDocsTypeParam;
+    private readonly XElement _xEDocsTypeParam;
     public IDocsAPI ParentAPI
     {
         get; private set;
     }
 
-    public string Name
-    {
-        get
-        {
-            return XmlHelper.GetAttributeValue(XEDocsTypeParam, "name");
-        }
-    }
+    public string Name => XmlHelper.GetAttributeValue(_xEDocsTypeParam, "name");
 
-    public string Value
-    {
-        get
-        {
-            return XmlHelper.GetNodesInPlainText(XEDocsTypeParam);
-        }
-    }
+    public string Value => XmlHelper.GetNodesInPlainText(_xEDocsTypeParam);
 
     public DocsTypeParam(IDocsAPI parentAPI, XElement xeDocsTypeParam)
     {
         ParentAPI = parentAPI;
-        XEDocsTypeParam = xeDocsTypeParam;
+        _xEDocsTypeParam = xeDocsTypeParam;
     }
 }

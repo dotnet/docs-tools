@@ -36,8 +36,5 @@ internal class IntelliSenseXmlTypeParam
         }
     }
 
-    public IntelliSenseXmlTypeParam(XElement xeTypeParam)
-    {
-        XETypeParam = xeTypeParam;
-    }
+    public IntelliSenseXmlTypeParam(XElement xeTypeParam) => XETypeParam = xeTypeParam;
 }

@@ -2,14 +2,8 @@
 
 internal class DocsAssemblyInfo
 {
-    private readonly XElement XEAssemblyInfo;
-    public string AssemblyName
-    {
-        get
-        {
-            return XmlHelper.GetChildElementValue(XEAssemblyInfo, "AssemblyName");
-        }
-    }
+    private readonly XElement _xEAssemblyInfo;
+    public string AssemblyName => XmlHelper.GetChildElementValue(_xEAssemblyInfo, "AssemblyName");
 
     private List<string>? _assemblyVersions;
     public List<string> AssemblyVersions
@@ -18,7 +12,7 @@ internal class DocsAssemblyInfo
         {
             if (_assemblyVersions == null)
             {
-                _assemblyVersions = XEAssemblyInfo.Elements("AssemblyVersion").Select(x => XmlHelper.GetNodesInPlainText(x)).ToList();
+                _assemblyVersions = _xEAssemblyInfo.Elements("AssemblyVersion").Select(x => XmlHelper.GetNodesInPlainText(x)).ToList();
             }
             return _assemblyVersions;
         }
@@ -26,7 +20,7 @@ internal class DocsAssemblyInfo
 
     public DocsAssemblyInfo(XElement xeAssemblyInfo)
     {
-        XEAssemblyInfo = xeAssemblyInfo;
+        _xEAssemblyInfo = xeAssemblyInfo;
     }
 
     public override string ToString() => AssemblyName;

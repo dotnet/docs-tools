@@ -13,8 +13,8 @@ internal class IntelliSenseXmlCommentsContainer
 {
     private DirectoryInfo IntelliSenseXmlDir { get; set; }
 
-    private readonly string docsVersionSuffix = ".docs.xml";
-    private readonly string mergedVersionSuffix = ".merged.xml";
+    private readonly string _docsVersionSuffix = ".docs.xml";
+    private readonly string _mergedVersionSuffix = ".merged.xml";
 
     // The IntelliSense xml files do not separate types
     // from members like ECMA xml files - everything is a member.
@@ -150,7 +150,7 @@ internal class IntelliSenseXmlCommentsContainer
         List<string> savedFiles = new();
         foreach (IntelliSenseXmlFile xmlFile in Files.Values.Where(x => x.Changed))
         {
-            string docsVersionFileName = xmlFile.FilePath.Replace(".xml", docsVersionSuffix);
+            string docsVersionFileName = xmlFile.FilePath.Replace(".xml", _docsVersionSuffix);
             Log.Info(false, $"Saving changes to '{docsVersionFileName}' ...");
 
             try
@@ -211,7 +211,7 @@ internal class IntelliSenseXmlCommentsContainer
         {
             Log.Info(false, $"Adding conflict markers to '{xmlFile.FilePath}' ...");
 
-            string modifiedIntelliSenseFile = xmlFile.FilePath.Replace(".xml", docsVersionSuffix);
+            string modifiedIntelliSenseFile = xmlFile.FilePath.Replace(".xml", _docsVersionSuffix);
             if (!File.Exists(modifiedIntelliSenseFile))
             {
                 Log.Error($"IntelliSense XML file '{xmlFile.FilePath}' had " +
@@ -222,7 +222,7 @@ internal class IntelliSenseXmlCommentsContainer
             // Convert the file paths to Linux file system paths.
             string originalIntelliSenseFile = xmlFile.FilePath.ConvertToUnixFilePath();
             modifiedIntelliSenseFile = modifiedIntelliSenseFile.ConvertToUnixFilePath();
-            string mergedFile = originalIntelliSenseFile.Replace(".xml", mergedVersionSuffix);
+            string mergedFile = originalIntelliSenseFile.Replace(".xml", _mergedVersionSuffix);
 
             string diffCommand = $"diff --unchanged-group-format=\"%=\" --old-group-format=\"\" --new-group-format=\"%>\" --changed-group-format=\"<<<<<<<%c'\\\\12'%<=======%c'\\\\12'%>>>>>>>>%c'\\\\12'\" {originalIntelliSenseFile} {modifiedIntelliSenseFile} > {mergedFile}";
 
@@ -243,7 +243,7 @@ internal class IntelliSenseXmlCommentsContainer
         foreach (IntelliSenseXmlFile xmlFile in Files.Values.Where(x => x.Changed))
         {
             // Delete all files that end with docsVersionSuffix.
-            string modifiedIntelliSenseFile = xmlFile.FilePath.Replace(".xml", docsVersionSuffix);
+            string modifiedIntelliSenseFile = xmlFile.FilePath.Replace(".xml", _docsVersionSuffix);
             if (!File.Exists(modifiedIntelliSenseFile))
             {
                 Log.Error($"IntelliSense XML file '{xmlFile.FilePath}' had " +
@@ -253,7 +253,7 @@ internal class IntelliSenseXmlCommentsContainer
                 File.Delete(modifiedIntelliSenseFile);
 
             // "Move" the merged files to the original IntelliSense XML files.
-            string mergedFile = xmlFile.FilePath.Replace(".xml", mergedVersionSuffix);
+            string mergedFile = xmlFile.FilePath.Replace(".xml", _mergedVersionSuffix);
             if (!File.Exists(mergedFile))
             {
                 Log.Error($"IntelliSense XML file '{xmlFile.FilePath}' had " +

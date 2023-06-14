@@ -2,26 +2,10 @@
 
 internal class DocsTypeSignature
 {
-    private readonly XElement XETypeSignature;
+    private readonly XElement _xETypeSignature;
 
-    public string Language
-    {
-        get
-        {
-            return XmlHelper.GetAttributeValue(XETypeSignature, "Language");
-        }
-    }
+    public string Language => XmlHelper.GetAttributeValue(_xETypeSignature, "Language");
+    public string Value => XmlHelper.GetAttributeValue(_xETypeSignature, "Value");
 
-    public string Value
-    {
-        get
-        {
-            return XmlHelper.GetAttributeValue(XETypeSignature, "Value");
-        }
-    }
-
-    public DocsTypeSignature(XElement xeTypeSignature)
-    {
-        XETypeSignature = xeTypeSignature;
-    }
+    public DocsTypeSignature(XElement xeTypeSignature) => _xETypeSignature = xeTypeSignature;
 }

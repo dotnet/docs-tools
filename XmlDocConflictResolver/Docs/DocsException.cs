@@ -2,26 +2,22 @@
 
 internal class DocsException
 {
-    private readonly XElement XEException;
+    private readonly XElement _xEException;
 
     public IDocsAPI ParentAPI
     {
         get; private set;
     }
 
-    public string Cref => XmlHelper.GetAttributeValue(XEException, "cref");
-
-    public string Value
-    {
-        get => XmlHelper.GetNodesInPlainText(XEException);
-    }
+    public string Cref => XmlHelper.GetAttributeValue(_xEException, "cref");
+    public string Value => XmlHelper.GetNodesInPlainText(_xEException);
 
     public string OriginalValue { get; private set; }
 
     public DocsException(IDocsAPI parentAPI, XElement xException)
     {
         ParentAPI = parentAPI;
-        XEException = xException;
+        _xEException = xException;
         OriginalValue = Value;
     }
 
