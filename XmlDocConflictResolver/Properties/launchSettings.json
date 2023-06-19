@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "XmlDocConflictResolver": {
+      "commandName": "Project",
+      "commandLineArgs": "--ixml C:\\Users\\gewarren\\binaries\\dotnet\\dotnet-plat-ext-8.0 --ecmaxml C:\\Users\\gewarren\\dotnet-api-docs\\xml > output.txt"
+    }
+  }
+}
