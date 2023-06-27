@@ -409,7 +409,7 @@ class Program
                         if (errorSkipped)
                             errorsSkipped++;
                         else
-                            Console.WriteLine($"::error file={file},line={lineNumber},col={column}::{item.ErrorLine}");
+                            Console.WriteLine($"::error file={file.Replace('\\', '/')},line={lineNumber},col={column}::{item.ErrorLine}");
 
                     }
                     else
