@@ -388,7 +388,7 @@ class Program
 
                     if (match.Success)
                     {
-                        string file = match.Groups[1].Value.Replace($"D:\\a\\{repo}\\{repo}\\", "");//.Replace('\\', '/');
+                        string file = match.Groups[1].Value.Replace($"D:\\a\\{repo}\\{repo}\\", "");
                         int lineNumber = int.Parse(match.Groups[2].Value);
                         int column = int.Parse(match.Groups[3].Value);
                         bool errorSkipped = false;
