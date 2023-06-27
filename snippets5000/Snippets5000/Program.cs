@@ -388,7 +388,7 @@ class Program
 
                     if (match.Success)
                     {
-                        string file = match.Groups[1].Value.Replace($"D:\\a\\{repo}\\{repo}\\", "");//.Replace('\\', '/');
+                        string file = match.Groups[1].Value.Replace($"D:\\a\\{repo}\\{repo}\\", "");
                         int lineNumber = int.Parse(match.Groups[2].Value);
                         int column = int.Parse(match.Groups[3].Value);
                         bool errorSkipped = false;
@@ -409,7 +409,7 @@ class Program
                         if (errorSkipped)
                             errorsSkipped++;
                         else
-                            Console.WriteLine($"::error file={file},line={lineNumber},col={column}::{item.ErrorLine}");
+                            Console.WriteLine($"::error file={file.Replace('\\', '/')},line={lineNumber},col={column}::{item.ErrorLine}");
 
                     }
                     else
