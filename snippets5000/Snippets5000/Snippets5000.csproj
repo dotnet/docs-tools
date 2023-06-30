@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <Version>3.0.0.0</Version>
+    <Version>4.0.0.0</Version>
 
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>snippets5000</ToolCommandName>

@@ -56,7 +56,7 @@ class Program
                 var key = CommandLineUtility.GetEnvVariable("GitHubKey", "You must store your GitHub key in the 'GitHubKey' environment variable", null);
 
                 List<DiscoveryResult> localResults = new();
-                await foreach (var item in new PullRequestProjectList(owner, repo, pullrequest.Value, sourcepath).GenerateBuildList(key))
+                await foreach (var item in new PullRequestProcessor(owner, repo, pullrequest.Value, sourcepath).GenerateBuildList(key))
                     localResults.Add(item);
 
                 projects = localResults;

@@ -142,8 +142,12 @@
   },
   {
     "Name": "Delete - All files, artifact remains in folder",
-    "CountOfEmptyResults": 2,
-    "ExpectedResults": null,
+    "ExpectedResults": [
+      {
+        "ResultCode": 1,
+        "DiscoveredProject": ""
+      }
+    ],
     "Items": [
       {
         "ItemType": "Delete",
@@ -157,7 +161,6 @@
   },
   {
     "Name": "Delete - All files, artifact remains in folder and snippets file",
-    "CountOfEmptyResults": 2,
     "ExpectedResults": [
       {
         "ResultCode": 1,
@@ -236,14 +239,14 @@
     "Name": "Create - Solution found, just .proj file",
     "ExpectedResults": [
       {
-        "ResultCode": 3,
-        "DiscoveredProject": "snippets/bad/sln_odd_proj/file.sln"
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/solutions/sln_odd_proj/file.sln"
       }
     ],
     "Items": [
       {
         "ItemType": "Create",
-        "Path": "snippets/bad/sln_odd_proj/some_code/project1.proj"
+        "Path": "snippets/good/solutions/sln_odd_proj/some_code/project1.proj"
       }
     ]
   },
@@ -288,7 +291,7 @@
     "ExpectedResults": [
       {
         "ResultCode": 2,
-        "DiscoveredProject": "snippets/bad/samefolder/project1.csproj"
+        "DiscoveredProject": "snippets/bad/samefolder/project2.vbproj"
       }
     ],
     "Items": [
@@ -306,18 +309,18 @@
     "Name": "Create - New project, is missing from solution",
     "ExpectedResults": [
       {
-        "ResultCode": 3,
-        "DiscoveredProject": "snippets/good/solutions/lots-o-projects/linq-snippets.sln"
+        "ResultCode": 4,
+        "DiscoveredProject": "snippets/bad/lots-o-projects/linq-snippets.sln"
       }
     ],
     "Items": [
       {
         "ItemType": "Create",
-        "Path": "snippets/good/solutions/lots-o-projects/partition_not_in_sln/partition.csproj"
+        "Path": "snippets/bad/lots-o-projects/partition_not_in_sln/partition.csproj"
       },
       {
         "ItemType": "Create",
-        "Path": "snippets/good/solutions/lots-o-projects/partition_not_in_sln/Program.cs"
+        "Path": "snippets/bad/lots-o-projects/partition_not_in_sln/Program.cs"
       }
     ]
   },
@@ -325,7 +328,7 @@
     "Name": "Edit - Solution found, no project",
     "ExpectedResults": [
       {
-        "ResultCode": 1,
+        "ResultCode": 3,
         "DiscoveredProject": "snippets/bad/sln_no_proj/file.sln"
       }
     ],
