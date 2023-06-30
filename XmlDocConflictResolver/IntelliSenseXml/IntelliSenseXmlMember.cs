@@ -171,6 +171,28 @@ internal class IntelliSenseXmlMember
         }
     }
 
+    private string? _remarks;
+    public string Remarks
+    {
+        get
+        {
+            if (_remarks == null)
+            {
+                XElement? xElement = _xEMember.Element("remarks");
+                _remarks = (xElement != null) ? XmlHelper.GetNodesInPlainText(xElement) : string.Empty;
+            }
+            return _remarks;
+        }
+        set
+        {
+            _remarks = value;
+
+            // Update the XElement.
+            XElement? xElement = _xEMember.Element("remarks");
+            if (xElement != null) { xElement.Value = value; }
+        }
+    }
+
     public IntelliSenseXmlMember(XElement xeMember, IntelliSenseXmlFile xmlFile)
     {
         _xEMember = xeMember ?? throw new ArgumentNullException(nameof(xeMember));

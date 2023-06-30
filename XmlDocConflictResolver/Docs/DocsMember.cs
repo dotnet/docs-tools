@@ -62,11 +62,9 @@ internal class DocsMember : DocsAPI
         }
     }
 
-    // TODO - not sure if these need to be overridden.
     public override string Returns => GetNodesInPlainText("returns");
-
     public override string Summary => GetNodesInPlainText("summary");
-
+    public override string Remarks => GetNodesInPlainText("remarks");
     public string Value => GetNodesInPlainText("value");
 
     public List<DocsException> Exceptions

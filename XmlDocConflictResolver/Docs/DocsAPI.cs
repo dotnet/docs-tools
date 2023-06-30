@@ -208,6 +208,7 @@ internal abstract class DocsAPI : IDocsAPI
 
     public abstract string Summary { get; }
     public abstract string Returns { get; }
+    public abstract string Remarks { get; }
 
     public List<DocsAssemblyInfo> AssemblyInfos
     {

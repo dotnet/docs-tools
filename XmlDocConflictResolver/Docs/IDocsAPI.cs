@@ -14,4 +14,5 @@ internal interface IDocsAPI
     public abstract List<DocsTypeParam> TypeParams { get; }
     public abstract string Summary { get; }
     public abstract string Returns { get; }
+    public abstract string Remarks { get; }
 }

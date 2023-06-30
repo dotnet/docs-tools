@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Management.Automation.Language;
+using System.Text;
 using System.Xml.Linq;
 
 namespace XmlDocConflictResolver;
@@ -57,29 +59,19 @@ internal class ConflictChecker
         // Find a matching ECMAXML file for each type.
         foreach (IntelliSenseXmlMember ixmlMember in _intelliSenseXmlComments.Members.Values)
         {
-            string typeDocId;
-            if (ixmlMember.Name.StartsWith('T'))
-                typeDocId = ixmlMember.Name;
-            else
-            {
-                // Construct the DocId for the containing type.
-                // From "M:System.Formats.Cbor.CborWriter.WriteTag(System.Formats.Cbor.CborTag)"
-                // to "T:System.Formats.Cbor.CborWriter"
-
-                // First remove parameters, if any.
-                typeDocId = ixmlMember.Name.Split('(')[0];
-                // Chop off prefix and member name.
-                typeDocId = typeDocId[1..typeDocId.LastIndexOf('.')];
-                // Add "T" prefix.
-                typeDocId = string.Concat("T", typeDocId);
-            }
+            // Ignore members and assume they've been loaded with their containing type.
+            if (!ixmlMember.Name.StartsWith('T'))
+                continue;
 
             // Check if we've already loaded an ECMAXML file for the containing type.
-            if (!_docsComments.Types.ContainsKey(typeDocId))
+            if (!_docsComments.Types.ContainsKey(ixmlMember.Name))
             {
-                FileInfo? docsFile = GetDocsFileForMember(ixmlMember);
+                FileInfo? docsFile = GetDocsFileForType(ixmlMember);
                 if (docsFile is null)
+                {
+                    Log.Error($"No docs file found for type '{ixmlMember.Name}'.");
                     continue;
+                }
 
                 // Load the docs file.
                 XDocument? xDoc = null;
@@ -187,6 +179,13 @@ internal class ConflictChecker
                 ixmlMember.XmlFile.Changed = true;
             }
 
+            if (!ecmaxmlApi.Remarks.IsDocsEmpty() &&
+                string.Compare(ecmaxmlApi.Remarks, ixmlMember.Remarks) != 0)
+            {
+                ixmlMember.Remarks = ecmaxmlApi.Remarks;
+                ixmlMember.XmlFile.Changed = true;
+            }
+
             //foreach (IntelliSenseXmlParam ixmlParam in ixmlMember.Params)
             for (int i = 0; i < ixmlMember.Params.Count; i++)
             {
@@ -196,7 +195,7 @@ internal class ConflictChecker
                 if (!ixmlParam.Value.IsDocsEmpty())
                 {
                     DocsParam? ecmaxmlParam = ecmaxmlApi.Params.FirstOrDefault(p => p.Name == ixmlParam.Name);
-                    if (ecmaxmlParam is not null && 
+                    if (ecmaxmlParam is not null &&
                         string.Compare(ecmaxmlParam.Value, ixmlParam.Value) != 0)
                     {
                         ixmlParam.Value = ecmaxmlParam.Value;
@@ -210,9 +209,9 @@ internal class ConflictChecker
                 // Find matching typeParam from docs XML.
                 if (!ixmlTypeParam.Value.IsDocsEmpty())
                 {
-                    DocsTypeParam? ecmaxmlTypeParam = 
+                    DocsTypeParam? ecmaxmlTypeParam =
                         ecmaxmlApi.TypeParams.FirstOrDefault(tp => tp.Name == ixmlTypeParam.Name);
-                    if (ecmaxmlTypeParam is not null && 
+                    if (ecmaxmlTypeParam is not null &&
                         string.Compare(ecmaxmlTypeParam.Value, ixmlTypeParam.Value) != 0)
                     {
                         ixmlTypeParam.Value = ecmaxmlTypeParam.Value;
@@ -226,6 +225,7 @@ internal class ConflictChecker
             // These XML tags are only for non-type APIs.
             if (ecmaxmlApi.Kind == APIKind.Member)
             {
+                // Property value.
                 DocsMember ecmaxmlMember = (DocsMember)ecmaxmlApi;
                 if (!ecmaxmlMember.Value.IsDocsEmpty() &&
                     string.Compare(ecmaxmlMember.Value, ixmlMember.Value) != 0)
@@ -234,6 +234,7 @@ internal class ConflictChecker
                     ixmlMember.XmlFile.Changed = true;
                 }
 
+                // Exceptions.
                 foreach (IntelliSenseXmlException ixmlException in ixmlMember.Exceptions)
                 {
                     // Find matching exception from docs XML.
@@ -252,31 +253,42 @@ internal class ConflictChecker
         }
     }
 
-    private FileInfo? GetDocsFileForMember(IntelliSenseXmlMember ixmlMember)
+    private FileInfo? GetDocsFileForType(IntelliSenseXmlMember ixmlMember)
     {
+        bool nestedType = false;
+
         // Files are named by type and in a folder with the name of the namespace.
         var directories = _docsXmlDir.EnumerateDirectories(ixmlMember.Namespace, SearchOption.AllDirectories);
         if (!directories.Any())
         {
-            Log.Error($"No docs directory found for namespace '{ixmlMember.Namespace}'.");
             // This could be because it's a nested class and the namespace was calculated incorrectly.
             // So look for a directory with one less period-separated token on the end.
+            if (!ixmlMember.Namespace.Contains('.'))
+                return null;
+
             string newNamespace = ixmlMember.Namespace[..ixmlMember.Namespace.LastIndexOf('.')];
             directories = _docsXmlDir.EnumerateDirectories(newNamespace, SearchOption.AllDirectories);
             if (!directories.Any())
                 return null;
+            else
+                nestedType = true;
         }
 
         // Get just the type name.
-        // TODO: This won't work for nested types.
+        // Nested types handling:
+        // For example, for T:System.TimeZoneInfo.TransitionTime,
+        // the docs file is System > TimeZoneInfo+TransitionTime.xml.
         string typeName;
-        if (ixmlMember.Name.StartsWith('T'))
-            typeName = ixmlMember.Name[(ixmlMember.Name.LastIndexOf('.') + 1)..];
-        else
+        if (nestedType)
         {
-            string[] tokens = ixmlMember.Name.Split('.');
-            typeName = tokens[tokens.Length - 2];
+            string[] nameParts = ixmlMember.Name.Split('.');
+            if (nameParts.Length > 2)
+                typeName = string.Join("+", nameParts[(nameParts.Length - 2)..]);
+            else
+                return null;
         }
+        else
+            typeName = ixmlMember.Name[(ixmlMember.Name.LastIndexOf('.') + 1)..];
 
         IEnumerable<FileInfo>? files = null;
         foreach (var directory in directories)
@@ -289,7 +301,6 @@ internal class ConflictChecker
 
         if (files is null || !files.Any())
         {
-            Log.Error($"No docs file found for type '{typeName}'.");
             return null;
         }
 
