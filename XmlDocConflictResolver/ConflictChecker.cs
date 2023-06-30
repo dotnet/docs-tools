@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Management.Automation.Language;
-using System.Text;
+﻿using System.Text;
 using System.Xml.Linq;
 
 namespace XmlDocConflictResolver;
