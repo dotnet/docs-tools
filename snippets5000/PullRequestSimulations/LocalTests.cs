@@ -49,7 +49,7 @@ public partial class LocalTests
                 Assert.IsTrue(File.Exists(Path.GetFullPath(Path.Combine(CurrentFolder, item.Path))));
 
 
-            PullRequestProcessor.Test(CurrentFolder, item.Path, out DiscoveryResult? resultItem);
+            DiscoveryResult? resultItem = PullRequestProcessor.GenerateItemResult(CurrentFolder, item.Path);
 
             if (!resultItem.HasValue)
                 emptyErrors++;

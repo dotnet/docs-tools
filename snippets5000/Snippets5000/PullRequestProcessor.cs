@@ -60,17 +60,15 @@ internal class PullRequestProcessor
 
         await foreach (var item in files.PerformQuery())
         {
-            Test(_rootDir, item, out DiscoveryResult? resultValue);
+            DiscoveryResult? resultValue = GenerateItemResult(_rootDir, item);
 
             if (resultValue != null)
                 yield return resultValue.Value;
         }
     }
 
-    static internal void Test(string rootDir, string item, out DiscoveryResult? resultValue)
+    static internal DiscoveryResult? GenerateItemResult(string rootDir, string item)
     {
-        resultValue = null;
-
         // Get components of the file path
         string fullPath = Path.Combine(rootDir.Replace('/', '\\'), item.Replace('/', '\\'));
         string itemFileName = Path.GetFileName(fullPath);
@@ -79,7 +77,7 @@ internal class PullRequestProcessor
         // The file must be in the list of file name triggers or its extension must be one we care about
         if (!EnvFileTriggers.Contains(itemFileName, StringComparer.OrdinalIgnoreCase) &&
             !EnvExtensionsCodeTriggers.Contains(Path.GetExtension(itemFileName), StringComparer.OrdinalIgnoreCase))
-            return;
+            return null;
 
         bool itemWasDeleted = !File.Exists(fullPath);
         bool allProjectsFoundInSln = false;
@@ -112,7 +110,7 @@ internal class PullRequestProcessor
             project = TransformPathToUnix(rootDir, project);
 
         // Process the condition checks to see if this item is valid or not
-        resultValue = (project, countOfSln, countOfProjs, countOfCode, countOfSpecial, itemWasDeleted, allProjectsFoundInSln) switch
+        return (project, countOfSln, countOfProjs, countOfCode, countOfSpecial, itemWasDeleted, allProjectsFoundInSln) switch
         {
             //                            Proj File, Sln#, Proj#, Code#, Spec#,   Del, SlnHasPrj
             /* File del, no code/proj  */ (null,        0,     0,     0,     0,  true, _)     => null,

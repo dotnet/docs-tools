@@ -26,9 +26,10 @@ internal class TestingProjectList
 
         foreach (var item in tests.Where(t => t.Name.Equals(_testId, StringComparison.InvariantCultureIgnoreCase)).First().Items)
         {
-            PullRequestProcessor.Test(_rootDir, item.Path, out DiscoveryResult? resultValue);
+            DiscoveryResult? resultValue = PullRequestProcessor.GenerateItemResult(_rootDir, item.Path);
 
-            if (resultValue != null) yield return resultValue.Value;
+            if (resultValue != null)
+                yield return resultValue.Value;
         }
     }
 }
