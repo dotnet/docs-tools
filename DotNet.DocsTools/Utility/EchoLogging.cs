@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DotNet.DocsTools.Utility;
 
-public class EchoLogging
+public static class EchoLogging
 {
     /// <summary>
     /// Simple function return an indented string.
