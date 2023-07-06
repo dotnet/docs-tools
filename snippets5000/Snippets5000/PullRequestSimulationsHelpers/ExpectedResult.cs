@@ -16,6 +16,11 @@ public readonly struct ExpectedResult
     /// </summary>
     public string DiscoveredProject { get; init; }
 
+    /// <summary>
+    /// Creates a new result with the specified code and project.
+    /// </summary>
+    /// <param name="resultCode">The result code.</param>
+    /// <param name="discoveredProject">The path to the project.</param>
     public ExpectedResult(int resultCode, string discoveredProject)
     {
         ResultCode = resultCode;
