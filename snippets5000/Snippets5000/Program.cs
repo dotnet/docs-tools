@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using static Snippets5000.SnippetsConfigFile;
+using Log = DotNet.DocsTools.Utility.EchoLogging;
+using static System.CommandLine.Rendering.Ansi.Cursor;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PullRequestSimulations")]
 
@@ -15,7 +17,7 @@ class Program
     const string OUTPUT_ERROR_3_SLNNOPROJ = "ERROR: Solution found, but project was found and isn't in the solution.";
     const string OUTPUT_GOOD = "GOOD: Passed structural tests.";
     const string SNIPPETS_FILE_NAME = "snippets.5000.json";
-
+    
     const int EXITCODE_GOOD = 0;
     const int EXITCODE_BAD = 1;
 
@@ -68,7 +70,7 @@ class Program
             else
                 projects = new TestingProjectList(dryrunTestId, dryrunTestDataFile, sourcepath).GenerateBuildList();
 
-            Console.WriteLine("\r\nOutput all items found, grouped by status...");
+            Log.Write(0, "\r\nOutput all items found, grouped by status...");
 
             // Start processing all of the discovered projects
             ProcessDiscoveredProjects(projects, out List<SnippetsConfigFile> transformedProjects, out string[] projectsToCompile);
@@ -86,10 +88,10 @@ class Program
             {
                 if (!first)
                 {
-                    Console.WriteLine($"\r\n😭 Compile targets with unresolved issues:");
+                    Log.Write(0, "\r\n😭 Compile targets with unresolved issues:");
                     first = true;
                 }
-                Console.WriteLine($"{Log(2)}{item.RunTargetFile}");
+                Log.Write(2, item.RunTargetFile);
                 exitCode = EXITCODE_BAD;
             }
 
@@ -104,7 +106,7 @@ class Program
 
             // There were no errors, log it!
             if (exitCode == 0)
-                Console.WriteLine($"\r\n😀 All builds passing! 😀");
+                Log.Write(0, "\r\n😀 All builds passing! 😀");
 
             return exitCode;
         }
@@ -114,7 +116,7 @@ class Program
         {
             var fullBuild = new FullBuildProjectList(sourcepath);
             foreach (var path in fullBuild.GenerateBuildList())
-                Console.WriteLine(path);
+                Log.Write(0, path);
         }
 
         return EXITCODE_GOOD;
@@ -133,8 +135,8 @@ class Program
         bool first = false;
         foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_NOPROJ))
         {
-            if (!first) { Console.WriteLine(OUTPUT_ERROR_1_NOPROJ); first = true; }
-            Console.WriteLine($"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_1_NOPROJ}");
+            if (!first) { Log.Write(0, OUTPUT_ERROR_1_NOPROJ); first = true; }
+            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_1_NOPROJ}");
             transformedProjects.Add(new SnippetsConfigFile() { RunOutput = OUTPUT_ERROR_1_NOPROJ, RunExitCode = project.Code, RunTargetFile = project.InputFile, RunErrorIsStructural = true, RunConsideredGood = false });
         }
 
@@ -142,8 +144,8 @@ class Program
         first = false;
         foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_TOOMANY))
         {
-            if (!first) { Console.WriteLine(OUTPUT_ERROR_2_TOOMANY); first = true; }
-            Console.WriteLine($"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_2_TOOMANY}");
+            if (!first) { Log.Write(0, OUTPUT_ERROR_2_TOOMANY); first = true; }
+            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_2_TOOMANY}");
             transformedProjects.Add(new SnippetsConfigFile() { RunOutput = OUTPUT_ERROR_2_TOOMANY, RunExitCode = project.Code, RunTargetFile = project.InputFile, RunErrorIsStructural = true, RunConsideredGood = false });
         }
 
@@ -152,8 +154,8 @@ class Program
         first = false;
         foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_SLN_NOPROJ))
         {
-            if (!first) { Console.WriteLine(OUTPUT_ERROR_3_SLNNOPROJ); first = true; }
-            Console.WriteLine($"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_3_SLNNOPROJ}");
+            if (!first) { Log.Write(0, OUTPUT_ERROR_3_SLNNOPROJ); first = true; }
+            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_3_SLNNOPROJ}");
             transformedProjects.Add(new SnippetsConfigFile() { RunOutput = OUTPUT_ERROR_3_SLNNOPROJ, RunExitCode = project.Code, RunTargetFile = project.InputFile, RunErrorIsStructural = true, RunConsideredGood = false });
         }
 
@@ -161,18 +163,18 @@ class Program
         first = false;
         foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_GOOD))
         {
-            if (!first) { Console.WriteLine(OUTPUT_GOOD); first = true; }
-            Console.WriteLine(project);
+            if (!first) { Log.Write(0, OUTPUT_GOOD); first = true; }
+            Log.Write(0, project);
         }
 
-        Console.WriteLine("\r\nGathering unique projects to compile:");
+        Log.Write(0, "\r\nGathering unique projects to compile:");
         projectsToCompile = projects.Where(p => p.Code == DiscoveryResult.RETURN_GOOD).Select(p => p.DiscoveredFile).Distinct().ToArray();
 
         // Gather the files to be tested:
         foreach (var item in projectsToCompile)
-            Console.WriteLine($"  {item}");
+            Log.Write(2, item);
 
-        Console.WriteLine("\r\nCompile projects...");
+        Log.Write(0, "\r\nCompile projects...");
     }
 
     // Compiles all of the projectsToCompile items, adding the results to the transformedProjects list.
@@ -193,11 +195,10 @@ class Program
             expansionVariables.Clear();
 
             Directory.SetCurrentDirectory(sourcePath);
-            Console.WriteLine("\r\n===================================");
-            Console.WriteLine($"Compile: {counter}/{projectsToCompile.Length} {item}");
+            Log.CreateGroup($"Compile: {counter}/{projectsToCompile.Length} {item}");
 
             string projectPath = Path.GetFullPath(item);
-            Console.WriteLine($"{Log(2)}Resolved path: {projectPath}");
+            Log.Write(2, $"Resolved path: {projectPath}");
 
             expansionVariables.Add("repoRoot", sourcePath);
             expansionVariables.Add("projectPath", projectPath);
@@ -209,7 +210,7 @@ class Program
             string possibleSnippetsFilePath = Path.Combine(Path.GetDirectoryName(projectPath)!, SNIPPETS_FILE_NAME);
             if (File.Exists(possibleSnippetsFilePath))
             {
-                Console.WriteLine($"{Log(2)}Found snippets config file");
+                Log.Write(2, "Found snippets config file");
 
                 try
                 {
@@ -217,11 +218,12 @@ class Program
                 }
                 catch (Exception e1)
                 {
-                    Console.WriteLine($"{Log(2)}Unable to load config file: {e1.StackTrace}");
+                    Log.Write(2, $"Unable to load config file: {e1.StackTrace}");
                 }
+                
             }
 
-            Console.WriteLine($"{Log(2)}Mode: {config.Host}");
+            Log.Write(2, $"Mode: {config.Host}");
 
             Directory.SetCurrentDirectory(Path.GetDirectoryName(projectPath)!);
 
@@ -251,14 +253,14 @@ class Program
                 }
                 else
                 {
-                    Console.WriteLine($"{Log(2)}Mode is custom but command isn't set");
+                    Log.Write(2, "Mode is custom but command isn't set");
                     config.RunOutput = "Invalid snippets file, missing command for custom action";
                     config.RunConsideredGood = false;
                 }
             }
             else
             {
-                Console.WriteLine($"{Log(2)}Mode is invalid... nothing to do");
+                Log.Write(2, "Mode is invalid... nothing to do");
                 config.RunConsideredGood = false;
             }
 
@@ -267,9 +269,9 @@ class Program
             // Run the batch file to do the compile.
             if (config.RunConsideredGood)
             {
-                Console.WriteLine($"{Log(2)}Contents of {FANCY_BATCH_FILENAME}:");
+                Log.Write(2, $"Contents of {FANCY_BATCH_FILENAME}:");
                 foreach (var line in File.ReadAllLines(FANCY_BATCH_FILENAME))
-                    Console.WriteLine($"{Log(4)}{line}");
+                    Log.Write(4, line);
 
                 ProcessStartInfo processInfo = new(FANCY_BATCH_FILENAME)
                 {
@@ -302,15 +304,18 @@ class Program
                 config.RunConsideredGood = config.RunExitCode == 0;
 
                 config.RunOutput = config.RunOutput.Trim();
-                Console.WriteLine($"{Log(2)}Output: \r\n{Log(4)}{config.RunOutput.Replace("\n", $"\n{Log(4)}")}\r\n");
+                Log.Write(2, $"Output:");
+                Log.Write(4, config.RunOutput.Replace("\n", $"\n{Log.Ind(4)}"));
             }
+
+            Log.EndGroup();
 
             transformedProjects.Add(config);
 
             counter++;
         }
 
-        Console.WriteLine();
+        Log.Write(0, "");
     }
 
     // After all compiles have finished, this method scans through ones that failed and checks to see
@@ -327,11 +332,11 @@ class Program
 
             if (!first)
             {
-                Console.WriteLine($"\r\nSome projects failed to compile...");
+                Log.Write(0, "\r\nSome projects failed to compile...");
                 first = true;
             }
 
-            Console.WriteLine($"\r\nProcessing failure: {config.RunTargetFile}");
+            Log.Write(0, $"\r\nProcessing failure: {config.RunTargetFile}");
 
             foreach (var line in config.RunOutput.Split('\n'))
             {
@@ -370,8 +375,8 @@ class Program
                 }
                 else
                 */
-                
-                Console.WriteLine($"{Log(2)}Unable to find error from output");
+
+                Log.Write(2, "Unable to find error from output");
             }
 
             // Normal MSBUILD errors
@@ -382,7 +387,8 @@ class Program
                 int errorsSkipped = 0;
                 foreach (var item in config.DetectedBuildErrors)
                 {
-                    Console.WriteLine($"\r\n{Log(2)}Found error code: {item.ErrorCode} on line\r\n{Log(4)}{item.ErrorLine!}");
+                    Log.Write(0, "");
+                    Log.Write(0, $"Found error code: {item.ErrorCode} on line\r\n{Log.Ind(4)}{item.ErrorLine!}");
 
                     Match match = Regex.Match(item.ErrorLine!, "(^.*)\\((\\d*),(\\d*)\\)");
 
@@ -400,7 +406,7 @@ class Program
                                                 && error.Line == lineNumber
                                           select new { })
                         {
-                            Console.WriteLine($"{Log(4)}Skipping this error");
+                            Log.Write(4, "Skipping this error");
                             errorSkipped = true;
                             item.IsSkipped = true;
                             break;
@@ -409,11 +415,11 @@ class Program
                         if (errorSkipped)
                             errorsSkipped++;
                         else
-                            Console.WriteLine($"::error file={file.Replace('\\', '/')},line={lineNumber},col={column}::{item.ErrorLine}");
+                            Log.Write(0, $"::error file={file.Replace('\\', '/')},line={lineNumber},col={column}::{item.ErrorLine}");
 
                     }
                     else
-                        Console.WriteLine($"{Log(2)}Unable to parse error line and column");
+                        Log.Write(2, "Unable to parse error line and column");
                 }
 
                 // Mark this as successful because every error was skipped
@@ -421,12 +427,4 @@ class Program
             }
         }
     }
-
-    
-    /// <summary>
-    /// Simple function return an indented string. Smaller name so easier to interpolate in strings.
-    /// </summary>
-    /// <param name="level">How many spaces to add.</param>
-    private static string Log(int level) =>
-        new(' ', level);
 }
