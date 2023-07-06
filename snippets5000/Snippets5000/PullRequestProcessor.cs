@@ -228,5 +228,5 @@ internal class PullRequestProcessor
     }
 
     static string TransformPathToUnix(string repoRoot, string filePath) =>
-        filePath.Substring(repoRoot.Length).Replace("\\", "/");
+        filePath.Substring(repoRoot.Length + 1).Replace("\\", "/");
 }
