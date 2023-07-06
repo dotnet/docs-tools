@@ -138,12 +138,14 @@ internal class DocsType : DocsAPI
 
     public override string Summary => GetNodesInPlainText("summary");
 
-    // TODO: param and typeparam are missing from DocsType (e.g. if it's a delegate)?
+    // params and typeparams are inherited from DocsAPI.
 
     /// <summary>
     /// Only available when the type is a delegate.
     /// </summary>
     public override string Returns => GetNodesInPlainText("returns");
+
+    public override string Remarks => GetNodesInPlainText("remarks");
 
     public override string ToString() => FullName;
 
