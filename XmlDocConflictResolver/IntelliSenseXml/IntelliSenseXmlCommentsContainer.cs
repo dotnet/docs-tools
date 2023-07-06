@@ -160,7 +160,7 @@ internal class IntelliSenseXmlCommentsContainer
                     Encoding = xmlFile.FileEncoding,
                     Indent = true,
                     CheckCharacters = false,
-                    IndentChars = "    "
+                    IndentChars = "  "
                 };
 
                 using (XmlWriter xw = XmlWriter.Create(docsVersionFileName, xws))
@@ -215,7 +215,7 @@ internal class IntelliSenseXmlCommentsContainer
             if (!File.Exists(modifiedIntelliSenseFile))
             {
                 Log.Error($"IntelliSense XML file '{xmlFile.FilePath}' had " +
-                    $"changes but no docs version file '{modifiedIntelliSenseFile}' was found.");
+                    $"changes but no *docs version* file '{modifiedIntelliSenseFile}' was found.");
                 continue;
             }
 
@@ -224,7 +224,7 @@ internal class IntelliSenseXmlCommentsContainer
             modifiedIntelliSenseFile = modifiedIntelliSenseFile.ConvertToUnixFilePath();
             string mergedFile = originalIntelliSenseFile.Replace(".xml", _mergedVersionSuffix);
 
-            string diffCommand = $"diff --unchanged-group-format=\"%=\" --old-group-format=\"\" --new-group-format=\"%>\" --changed-group-format=\"<<<<<<<%c'\\\\12'%<=======%c'\\\\12'%>>>>>>>>%c'\\\\12'\" {originalIntelliSenseFile} {modifiedIntelliSenseFile} > {mergedFile}";
+            string diffCommand = $"diff --unchanged-group-format=\"%=\" --old-group-format=\"\" --new-group-format=\"%>\" --changed-group-format=\"<<<<<<<%c'\\\\12'%<=======%c'\\\\12'%>>>>>>>>%c'\\\\12'\" \"{originalIntelliSenseFile}\" \"{modifiedIntelliSenseFile}\" > \"{mergedFile}\"";
 
             string scriptPath = "diff_script.sh";
             File.WriteAllText(scriptPath, diffCommand);
@@ -260,7 +260,10 @@ internal class IntelliSenseXmlCommentsContainer
                     $"changes but no merged file '{mergedFile}' was found.");
             }
             else
+            {
                 File.Move(mergedFile, xmlFile.FilePath, true);
+                Log.Info($"Inserted conflicting text into '{xmlFile.FilePath}'.");
+            }
         }
 
         Log.Info("Finished cleaning up files.");
