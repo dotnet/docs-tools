@@ -12,6 +12,7 @@ namespace Snippets5000
         public const int RETURN_NOPROJ = 1;
         public const int RETURN_TOOMANY = 2;
         public const int RETURN_SLN_NOPROJ = 3;
+        public const int RETURN_SLN_PROJ_MISSING = 4;
 
         public const int RETURN_TEMP_SLNFOUND = 99;
 

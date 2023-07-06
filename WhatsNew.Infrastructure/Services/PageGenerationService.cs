@@ -290,7 +290,7 @@ public class PageGenerationService
             {
                 // Format a merged pull requests badge, for example:
                 // https://img.shields.io/badge/Merged%20Pull%20Requests-7-green
-                var altText = $"There were {count} pull requests merged by {user.name}.";
+                var altText = $"{count} pull requests.";
                 var mergedPullRequestsBadge = $"![{altText}](https://img.shields.io/badge/Merged%20Pull%20Requests-{count}-green)";
                 
                 sb.AppendLine($"- [{user.login}](https://github.com/{user.login}){(user.name != null ? " - " + user.name : "")} {mergedPullRequestsBadge}");
