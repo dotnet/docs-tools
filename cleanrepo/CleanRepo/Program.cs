@@ -152,7 +152,7 @@ static class Program
 
             // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
             // This is done here (dynamically) because it relies on knowing the base path URL.
-            docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?({docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
+            docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?(?<path>{docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
 
             // Gather media file names.
             if (docFxRepo.ImageRefs is null)
@@ -194,7 +194,7 @@ static class Program
 
             // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
             // This is done here (dynamically) because it relies on knowing the base path URL.
-            docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?({docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
+            docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?(?<path>{docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
 
             // Gather media file names.
             if (docFxRepo.ImageRefs is null)
