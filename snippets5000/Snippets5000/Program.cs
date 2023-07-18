@@ -50,7 +50,7 @@ class Program
             !string.IsNullOrEmpty(owner) &&
             !string.IsNullOrEmpty(repo))
         {
-            IEnumerable<DiscoveryResult> projects;
+            List<DiscoveryResult> projects;
 
             // Normal github PR
             if (string.IsNullOrEmpty(dryrunTestId))
@@ -68,8 +68,9 @@ class Program
             else if (string.IsNullOrEmpty(dryrunTestDataFile))
                 throw new ArgumentNullException(nameof(dryrunTestDataFile), "The dryrun Test DataFile must be set");
             else
-                projects = new TestingProjectList(dryrunTestId, dryrunTestDataFile, sourcepath).GenerateBuildList();
+                projects = new TestingProjectList(dryrunTestId, dryrunTestDataFile, sourcepath).GenerateBuildList().ToList();
 
+            Log.Write(0, $"{projects.Count} items found.");
             Log.Write(0, "\r\nOutput all items found, grouped by status...");
 
             // Start processing all of the discovered projects
@@ -389,7 +390,6 @@ class Program
                 {
                     Log.Write(0, "");
                     Log.Write(0, $"Found error code: {item.ErrorCode} on line\r\n{Log.Ind(4)}{item.ErrorLine!}");
-
                     Match match = Regex.Match(item.ErrorLine!, "(^.*)\\((\\d*),(\\d*)\\)");
 
                     if (match.Success)

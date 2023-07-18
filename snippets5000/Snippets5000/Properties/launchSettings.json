@@ -2,7 +2,7 @@
   "profiles": {
     "Test via GitHub": {
       "commandName": "Project",
-      "commandLineArgs": "--sourcepath C:\\\\code\\\\Work\\\\dotnet\\\\docs-desktop --owner dotnet --repo docs-desktop --pullrequest 1058",
+      "commandLineArgs": "--sourcepath C:\\code\\Work\\dotnet\\dotnet-api-docs --owner dotnet --repo dotnet-api-docs --pullrequest 9149",
       "environmentVariables": {
         "ExtensionsProjs": ".csproj;.fsproj;.vbproj;.vcxproj;.sln",
         "ExtensionsCodeTriggers": ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml",
