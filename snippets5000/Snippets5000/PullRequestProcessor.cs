@@ -76,7 +76,8 @@ internal class PullRequestProcessor
 
         // The file must be in the list of file name triggers or its extension must be one we care about
         if (!EnvFileTriggers.Contains(itemFileName, StringComparer.OrdinalIgnoreCase) &&
-            !EnvExtensionsCodeTriggers.Contains(Path.GetExtension(itemFileName), StringComparer.OrdinalIgnoreCase))
+            !EnvExtensionsCodeTriggers.Contains(Path.GetExtension(itemFileName), StringComparer.OrdinalIgnoreCase) &&
+            !EnvExtensionsProjects.Contains(Path.GetExtension(itemFileName), StringComparer.OrdinalIgnoreCase))
             return null;
 
         bool itemWasDeleted = !File.Exists(fullPath);

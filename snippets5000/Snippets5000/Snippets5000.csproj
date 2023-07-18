@@ -7,13 +7,8 @@
     <Nullable>enable</Nullable>
 
     <Version>4.0.0.0</Version>
-
-    <PackAsTool>true</PackAsTool>
-    <ToolCommandName>snippets5000</ToolCommandName>
-    <PackageOutputPath>./nupkg</PackageOutputPath>
-
-    <PackageId>DotnetDocsTools.LocateProjects</PackageId>
-    <Authors>Andy and Bill</Authors>
+    <AssemblyTitle>Snippets 5000</AssemblyTitle>
+    <Authors>Andy De George</Authors>
     <Company>Microsoft</Company>
   </PropertyGroup>
 
