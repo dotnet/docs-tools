@@ -35,4 +35,4 @@ runs:
       run: |
         $support = '${{ inputs.support }}'
         $projects = ${{ steps.dotnet-version-sweeper.outputs.upgrade-projects }}
-        .\upgrade-projects.ps1 $support $projects
+        ./upgrade-projects.ps1 $support $projects
