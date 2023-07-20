@@ -24,6 +24,9 @@ foreach ($projectDir in $projects) {
     Write-Host "Attempting to upgrade project: $projectDir"
     Write-Host ""
 
+    # Normalize the project directory
+    $projectDir = [IO.Path]::GetFullPath($projectDir)
+
     # Remove the git repository directory from the project directory
     $relativePath = $projectDir.Replace($gitRepoDir, "")
 
@@ -36,9 +39,6 @@ foreach ($projectDir in $projects) {
 
     # Create a new branch
     git checkout -b $branch
-
-    # Normalize the project directory
-    $projectDir = [IO.Path]::GetFullPath($projectDir)
 
     # Capture all output from the upgrade-assistant command
     $output = upgrade-assistant upgrade "$projectDir" `
