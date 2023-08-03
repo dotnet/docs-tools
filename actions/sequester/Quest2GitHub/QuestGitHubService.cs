@@ -71,21 +71,22 @@ public class QuestGitHubService : IDisposable
     {
         // Trigger the OSPO bulk import before making any edits to any issue:
         await _ospoClient.GetAllAsync();
-        if ((_importTriggerLabel is null) || (_importedLabel is null))
-            await retrieveLabelIDs(organization, repository);
-        if (_allIterations is null)
-        {
-            _allIterations = await retrieveIterationLabels();
-        }
-        var currentIteration = QuestIteration.CurrentIteration(_allIterations);
 
-        var iter = new EnumerateIssues();
+        if (_importTriggerLabel is null || _importedLabel is null)
+        {
+            await RetrieveLabelIdsAsync(organization, repository);
+        }
+        
+        _allIterations ??= await RetrieveIterationLabelsAsync();
+
+        var currentIteration = QuestIteration.CurrentIteration(_allIterations);
+        var issueEnumerator = new EnumerateIssues();
 
         var historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
 
         int totalImport = 0;
         int totalSkipped = 0;
-        await foreach (var item in iter.AllQuestIssues(_ghClient, organization, repository, _importTriggerLabelText, _importedLabelText))
+        await foreach (var item in issueEnumerator.AllQuestIssues(_ghClient, organization, repository, _importTriggerLabelText, _importedLabelText))
         {
             if (item.UpdatedAt < historyThreshold)
                 break;
@@ -94,16 +95,16 @@ public class QuestGitHubService : IDisposable
             {
                 // Console.WriteLine($"{item.IssueNumber}: {item.Title}");
                 Console.WriteLine(item);
-                var questItem = await FindLinkedWorkItem(item);
-                if (dryRun is false)
+                var questItem = await FindLinkedWorkItemAsync(item);
+                if (dryRun is false && currentIteration is not null)
                 {
                     if (questItem != null)
                     {
-                        await UpdateWorkItem(questItem, item, currentIteration, _allIterations);
+                        await UpdateWorkItemAsync(questItem, item, currentIteration, _allIterations);
                     }
                     else
                     {
-                        questItem = await LinkIssue(organization, repository, item, currentIteration, _allIterations);
+                        questItem = await LinkIssueAsync(organization, repository, item, currentIteration, _allIterations);
                     }
                 }
                 totalImport++;
@@ -129,13 +130,15 @@ public class QuestGitHubService : IDisposable
         // Trigger the OSPO bulk import before making any edits to any issue:
         await _ospoClient.GetAllAsync();
 
-        if ((_importTriggerLabel == null) || (_importedLabel == null))
-            await retrieveLabelIDs(gitHubOrganization, gitHubRepository);
-        if (_allIterations is null)
+        if (_importTriggerLabel is null || _importedLabel is null)
         {
-            _allIterations = await retrieveIterationLabels();
+            await RetrieveLabelIdsAsync(gitHubOrganization, gitHubRepository);
         }
-        var currentIteration = QuestIteration.CurrentIteration(_allIterations);
+        
+        _allIterations ??= await RetrieveIterationLabelsAsync();
+
+        var currentIteration = QuestIteration.CurrentIteration(_allIterations) 
+            ?? throw new Exception("No current iteration found");
 
         //Retrieve the GitHub issue.
         var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
@@ -145,7 +148,7 @@ public class QuestGitHubService : IDisposable
         var sequestered = ghIssue.Labels.Any(l => l.nodeID == _importedLabel?.nodeID);
         // Only query AzDo if needed:
         var questItem = (request || sequestered)
-            ? await FindLinkedWorkItem(ghIssue)
+            ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
         // The order here is important to avoid a race condition that causes
@@ -157,13 +160,13 @@ public class QuestGitHubService : IDisposable
         {
             if (questItem is null)
             {
-                questItem = await LinkIssue(gitHubOrganization, gitHubRepository, ghIssue, currentIteration, _allIterations);
+                questItem = await LinkIssueAsync(gitHubOrganization, gitHubRepository, ghIssue, currentIteration, _allIterations);
             }
             else if (questItem is not null)
             {
                 // This allows a human to force a manual update: just add the trigger label.
                 // Note that it updates even if the item is closed.
-                await UpdateWorkItem(questItem, ghIssue, currentIteration, _allIterations);
+                await UpdateWorkItemAsync(questItem, ghIssue, currentIteration, _allIterations);
 
             }
             // Next, if the item is already linked, consider any updates.
@@ -172,9 +175,9 @@ public class QuestGitHubService : IDisposable
             // does get triggered again. The second trigger will check for any updates
             // a human made to assigned or state while the initial run was taking place.
         }
-        else if (sequestered && (questItem is not null))
+        else if (sequestered && questItem is not null)
         {
-            await UpdateWorkItem(questItem, ghIssue, currentIteration, _allIterations);
+            await UpdateWorkItemAsync(questItem, ghIssue, currentIteration, _allIterations);
         }
     }
 
@@ -192,7 +195,7 @@ public class QuestGitHubService : IDisposable
     private Task<GithubIssue> RetrieveIssueAsync(string org, string repo, int issueNumber) =>
             GithubIssue.QueryIssue(_ghClient, org, repo, issueNumber);
 
-    private async Task<QuestIteration[]> retrieveIterationLabels()
+    private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
     {
         var sprintPackets = await _azdoClient.RetrieveAllIterations();
 
@@ -216,11 +219,11 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private async Task<QuestWorkItem?> LinkIssue(string organization, string repo, GithubIssue ghIssue, QuestIteration currentIteration, 
+    private async Task<QuestWorkItem?> LinkIssueAsync(string organization, string repo, GithubIssue ghIssue, QuestIteration currentIteration, 
         IEnumerable<QuestIteration> allIterations)
     {
         var workItem = LinkedQuestId(ghIssue);
-        if (workItem == null)
+        if (workItem is null)
         {
             // Remove the trigger label before doing anything. That prevents
             // a race condition causing multiple imports:
@@ -251,7 +254,7 @@ public class QuestGitHubService : IDisposable
         }
     }
 
-    private async Task retrieveLabelIDs(string org, string repo)
+    private async Task RetrieveLabelIdsAsync(string org, string repo)
     {
         var labelQuery = new EnumerateLabels(_ghClient, org, repo);
         await foreach (var label in labelQuery.AllLabels())
@@ -261,7 +264,7 @@ public class QuestGitHubService : IDisposable
         }
     }
 
-    private async Task<QuestWorkItem?> UpdateWorkItem(QuestWorkItem questItem, GithubIssue ghIssue, QuestIteration currentIteration,
+    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, GithubIssue ghIssue, QuestIteration currentIteration,
         IEnumerable<QuestIteration> allIterations)
     {
         var ghAssigneeEmailAddress = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
@@ -275,7 +278,7 @@ public class QuestGitHubService : IDisposable
         if (questAssigneeID?.Id != questItem.AssignedToId)
         {
             // build patch document for assignment.
-            assignPatch = (questAssigneeID == null) ?
+            assignPatch = (questAssigneeID is null) ?
                 new JsonPatchDocument
                 {
                     Operation = Op.Remove,
@@ -344,10 +347,10 @@ public class QuestGitHubService : IDisposable
         return newItem;
     }
 
-    private async Task<QuestWorkItem?> FindLinkedWorkItem(GithubIssue issue)
+    private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(GithubIssue issue)
     {
         int? questId = LinkedQuestId(issue);
-        if (questId == null)
+        if (questId is null)
             return null;
         else
             return await QuestWorkItem.QueryWorkItem(_azdoClient, questId.Value);
