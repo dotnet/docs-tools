@@ -26,15 +26,15 @@
         </div>
         @if (_repoLabelsState.IsLoading)
     {
-        <ProgressIndicator Message="🏷️ Loading area labels..." />
+        <ProgressIndicator Message="??? Loading area labels..." />
     }
         @if (_issueSnapshots is null)
     {
-        <ProgressIndicator Message="🤖 Loading data..." />
+        <ProgressIndicator Message="?? Loading data..." />
     }
     else if (_chartConfig.Data is { Datasets.Count : 0 })
     {
-        <ProgressIndicator Message="📈 Building chart..." />
+        <ProgressIndicator Message="?? Building chart..." />
     }
     else
     {

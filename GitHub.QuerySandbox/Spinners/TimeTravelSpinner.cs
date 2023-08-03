@@ -6,17 +6,17 @@ internal sealed class TimeTravelSpinner : Spinner
     public override bool IsUnicode => true;
     public override IReadOnlyList<string> Frames => new List<string>
     {
-        "🕛 ",
-        "🕚 ",
-        "🕙 ",
-        "🕘 ",
-        "🕗 ",
-        "🕖 ",
-        "🕕 ",
-        "🕔 ",
-        "🕓 ",
-        "🕒 ",
-        "🕑 ",
-        "🕐 ",
+        "?? ",
+        "?? ",
+        "?? ",
+        "?? ",
+        "?? ",
+        "?? ",
+        "?? ",
+        "?? ",
+        "?? ",
+        "?? ",
+        "?? ",
+        "?? ",
     };
 }
