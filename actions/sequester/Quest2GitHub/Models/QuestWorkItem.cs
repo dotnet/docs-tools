@@ -63,7 +63,7 @@ public class QuestWorkItem
     /// This is retrieved from /Microsoft.VSTS.Scheduling.StoryPoints
     /// </remarks>
     public required int? StoryPoints { get; init; }
-    
+
     /// <summary>
     /// Create a work item object from the ID
     /// </summary>
@@ -91,8 +91,8 @@ public class QuestWorkItem
     /// Finally, create the work item object from the returned
     /// Json element.
     /// </remarks>
-    public static async Task<QuestWorkItem> CreateWorkItemAsync(GithubIssue issue, 
-        QuestClient questClient, 
+    public static async Task<QuestWorkItem> CreateWorkItemAsync(GithubIssue issue,
+        QuestClient questClient,
         OspoClient ospoClient,
         string path,
         string? requestLabelNodeId,
@@ -200,7 +200,8 @@ public class QuestWorkItem
         {
             result = await questClient.CreateWorkItem(patchDocument);
             newItem = WorkItemFromJson(result);
-        } catch (InvalidOperationException)
+        }
+        catch (InvalidOperationException)
         {
             Console.WriteLine(result.ToString());
             // This will happen when the assignee IS a Microsoft FTE,
@@ -273,20 +274,25 @@ public class QuestWorkItem
             var newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
             linkedGitHubRepo = true;
             return newItem;
-        } catch (InvalidOperationException ex)
+        }
+        catch (InvalidOperationException ex)
         {
-            Console.WriteLine("Can't add closing PR. The GitHub repo is likely not configured as linked in Quest.");
+            Console.WriteLine($"""
+                Can't add closing PR. The GitHub repo is likely not configured as linked in Quest.
+                Exception: {ex}
+                """);
+
             linkedGitHubRepo = false;
             return null;
         }
     }
 
-/// <summary>
-/// Construct a work item from the JSON document.
-/// </summary>
-/// <param name="root">The root element.</param>
-/// <returns>The Quest work item.</returns>
-public static QuestWorkItem WorkItemFromJson(JsonElement root)
+    /// <summary>
+    /// Construct a work item from the JSON document.
+    /// </summary>
+    /// <param name="root">The root element.</param>
+    /// <returns>The Quest work item.</returns>
+    public static QuestWorkItem WorkItemFromJson(JsonElement root)
     {
         var id = root.GetProperty("id").GetInt32();
         var fields = root.GetProperty("fields");
