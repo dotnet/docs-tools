@@ -217,6 +217,21 @@ exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
  */
 function getPullRequest(token, cursor = null) {
     return __awaiter(this, void 0, void 0, function* () {
+        /*
+        You can verify the query below, by running the following in the GraphQL Explorer:
+            https://docs.github.com/en/graphql/overview/explorer
+        
+        1. Sign in to GitHub.
+        2. Paste the query string value into the query window.
+        3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
+          {
+            "name": "docs",
+            "owner": "dotnet",
+            "number": 36636,
+            "cursor": null
+          }
+        4. Click the "Play" button.
+        */
         const octokit = (0, github_1.getOctokit)(token);
         return yield octokit.graphql({
             query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
@@ -453,7 +468,7 @@ function isSuccessStatus(token) {
             // Loop and wait if there's no OPS build status yet.
             // (This is unusual.)
             const loops = 30;
-            for (let i = 0; i < loops && buildStatus === null; i++) {
+            for (let i = 0; i < loops && !buildStatus; i++) {
                 // Sleep for 10 seconds.
                 yield (0, wait_1.wait)(10000);
                 const { data: statuses } = yield octokit.rest.repos.listCommitStatusesForRef({
@@ -471,7 +486,7 @@ function isSuccessStatus(token) {
                 }
             }
             // Didn't find OPS status. This is bad.
-            if (buildStatus === null) {
+            if (!buildStatus) {
                 (0, core_1.setFailed)(`Did not find OPS status check after waiting for ${(loops * 10) / 60} minutes. If it shows 'Expected — Waiting for status to be reported', close and reopen the pull request to trigger a build.`);
             }
             // Check state of OPS status check.
@@ -494,7 +509,7 @@ function isSuccessStatus(token) {
                 }
                 // This should never happen since if nothing else,
                 // we'll find the OPS status we found initially.
-                if (buildStatus === null) {
+                if (!buildStatus) {
                     throw new Error("Did not find OPS status check.");
                 }
             }
