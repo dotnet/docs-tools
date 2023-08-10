@@ -112,6 +112,22 @@ async function getPullRequest(
   token: string,
   cursor: string | null = null
 ): Promise<PullRequestDetails> {
+  /*
+  You can verify the query below, by running the following in the GraphQL Explorer:
+      https://docs.github.com/en/graphql/overview/explorer
+  
+  1. Sign in to GitHub.
+  2. Paste the query string value into the query window.
+  3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
+    {
+      "name": "docs",
+      "owner": "dotnet",
+      "number": 36636,
+      "cursor": null
+    }
+  4. Click the "Play" button.
+  */
+
   const octokit = getOctokit(token);
   return await octokit.graphql<PullRequestDetails>({
     query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
