@@ -124,6 +124,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
+const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
 const WorkflowInput_1 = __nccwpck_require__(6741);
 const file_heading_extractor_1 = __nccwpck_require__(3767);
@@ -134,41 +135,45 @@ function tryUpdatePullRequestBody(token) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const prNumber = github_1.context.payload.number;
-            console.log(`Update pull ${prNumber} request body.`);
+            (0, core_1.info)(`Update pull ${prNumber} request body.`);
             let allFiles = [];
             let details = yield getPullRequest(token, null);
             if (!details) {
-                console.log("Unable to get the pull request from GitHub GraphQL");
+                (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
             }
             const pullRequest = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
             if (!pullRequest) {
-                console.log("Unable to pull request details from object-graph.");
+                (0, core_1.info)("Unable to pull request details from object-graph.");
             }
             if (pullRequest.changedFiles === 0) {
-                console.log("No files changed at all...");
+                (0, core_1.info)("No files changed at all...");
                 return;
             }
             else {
                 try {
-                    console.log(JSON.stringify(pullRequest, undefined, 2));
+                    (0, core_1.startGroup)("Pull request JSON body");
+                    (0, core_1.info)(JSON.stringify(pullRequest, undefined, 2));
+                    (0, core_1.endGroup)();
                 }
-                catch (_f) { }
+                catch (_f) {
+                    (0, core_1.endGroup)();
+                }
             }
             allFiles = [...pullRequest.files.edges];
             while (details.repository.pullRequest.files.pageInfo.hasNextPage) {
                 const cursor = details.repository.pullRequest.files.pageInfo.endCursor;
                 details = yield getPullRequest(token, cursor);
                 if (!details) {
-                    console.log("Unable to get the pull request from GitHub GraphQL");
+                    (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
                 }
                 const moreFiles = (_d = (_c = (_b = details.repository) === null || _b === void 0 ? void 0 : _b.pullRequest) === null || _c === void 0 ? void 0 : _c.files) === null || _d === void 0 ? void 0 : _d.edges;
                 if (!moreFiles) {
-                    console.log("Unable to pull request details from object-graph.");
+                    (0, core_1.info)("Unable to pull request details from object-graph.");
                 }
                 allFiles = [...allFiles, ...moreFiles];
             }
             if (isPullRequestModifyingMarkdownFiles(allFiles) === false) {
-                console.log("No updated markdown files...");
+                (0, core_1.info)("No updated markdown files...");
                 return;
             }
             const { files, exceedsMax } = getModifiedMarkdownFiles(allFiles);
@@ -184,8 +189,9 @@ function tryUpdatePullRequestBody(token) {
                 // Append preview table to bottom.
                 updatedBody = appendTable(pullRequest.body, markdownTable);
             }
-            console.log("Proposed PR body:");
-            console.log(updatedBody);
+            (0, core_1.startGroup)("Proposed PR body");
+            (0, core_1.info)(updatedBody);
+            (0, core_1.endGroup)();
             const octokit = (0, github_1.getOctokit)(token);
             const response = yield octokit.rest.pulls.update({
                 owner: github_1.context.repo.owner,
@@ -194,17 +200,17 @@ function tryUpdatePullRequestBody(token) {
                 body: updatedBody,
             });
             if (response && response.status === 200) {
-                console.log("Pull request updated...");
+                (0, core_1.info)("Pull request updated...");
             }
             else {
-                console.log("Unable to update pull request...");
+                (0, core_1.info)("Unable to update pull request...");
             }
         }
         catch (error) {
-            console.log(`Unable to process markdown preview: ${error}`);
+            (0, core_1.warning)(`Unable to process markdown preview: ${error}`);
         }
         finally {
-            console.log("Finished attempting to generate preview.");
+            (0, core_1.info)("Finished attempting to generate preview.");
         }
     });
 }

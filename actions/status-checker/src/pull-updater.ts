@@ -1,3 +1,4 @@
+import { info, warning, startGroup, endGroup } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { FileChange } from "./types/FileChange";
 import { PullRequestDetails } from "./types/PullRequestDetails";
@@ -12,30 +13,29 @@ const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 export async function tryUpdatePullRequestBody(token: string) {
   try {
     const prNumber: number = context.payload.number;
-    console.log(`Update pull ${prNumber} request body.`);
+    info(`Update pull ${prNumber} request body.`);
 
     let allFiles: NodeOf<FileChange>[] = [];
     let details = await getPullRequest(token, null);
     if (!details) {
-      console.log("Unable to get the pull request from GitHub GraphQL");
+      info("Unable to get the pull request from GitHub GraphQL");
     }
 
     const pullRequest = details.repository?.pullRequest;
     if (!pullRequest) {
-      console.log("Unable to pull request details from object-graph.");
+      info("Unable to pull request details from object-graph.");
     }
 
     if (pullRequest.changedFiles === 0) {
-      console.log("No files changed at all...");
+      info("No files changed at all...");
       return;
     } else {
       try {
-        console.log("::group::Pull request JSON body");
-        console.log(JSON.stringify(pullRequest, undefined, 2));
-        console.log("::endgroup::");
-      }
-      catch {
-        console.log("::endgroup::");
+        startGroup("Pull request JSON body");
+        info(JSON.stringify(pullRequest, undefined, 2));
+        endGroup();
+      } catch {
+        endGroup();
       }
     }
 
@@ -46,19 +46,19 @@ export async function tryUpdatePullRequestBody(token: string) {
       details = await getPullRequest(token, cursor);
 
       if (!details) {
-        console.log("Unable to get the pull request from GitHub GraphQL");
+        info("Unable to get the pull request from GitHub GraphQL");
       }
 
       const moreFiles = details.repository?.pullRequest?.files?.edges;
       if (!moreFiles) {
-        console.log("Unable to pull request details from object-graph.");
+        info("Unable to pull request details from object-graph.");
       }
 
       allFiles = [...allFiles, ...moreFiles];
     }
 
     if (isPullRequestModifyingMarkdownFiles(allFiles) === false) {
-      console.log("No updated markdown files...");
+      info("No updated markdown files...");
       return;
     }
 
@@ -84,9 +84,9 @@ export async function tryUpdatePullRequestBody(token: string) {
       updatedBody = appendTable(pullRequest.body, markdownTable);
     }
 
-    console.log("::group::Proposed PR body");
-    console.log(updatedBody);
-    console.log("::endgroup::");
+    startGroup("Proposed PR body");
+    info(updatedBody);
+    endGroup();
 
     const octokit = getOctokit(token);
     const response = await octokit.rest.pulls.update({
@@ -97,14 +97,14 @@ export async function tryUpdatePullRequestBody(token: string) {
     });
 
     if (response && response.status === 200) {
-      console.log("Pull request updated...");
+      info("Pull request updated...");
     } else {
-      console.log("Unable to update pull request...");
+      info("Unable to update pull request...");
     }
   } catch (error) {
-    console.log(`Unable to process markdown preview: ${error}`);
+    warning(`Unable to process markdown preview: ${error}`);
   } finally {
-    console.log("Finished attempting to generate preview.");
+    info("Finished attempting to generate preview.");
   }
 }
 
