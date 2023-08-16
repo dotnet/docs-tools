@@ -30,8 +30,13 @@ export async function tryUpdatePullRequestBody(token: string) {
       return;
     } else {
       try {
+        console.log("::group::Pull request JSON body");
         console.log(JSON.stringify(pullRequest, undefined, 2));
-      } catch {}
+        console.log("::endgroup::");
+      }
+      catch {
+        console.log("::endgroup::");
+      }
     }
 
     allFiles = [...pullRequest.files.edges];
@@ -79,8 +84,9 @@ export async function tryUpdatePullRequestBody(token: string) {
       updatedBody = appendTable(pullRequest.body, markdownTable);
     }
 
-    console.log("Proposed PR body:");
+    console.log("::group::Proposed PR body");
     console.log(updatedBody);
+    console.log("::endgroup::");
 
     const octokit = getOctokit(token);
     const response = await octokit.rest.pulls.update({
