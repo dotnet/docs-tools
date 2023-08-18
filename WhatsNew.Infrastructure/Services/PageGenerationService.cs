@@ -77,7 +77,8 @@ public class PageGenerationService
                 {
                     sectionsWritten++;
                 }
-                if ((sectionsWritten <= 3) || dontTrim)
+                if ((sectionsWritten <= (_configuration.Repository.NavigationOptions?.MaximumNumberOfArticles ?? 3))
+                    || dontTrim)
                 {
                     await stream.WriteLineAsync(line);
                 }

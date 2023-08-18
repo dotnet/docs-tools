@@ -41,7 +41,7 @@ Metrics for the "what's new" pages are made available at [aka.ms/whatsnewindocs]
    - Select **Secrets**
    - Add "OSPO_KEY" as a **Repository Secret**.
 1. Install the [.NET SDK 7.0](https://dotnet.microsoft.com/download/dotnet) or later.
-1. build and publish the tool. The `WhatsNew.Cli` folder is at the root of the repository you closed in step 1.
+1. build and publish the tool. The `WhatsNew.Cli` folder is at the root of the repository you closed in step 1. By default, this builds the *Debug* configuration. 
 
     ```bash
     cd ./WhatsNew.Cli
@@ -90,8 +90,8 @@ dotnet WhatsNew.Cli.dll --owner dotnet --repo docs --startdate 7/1/2020 --enddat
 | `repo`*    | The name of the GitHub repository within the provided organization. | `--repo azure-docs-pr` |
 | `docset` | The product name within the provided repository. Required only for monolithic repos, such as *azure-docs-pr*. | `--docset cognitive-services` |
 | `branch` | The branch name within the provided repository. If not provided, the repository's default branch is used. | `--branch dev` |
-| `startdate` | A range start date in a valid format. For example, "yyyy-MM-dd" or "MM/dd/yyyy". | `--startdate 7/1/2020` |
-| `enddate`  | A range end date in a valid format. For example, "yyyy-MM-dd" or "MM/dd/yyyy". | `--enddate 7/15/2020` |
+| `startdate` | A range start date in a valid format. For example, "yyyy-MM-dd" or "MM/dd/yyyy". Any format accepted by [`DateTime.Parse`](https://learn.microsoft.com/dotnet/api/system.datetime.parse)` is accepted. | `--startdate 7/1/2020` |
+| `enddate`  | A range end date in a valid format. For example, "yyyy-MM-dd" or "MM/dd/yyyy". Any format accepted by [`DateTime.Parse`](https://learn.microsoft.com/dotnet/api/system.datetime.parse)` is accepted. | `--enddate 7/15/2020` |
 | `savedir`   | An absolute directory path to which the generated Markdown file should be written. | `--savedir C:\whatsnew` |
 | `savefile`  | The path to an existing file that should be modified by the tool. | `--savefile ./docs/ide/whats-new-visual-studio-docs.md` |
 | `reporoot`   | An absolute directory path to the root folder of your repository. Default is "./" | `--reporoot C:\source\dotnet\docs`|
