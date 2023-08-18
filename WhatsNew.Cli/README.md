@@ -29,31 +29,31 @@ Metrics for the "what's new" pages are made available at [aka.ms/whatsnewindocs]
     - For public repos:
       - **repo** > **public_repo**
       - **admin:org** > **read:org**
-1. For private repos in the *MicrosoftDocs* GitHub organization, after generating the PAT, select **Enable SSO** and choose **Authorize** for both **microsoft** and **MicrosoftDocs**.
+1. For private repos in the *MicrosoftDocs* GitHub organization, after generating the PAT, select **Enable SSO** and choose **Authorize** for the **MicrosoftDocs**.
 1. Store the PAT in an environment variable named `GitHubKey`.
 1. Set up an OSPO personal access token
    > This step is required for versions 2.0 and above.
 
    The OSPO personal access token is required to access the OSPO API. This API determines community contributors and Microsoft employee and vendor contributors.
 1. Request a token at [Visual Studio Online](https://ossmsft.visualstudio.com/_usersSettings/tokens). You can disable all scopes *except* read:user profile.
-1. Store the token in an environment variable named "OSPO_KEY".  If you are using the GitHub Action to generate the PR automatically, add the key as a secret in your repository:
+1. Store the token in an environment variable named "OSPO_KEY". **If you are using the GitHub Action to generate the PR automatically**, add the key as a secret in your repository:
    - Go to **Settings** on your repo.
    - Select **Secrets**
    - Add "OSPO_KEY" as a **Repository Secret**.
 1. Install the [.NET SDK 7.0](https://dotnet.microsoft.com/download/dotnet) or later.
-1. build and publish the tool:
+1. build and publish the tool. The `WhatsNew.Cli` folder is at the root of the repository you closed in step 1.
 
     ```bash
-    cd WhatsNew.Cli
+    cd ./WhatsNew.Cli
     dotnet build
     dotnet publish
     ```
 
-1. Run the appropriate `dotnet whatsnew` command. See the examples below. The location of the generated Markdown file can be specified by setting the `--savedir` option:
+1. Run the appropriate `dotnet whatsnew` command. See the examples below:
 
    ```bash
    cd work/visualstudio-docs-pr
-   dotnet ../docs-tools/WhatsNew.Cli/bin/Debug/net7.0/publish/WhatsNew.Cli.dll --owner MicrosoftDocs --repo visualstudio-docs-pr --savefile ./docs/ide/whats-new-visual-studio-docs.md 
+   dotnet ../docs-tools/WhatsNew.Cli/bin/Debug/net7.0/publish/WhatsNew.dll --owner MicrosoftDocs --repo visualstudio-docs-pr --savefile ./docs/ide/whats-new-visual-studio-docs.md 
    ```
 
 ### Examples
@@ -61,19 +61,19 @@ Metrics for the "what's new" pages are made available at [aka.ms/whatsnewindocs]
 **Display the help menu:**
 
 ```bash
-dotnet whatsnew -h
+dotnet WhatsNew.dll -h
 ```
 
 **Generate the *dotnet/AspNetCore.Docs* repo's what's new page for the period starting 5/1/2020 and ending 5/31/2020. Process PRs in the *dev* branch.**
 
 ```bash
-dotnet WhatsNew.Cli.dll --owner dotnet --repo AspNetCore.Docs --branch dev --startdate 2020-05-01 --enddate 2020-05-31
+dotnet WhatsNew.dll --owner dotnet --repo AspNetCore.Docs --branch dev --startdate 2020-05-01 --enddate 2020-05-31
 ```
 
 **Generate the Cognitive Services docset's what's new page for the period starting 5/1/2020 and ending 5/31/2020. Process PRs in the repository's default branch.**
 
 ```bash
-dotnet WhatsNew.Cli.dll --owner MicrosoftDocs --repo azure-docs-pr --docset cognitive-services --startdate 2020-05-01 --enddate 2020-05-31
+dotnet WhatsNew.dll --owner MicrosoftDocs --repo azure-docs-pr --docset cognitive-services --startdate 2020-05-01 --enddate 2020-05-31
 ```
 
 **Generate the *dotnet/docs* repo's what's new page for the period starting 7/1/2020 and ending 7/5/2020. Process PRs in the repository's default branch. Save the generated Markdown file in the */Users/janedoe/docs* directory:**
@@ -122,19 +122,31 @@ The following properties are supported in the JSON configuration file.
 
 ### `inclusionCriteria` properties
 
-| Property              | Description | Example |
-| --------------------- | ----------- | ------- |
-| `omitPullRequestTitles` | A flag indicating whether to display pull request titles in the generated Markdown file. Default value: `false` | `"omitPullRequestTitles": true` |
-| `labels` | A list of GitHub label filters to apply. The label filters will be converted to a space-delimited string. Default value: `[]` | `"labels": [ "label:cognitive-services/svc" ]` |
-| `maxFilesChanged` | The maximum number of changed files that a pull request can contain before being ignored. Default value: `75` | `"maxFilesChanged": 50` |
-| `minAdditionsToFile` | The minimum number of lines changed that a pull request file must contain before being included. Default value: `75` | `"minAdditionsToFile": 62` |
+| Property                    | Description | Example |
+| --------------------------- | ----------- | ------- |
+| `omitPullRequestTitles`     | A flag indicating whether to display pull request titles in the generated Markdown file. Default value: `false` | `"omitPullRequestTitles": true` |
+| `labels`                    | A list of GitHub label filters to apply. The label filters will be converted to a space-delimited string. Default value: `[]` | `"labels": [ "label:cognitive-services/svc" ]` |
+| `maxFilesChanged`           | The maximum number of changed files that a pull request can contain before being ignored. Default value: `75` | `"maxFilesChanged": 50` |
+| `minAdditionsToFile`        | The minimum number of lines changed that a pull request file must contain before being included. Default value: `75` | `"minAdditionsToFile": 62` |
 | `pullRequestTitlesToIgnore` | A comma-delimited list of regular expressions matching pull request titles to ignore. | `"pullRequestTitlesToIgnore": [ "^Confirm merge from repo_sync_working_branch", "^Repo sync for protected CLA branch" ]` |
 
 ### `docLinkSettings` properties
 
-| Property              | Description | Example |
-| --------------------- | ----------- | ------- |
-| `linkFormat`* | The Markdown format to use when creating links to docs. Possible values: `relative`, `siteRelative`, `xref`.<br><br>`siteRelative` links don't include file extensions; `relative` links do. | `"linkFormat": "relative"` |
+| Property             | Description | Example |
+| -------------------- | ----------- | ------- |
+| `linkFormat`*        | The Markdown format to use when creating links to docs. Possible values: `relative`, `siteRelative`, `xref`.<br><br>`siteRelative` links don't include file extensions; `relative` links do. | `"linkFormat": "relative"` |
 | `relativeLinkPrefix` | The path that prefixes the doc link. Required when `linkFormat` is set to `relative` or `siteRelative`. | `"relativeLinkPrefix": "/dotnet/"` |
 
 *Indicates a required property
+
+### `navigationOptions` properties
+
+These options apply in the 2.0 release of the What's New tool. The 2.0 release will update nodes in a TOC and an index file in addition to creating the What's New file. That requires config options for how many What's New files to keep publishing, and where to find the YML nodes to update.
+
+| Property                  | Description | Example |
+| ------------------------- | ----------- | ------- |
+| `maximumNumberOfArticles` | The maximum number of "What's new" articles or sections to keep. Once the value is reached, the older article or section gets deleted from your local repository storage. Default value: `3` | `"maximumNumberOfArticles": 6` |
+| `repoTocFolder`           | The folder where the TOC for what's new articles is located relative to the repo root. Unused when you keep one file with multiple entries. Default value: `null` | `"repoTocFolder": "docs/whats-new"` |
+| `tocParentNode`           | The parent node in your TOC file for the "What's New" articles. Unused when you keep one file with multiple entries. Default value: `null` | `"tocParentNode": "Latest documentation updates"` |
+| `repoIndexFolder`         | The folder where the `index.yml` for What's new" articles is stored relative to the repo root. Unused when you keep one file with multiple entries. Default value: `null` | `repoIndexFolder": "docs/whats-new"` |
+| `indexParentNode`         | The parent node in the `index.yml` file where "What's New" articles are listed. Unused when you keep one file with multiple entries. Default value: `null` | `"indexParentNode": "Latest documentation updates"` |

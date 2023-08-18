@@ -46,12 +46,33 @@ public class Program
             LocalConfig = localconfig,
         };
 
-        var configService = new ConfigurationService();
-        var whatsNewConfig = await configService.GetConfiguration(input);
+        // The config service makes one or two optional calls to GH to read
+        // the config file and get the current default branch.
+        // The GH API returns JSON on auth failures, so those queries fail
+        // with very cryptic error messages. This try/catch block catches
+        // those errors and provides a more helpful message.
+        WhatsNewConfiguration? whatsNewConfig = default;
+        try
+        {
+            var configService = new ConfigurationService();
+            whatsNewConfig = await configService.GetConfiguration(input);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Could not initialize default branch and What's new configuration. Exiting.");
+            Console.WriteLine("The likely cause is an authentication failure. Check the following:");
+            Console.WriteLine("\tIs the GitHub token valid?");
+            Console.WriteLine("\tIs the GitHub token authorized for single sign-on (SSO)?");
+            Console.WriteLine("\tDoes the GitHub token have the correct scopes?");
+            Console.WriteLine("See https://github.com/dotnet/docs-tools/blob/main/WhatsNew.Cli/README.md#usage for detailed instrucions");
+
+            Console.WriteLine($"Error message: {ex.Message}");
+            return;
+        }
         var pageGenService = new PageGenerationService(whatsNewConfig);
 
         await pageGenService.WriteMarkdownFile(savefile);
-         if (string.IsNullOrWhiteSpace(savefile))
+        if (string.IsNullOrWhiteSpace(savefile))
         {
             var tocService = new TocUpdateService(whatsNewConfig);
             await tocService.UpdateWhatsNewToc();
@@ -59,7 +80,7 @@ public class Program
             var indexService = new IndexUpdateService(whatsNewConfig);
             await indexService.UpdateWhatsNewLandingPage();
         }
-        whatsNewConfig.OspoClient.Dispose();
-        whatsNewConfig.GitHubClient.Dispose();
+        whatsNewConfig?.OspoClient?.Dispose();
+        whatsNewConfig?.GitHubClient?.Dispose();
     }
 }
