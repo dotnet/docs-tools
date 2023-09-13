@@ -24,7 +24,7 @@ internal sealed class File : IRunnerItem
 
         List<FileCheck> items = new List<FileCheck>(node.Children.Count);
 
-        foreach (var item in node.Children)
+        foreach (YamlNode item in node.Children)
         {
             state.Logger.LogDebug($"BUILD: Adding check {item["path"]}");
             items.Add(new FileCheck(item["path"].ToString(), Runner.Build(item["run"].AsSequenceNode(), state)));
@@ -47,10 +47,10 @@ internal sealed class File : IRunnerItem
 
         // TODO: New feature, detect add/updated/delete file changes.
         // Currently we don't care what happened.
-        foreach (var item in _items)
+        foreach (FileCheck item in _items)
         {
-            var match = false;
-            foreach (var file in state.PullRequestFiles)
+            bool match = false;
+            foreach (Octokit.PullRequestFile file in state.PullRequestFiles)
             {
                 if (Utilities.MatchRegex(item.RegexCheck, file.FileName ?? "", state) || Utilities.MatchRegex(item.RegexCheck, file.PreviousFileName ?? "", state))
                 {

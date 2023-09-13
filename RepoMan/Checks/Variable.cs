@@ -20,7 +20,7 @@ internal sealed class Variable : ICheck
     {
         state.Logger.LogInformation($"Check variable: {Name}={Value}");
 
-        var result = state.Variables.ContainsKey(Name) && state.Variables[Name] == Value;
+        bool result = state.Variables.ContainsKey(Name) && state.Variables[Name] == Value;
 
         if (result)
             state.Logger.LogInformation($"PASS");

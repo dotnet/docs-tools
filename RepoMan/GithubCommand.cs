@@ -34,22 +34,22 @@ internal static class GithubCommand
         return state.Projects;
     }
 
-    public static async Task<ProjectColumn[]> GetProjectColumns(State state, int projectId)
+    public static async Task<ProjectColumn[]?> GetProjectColumns(State state, int projectId)
     {
         // If columns already cached, return those.
         if (state.ProjectColumns.ContainsKey(projectId)) return state.ProjectColumns[projectId];
 
         // Get projects (which will be cached)
-        var projects = await GetProjects(state);
+        IReadOnlyList<Project> projects = await GetProjects(state);
 
         // Search for the project we want
-        var project = projects.FirstOrDefault(e => e.Number == projectId);
+        Project? project = projects.FirstOrDefault(e => e.Number == projectId);
 
         // Exit if project not found
         if (project == null) return null;
 
         // Get the columns
-        var columns = (await state.ProjectsClient.Column.GetAll(project.Id)).ToArray();
+        ProjectColumn[] columns = (await state.ProjectsClient.Column.GetAll(project.Id)).ToArray();
         state.ProjectColumns[projectId] = columns;
 
         return columns;
@@ -81,19 +81,19 @@ internal static class GithubCommand
     /// <returns>An empty task.</returns>
     public static async Task RemoveLabels(string[] labels, IReadOnlyList<Label> existingLabels, State state)
     {
-        var existingLabelsTransformed = existingLabels.Select(l => l.Name.ToLower());
+        IEnumerable<string> existingLabelsTransformed = existingLabels.Select(l => l.Name.ToLower());
 
         if (labels.Length != 0 && existingLabels != null && existingLabels.Count != 0)
         {
-            var removedLabels = new List<string>();
+            List<string> removedLabels = new();
 
-            foreach (var label in labels)
+            foreach (string label in labels)
                 if (existingLabelsTransformed.Contains(label.ToLower()))
                     removedLabels.Add(label);
 
             state.Logger.LogInformation($"GitHub: Labels removed: {string.Join(",", labels)}");
 
-            foreach (var label in removedLabels)
+            foreach (string label in removedLabels)
                 await state.Client.Issue.Labels.RemoveFromIssue(state.RepositoryId, state.Issue.Number, label);
         }
         else
@@ -112,9 +112,9 @@ internal static class GithubCommand
         {
             state.Logger.LogInformation($"GitHub: Adding assignees: {string.Join(",", names)}");
 
-            var updateIssue = state.Issue.ToUpdate();
+            IssueUpdate updateIssue = state.Issue.ToUpdate();
             
-            foreach (var item in names)
+            foreach (string item in names)
                 updateIssue.AddAssignee(item);
 
             await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
@@ -131,10 +131,10 @@ internal static class GithubCommand
     {
         if (names.Length != 0)
         {
-            var logins = new List<string>();
-            var teams = new List<string>();
+            List<string>? logins = new();
+            List<string>? teams = new();
 
-            foreach (var name in names)
+            foreach (string name in names)
             {
                 if (name.StartsWith("team:", StringComparison.OrdinalIgnoreCase))
                     teams.Add(name.Substring(5));
@@ -175,7 +175,7 @@ internal static class GithubCommand
     /// <returns>An empty task.</returns>
     public static async Task SetMilestone(int milestone, State state)
     {
-        var updateIssue = state.Issue.ToUpdate();
+        IssueUpdate updateIssue = state.Issue.ToUpdate();
         updateIssue.Milestone = milestone;
         state.Logger.LogInformation($"GitHub: Set milestone to {milestone}");
         await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
@@ -189,7 +189,7 @@ internal static class GithubCommand
     /// <returns>An empty task.</returns>
     public static async Task RemoveMilestone(State state)
     {
-        var updateIssue = state.Issue.ToUpdate();
+        IssueUpdate updateIssue = state.Issue.ToUpdate();
         updateIssue.Milestone = null;
         state.Logger.LogInformation($"GitHub: Clearing milestone");
         await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
@@ -208,10 +208,7 @@ internal static class GithubCommand
         // the logic path doens't work with projects.. Ah!! Move milestone logic back here.
         if (projects.Length != 0)
         {
-            var existingProjects = await GetProjects(state);
-            var update = state.Issue.ToUpdate();
-
-            foreach (var projectString in projects)
+            foreach (string projectString in projects)
             {
                 if (!int.TryParse(projectString, out int id))
                 {
@@ -221,11 +218,11 @@ internal static class GithubCommand
 
                 bool foundProject = false;
 
-                foreach (var projectObject in state.Projects)
+                foreach (Project projectObject in state.Projects)
                 {
                     if (projectObject.Number == id)
                     {
-                        var columns = await GetProjectColumns(state, id);
+                        ProjectColumn[]? columns = await GetProjectColumns(state, id);
 
                         if (columns != null)
                         {
@@ -234,7 +231,7 @@ internal static class GithubCommand
                             if (state.RequestType == RequestType.Issue)
                                 projectCard = new NewProjectCard(state.Issue.Id, ProjectCardContentType.Issue);
                             else
-                                projectCard = new NewProjectCard(state.PullRequest.Id, ProjectCardContentType.PullRequest);
+                                projectCard = new NewProjectCard(state.PullRequest!.Id, ProjectCardContentType.PullRequest);
 
                             state.Logger.LogInformation($"GitHub: Project added: {projectObject.Number}:{projectObject.Name}");
                             await state.ProjectsClient.Card.Create(columns[0].Id, projectCard);

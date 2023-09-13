@@ -16,8 +16,8 @@ internal static class Utilities
     {
         try
         {
-            var markdown = Markdig.Markdown.Parse(content);
-            var link = markdown.Descendants<ParagraphBlock>().SelectMany(x => x?.Inline?.Descendants<LinkInline>()!).FirstOrDefault();
+            MarkdownDocument markdown = Markdig.Markdown.Parse(content);
+            LinkInline? link = markdown.Descendants<ParagraphBlock>().SelectMany(x => x?.Inline?.Descendants<LinkInline>()!).FirstOrDefault();
 
             if (link == null)
                 return Markdig.Markdown.ToPlainText(content);
@@ -36,10 +36,10 @@ internal static class Utilities
 
         try
         {
-            var githubRequests = state.RequestBody().Root.ToString();
-            var jmesTest = new DevLab.JmesPath.JmesPath();
+            string githubRequests = state.RequestBody().Root.ToString();
+            DevLab.JmesPath.JmesPath jmesTest = new DevLab.JmesPath.JmesPath();
 
-            var result = jmesTest.Transform(githubRequests, query);
+            string result = jmesTest.Transform(githubRequests, query);
 
             if (result != "null" && result != "false")
             {

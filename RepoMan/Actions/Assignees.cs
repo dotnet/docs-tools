@@ -26,7 +26,7 @@ internal sealed class Assignees: IRunnerItem
 
         else
         {
-            foreach (var item in node.AsSequenceNode())
+            foreach (YamlNode item in node.AsSequenceNode())
             {
                 state.Logger.LogDebug($"BUILD: Assignee: {item}");
                 names.Add(item.ToString());
@@ -44,7 +44,7 @@ internal sealed class Assignees: IRunnerItem
             state.Logger.LogInformation($"Adding assignees to pool");
 
             // Add to state pooled labels for add
-            foreach (var item in _names)
+            foreach (string item in _names)
                 state.Operations.Assignees.Add(item);
         }
     }

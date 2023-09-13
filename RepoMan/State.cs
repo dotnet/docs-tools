@@ -73,19 +73,19 @@ internal sealed class State
         Logger.LogDebug("Header check metadata settings: ");
 
         int counter = 0;
-        foreach (var item in Settings.DocMetadata.Headers)
+        foreach (string[] item in Settings.DocMetadata.Headers)
         {
             counter++;
             Logger.LogDebug($"- Set {counter}");
 
-            foreach (var setItem in item)
+            foreach (string setItem in item)
                 Logger.LogDebug($"  - {setItem}");
         }
 
         Logger.LogInformation("Checking for comment metadata");
 
         // Use the headers defined in the yaml config. You can define different sets of headers
-        foreach (var item in Settings.DocMetadata.Headers)
+        foreach (string[] item in Settings.DocMetadata.Headers)
         {
             for (int i = 0; i < content.Length; i++)
             {
@@ -135,7 +135,7 @@ internal sealed class State
 
             for (int i = index; i < content.Length; i++)
             {
-                var match = System.Text.RegularExpressions.Regex.Match(content[i], Settings.DocMetadata.ParserRegex);
+                System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(content[i], Settings.DocMetadata.ParserRegex);
 
                 if (match.Success)
                 {
@@ -151,7 +151,7 @@ internal sealed class State
     {
         // Remove labels in the remove category from the add cateogry
         // We still run via remove, they may be already on the issue
-        foreach (var item in Operations.LabelsRemove)
+        foreach (string item in Operations.LabelsRemove)
         {
             if (Operations.LabelsAdd.Contains(item))
                 Operations.LabelsAdd.Remove(item);
@@ -160,7 +160,7 @@ internal sealed class State
 
         if (Operations.LabelsAdd.Count != 0)
         {
-            var uniqueLabels = Operations.LabelsAdd.Distinct().ToArray();
+            string[] uniqueLabels = Operations.LabelsAdd.Distinct().ToArray();
 
             Logger.LogInformation($"Adding {uniqueLabels.Length} labels");
             await GithubCommand.AddLabels(uniqueLabels, this);
@@ -168,7 +168,7 @@ internal sealed class State
 
         if (Operations.LabelsRemove.Count != 0)
         {
-            var uniqueLabels = Operations.LabelsRemove.Distinct().ToArray();
+            string[] uniqueLabels = Operations.LabelsRemove.Distinct().ToArray();
 
             Logger.LogInformation($"Removing {uniqueLabels.Length} labels");
             await GithubCommand.RemoveLabels(uniqueLabels, this.Issue.Labels, this);
@@ -176,7 +176,7 @@ internal sealed class State
 
         if (Operations.Assignees.Count != 0)
         {
-            var uniqueNames = Operations.Assignees.Distinct().ToArray();
+            string[] uniqueNames = Operations.Assignees.Distinct().ToArray();
 
             Logger.LogInformation($"Adding {uniqueNames.Length} assignees");
             await GithubCommand.AddAssignees(uniqueNames, this);
@@ -184,7 +184,7 @@ internal sealed class State
 
         if (Operations.Reviewers.Count != 0)
         {
-            var uniqueNames = Operations.Reviewers.Distinct().ToArray();
+            string[] uniqueNames = Operations.Reviewers.Distinct().ToArray();
 
             Logger.LogInformation($"Adding {uniqueNames.Length} reviewers");
             await GithubCommand.AddReviewers(uniqueNames, this);
@@ -202,10 +202,10 @@ internal sealed class State
 
     public void LoadSettings(YamlNode settingsNode)
     {
-        var deserializer = new YamlDotNet.Serialization.Deserializer();
-        var resultStream = new YamlStream(new YamlDocument(settingsNode));
-        var builder = new StringBuilder();
-        using var writer = new System.IO.StringWriter(builder);
+        YamlDotNet.Serialization.Deserializer deserializer = new YamlDotNet.Serialization.Deserializer();
+        YamlStream resultStream = new YamlStream(new YamlDocument(settingsNode));
+        StringBuilder builder = new StringBuilder();
+        using StringWriter writer = new System.IO.StringWriter(builder);
         resultStream.Save(writer);
         Settings = deserializer.Deserialize<SettingsConfig>(builder.ToString());
     }

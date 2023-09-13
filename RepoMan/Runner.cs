@@ -9,18 +9,18 @@ internal sealed class Runner: IRunnerItem
 
     public static Runner Build(YamlSequenceNode actionNode, State state)
     {
-        var runner = new Runner();
+        Runner runner = new Runner();
         state.Logger.LogDebug("BUILD: Create runner");
 
-        foreach (var item in actionNode)
+        foreach (YamlNode item in actionNode)
         {
             try
             {
                 if (item.NodeType == YamlNodeType.Mapping)
                 {
-                    var mappingItem = item.AsMappingNode();
-                    var firstProperty = mappingItem.FirstProperty();
-                    var itemType = GetRunnerType(firstProperty.Name, state);
+                    YamlMappingNode mappingItem = item.AsMappingNode();
+                    (string Name, YamlNode Node) firstProperty = mappingItem.FirstProperty();
+                    RunnerItemTypes itemType = GetRunnerType(firstProperty.Name, state);
 
                     switch (itemType)
                     {
@@ -55,7 +55,7 @@ internal sealed class Runner: IRunnerItem
                             break;
 
                         case RunnerItemTypes.Predefined:
-                            var predefinedReference = firstProperty.Node.ToString();
+                            string predefinedReference = firstProperty.Node.ToString();
                             state.Logger.LogDebug($"BUILD: Predefined reference: {predefinedReference}");
 
                             // Do we have a predefined section?
@@ -121,7 +121,7 @@ internal sealed class Runner: IRunnerItem
     public async Task Run(State state)
     {
         state.Logger.LogInformation($"Running items; count: {Actions.Count}");
-        foreach (var item in Actions)
+        foreach (IRunnerItem item in Actions)
             await item.Run(state);
     }
 

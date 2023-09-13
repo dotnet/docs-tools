@@ -14,9 +14,9 @@ internal sealed class Group: IRunnerItem
     {
         state.Logger.LogInformation($"Running check group; count: {Checks.Count}");
 
-        var result = true;
+        bool result = true;
 
-        foreach (var check in Checks)
+        foreach (ICheck check in Checks)
         {
             if (!await check.Run(state))
             {
@@ -44,13 +44,13 @@ internal sealed class Group: IRunnerItem
     {
         state.Logger.LogDebug("BUILD: Check group start");
 
-        var checkGroup = new Group();
+        Group checkGroup = new Group();
 
-        var checkItems = node["check"].AsSequenceNode().Children;
+        IList<YamlNode> checkItems = node["check"].AsSequenceNode().Children;
 
-        foreach (var item in checkItems)
+        foreach (YamlNode item in checkItems)
         {
-            var typeProperty = item["type"].ToString();
+            string typeProperty = item["type"].ToString();
 
             state.Logger.LogDebug($"BUILD: Finding check type {typeProperty}");
 

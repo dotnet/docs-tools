@@ -22,13 +22,12 @@ public static class Function1
     {
         try
         {
-            State state = new State();
-            state.Logger = log;
+            State state = new() { Logger = log };
 
             log.LogInformation($"RepoMan v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
 
             // Prep for auth
-            var token = System.Environment.GetEnvironmentVariable("GithubToken", EnvironmentVariableTarget.Process);
+            string? token = Environment.GetEnvironmentVariable("GithubToken", EnvironmentVariableTarget.Process);
 
             if (string.IsNullOrEmpty(token))
             {
@@ -59,7 +58,7 @@ public static class Function1
             // =================
             if (eventType == EventTypeIssue)
             {
-                var issuePayload = new Octokit.Internal.SimpleJsonSerializer().Deserialize<IssueEventPayload>(requestBody);
+                IssueEventPayload issuePayload = new Octokit.Internal.SimpleJsonSerializer().Deserialize<IssueEventPayload>(requestBody);
 
                 log.LogInformation($"Type: Issue \nId: {issuePayload.Issue.Number} \nAction: {issuePayload.Action} \nRepo: {issuePayload.Repository.CloneUrl}");
 
@@ -68,7 +67,7 @@ public static class Function1
                 state.RepositoryOwner = issuePayload.Repository.Owner.Login;
                 state.RequestType = RequestType.Issue;
 
-                var rulesResult = await ReadRepoRulesFile(state);
+                (bool Success, bool GhalFileExists) rulesResult = await ReadRepoRulesFile(state);
 
                 // Check if rules failed to load
                 if (!rulesResult.Success)
@@ -112,7 +111,7 @@ public static class Function1
             // =================
             else if (eventType == EventTypePullRequest)
             {
-                var pullPayload = new Octokit.Internal.SimpleJsonSerializer().Deserialize<PullRequestEventPayload>(requestBody);
+                PullRequestEventPayload pullPayload = new Octokit.Internal.SimpleJsonSerializer().Deserialize<PullRequestEventPayload>(requestBody);
 
                 log.LogInformation($"Type: PullRequest \nId: {pullPayload.PullRequest.Number} \nAction: {pullPayload.Action} \nRepo: {pullPayload.Repository.CloneUrl}");
 
@@ -121,7 +120,7 @@ public static class Function1
                 state.RepositoryOwner = pullPayload.Repository.Owner.Login;
                 state.RequestType = RequestType.PullRequest;
 
-                var rulesResult = await ReadRepoRulesFile(state);
+                (bool Success, bool GhalFileExists) rulesResult = await ReadRepoRulesFile(state);
 
                 // Check if rules failed to load
                 if (!rulesResult.Success)
@@ -161,7 +160,7 @@ public static class Function1
             // =================
             else if (eventType == EventTypeComment)
             {
-                var commentPayload = new Octokit.Internal.SimpleJsonSerializer().Deserialize<IssueCommentPayload>(requestBody);
+                IssueCommentPayload commentPayload = new Octokit.Internal.SimpleJsonSerializer().Deserialize<IssueCommentPayload>(requestBody);
 
                 log.LogInformation($"Type: PullRequest \nId: {commentPayload.Issue.Number} \nAction: {commentPayload.Action} \nRepo: {commentPayload.Repository.CloneUrl}");
 
@@ -170,7 +169,7 @@ public static class Function1
                 state.RepositoryOwner = commentPayload.Repository.Owner.Login;
                 state.RequestType = RequestType.Comment;
 
-                var rulesResult = await ReadRepoRulesFile(state);
+                (bool Success, bool GhalFileExists) rulesResult = await ReadRepoRulesFile(state);
 
                 // Check if rules failed to load
                 if (!rulesResult.Success)
@@ -224,14 +223,14 @@ public static class Function1
             // Check rules for event+action combination
             if (state.RepoRulesYaml.Exists(eventType))
             {
-                var eventNode = state.RepoRulesYaml[eventType].AsMappingNode();
+                YamlMappingNode eventNode = state.RepoRulesYaml[eventType].AsMappingNode();
 
                 if (eventNode.Children.ContainsKey(state.EventAction))
                 {
                     bool remappedEvent = false;
 
                 restart_node_check:
-                    var actionNode = eventNode[state.EventAction];
+                    YamlNode actionNode = eventNode[state.EventAction];
 
                     // Remapping
                     if (actionNode.NodeType == YamlNodeType.Scalar)
@@ -285,7 +284,7 @@ public static class Function1
     {
         if (state.EventAction == "labeled")
         {
-            var magicLabel = state.Issue.Labels.FirstOrDefault(l => l.Name.StartsWith("rerun-action-", StringComparison.OrdinalIgnoreCase));
+            Label? magicLabel = state.Issue.Labels.FirstOrDefault(l => l.Name.StartsWith("rerun-action-", StringComparison.OrdinalIgnoreCase));
 
             if (magicLabel != null)
             {
@@ -356,7 +355,7 @@ public static class Function1
         // Make sure old config file doesn't exist:
         try
         {
-            var oldConfig = await state.Client.Repository.Content.GetAllContents(state.RepositoryId, ".ghal.rules.json");
+            IReadOnlyList<RepositoryContent> oldConfig = await state.Client.Repository.Content.GetAllContents(state.RepositoryId, ".ghal.rules.json");
             return (false, true);
         }
         catch (Octokit.NotFoundException)
@@ -372,10 +371,10 @@ public static class Function1
         // Get repo settings
         try
         {
-            var rulesResponse = await state.Client.Repository.Content.GetAllContents(state.RepositoryId, RulesFileName);
-            var repoRulesFile = rulesResponse.FirstOrDefault().Content;
+            IReadOnlyList<RepositoryContent> rulesResponse = await state.Client.Repository.Content.GetAllContents(state.RepositoryId, RulesFileName);
+            string repoRulesFile = rulesResponse[0].Content;
 
-            ///* HACK This is broken... github is adding int 63 to the start of the file which breaks the parser
+            ///* HACK This is broken... github is adding byte 63 to the start of the file which breaks the parser
             byte[] bytes = System.Text.Encoding.ASCII.GetBytes(repoRulesFile);
             if (bytes[0] == 63)
                 repoRulesFile = System.Text.Encoding.UTF8.GetString(bytes.AsSpan(1));
@@ -385,8 +384,8 @@ public static class Function1
             
             // Read config for the repo
             state.Logger.LogInformation($"Reading repo rules file: {RulesFileName}");
-            using var reader = new StringReader(repoRulesFile);
-            var parser = new YamlDotNet.RepresentationModel.YamlStream();
+            using StringReader reader = new StringReader(repoRulesFile);
+            YamlStream parser = new YamlStream();
             parser.Load(reader);
 
             // Convert string content into YAML object
@@ -422,7 +421,7 @@ public static class Function1
         if (!signature.StartsWith(Sha1Prefix)) return false;
         signature = signature.Substring(Sha1Prefix.Length);
 
-        var token = System.Environment.GetEnvironmentVariable("SecretToken", EnvironmentVariableTarget.Process);
+        string? token = System.Environment.GetEnvironmentVariable("SecretToken", EnvironmentVariableTarget.Process);
 
         if (token == null)
         {
@@ -430,29 +429,27 @@ public static class Function1
             return false;
         }
 
-        var secret = System.Text.Encoding.ASCII.GetBytes(token);
-        var payloadBytes = System.Text.Encoding.UTF8.GetBytes(body);
+        byte[] secret = System.Text.Encoding.ASCII.GetBytes(token);
+        byte[] payloadBytes = System.Text.Encoding.UTF8.GetBytes(body);
 
-        using (var sha1 = new System.Security.Cryptography.HMACSHA1(secret))
+        using System.Security.Cryptography.HMACSHA1 sha1 = new(secret);
+        string result = ToHexString(sha1.ComputeHash(payloadBytes));
+
+        if (string.Equals(result, signature, StringComparison.OrdinalIgnoreCase))
         {
-            var result = ToHexString(sha1.ComputeHash(payloadBytes));
-
-            if (string.Equals(result, signature, StringComparison.OrdinalIgnoreCase))
-            {
-                log.LogTrace($"signature check OK\n    sent: {signature}\ncomputed: {result}");
-                return true;
-            }
-
-            log.LogError($"signature check failed\n    sent: {signature}\ncomputed: {result}");
-
-            return false;
+            log.LogTrace($"signature check OK\n    sent: {signature}\ncomputed: {result}");
+            return true;
         }
+
+        log.LogError($"signature check failed\n    sent: {signature}\ncomputed: {result}");
+
+        return false;
 
         static string ToHexString(byte[] bytes)
         {
-            var builder = new System.Text.StringBuilder(bytes.Length * 2);
+            System.Text.StringBuilder builder = new System.Text.StringBuilder(bytes.Length * 2);
             
-            foreach (var b in bytes)
+            foreach (byte b in bytes)
                 builder.AppendFormat("{0:x2}", b);
 
             return builder.ToString();

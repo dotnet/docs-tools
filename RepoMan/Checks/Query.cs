@@ -18,7 +18,7 @@ internal sealed class Query : ICheck
     {
         state.Logger.LogInformation($"Evaluating: {Value}");
 
-        var result = Utilities.TestStateJMES(Value, state);
+        bool result = Utilities.TestStateJMES(Value, state);
 
         if (result)
             state.Logger.LogInformation($"PASS");

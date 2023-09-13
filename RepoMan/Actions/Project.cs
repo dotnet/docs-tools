@@ -25,7 +25,7 @@ internal sealed class Projects: IRunnerItem
             projects.Add(node.ToInt());
         else
         {
-            foreach (var item in node.AsSequenceNode())
+            foreach (YamlNode item in node.AsSequenceNode())
                 projects.Add(item.ToInt());
         }
 
@@ -34,18 +34,18 @@ internal sealed class Projects: IRunnerItem
 
     public async Task Run(State state)
     {
-        var existingProjects = await GithubCommand.GetProjects(state);
+        IReadOnlyList<Project> existingProjects = await GithubCommand.GetProjects(state);
         List<(int Column, NewProjectCard Card, int ProjectId)> projectCards = new List<(int, NewProjectCard, int)>();
 
-        foreach (var id in _projects)
+        foreach (int id in _projects)
         {
             bool foundProject = false;
 
-            foreach (var projectObject in state.Projects)
+            foreach (Project projectObject in state.Projects)
             {
                 if (projectObject.Number == id)
                 {
-                    var columns = await GithubCommand.GetProjectColumns(state, id);
+                    ProjectColumn[]? columns = await GithubCommand.GetProjectColumns(state, id);
 
                     if (columns != null)
                     {
@@ -83,7 +83,7 @@ internal sealed class Projects: IRunnerItem
         // Add issue/pr to projects
         if (_type == RunnerItemSubTypes.Add)
         {
-            foreach (var item in projectCards)
+            foreach ((int Column, NewProjectCard Card, int ProjectId) item in projectCards)
             {
                 state.Logger.LogInformation($"Adding project: {item.ProjectId}");
 

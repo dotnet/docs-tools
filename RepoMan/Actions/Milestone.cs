@@ -31,7 +31,7 @@ internal sealed class Milestone: IRunnerItem
             return;
         }
 
-        var milestones = await GithubCommand.GetMilestones(state);
+        IReadOnlyList<Octokit.Milestone> milestones = await GithubCommand.GetMilestones(state);
         int milestoneId = InvalidMilestone;
 
         // Special milestone
@@ -41,7 +41,7 @@ internal sealed class Milestone: IRunnerItem
 
             state.Logger.LogInformation($"Setting [Month] milestone: {monthYear}");
 
-            foreach (var item in milestones)
+            foreach (Octokit.Milestone item in milestones)
             {
                 if (item.Title.Equals(monthYear, StringComparison.OrdinalIgnoreCase))
                 {
@@ -55,10 +55,10 @@ internal sealed class Milestone: IRunnerItem
         {
             try
             {
-                var sprint = DotNetDocs.Tools.Utility.SprintDateRange.GetSprintFor(DateTime.Now).SprintName;
+                string sprint = DotNetDocs.Tools.Utility.SprintDateRange.GetSprintFor(DateTime.Now).SprintName;
                 state.Logger.LogInformation($"Setting [sprint] milestone: {sprint}");
 
-                foreach (var item in milestones)
+                foreach (Octokit.Milestone item in milestones)
                 {
                     if (item.Title.Equals(sprint, StringComparison.OrdinalIgnoreCase))
                     {
@@ -79,7 +79,7 @@ internal sealed class Milestone: IRunnerItem
             {
                 state.Logger.LogInformation($"Searching for milestone {_milestone}");
 
-                foreach (var item in milestones)
+                foreach (Octokit.Milestone item in milestones)
                 {
                     if (id == item.Id)
                     {

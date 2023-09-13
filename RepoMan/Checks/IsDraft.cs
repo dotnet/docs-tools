@@ -24,7 +24,7 @@ internal sealed class IsDraft : ICheck
             return await Task.FromResult(false);
         }
 
-        var result = state.PullRequest?.Draft == Condition;
+        bool result = state.PullRequest?.Draft == Condition;
 
         if (result)
             state.Logger.LogInformation($"PASS");

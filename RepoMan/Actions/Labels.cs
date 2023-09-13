@@ -28,7 +28,7 @@ internal sealed class Labels: IRunnerItem
 
         else
         {
-            foreach (var item in node.AsSequenceNode())
+            foreach (YamlNode item in node.AsSequenceNode())
             {
                 state.Logger.LogDebug($"BUILD: {mode} label: {item}");
                 labels.Add(item.ToString());
@@ -46,7 +46,7 @@ internal sealed class Labels: IRunnerItem
             state.Logger.LogInformation($"Adding remove-labels to pool");
 
             // Add to state pooled labels for add
-            foreach (var item in _labels)
+            foreach (string item in _labels)
                 state.Operations.LabelsAdd.Add(item);
         }
         else
@@ -54,7 +54,7 @@ internal sealed class Labels: IRunnerItem
             state.Logger.LogInformation($"Adding add-labels to pool");
 
             // Add to state pooled labels for remove
-            foreach (var item in _labels)
+            foreach (string item in _labels)
                 state.Operations.LabelsRemove.Add(item);
         }
     }
