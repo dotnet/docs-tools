@@ -1,14 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-public class Query : ICheck
+internal sealed class Query : ICheck
 {
     public string Value { get; }
 

@@ -1,18 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using Octokit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Projects: IRunnerItem
+internal sealed class Projects: IRunnerItem
 {
-    private RunnerItemSubTypes _type;
-    private int[] _projects;
+    private readonly RunnerItemSubTypes _type;
+    private readonly int[] _projects;
 
     public Projects(YamlNode node, RunnerItemSubTypes subType, State state)
     {

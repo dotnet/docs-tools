@@ -1,17 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Labels: IRunnerItem
+internal sealed class Labels: IRunnerItem
 {
-    private RunnerItemSubTypes _type;
-    private string[] _labels;
+    private readonly RunnerItemSubTypes _type;
+    private readonly string[] _labels;
 
     public Labels(YamlNode node, RunnerItemSubTypes subType, State state)
     {

@@ -1,17 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Comment : IRunnerItem
+internal sealed class Comment : IRunnerItem
 {
-    private string _comment;
-    private string _value;
+    private readonly string _comment;
+    private readonly string _value;
 
     public Comment(YamlNode node, State state)
     {

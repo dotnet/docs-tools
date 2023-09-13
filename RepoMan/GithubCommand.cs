@@ -1,15 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using Octokit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RepoMan;
 
-static class GithubCommand
+internal static class GithubCommand
 {
     /// <summary>
     /// Caches and returns a list of all milestones associated with the repository.

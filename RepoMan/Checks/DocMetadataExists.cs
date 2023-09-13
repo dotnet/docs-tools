@@ -1,14 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-public class DocMetadataExists : ICheck
+internal sealed class DocMetadataExists : ICheck
 {
     public DocMetadataExists(State state)
     {

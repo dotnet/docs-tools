@@ -1,14 +1,10 @@
 ﻿using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace RepoMan;
 
-public class Utilities
+internal static class Utilities
 {
     public static bool MatchRegex(string pattern, string source, State state)
     {

@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
 
-public static class YamlExtensions
+internal static class YamlExtensions
 {
     public static int ToInt(this YamlNode node) =>
         Convert.ToInt32(((YamlScalarNode)node).Value);

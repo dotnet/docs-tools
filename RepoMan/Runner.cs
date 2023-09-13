@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
 
-public class Runner: IRunnerItem
+internal sealed class Runner: IRunnerItem
 {
     public List<IRunnerItem> Actions { get; } = new List<IRunnerItem>();
 

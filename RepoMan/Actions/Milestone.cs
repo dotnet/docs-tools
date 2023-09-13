@@ -1,19 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Milestone: IRunnerItem
+internal sealed class Milestone: IRunnerItem
 {
     private const int InvalidMilestone = -1;
 
-    private RunnerItemSubTypes _type = RunnerItemSubTypes.Add;
-    private string _milestone;
+    private readonly RunnerItemSubTypes _type = RunnerItemSubTypes.Add;
+    private readonly string _milestone;
 
     public Milestone(YamlNode node, RunnerItemSubTypes subType, State state)
     {

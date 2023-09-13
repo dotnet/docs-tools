@@ -1,17 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Reviewers: IRunnerItem
+internal sealed class Reviewers: IRunnerItem
 {
-    private RunnerItemSubTypes _type;
-    private string[] _names;
+    private readonly RunnerItemSubTypes _type;
+    private readonly string[] _names;
 
     public Reviewers(YamlNode node, RunnerItemSubTypes subType, State state)
     {

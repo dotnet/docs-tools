@@ -1,14 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-public class Group: IRunnerItem
+internal sealed class Group: IRunnerItem
 {
     public List<ICheck> Checks { get; } = new List<ICheck>();
 

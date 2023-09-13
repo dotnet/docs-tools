@@ -1,22 +1,17 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class File : IRunnerItem
+internal sealed class File : IRunnerItem
 {
     private const string ModeAdd = "add";
     private const string ModeChanged = "changed";
     private const string ModeDelete = "remove";
 
-    private string _mode;
-    private bool _isValid;
-    private IEnumerable<FileCheck> _items;
+    private readonly string _mode;
+    private readonly bool _isValid;
+    private readonly IEnumerable<FileCheck> _items;
 
     public File(YamlSequenceNode node, string mode, State state)
     {
@@ -71,10 +66,10 @@ public class File : IRunnerItem
         return;
     }
 
-    private class FileCheck
+    private sealed class FileCheck
     {
-        public string RegexCheck;
-        public Runner Actions;
+        public readonly string RegexCheck;
+        public readonly Runner Actions;
 
         public FileCheck(string regex, Runner actions) =>
             (RegexCheck, Actions) = (regex, actions);

@@ -1,18 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Variable: IRunnerItem
+internal sealed class Variable: IRunnerItem
 {
-    private RunnerItemSubTypes _type;
-    private string _id;
-    private string _value;
+    private readonly RunnerItemSubTypes _type;
+    private readonly string _id;
+    private readonly string _value;
 
     public Variable(YamlMappingNode node, RunnerItemSubTypes subType, State state)
     {
