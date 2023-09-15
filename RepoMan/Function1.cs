@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Runtime.CompilerServices;
+
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
@@ -6,6 +9,8 @@ using Newtonsoft.Json.Linq;
 using Octokit;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
+
+[assembly: InternalsVisibleTo("RepoManConfigTest")]
 
 namespace RepoMan;
 

@@ -6,13 +6,17 @@ using YamlDotNet.RepresentationModel;
 using Octokit;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Http;
+using System.Text.RegularExpressions;
 
 namespace RepoMan;
 
-class Program
+partial class Program
 {
     static async Task Main(string[] args)
     {
+        string url = "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record#value-equality";
+
         // Read config for the repo
         var text = System.IO.File.ReadAllText(".repoman.yml");
 
@@ -52,10 +56,13 @@ class Program
         // Load the settings from the config
         state.LoadSettings(state.RepoRulesYaml["config"]);
 
-        
-
-        var githubEvent = "pull_request";
+        var githubEvent = "issues";
         var githubAction = "opened";
+        var githubIssue = await client.Issue.Get("dotnet", "docs", 37120);
+
+        state.Issue = githubIssue;
+        state.IssuePrBody = state.Issue.Body;
+        state.LoadCommentMetadata(state.IssuePrBody);
 
         if (state.RepoRulesYaml.Exists(githubEvent))
         {
@@ -78,7 +85,7 @@ class Program
     {
         byte[] bytSrc;
         byte[] bytDestination;
-        string strTo = String.Empty;
+        string strTo = string.Empty;
 
         bytSrc = Encoding.Unicode.GetBytes(strFrom);
         bytDestination = Encoding.Convert(Encoding.Unicode, Encoding.ASCII, bytSrc);
@@ -86,7 +93,6 @@ class Program
 
         return strTo;
     }
-
 }
 
 //public static bool IsCheck(YamlMappingNode node) =>

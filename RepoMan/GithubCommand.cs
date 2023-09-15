@@ -66,7 +66,7 @@ internal static class GithubCommand
         if (labels.Length != 0)
         {
             state.Logger.LogInformation($"GitHub: Labels added: {string.Join(",", labels)}");
-            await state.Client.Issue.Labels.AddToIssue(state.RepositoryId, state.Issue.Number, labels.ToArray());
+            await state.Client.Issue.Labels.AddToIssue(state.RepositoryId, state.Issue.Number, labels.Select(state.ExpandVariables).ToArray());
         }
         else
             state.Logger.LogTrace("No labels to add");
@@ -88,7 +88,7 @@ internal static class GithubCommand
             List<string> removedLabels = new();
 
             foreach (string label in labels)
-                if (existingLabelsTransformed.Contains(label.ToLower()))
+                if (existingLabelsTransformed.Contains(state.ExpandVariables(label).ToLower()))
                     removedLabels.Add(label);
 
             state.Logger.LogInformation($"GitHub: Labels removed: {string.Join(",", labels)}");
@@ -115,7 +115,7 @@ internal static class GithubCommand
             IssueUpdate updateIssue = state.Issue.ToUpdate();
             
             foreach (string item in names)
-                updateIssue.AddAssignee(item);
+                updateIssue.AddAssignee(state.ExpandVariables(item));
 
             await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
         }
@@ -137,9 +137,9 @@ internal static class GithubCommand
             foreach (string name in names)
             {
                 if (name.StartsWith("team:", StringComparison.OrdinalIgnoreCase))
-                    teams.Add(name.Substring(5));
+                    teams.Add(state.ExpandVariables(name.Substring(5)));
                 else
-                    logins.Add(name);
+                    logins.Add(state.ExpandVariables(name));
             }
 
             if (logins.Count != 0)
@@ -164,7 +164,7 @@ internal static class GithubCommand
     public static async Task AddComment(string comment, State state)
     {
         state.Logger.LogInformation($"GitHub: Create comment");
-        await state.Client.Issue.Comment.Create(state.RepositoryId, state.Issue.Number, comment);
+        await state.Client.Issue.Comment.Create(state.RepositoryId, state.Issue.Number, state.ExpandVariables(comment));
     }
 
     /// <summary>
@@ -196,9 +196,9 @@ internal static class GithubCommand
     }
 
     /// <summary>
-    /// Assigns projects to the provided <see cref="State.Issue"/>.
+    /// Assigns projects (classic) to the provided <see cref="State.Issue"/>.
     /// </summary>
-    /// <param name="project">The project numbers to set.</param>
+    /// <param name="projects">The project numbers to set.</param>
     /// <param name="state">The state object of the Azure Function.</param>
     /// <returns>An empty task.</returns>
     public static async Task AddProjects(string[] projects, State state)

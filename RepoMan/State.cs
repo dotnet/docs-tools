@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Octokit;
+using StarodubOleg.GPPG.Runtime;
 using System.Text;
 using YamlDotNet.RepresentationModel;
 
@@ -128,6 +129,46 @@ internal sealed class State
             }
         }
 
+        // After comment has been scanned, if the URL was found in the metaata, load the
+        // article page and scrape the metadata from the HTML
+        if (DocIssueMetadata.Count != 0)
+        {
+            // This same code is copied below in the other logic
+            Logger.LogInformation("Look for article URL");
+            if (DocIssueMetadata.ContainsKey("content source"))
+            {
+                Dictionary<string, string> newMetadata = Utilities.ScrapeArticleMetadata(new Uri(DocIssueMetadata["content source"]), this).Result;
+
+                DocIssueMetadata = new(DocIssueMetadata.Union(newMetadata));
+            }
+        }
+
+        // If no comment metadata was found, need to see if the new template is being used
+        // and if so, load the artilce page and scrape the metadata from the HTML
+        else
+        {
+            Logger.LogInformation("Look for article URL");
+
+            foreach (var regexSearch in Settings.DocMetadata.ContentUrlRegex)
+            {
+                Logger.LogInformation($"Processing regex: {regexSearch}");
+                System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(comment, regexSearch);
+
+                if (match.Success)
+                {
+                    Dictionary<string, string> newMetadata = Utilities.ScrapeArticleMetadata(new Uri(match.Groups[1].Value.ToLower()), this).Result;
+
+                    DocIssueMetadata = new(DocIssueMetadata.Union(newMetadata));
+
+                    break;
+                }
+            }
+        }
+
+        // Load each metadata item into a variable
+        foreach (string key in DocIssueMetadata.Keys)
+            Variables[key] = DocIssueMetadata[key];
+
         // Reads each line from the index of the content to the end, checking for a metadata field pattern
         void ScanLines(int index)
         {
@@ -145,6 +186,19 @@ internal sealed class State
                 }
             }
         }
+    }
+
+    public string ExpandVariables(string input)
+    {
+        foreach (string key in Variables.Keys)
+        {
+            string magicKey = $"${key.ToLower().Trim()}$";
+
+            if (input.Contains(magicKey))
+                input = input.Replace(magicKey, Variables[key]);
+        }
+
+        return input;
     }
 
     public async Task RunPooledActions()
@@ -214,12 +268,12 @@ internal sealed class State
 
     public class SettingsConfig
     {
-        public ConfigDocMetadata DocMetadata = new ConfigDocMetadata();
-
+        public ConfigDocMetadata? DocMetadata;
 
         public class ConfigDocMetadata
         {
-            public List<string[]> Headers = new List<string[]>();
+            public List<string[]>? Headers;
+            public List<string>? ContentUrlRegex;
             public string? ParserRegex { get; set; }
         }
     }

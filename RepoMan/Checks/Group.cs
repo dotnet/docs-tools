@@ -77,6 +77,8 @@ internal sealed class Group: IRunnerItem
             {
                 // Future
             }
+            else
+                state.Logger.LogError($"Check type not found: {typeProperty}");
             
         }
 
