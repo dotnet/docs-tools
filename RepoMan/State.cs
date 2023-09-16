@@ -151,8 +151,8 @@ internal sealed class State
 
             foreach (var regexSearch in Settings.DocMetadata.ContentUrlRegex)
             {
-                Logger.LogInformation($"Processing regex: {regexSearch}");
-                System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(comment, regexSearch);
+               Logger.LogInformation($"Processing regex: {regexSearch}");
+                System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(comment, regexSearch, System.Text.RegularExpressions.RegexOptions.Multiline);
 
                 if (match.Success)
                 {

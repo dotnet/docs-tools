@@ -1,20 +1,18 @@
-﻿using System.Runtime.CompilerServices;
-
-
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json.Linq;
-using Octokit;
-using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Runtime.CompilerServices;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using YamlDotNet.RepresentationModel;
+using Octokit;
+using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Logging;
+using Grpc.Core;
 
 [assembly: InternalsVisibleTo("RepoManConfigTest")]
 
 namespace RepoMan;
 
-public static class Function1
+public class Function1
 {
     public const string EventTypeIssue = "issues";
     public const string EventTypePullRequest = "pull_request";
@@ -22,14 +20,21 @@ public static class Function1
     public const int SchemaVersionMinimum = 1;
     public const string RulesFileName = ".repoman.yml";
 
-    [FunctionName("Function1")]
-    public static async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]HttpRequest req, ILogger log)
+    private readonly ILogger _logger;
+
+    public Function1(ILoggerFactory loggerFactory)
+    {
+        _logger = loggerFactory.CreateLogger<Function1>();
+    }
+
+    [Function("Function1")]
+    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req)
     {
         try
         {
-            State state = new() { Logger = log };
-
-            log.LogInformation($"RepoMan v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
+            State state = new() { Logger = _logger };
+            
+            _logger.LogInformation($"RepoMan v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
 
             // Prep for auth
             string? token = Environment.GetEnvironmentVariable("GithubToken", EnvironmentVariableTarget.Process);
@@ -37,8 +42,9 @@ public static class Function1
             if (string.IsNullOrEmpty(token))
             {
                 string error = "GithubToken setting is missing";
-                log.LogError(error);
-                return new BadRequestObjectResult(error);
+                _logger.LogError(error);
+                
+                return  req.CreateBadRequestResponse(error);
             }
 
             // Github client
@@ -49,13 +55,13 @@ public static class Function1
 
             // Validate signature of payload
             string requestBody = new StreamReader(req.Body).ReadToEnd();
-            string eventType = req.Headers["X-GitHub-Event"];
+            string eventType = req.Headers.GetValues("X-GitHub-Event").First();
 
-            if (!IsSecure(requestBody, req.Headers["X-Hub-Signature"], log))
+            if (!IsSecure(requestBody, req.Headers.GetValues("X-Hub-Signature").First(), _logger))
             {
                 string error = "Sig is missing";
-                log.LogError(error);
-                return new BadRequestObjectResult(error);
+                _logger.LogError(error);
+                return req.CreateBadRequestResponse(error);
             }
 
             // =================
@@ -65,7 +71,7 @@ public static class Function1
             {
                 IssueEventPayload issuePayload = new Octokit.Internal.SimpleJsonSerializer().Deserialize<IssueEventPayload>(requestBody);
 
-                log.LogInformation($"Type: Issue \nId: {issuePayload.Issue.Number} \nAction: {issuePayload.Action} \nRepo: {issuePayload.Repository.CloneUrl}");
+                _logger.LogInformation($"Type: Issue \nId: {issuePayload.Issue.Number} \nAction: {issuePayload.Action} \nRepo: {issuePayload.Repository.CloneUrl}");
 
                 state.RepositoryId = issuePayload.Repository.Id;
                 state.RepositoryName = issuePayload.Repository.Name;
@@ -85,7 +91,7 @@ public static class Function1
                         error = $"The rules file ({RulesFileName}) is missing in repository.";
 
                     state.Logger.LogError(error);
-                    return new BadRequestObjectResult(error);
+                    return req.CreateBadRequestResponse(error);
                 }
 
                 // Make sure rules version is correct
@@ -93,7 +99,7 @@ public static class Function1
                 {
                     string error = "Rules file is out-of-date. Contact adegeo@ms to upgrade.";
                     state.Logger.LogError(error);
-                    return new BadRequestObjectResult(error);
+                    return req.CreateBadRequestResponse(error);
                 }
 
                 state.EventAction = issuePayload.Action;
@@ -118,7 +124,7 @@ public static class Function1
             {
                 PullRequestEventPayload pullPayload = new Octokit.Internal.SimpleJsonSerializer().Deserialize<PullRequestEventPayload>(requestBody);
 
-                log.LogInformation($"Type: PullRequest \nId: {pullPayload.PullRequest.Number} \nAction: {pullPayload.Action} \nRepo: {pullPayload.Repository.CloneUrl}");
+                _logger.LogInformation($"Type: PullRequest \nId: {pullPayload.PullRequest.Number} \nAction: {pullPayload.Action} \nRepo: {pullPayload.Repository.CloneUrl}");
 
                 state.RepositoryId = pullPayload.Repository.Id;
                 state.RepositoryName = pullPayload.Repository.Name;
@@ -138,7 +144,7 @@ public static class Function1
                         error = $"The rules file ({RulesFileName}) is missing in repository.";
 
                     state.Logger.LogError(error);
-                    return new BadRequestObjectResult(error);
+                    return req.CreateBadRequestResponse(error);
                 }
 
                 // Make sure rules version is correct
@@ -146,7 +152,7 @@ public static class Function1
                 {
                     string error = "Rules file is out-of-date. Contact adegeo@ms to upgrade.";
                     state.Logger.LogError(error);
-                    return new BadRequestObjectResult(error);
+                    return req.CreateBadRequestResponse(error);
                 }
 
                 state.IsPullRequest = true;
@@ -167,7 +173,7 @@ public static class Function1
             {
                 IssueCommentPayload commentPayload = new Octokit.Internal.SimpleJsonSerializer().Deserialize<IssueCommentPayload>(requestBody);
 
-                log.LogInformation($"Type: PullRequest \nId: {commentPayload.Issue.Number} \nAction: {commentPayload.Action} \nRepo: {commentPayload.Repository.CloneUrl}");
+                _logger.LogInformation($"Type: PullRequest \nId: {commentPayload.Issue.Number} \nAction: {commentPayload.Action} \nRepo: {commentPayload.Repository.CloneUrl}");
 
                 state.RepositoryId = commentPayload.Repository.Id;
                 state.RepositoryName = commentPayload.Repository.Name;
@@ -187,7 +193,7 @@ public static class Function1
                         error = $"The rules file ({RulesFileName}) is missing in repository.";
 
                     state.Logger.LogError(error);
-                    return new BadRequestObjectResult(error);
+                    return req.CreateBadRequestResponse(error);
                 }
 
                 // Make sure rules version is correct
@@ -195,7 +201,7 @@ public static class Function1
                 {
                     string error = "Rules file is out-of-date. Contact adegeo@ms to upgrade.";
                     state.Logger.LogError(error);
-                    return new BadRequestObjectResult(error);
+                    return req.CreateBadRequestResponse(error);
                 }
 
                 state.EventAction = commentPayload.Action;
@@ -216,7 +222,7 @@ public static class Function1
             else
             {
                 state.Logger.LogError($"Event isn't supported {eventType}");
-                return new BadRequestResult();
+                return req.CreateBadRequestResponse();
             }
 
             // Check if a magic label was sent, modify the state accordingly
@@ -244,7 +250,7 @@ public static class Function1
                         if (remappedEvent)
                         {
                             state.Logger.LogError($"Remapping already happened once. Can't remap an event into another remap.");
-                            return new BadRequestResult();
+                            return req.CreateBadRequestResponse();
                         }
 
                         state.Logger.LogInformation($"Remap found in rules. From: {state.EventAction} To: {actionNode}");
@@ -253,7 +259,7 @@ public static class Function1
                         if (state.EventAction == actionNode.ToString())
                         {
                             state.Logger.LogError($"Remapped to self.");
-                            return new BadRequestResult();
+                            return req.CreateBadRequestResponse();
                         }
 
                         state.EventAction = actionNode.ToString();
@@ -262,7 +268,7 @@ public static class Function1
                     else if (actionNode.NodeType != YamlNodeType.Sequence)
                     {
                         state.Logger.LogError($"Event should use a sequence.");
-                        return new BadRequestResult();
+                        return req.CreateBadRequestResponse();
                     }
 
                     state.Logger.LogInformation($"Processing action: {state.EventAction}");
@@ -276,12 +282,12 @@ public static class Function1
             else
                 state.Logger.LogInformation($"Event {eventType} not defined in rules. Nothing to do.");
 
-            return new OkResult();
+            return req.CreateResponse(HttpStatusCode.OK);
         }
         catch (Exception e)
         {
-            log.LogError("Problem parsing: " + e);
-            return new BadRequestResult();
+            _logger.LogError("Problem parsing: " + e);
+            return req.CreateBadRequestResponse();
         }
     }
 
@@ -386,7 +392,7 @@ public static class Function1
 
             if (repoRulesFile == null)
                 return (false, false);
-            
+
             // Read config for the repo
             state.Logger.LogInformation($"Reading repo rules file: {RulesFileName}");
             using StringReader reader = new StringReader(repoRulesFile);
@@ -453,12 +459,11 @@ public static class Function1
         static string ToHexString(byte[] bytes)
         {
             System.Text.StringBuilder builder = new System.Text.StringBuilder(bytes.Length * 2);
-            
+
             foreach (byte b in bytes)
                 builder.AppendFormat("{0:x2}", b);
 
             return builder.ToString();
         }
     }
-
 }

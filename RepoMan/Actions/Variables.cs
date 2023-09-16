@@ -22,7 +22,7 @@ internal sealed class Variable: IRunnerItem
 
             if (_value.StartsWith("jmes:"))
             {
-                _value = Utilities.GetJMESResult(_value.Substring("jmes:".Length), state);
+                _value = Utilities.GetJMESResult(_value.Substring("jmes:".Length), state).Trim('"');
                 if (_value.Equals("null", StringComparison.InvariantCultureIgnoreCase))
                     _isValid = false;
             }
