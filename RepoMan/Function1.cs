@@ -107,7 +107,7 @@ public class Function1
                 state.Issue = issuePayload.Issue;
                 state.Comment = null;
                 state.EventPayload = JObject.Parse(requestBody);
-                state.IssuePrBody = issuePayload.Issue.Body;
+                state.IssuePrBody = issuePayload.Issue.Body ?? string.Empty;
 
                 if (state.PullRequest != null)
                 {
@@ -161,7 +161,7 @@ public class Function1
                 state.Issue = await state.Client.Issue.Get(pullPayload.Repository.Id, pullPayload.Number);
                 state.Comment = null;
                 state.EventPayload = JObject.Parse(requestBody);
-                state.IssuePrBody = pullPayload.PullRequest.Body;
+                state.IssuePrBody = pullPayload.PullRequest.Body ?? string.Empty;
                 state.PullRequestFiles = (await state.Client.PullRequest.Files(state.RepositoryId, state.PullRequest.Number)).ToArray();
                 state.PullRequestReviews = (await state.Client.PullRequest.Review.GetAll(state.RepositoryId, state.PullRequest.Number)).ToArray();
             }
@@ -209,7 +209,7 @@ public class Function1
                 state.Issue = commentPayload.Issue;
                 state.Comment = commentPayload.Comment;
                 state.EventPayload = JObject.Parse(requestBody);
-                state.IssuePrBody = commentPayload.Comment.Body;
+                state.IssuePrBody = commentPayload.Comment.Body ?? string.Empty;
 
                 if (state.PullRequest != null)
                 {
@@ -312,11 +312,11 @@ public class Function1
                 if (state.RequestType == RequestType.PullRequest)
                 {
                     state.PullRequest = await state.Client.PullRequest.Get(state.RepositoryId, state.Issue.Number);
-                    state.IssuePrBody = state.PullRequest.Body;
+                    state.IssuePrBody = state.PullRequest.Body ?? string.Empty;
                 }
                 else if (state.RequestType == RequestType.Issue)
                 {
-                    state.IssuePrBody = state.Issue.Body;
+                    state.IssuePrBody = state.Issue?.Body ?? string.Empty;
                 }
                 else // Comment
                 {

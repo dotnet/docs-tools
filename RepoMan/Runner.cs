@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
@@ -110,6 +111,8 @@ internal sealed class Runner: IRunnerItem
             catch (Exception e)
             {
                 state.Logger.LogError($"BUILD: Error building an action\n{e.Message}\n{e.StackTrace}");
+                if (Debugger.IsAttached)
+                    Debugger.Break();
             }
         }
 

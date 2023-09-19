@@ -3,6 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
+// TODO: This is an action, but it seems to operate like a check??
 internal sealed class File : IRunnerItem
 {
     private const string ModeAdd = "add";

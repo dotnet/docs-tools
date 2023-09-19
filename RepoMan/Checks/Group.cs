@@ -63,6 +63,9 @@ internal sealed class Group: IRunnerItem
             else if (typeProperty.Equals("metadata-exists", StringComparison.OrdinalIgnoreCase))
                 checkGroup.Checks.Add(new DocMetadataExists(state));
 
+            else if (typeProperty.Equals("metadata-new-exists", StringComparison.OrdinalIgnoreCase))
+                checkGroup.Checks.Add(new DocMetadataExists(state));
+
             else if (typeProperty.Equals("isdraft", StringComparison.OrdinalIgnoreCase))
                 checkGroup.Checks.Add(new IsDraft(item.AsMappingNode(), state));
 
@@ -73,13 +76,13 @@ internal sealed class Group: IRunnerItem
             {
                 // Future
             }
-            else if (typeProperty.Equals("comment", StringComparison.OrdinalIgnoreCase))
-            {
-                // Future
-            }
+            else if (typeProperty.Equals("comment-body", StringComparison.OrdinalIgnoreCase))
+                checkGroup.Checks.Add(new CommentBody(item.AsMappingNode(), state));
             else
+            {
                 state.Logger.LogError($"Check type not found: {typeProperty}");
-            
+                checkGroup.Checks.Add(new ForceFail());
+            }
         }
 
         if (node.Exists("pass", out YamlSequenceNode? values))

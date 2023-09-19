@@ -31,6 +31,7 @@ internal sealed class State
     public Dictionary<int, ProjectColumn[]> ProjectColumns = new Dictionary<int, ProjectColumn[]>();
     public ProjectsClient ProjectsClient;
     public Dictionary<string, string> DocIssueMetadata = new Dictionary<string, string>();
+    public bool IsV2Metadata = false;
     public SettingsConfig Settings;
     public OperationPool Operations = new OperationPool();
     public YamlMappingNode RepoRulesYaml;
@@ -53,7 +54,7 @@ internal sealed class State
                                                 //JArray.Parse(Client.Connection.Get<PullRequestReview[]>(ApiUrls.PullRequestReviews(RepositoryId, PullRequest.Number), TimeSpan.FromSeconds(5)).Result.HttpResponse.Body.ToString())),
             new JProperty("Comment", Comment == null ? null : JObject.Parse(Client.Connection.Get<IssueComment>(ApiUrls.IssueComment(RepositoryId, Comment.Id), TimeSpan.FromSeconds(5)).Result.HttpResponse.Body.ToString())),
             new JProperty("EventPayload", EventPayload),
-            new JProperty("Variables", Variables)
+            new JProperty("Variables", JArray.FromObject(Variables.Select(kv => new { kv.Key, kv.Value }).ToArray()))
             );
 
         return _cachedStateBody;
@@ -144,7 +145,7 @@ internal sealed class State
         }
 
         // If no comment metadata was found, need to see if the new template is being used
-        // and if so, load the artilce page and scrape the metadata from the HTML
+        // and if so, load the article page and scrape the metadata from the HTML
         else
         {
             Logger.LogInformation("Look for article URL");
@@ -156,6 +157,8 @@ internal sealed class State
 
                 if (match.Success)
                 {
+                    IsV2Metadata = true;
+
                     Dictionary<string, string> newMetadata = Utilities.ScrapeArticleMetadata(new Uri(match.Groups[1].Value.ToLower()), this).Result;
 
                     DocIssueMetadata = new(DocIssueMetadata.Union(newMetadata));
