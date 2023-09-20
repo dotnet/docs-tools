@@ -6,6 +6,8 @@ namespace RepoMan;
 
 internal sealed class Runner: IRunnerItem
 {
+    public static YamlNode DebugNode;
+
     public List<IRunnerItem> Actions { get; } = new List<IRunnerItem>();
 
     public static Runner Build(YamlSequenceNode actionNode, State state)
@@ -17,6 +19,8 @@ internal sealed class Runner: IRunnerItem
         {
             try
             {
+                DebugNode = item;
+
                 if (item.NodeType == YamlNodeType.Mapping)
                 {
                     YamlMappingNode mappingItem = item.AsMappingNode();
@@ -110,7 +114,7 @@ internal sealed class Runner: IRunnerItem
             }
             catch (Exception e)
             {
-                state.Logger.LogError($"BUILD: Error building an action\n{e.Message}\n{e.StackTrace}");
+                state.Logger.LogError($"BUILD: Error building an action Line: {DebugNode.Start.Line} Col: {DebugNode.Start.Column}\n{e.Message}\n{e.StackTrace}");
                 if (Debugger.IsAttached)
                     Debugger.Break();
             }
