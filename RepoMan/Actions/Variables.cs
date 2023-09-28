@@ -32,7 +32,6 @@ internal sealed class Variable: IRunnerItem
             _value = "null";
     }
 
-
     public async Task Run(State state)
     {
         if (!_isValid)

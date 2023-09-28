@@ -42,7 +42,7 @@ internal sealed class Group: IRunnerItem
 
     public static Group Build(YamlMappingNode node, State state)
     {
-        state.Logger.LogDebug("BUILD: Check group start");
+        state.Logger.LogDebugger("BUILD: Check group start");
 
         Group checkGroup = new Group();
 
@@ -52,7 +52,7 @@ internal sealed class Group: IRunnerItem
         {
             string typeProperty = item["type"].ToString();
 
-            state.Logger.LogDebug($"BUILD: Finding check type {typeProperty}");
+            state.Logger.LogDebugger($"BUILD: Finding check type {typeProperty}");
 
             if (typeProperty.Equals("query", StringComparison.OrdinalIgnoreCase))
                 checkGroup.Checks.Add(new Query(item.AsMappingNode(), state));
@@ -64,7 +64,7 @@ internal sealed class Group: IRunnerItem
                 checkGroup.Checks.Add(new DocMetadataExists(state));
 
             else if (typeProperty.Equals("metadata-new-exists", StringComparison.OrdinalIgnoreCase))
-                checkGroup.Checks.Add(new DocMetadataExists(state));
+                checkGroup.Checks.Add(new DocNewMetadataExists(state));
 
             else if (typeProperty.Equals("isdraft", StringComparison.OrdinalIgnoreCase))
                 checkGroup.Checks.Add(new IsDraft(item.AsMappingNode(), state));

@@ -240,7 +240,7 @@ public class Function1
                 {
                     bool remappedEvent = false;
 
-                restart_node_check:
+                    restart_node_check:
                     YamlNode actionNode = eventNode[state.EventAction];
 
                     // Remapping

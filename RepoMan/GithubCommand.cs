@@ -168,6 +168,36 @@ internal static class GithubCommand
     }
 
     /// <summary>
+    /// Closes an issue or pull request.
+    /// </summary>
+    /// <param name="state">The state object of the Azure Function.</param>
+    public static async Task Close(State state)
+    {
+        state.Logger.LogInformation($"GitHub: Close");
+
+        if (state.IsPullRequest)
+        {
+            PullRequestUpdate updatedPR = new()
+            {
+                Base = state.PullRequest.Base.Ref,
+                Body = state.PullRequest.Body,
+                Title = state.PullRequest.Title,
+                State = ItemState.Closed
+            };
+
+            await state.Client.PullRequest.Update(state.RepositoryId, state.PullRequest.Number, updatedPR);
+        }
+        else
+        {
+            IssueUpdate updatedIssue = state.Issue.ToUpdate();
+            updatedIssue.State = ItemState.Closed;
+
+            await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updatedIssue);
+
+        }
+    }
+
+    /// <summary>
     /// Assigns a milestone to the provided <see cref="State.Issue"/>.
     /// </summary>
     /// <param name="milestone">The milestone id.</param>

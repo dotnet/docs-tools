@@ -6,7 +6,7 @@ internal sealed class DocMetadataExists : ICheck
 {
     public DocMetadataExists(State state)
     {
-        state.Logger.LogDebug($"BUILD: Check-metadata-exists");
+        state.Logger.LogDebugger($"BUILD: Check-metadata-exists");
     }
 
     public async Task<bool> Run(State state)

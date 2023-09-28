@@ -20,7 +20,7 @@ internal sealed class Milestone: IRunnerItem
 
 
         _milestone = node.ToString();
-        state.Logger.LogInformation($"BUILD: {mode} milestone '{_milestone}'");
+        state.Logger.LogDebugger($"BUILD: {mode} milestone '{_milestone}'");
     }
 
     public async Task Run(State state)
@@ -46,7 +46,7 @@ internal sealed class Milestone: IRunnerItem
                 if (item.Title.Equals(monthYear, StringComparison.OrdinalIgnoreCase))
                 {
                     milestoneId = item.Number;
-                    state.Logger.LogDebug($"Found milestone: {item.Title}:{item.Number}");
+                    state.Logger.LogDebugger($"Found milestone: {item.Title}:{item.Number}");
                     break;
                 }
             }
@@ -63,7 +63,7 @@ internal sealed class Milestone: IRunnerItem
                     if (item.Title.Equals(sprint, StringComparison.OrdinalIgnoreCase))
                     {
                         milestoneId = item.Number;
-                        state.Logger.LogDebug($"Found milestone: {item.Title}:{item.Number}");
+                        state.Logger.LogDebugger($"Found milestone: {item.Title}:{item.Number}");
                     break;
                     }
                 }
@@ -96,7 +96,7 @@ internal sealed class Milestone: IRunnerItem
         if (milestoneId == InvalidMilestone)
         {
             state.Logger.LogError("Milestone is invalid, can't run this action");
-            state.Logger.LogDebug($"Milestones available { string.Concat(milestones.Select(m => $"\n{m.Title}")) }");
+            state.Logger.LogDebugger($"Milestones available { string.Concat(milestones.Select(m => $"\n{m.Title}")) }");
             return;
         }
 

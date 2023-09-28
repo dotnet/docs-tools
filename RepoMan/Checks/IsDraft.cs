@@ -9,7 +9,7 @@ internal sealed class IsDraft : ICheck
 
     public IsDraft(YamlMappingNode node, State state)
     {
-        state.Logger.LogDebug($"BUILD: IsDraft");
+        state.Logger.LogDebugger($"BUILD: IsDraft");
         Condition = Convert.ToBoolean(node["value"].ToString());
         state.Logger.LogTrace($"BUILD: - {Condition}");
     }

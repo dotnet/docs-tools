@@ -20,7 +20,7 @@ internal sealed class Reviewers: IRunnerItem
         // Check for direct value or array
         if (node.NodeType == YamlNodeType.Scalar)
         {
-            state.Logger.LogDebug($"BUILD: Reviewer: {node}");
+            state.Logger.LogDebugger($"BUILD: Reviewer: {node}");
             names.Add(node.ToString());
         }
 
@@ -28,7 +28,7 @@ internal sealed class Reviewers: IRunnerItem
         {
             foreach (YamlNode item in node.AsSequenceNode())
             {
-                state.Logger.LogDebug($"BUILD: Reviewer: {item}");
+                state.Logger.LogDebugger($"BUILD: Reviewer: {item}");
                 names.Add(item.ToString());
             }
         }

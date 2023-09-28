@@ -10,7 +10,7 @@ internal sealed class Query : ICheck
     public Query(YamlMappingNode node, State state)
     {
         Value = node["value"].ToString();
-        state.Logger.LogDebug($"BUILD: Check-Query");
+        state.Logger.LogDebugger($"BUILD: Check-Query");
         state.Logger.LogTrace($"BUILD: {Value}");
     }
 

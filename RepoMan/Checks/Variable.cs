@@ -10,7 +10,7 @@ internal sealed class Variable : ICheck
 
     public Variable(YamlMappingNode node, State state)
     {
-        state.Logger.LogDebug($"BUILD: Variable");
+        state.Logger.LogDebugger($"BUILD: Variable");
         Name = node["name"].ToString();
         Value = node["value"].ToString();
         state.Logger.LogTrace($"BUILD: - {Name}={Value}");

@@ -6,14 +6,14 @@ namespace RepoMan;
 
 internal sealed class Runner: IRunnerItem
 {
-    public static YamlNode DebugNode;
+    public static YamlNode? DebugNode;
 
     public List<IRunnerItem> Actions { get; } = new List<IRunnerItem>();
 
     public static Runner Build(YamlSequenceNode actionNode, State state)
     {
         Runner runner = new Runner();
-        state.Logger.LogDebug("BUILD: Create runner");
+        state.Logger.LogDebugger("BUILD: Create runner");
 
         foreach (YamlNode item in actionNode)
         {
@@ -30,22 +30,22 @@ internal sealed class Runner: IRunnerItem
                     switch (itemType)
                     {
                         case RunnerItemTypes.Check:
-                            state.Logger.LogDebug("BUILD: Create check");
+                            state.Logger.LogDebugger("BUILD: Create check");
                             runner.Actions.Add(Checks.Group.Build(mappingItem, state));
                             break;
 
                         case RunnerItemTypes.Label:
-                            state.Logger.LogDebug("BUILD: Create label");
+                            state.Logger.LogDebugger("BUILD: Create label");
                             runner.Actions.Add(new Actions.Labels(firstProperty.Node, GetRunnerItemSubType(firstProperty.Name, state), state));
                             break;
 
                         case RunnerItemTypes.Milestone:
-                            state.Logger.LogDebug("BUILD: Create milestone");
+                            state.Logger.LogDebugger("BUILD: Create milestone");
                             runner.Actions.Add(new Actions.Milestone(firstProperty.Node, GetRunnerItemSubType(firstProperty.Name, state), state));
                             break;
 
                         case RunnerItemTypes.Project:
-                            state.Logger.LogDebug("BUILD: Create project");
+                            state.Logger.LogDebugger("BUILD: Create project");
                             runner.Actions.Add(new Actions.Projects(firstProperty.Node, GetRunnerItemSubType(firstProperty.Name, state), state));
                             break;
 
@@ -55,13 +55,13 @@ internal sealed class Runner: IRunnerItem
                             break;
 
                         case RunnerItemTypes.Variable:
-                            state.Logger.LogDebug("BUILD: Create Variable set/remove");
+                            state.Logger.LogDebugger("BUILD: Create Variable set/remove");
                             runner.Actions.Add(new Actions.Variable(mappingItem, GetRunnerItemSubType(firstProperty.Name, state), state));
                             break;
 
                         case RunnerItemTypes.Predefined:
                             string predefinedReference = firstProperty.Node.ToString();
-                            state.Logger.LogDebug($"BUILD: Predefined reference: {predefinedReference}");
+                            state.Logger.LogDebugger($"BUILD: Predefined reference: {predefinedReference}");
 
                             // Do we have a predefined section?
                             if (state.RepoRulesYaml.Exists("predefined"))
@@ -71,7 +71,7 @@ internal sealed class Runner: IRunnerItem
                                 if (predefinedSection.Exists(predefinedReference))
                                 {
                                     runner.Actions.Add(Runner.Build(predefinedSection[predefinedReference].AsSequenceNode(), state));
-                                    state.Logger.LogDebug($"BUILD: End predefined reference: {predefinedReference}");
+                                    state.Logger.LogDebugger($"BUILD: End predefined reference: {predefinedReference}");
                                 }
                                 else
                                     state.Logger.LogError($"BUILD: Predefined logic missing.");
@@ -82,17 +82,17 @@ internal sealed class Runner: IRunnerItem
                             break;
 
                         case RunnerItemTypes.Comment:
-                            state.Logger.LogDebug($"BUILD: Create Comment");
+                            state.Logger.LogDebugger($"BUILD: Create Comment");
                             runner.Actions.Add(new Actions.Comment(firstProperty.Node, state));
                             break;
 
                         case RunnerItemTypes.Assignee:
-                            state.Logger.LogDebug($"BUILD: Assignees");
+                            state.Logger.LogDebugger($"BUILD: Assignees");
                             runner.Actions.Add(new Actions.Assignees(firstProperty.Node, GetRunnerItemSubType(firstProperty.Name, state), state));
                             break;
 
                         case RunnerItemTypes.Reviewer:
-                            state.Logger.LogDebug($"BUILD: Reviewers");
+                            state.Logger.LogDebugger($"BUILD: Reviewers");
                             runner.Actions.Add(new Actions.Reviewers(firstProperty.Node, GetRunnerItemSubType(firstProperty.Name, state), state));
                             break;
 
@@ -104,6 +104,10 @@ internal sealed class Runner: IRunnerItem
                             // Future
                             // Should have child property specifying the action, open/close/move/whatever
                             break;
+                        case RunnerItemTypes.ProdTechLabels:
+                            state.Logger.LogDebugger($"BUILD: Product/Tech labels");
+                            runner.Actions.Add(new Actions.SetProdTechLabels());
+                            break;
                         default:
                             break;
                     }
@@ -111,16 +115,38 @@ internal sealed class Runner: IRunnerItem
                 }
                 else if (item.NodeType == YamlNodeType.Sequence)
                     runner.Actions.Add(Runner.Build(item.AsSequenceNode(), state));
+
+                else if (item.NodeType == YamlNodeType.Scalar)
+                {
+                    RunnerItemTypes itemType = GetRunnerType(((YamlScalarNode)item).Value!, state);
+                    switch (itemType)
+                    {
+                        case RunnerItemTypes.Close:
+                            state.Logger.LogDebugger($"BUILD: Close issue/pr");
+                            runner.Actions.Add(new Actions.CloseObject());
+                            break;
+
+                        case RunnerItemTypes.Reopen:
+                            state.Logger.LogDebugger($"BUILD: Reopen issue/pr");
+                            runner.Actions.Add(new Actions.CloseObject());
+                            break;
+                    }
+                }
             }
             catch (Exception e)
             {
-                state.Logger.LogError($"BUILD: Error building an action Line: {DebugNode.Start.Line} Col: {DebugNode.Start.Column}\n{e.Message}\n{e.StackTrace}");
+                if (DebugNode != null)
+                    state.Logger.LogError($"BUILD: Error building an action Line: {DebugNode.Start.Line} Col: {DebugNode.Start.Column}\n{e.Message}\n{e.StackTrace}");
+                else
+                    state.Logger.LogError($"BUILD: Error building an action");
+
                 if (Debugger.IsAttached)
                     Debugger.Break();
             }
         }
 
-        state.Logger.LogDebug("BUILD: runner done");
+        state.Logger.LogDebugger("BUILD: runner done");
+        DebugNode = null;
 
         return runner;
     }
@@ -172,8 +198,16 @@ internal sealed class Runner: IRunnerItem
 
         else if (nodeName.Equals("comment", StringComparison.OrdinalIgnoreCase))
             return RunnerItemTypes.Comment;
+        
+        else if (nodeName.Equals("close", StringComparison.OrdinalIgnoreCase))
+            return RunnerItemTypes.Close;
 
-        state.Logger.LogTrace($"BUILD: Invalid item type: {nodeName}");
+        else if (nodeName.Equals("reopen", StringComparison.OrdinalIgnoreCase))
+            return RunnerItemTypes.Reopen;
+
+        else if (nodeName.Equals("prod_tech_labels", StringComparison.OrdinalIgnoreCase))
+            return RunnerItemTypes.ProdTechLabels;
+
         throw new Exception($"Invalid item type: {nodeName}");
     }
 

@@ -16,7 +16,7 @@ internal sealed class Comment : IRunnerItem
     public async Task Run(State state)
     {
         state.Logger.LogInformation($"Adding comment");
-        state.Logger.LogDebug(_comment);
+        state.Logger.LogDebugger(_comment);
         await GithubCommand.AddComment(_comment, state);
     }
 }

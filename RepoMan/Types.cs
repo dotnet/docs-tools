@@ -13,7 +13,10 @@ internal enum RunnerItemTypes
     Variable,
     Assignee,
     Reviewer,
-    Predefined
+    Predefined,
+    Close,
+    Reopen,
+    ProdTechLabels
 }
 
 internal enum RunnerItemSubTypes

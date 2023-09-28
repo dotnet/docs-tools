@@ -83,7 +83,7 @@ internal static partial class Utilities
                 return true;
             }
 
-            state.Logger.LogDebug("JMES Result: Fail");
+            state.Logger.LogDebugger("JMES Result: Fail");
             return false;
         }
         catch (Exception e)
@@ -106,11 +106,11 @@ internal static partial class Utilities
 
             if (result.Equals("null", StringComparison.InvariantCultureIgnoreCase))
             {
-                state.Logger.LogDebug("JMES Result: Null return value");
+                state.Logger.LogDebugger("JMES Result: Null return value");
                 return string.Empty;
             }
 
-            state.Logger.LogDebug($"JMES Result: Returned {result}");
+            state.Logger.LogDebugger($"JMES Result: Returned {result}");
             return result;
         }
         catch (Exception e)

@@ -20,7 +20,7 @@ internal sealed class Assignees: IRunnerItem
         // Check for direct value or array
         if (node.NodeType == YamlNodeType.Scalar)
         {
-            state.Logger.LogDebug($"BUILD: Assignee: {node}");
+            state.Logger.LogDebugger($"BUILD: Assignee: {node}");
             names.Add(node.ToString());
         }
 
@@ -28,7 +28,7 @@ internal sealed class Assignees: IRunnerItem
         {
             foreach (YamlNode item in node.AsSequenceNode())
             {
-                state.Logger.LogDebug($"BUILD: Assignee: {item}");
+                state.Logger.LogDebugger($"BUILD: Assignee: {item}");
                 names.Add(item.ToString());
             }
         }

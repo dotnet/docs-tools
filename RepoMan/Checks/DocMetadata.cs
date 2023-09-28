@@ -10,7 +10,7 @@ internal sealed class DocMetadata : ICheck
 
     public DocMetadata(YamlMappingNode node, State state)
     {
-        state.Logger.LogDebug($"BUILD: Check-metadata-comment");
+        state.Logger.LogDebugger($"BUILD: Check-metadata-comment");
 
         Name = node["name"].ToString();
         Value = node["value"].ToString();

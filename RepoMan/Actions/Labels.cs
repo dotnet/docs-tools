@@ -22,7 +22,7 @@ internal sealed class Labels: IRunnerItem
         // Check for direct value or array
         if (node.NodeType == YamlNodeType.Scalar)
         {
-            state.Logger.LogDebug($"BUILD: {mode} label: {node}");
+            state.Logger.LogDebugger($"BUILD: {mode} label: {node}");
             labels.Add(node.ToString());
         }
 
@@ -30,7 +30,7 @@ internal sealed class Labels: IRunnerItem
         {
             foreach (YamlNode item in node.AsSequenceNode())
             {
-                state.Logger.LogDebug($"BUILD: {mode} label: {item}");
+                state.Logger.LogDebugger($"BUILD: {mode} label: {item}");
                 labels.Add(item.ToString());
             }
         }

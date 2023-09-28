@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Octokit;
 using StarodubOleg.GPPG.Runtime;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using YamlDotNet.RepresentationModel;
 
@@ -11,7 +12,8 @@ internal sealed class State
 {
     private JObject _cachedStateBody;
 
-    public bool IsPullRequest;
+    [MemberNotNullWhen(true, "PullRequest")]
+    public bool IsPullRequest { get; set; }
     public GitHubClient Client;
     public Issue Issue;
     public PullRequest? PullRequest;
@@ -61,6 +63,14 @@ internal sealed class State
     }
 
     /// <summary>
+    /// Writes the state json object to disk, for testing.
+    /// </summary>
+    public void SaveStateJson()
+    {
+        File.WriteAllText("state.json", RequestBody().ToString());
+    }
+
+    /// <summary>
     /// Loads the metadata from an issue comment.
     /// </summary>
     /// <param name="comment"></param>
@@ -72,16 +82,16 @@ internal sealed class State
         string[] content = comment.Replace("\r", "").Split('\n');
 
         // Log debug information about the headers loaded
-        Logger.LogDebug("Header check metadata settings: ");
+        Logger.LogDebugger("Header check metadata settings: ");
 
         int counter = 0;
         foreach (string[] item in Settings.DocMetadata.Headers)
         {
             counter++;
-            Logger.LogDebug($"- Set {counter}");
+            Logger.LogDebugger($"- Set {counter}");
 
             foreach (string setItem in item)
-                Logger.LogDebug($"  - {setItem}");
+                Logger.LogDebugger($"  - {setItem}");
         }
 
         Logger.LogInformation("Checking for comment metadata");
@@ -94,7 +104,7 @@ internal sealed class State
                 // If the first item in the set of headers matches, start
                 if (content[i].StartsWith(item[0]))
                 {
-                    Logger.LogDebug($"Found header match: '{item[0]}' in '{content[i]}'");
+                    Logger.LogDebugger($"Found header match: '{item[0]}' in '{content[i]}'");
 
                     // No other items in set, so we matched.
                     if (item.Length == 1)
@@ -110,7 +120,7 @@ internal sealed class State
                             // a "" skips this line, otherwise check for a match
                             if (item[headerIndex] == string.Empty || content[i + headerIndex].StartsWith(item[headerIndex]))
                             {
-                                Logger.LogDebug($"Found header match: '{item[headerIndex]}' in '{content[i + headerIndex]}'");
+                                Logger.LogDebugger($"Found header match: '{item[headerIndex]}' in '{content[i + headerIndex]}'");
                                 passed = true;
                             }
                             else
@@ -124,7 +134,7 @@ internal sealed class State
                         if (passed)
                             ScanLines(i + item.Length);
                         else
-                            Logger.LogDebug($"Additional headers not matched, skipping this line");
+                            Logger.LogDebugger($"Additional headers not matched, skipping this line");
                     }
                 }
             }
@@ -185,7 +195,7 @@ internal sealed class State
                 {
                     string key = match.Groups[1].Value.ToLower();
                     DocIssueMetadata[key] = Utilities.StripMarkdown(match.Groups[2].Value).Trim();
-                    Logger.LogDebug($"Added metadata: Key: '{key}' Value: '{DocIssueMetadata[key]}'");
+                    Logger.LogDebugger($"Added metadata: Key: '{key}' Value: '{DocIssueMetadata[key]}'");
                 }
             }
         }
@@ -193,6 +203,13 @@ internal sealed class State
 
     public string ExpandVariables(string input)
     {
+        if (input.StartsWith("jmes:"))
+        {
+            input = Utilities.GetJMESResult(input.Substring("jmes:".Length), this).Trim('"');
+            if (input.Equals("null", StringComparison.InvariantCultureIgnoreCase))
+                input = string.Empty;
+        }
+
         foreach (string key in Variables.Keys)
         {
             string magicKey = $"${key.ToLower().Trim()}$";

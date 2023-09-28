@@ -16,7 +16,7 @@ internal sealed class File : IRunnerItem
 
     public File(YamlSequenceNode node, string mode, State state)
     {
-        state.Logger.LogDebug($"BUILD: Check-files with mode {mode}");
+        state.Logger.LogDebugger($"BUILD: Check-files with mode {mode}");
 
         _mode = mode;
 
@@ -27,7 +27,7 @@ internal sealed class File : IRunnerItem
 
         foreach (YamlNode item in node.Children)
         {
-            state.Logger.LogDebug($"BUILD: Adding check {item["path"]}");
+            state.Logger.LogDebugger($"BUILD: Adding check {item["path"]}");
             items.Add(new FileCheck(item["path"].ToString(), Runner.Build(item["run"].AsSequenceNode(), state)));
         }
 
