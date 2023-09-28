@@ -79,7 +79,9 @@ internal sealed class State
         // We only read the issue metadata once.
         if (DocIssueMetadata.Count != 0) return;
 
-        string[] content = comment.Replace("\r", "").Split('\n');
+        comment = comment.Replace("\r", "");
+
+        string[] content = comment.Split('\n');
 
         // Log debug information about the headers loaded
         Logger.LogDebugger("Header check metadata settings: ");
