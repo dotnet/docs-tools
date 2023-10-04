@@ -1,21 +1,19 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Octokit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using StarodubOleg.GPPG.Runtime;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
 
-public class State
+internal sealed class State
 {
     private JObject _cachedStateBody;
 
-    public bool IsPullRequest;
+    [MemberNotNullWhen(true, "PullRequest")]
+    public bool IsPullRequest { get; set; }
     public GitHubClient Client;
     public Issue Issue;
     public PullRequest? PullRequest;
@@ -35,6 +33,7 @@ public class State
     public Dictionary<int, ProjectColumn[]> ProjectColumns = new Dictionary<int, ProjectColumn[]>();
     public ProjectsClient ProjectsClient;
     public Dictionary<string, string> DocIssueMetadata = new Dictionary<string, string>();
+    public bool IsV2Metadata = false;
     public SettingsConfig Settings;
     public OperationPool Operations = new OperationPool();
     public YamlMappingNode RepoRulesYaml;
@@ -57,10 +56,18 @@ public class State
                                                 //JArray.Parse(Client.Connection.Get<PullRequestReview[]>(ApiUrls.PullRequestReviews(RepositoryId, PullRequest.Number), TimeSpan.FromSeconds(5)).Result.HttpResponse.Body.ToString())),
             new JProperty("Comment", Comment == null ? null : JObject.Parse(Client.Connection.Get<IssueComment>(ApiUrls.IssueComment(RepositoryId, Comment.Id), TimeSpan.FromSeconds(5)).Result.HttpResponse.Body.ToString())),
             new JProperty("EventPayload", EventPayload),
-            new JProperty("Variables", Variables)
+            new JProperty("Variables", JArray.FromObject(Variables.Select(kv => new { kv.Key, kv.Value }).ToArray()))
             );
 
         return _cachedStateBody;
+    }
+
+    /// <summary>
+    /// Writes the state json object to disk, for testing.
+    /// </summary>
+    public void SaveStateJson()
+    {
+        File.WriteAllText("state.json", RequestBody().ToString());
     }
 
     /// <summary>
@@ -72,32 +79,34 @@ public class State
         // We only read the issue metadata once.
         if (DocIssueMetadata.Count != 0) return;
 
-        string[] content = comment.Replace("\r", "").Split('\n');
+        comment = comment.Replace("\r", "");
+
+        string[] content = comment.Split('\n');
 
         // Log debug information about the headers loaded
-        Logger.LogDebug("Header check metadata settings: ");
+        Logger.LogDebugger("Header check metadata settings: ");
 
         int counter = 0;
-        foreach (var item in Settings.DocMetadata.Headers)
+        foreach (string[] item in Settings.DocMetadata.Headers)
         {
             counter++;
-            Logger.LogDebug($"- Set {counter}");
+            Logger.LogDebugger($"- Set {counter}");
 
-            foreach (var setItem in item)
-                Logger.LogDebug($"  - {setItem}");
+            foreach (string setItem in item)
+                Logger.LogDebugger($"  - {setItem}");
         }
 
         Logger.LogInformation("Checking for comment metadata");
 
         // Use the headers defined in the yaml config. You can define different sets of headers
-        foreach (var item in Settings.DocMetadata.Headers)
+        foreach (string[] item in Settings.DocMetadata.Headers)
         {
             for (int i = 0; i < content.Length; i++)
             {
                 // If the first item in the set of headers matches, start
                 if (content[i].StartsWith(item[0]))
                 {
-                    Logger.LogDebug($"Found header match: '{item[0]}' in '{content[i]}'");
+                    Logger.LogDebugger($"Found header match: '{item[0]}' in '{content[i]}'");
 
                     // No other items in set, so we matched.
                     if (item.Length == 1)
@@ -113,7 +122,7 @@ public class State
                             // a "" skips this line, otherwise check for a match
                             if (item[headerIndex] == string.Empty || content[i + headerIndex].StartsWith(item[headerIndex]))
                             {
-                                Logger.LogDebug($"Found header match: '{item[headerIndex]}' in '{content[i + headerIndex]}'");
+                                Logger.LogDebugger($"Found header match: '{item[headerIndex]}' in '{content[i + headerIndex]}'");
                                 passed = true;
                             }
                             else
@@ -127,11 +136,53 @@ public class State
                         if (passed)
                             ScanLines(i + item.Length);
                         else
-                            Logger.LogDebug($"Additional headers not matched, skipping this line");
+                            Logger.LogDebugger($"Additional headers not matched, skipping this line");
                     }
                 }
             }
         }
+
+        // After comment has been scanned, if the URL was found in the metaata, load the
+        // article page and scrape the metadata from the HTML
+        if (DocIssueMetadata.Count != 0)
+        {
+            // This same code is copied below in the other logic
+            Logger.LogInformation("Look for article URL");
+            if (DocIssueMetadata.ContainsKey("content source"))
+            {
+                Dictionary<string, string> newMetadata = Utilities.ScrapeArticleMetadata(new Uri(DocIssueMetadata["content source"]), this).Result;
+
+                DocIssueMetadata = new(DocIssueMetadata.Union(newMetadata));
+            }
+        }
+
+        // If no comment metadata was found, need to see if the new template is being used
+        // and if so, load the article page and scrape the metadata from the HTML
+        else
+        {
+            Logger.LogInformation("Look for article URL");
+
+            foreach (var regexSearch in Settings.DocMetadata.ContentUrlRegex)
+            {
+               Logger.LogInformation($"Processing regex: {regexSearch}");
+                System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(comment, regexSearch, System.Text.RegularExpressions.RegexOptions.Multiline);
+
+                if (match.Success)
+                {
+                    IsV2Metadata = true;
+
+                    Dictionary<string, string> newMetadata = Utilities.ScrapeArticleMetadata(new Uri(match.Groups[1].Value.ToLower()), this).Result;
+
+                    DocIssueMetadata = new(DocIssueMetadata.Union(newMetadata));
+
+                    break;
+                }
+            }
+        }
+
+        // Load each metadata item into a variable
+        foreach (string key in DocIssueMetadata.Keys)
+            Variables[key] = DocIssueMetadata[key];
 
         // Reads each line from the index of the content to the end, checking for a metadata field pattern
         void ScanLines(int index)
@@ -140,23 +191,43 @@ public class State
 
             for (int i = index; i < content.Length; i++)
             {
-                var match = System.Text.RegularExpressions.Regex.Match(content[i], Settings.DocMetadata.ParserRegex);
+                System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(content[i], Settings.DocMetadata.ParserRegex);
 
                 if (match.Success)
                 {
                     string key = match.Groups[1].Value.ToLower();
                     DocIssueMetadata[key] = Utilities.StripMarkdown(match.Groups[2].Value).Trim();
-                    Logger.LogDebug($"Added metadata: Key: '{key}' Value: '{DocIssueMetadata[key]}'");
+                    Logger.LogDebugger($"Added metadata: Key: '{key}' Value: '{DocIssueMetadata[key]}'");
                 }
             }
         }
+    }
+
+    public string ExpandVariables(string input)
+    {
+        if (input.StartsWith("jmes:"))
+        {
+            input = Utilities.GetJMESResult(input.Substring("jmes:".Length), this).Trim('"');
+            if (input.Equals("null", StringComparison.InvariantCultureIgnoreCase))
+                input = string.Empty;
+        }
+
+        foreach (string key in Variables.Keys)
+        {
+            string magicKey = $"${key.ToLower().Trim()}$";
+
+            if (input.Contains(magicKey))
+                input = input.Replace(magicKey, Variables[key]);
+        }
+
+        return input;
     }
 
     public async Task RunPooledActions()
     {
         // Remove labels in the remove category from the add cateogry
         // We still run via remove, they may be already on the issue
-        foreach (var item in Operations.LabelsRemove)
+        foreach (string item in Operations.LabelsRemove)
         {
             if (Operations.LabelsAdd.Contains(item))
                 Operations.LabelsAdd.Remove(item);
@@ -165,7 +236,7 @@ public class State
 
         if (Operations.LabelsAdd.Count != 0)
         {
-            var uniqueLabels = Operations.LabelsAdd.Distinct().ToArray();
+            string[] uniqueLabels = Operations.LabelsAdd.Distinct().ToArray();
 
             Logger.LogInformation($"Adding {uniqueLabels.Length} labels");
             await GithubCommand.AddLabels(uniqueLabels, this);
@@ -173,7 +244,7 @@ public class State
 
         if (Operations.LabelsRemove.Count != 0)
         {
-            var uniqueLabels = Operations.LabelsRemove.Distinct().ToArray();
+            string[] uniqueLabels = Operations.LabelsRemove.Distinct().ToArray();
 
             Logger.LogInformation($"Removing {uniqueLabels.Length} labels");
             await GithubCommand.RemoveLabels(uniqueLabels, this.Issue.Labels, this);
@@ -181,7 +252,7 @@ public class State
 
         if (Operations.Assignees.Count != 0)
         {
-            var uniqueNames = Operations.Assignees.Distinct().ToArray();
+            string[] uniqueNames = Operations.Assignees.Distinct().ToArray();
 
             Logger.LogInformation($"Adding {uniqueNames.Length} assignees");
             await GithubCommand.AddAssignees(uniqueNames, this);
@@ -189,7 +260,7 @@ public class State
 
         if (Operations.Reviewers.Count != 0)
         {
-            var uniqueNames = Operations.Reviewers.Distinct().ToArray();
+            string[] uniqueNames = Operations.Reviewers.Distinct().ToArray();
 
             Logger.LogInformation($"Adding {uniqueNames.Length} reviewers");
             await GithubCommand.AddReviewers(uniqueNames, this);
@@ -207,10 +278,10 @@ public class State
 
     public void LoadSettings(YamlNode settingsNode)
     {
-        var deserializer = new YamlDotNet.Serialization.Deserializer();
-        var resultStream = new YamlStream(new YamlDocument(settingsNode));
-        var builder = new StringBuilder();
-        using var writer = new System.IO.StringWriter(builder);
+        YamlDotNet.Serialization.Deserializer deserializer = new YamlDotNet.Serialization.Deserializer();
+        YamlStream resultStream = new YamlStream(new YamlDocument(settingsNode));
+        StringBuilder builder = new StringBuilder();
+        using StringWriter writer = new System.IO.StringWriter(builder);
         resultStream.Save(writer);
         Settings = deserializer.Deserialize<SettingsConfig>(builder.ToString());
     }
@@ -219,12 +290,12 @@ public class State
 
     public class SettingsConfig
     {
-        public ConfigDocMetadata DocMetadata = new ConfigDocMetadata();
-
+        public ConfigDocMetadata? DocMetadata;
 
         public class ConfigDocMetadata
         {
-            public List<string[]> Headers = new List<string[]>();
+            public List<string[]>? Headers;
+            public List<string>? ContentUrlRegex;
             public string? ParserRegex { get; set; }
         }
     }

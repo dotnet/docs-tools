@@ -1,15 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using Octokit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RepoMan;
 
-static class GithubCommand
+internal static class GithubCommand
 {
     /// <summary>
     /// Caches and returns a list of all milestones associated with the repository.
@@ -40,22 +34,22 @@ static class GithubCommand
         return state.Projects;
     }
 
-    public static async Task<ProjectColumn[]> GetProjectColumns(State state, int projectId)
+    public static async Task<ProjectColumn[]?> GetProjectColumns(State state, int projectId)
     {
         // If columns already cached, return those.
         if (state.ProjectColumns.ContainsKey(projectId)) return state.ProjectColumns[projectId];
 
         // Get projects (which will be cached)
-        var projects = await GetProjects(state);
+        IReadOnlyList<Project> projects = await GetProjects(state);
 
         // Search for the project we want
-        var project = projects.FirstOrDefault(e => e.Number == projectId);
+        Project? project = projects.FirstOrDefault(e => e.Number == projectId);
 
         // Exit if project not found
         if (project == null) return null;
 
         // Get the columns
-        var columns = (await state.ProjectsClient.Column.GetAll(project.Id)).ToArray();
+        ProjectColumn[] columns = (await state.ProjectsClient.Column.GetAll(project.Id)).ToArray();
         state.ProjectColumns[projectId] = columns;
 
         return columns;
@@ -72,7 +66,7 @@ static class GithubCommand
         if (labels.Length != 0)
         {
             state.Logger.LogInformation($"GitHub: Labels added: {string.Join(",", labels)}");
-            await state.Client.Issue.Labels.AddToIssue(state.RepositoryId, state.Issue.Number, labels.ToArray());
+            await state.Client.Issue.Labels.AddToIssue(state.RepositoryId, state.Issue.Number, labels.Select(state.ExpandVariables).ToArray());
         }
         else
             state.Logger.LogTrace("No labels to add");
@@ -87,19 +81,19 @@ static class GithubCommand
     /// <returns>An empty task.</returns>
     public static async Task RemoveLabels(string[] labels, IReadOnlyList<Label> existingLabels, State state)
     {
-        var existingLabelsTransformed = existingLabels.Select(l => l.Name.ToLower());
+        IEnumerable<string> existingLabelsTransformed = existingLabels.Select(l => l.Name.ToLower());
 
         if (labels.Length != 0 && existingLabels != null && existingLabels.Count != 0)
         {
-            var removedLabels = new List<string>();
+            List<string> removedLabels = new();
 
-            foreach (var label in labels)
-                if (existingLabelsTransformed.Contains(label.ToLower()))
+            foreach (string label in labels)
+                if (existingLabelsTransformed.Contains(state.ExpandVariables(label).ToLower()))
                     removedLabels.Add(label);
 
             state.Logger.LogInformation($"GitHub: Labels removed: {string.Join(",", labels)}");
 
-            foreach (var label in removedLabels)
+            foreach (string label in removedLabels)
                 await state.Client.Issue.Labels.RemoveFromIssue(state.RepositoryId, state.Issue.Number, label);
         }
         else
@@ -118,10 +112,10 @@ static class GithubCommand
         {
             state.Logger.LogInformation($"GitHub: Adding assignees: {string.Join(",", names)}");
 
-            var updateIssue = state.Issue.ToUpdate();
+            IssueUpdate updateIssue = state.Issue.ToUpdate();
             
-            foreach (var item in names)
-                updateIssue.AddAssignee(item);
+            foreach (string item in names)
+                updateIssue.AddAssignee(state.ExpandVariables(item));
 
             await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
         }
@@ -137,15 +131,15 @@ static class GithubCommand
     {
         if (names.Length != 0)
         {
-            var logins = new List<string>();
-            var teams = new List<string>();
+            List<string>? logins = new();
+            List<string>? teams = new();
 
-            foreach (var name in names)
+            foreach (string name in names)
             {
                 if (name.StartsWith("team:", StringComparison.OrdinalIgnoreCase))
-                    teams.Add(name.Substring(5));
+                    teams.Add(state.ExpandVariables(name.Substring(5)));
                 else
-                    logins.Add(name);
+                    logins.Add(state.ExpandVariables(name));
             }
 
             if (logins.Count != 0)
@@ -170,7 +164,37 @@ static class GithubCommand
     public static async Task AddComment(string comment, State state)
     {
         state.Logger.LogInformation($"GitHub: Create comment");
-        await state.Client.Issue.Comment.Create(state.RepositoryId, state.Issue.Number, comment);
+        await state.Client.Issue.Comment.Create(state.RepositoryId, state.Issue.Number, state.ExpandVariables(comment));
+    }
+
+    /// <summary>
+    /// Closes an issue or pull request.
+    /// </summary>
+    /// <param name="state">The state object of the Azure Function.</param>
+    public static async Task Close(State state)
+    {
+        state.Logger.LogInformation($"GitHub: Close");
+
+        if (state.IsPullRequest)
+        {
+            PullRequestUpdate updatedPR = new()
+            {
+                Base = state.PullRequest.Base.Ref,
+                Body = state.PullRequest.Body,
+                Title = state.PullRequest.Title,
+                State = ItemState.Closed
+            };
+
+            await state.Client.PullRequest.Update(state.RepositoryId, state.PullRequest.Number, updatedPR);
+        }
+        else
+        {
+            IssueUpdate updatedIssue = state.Issue.ToUpdate();
+            updatedIssue.State = ItemState.Closed;
+
+            await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updatedIssue);
+
+        }
     }
 
     /// <summary>
@@ -181,7 +205,7 @@ static class GithubCommand
     /// <returns>An empty task.</returns>
     public static async Task SetMilestone(int milestone, State state)
     {
-        var updateIssue = state.Issue.ToUpdate();
+        IssueUpdate updateIssue = state.Issue.ToUpdate();
         updateIssue.Milestone = milestone;
         state.Logger.LogInformation($"GitHub: Set milestone to {milestone}");
         await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
@@ -195,16 +219,16 @@ static class GithubCommand
     /// <returns>An empty task.</returns>
     public static async Task RemoveMilestone(State state)
     {
-        var updateIssue = state.Issue.ToUpdate();
+        IssueUpdate updateIssue = state.Issue.ToUpdate();
         updateIssue.Milestone = null;
         state.Logger.LogInformation($"GitHub: Clearing milestone");
         await state.Client.Issue.Update(state.RepositoryId, state.Issue.Number, updateIssue);
     }
 
     /// <summary>
-    /// Assigns projects to the provided <see cref="State.Issue"/>.
+    /// Assigns projects (classic) to the provided <see cref="State.Issue"/>.
     /// </summary>
-    /// <param name="project">The project numbers to set.</param>
+    /// <param name="projects">The project numbers to set.</param>
     /// <param name="state">The state object of the Azure Function.</param>
     /// <returns>An empty task.</returns>
     public static async Task AddProjects(string[] projects, State state)
@@ -214,10 +238,7 @@ static class GithubCommand
         // the logic path doens't work with projects.. Ah!! Move milestone logic back here.
         if (projects.Length != 0)
         {
-            var existingProjects = await GetProjects(state);
-            var update = state.Issue.ToUpdate();
-
-            foreach (var projectString in projects)
+            foreach (string projectString in projects)
             {
                 if (!int.TryParse(projectString, out int id))
                 {
@@ -227,11 +248,11 @@ static class GithubCommand
 
                 bool foundProject = false;
 
-                foreach (var projectObject in state.Projects)
+                foreach (Project projectObject in state.Projects)
                 {
                     if (projectObject.Number == id)
                     {
-                        var columns = await GetProjectColumns(state, id);
+                        ProjectColumn[]? columns = await GetProjectColumns(state, id);
 
                         if (columns != null)
                         {
@@ -240,7 +261,7 @@ static class GithubCommand
                             if (state.RequestType == RequestType.Issue)
                                 projectCard = new NewProjectCard(state.Issue.Id, ProjectCardContentType.Issue);
                             else
-                                projectCard = new NewProjectCard(state.PullRequest.Id, ProjectCardContentType.PullRequest);
+                                projectCard = new NewProjectCard(state.PullRequest!.Id, ProjectCardContentType.PullRequest);
 
                             state.Logger.LogInformation($"GitHub: Project added: {projectObject.Number}:{projectObject.Name}");
                             await state.ProjectsClient.Card.Create(columns[0].Id, projectCard);

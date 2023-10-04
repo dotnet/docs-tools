@@ -768,5 +768,163 @@
       "type": "User",
       "site_admin": false
     }
-  }
+  },
+  "Variables": [
+    {
+      "Key": "viewport",
+      "Value": "width=device-width, initial-scale=1.0"
+    },
+    {
+      "Key": "twitter:card",
+      "Value": "summary"
+    },
+    {
+      "Key": "twitter:site",
+      "Value": "@MicrosoftLearn"
+    },
+    {
+      "Key": "apiPlatform",
+      "Value": "dotnet"
+    },
+    {
+      "Key": "author",
+      "Value": "BillWagner"
+    },
+    {
+      "Key": "breadcrumb_path",
+      "Value": "/dotnet/breadcrumb/toc.json"
+    },
+    {
+      "Key": "depot_name",
+      "Value": "VS.core-docs"
+    },
+    {
+      "Key": "description",
+      "Value": "Learn about commonly used coding conventions in C#. Coding conventions create a consistent look to the code and facilitate copying, changing, and maintaining the code. This article also includes the docs repo coding guidelines"
+    },
+    {
+      "Key": "document_id",
+      "Value": "40f42506-f4a5-859a-0266-ded002056d83"
+    },
+    {
+      "Key": "document_version_independent_id",
+      "Value": "f940f2ad-e13d-4d37-6439-f8afcbc4e4c7"
+    },
+    {
+      "Key": "feedback_system",
+      "Value": "OpenSource"
+    },
+    {
+      "Key": "git_commit_id",
+      "Value": "4b9798f0750f604ea3c591752e3d7dbeb33b8e22"
+    },
+    {
+      "Key": "gitcommit",
+      "Value": "https://github.com/dotnet/docs/blob/4b9798f0750f604ea3c591752e3d7dbeb33b8e22/docs/csharp/fundamentals/coding-style/coding-conventions.md"
+    },
+    {
+      "Key": "helpviewer_keyword",
+      "Value": "C# language, coding conventions"
+    },
+    {
+      "Key": "locale",
+      "Value": "en-us"
+    },
+    {
+      "Key": "ms.author",
+      "Value": "wiwagn"
+    },
+    {
+      "Key": "ms.date",
+      "Value": "07/27/2023"
+    },
+    {
+      "Key": "ms.devlang",
+      "Value": "csharp"
+    },
+    {
+      "Key": "ms.prod",
+      "Value": "dotnet-csharp"
+    },
+    {
+      "Key": "ms.technology",
+      "Value": "csharp-fundamentals"
+    },
+    {
+      "Key": "ms.topic",
+      "Value": "conceptual"
+    },
+    {
+      "Key": "original_content_git_url",
+      "Value": "https://github.com/dotnet/docs/blob/live/docs/csharp/fundamentals/coding-style/coding-conventions.md"
+    },
+    {
+      "Key": "page_type",
+      "Value": "conceptual"
+    },
+    {
+      "Key": "pdf_url_template",
+      "Value": "https://learn.microsoft.com/pdfstore/en-us/VS.core-docs/{branchName}{pdfName}"
+    },
+    {
+      "Key": "recommendations",
+      "Value": "true"
+    },
+    {
+      "Key": "schema",
+      "Value": "Conceptual"
+    },
+    {
+      "Key": "search.mshattr.devlang",
+      "Value": "csharp"
+    },
+    {
+      "Key": "show_latex",
+      "Value": "true"
+    },
+    {
+      "Key": "site_name",
+      "Value": "Docs"
+    },
+    {
+      "Key": "toc_rel",
+      "Value": "../../toc.json"
+    },
+    {
+      "Key": "uhfHeaderId",
+      "Value": "MSDocsHeader-DotNet"
+    },
+    {
+      "Key": "updated_at",
+      "Value": "2023-09-28 10:37 AM"
+    },
+    {
+      "Key": "word_count",
+      "Value": "2964"
+    },
+    {
+      "Key": "recommendation_types",
+      "Value": "Certification"
+    },
+    {
+      "Key": "persistent_id",
+      "Value": "1381f1af-2bf9-1c4d-d7f1-30d5908c6e57"
+    },
+    {
+      "Key": "cmProducts",
+      "Value": "https://authoring-docs-microsoft.poolparty.biz/devrel/8b896464-3b7d-4e1f-84b0-9bb45aeb5f64\" data-source=\"generated"
+    },
+    {
+      "Key": "spProducts",
+      "Value": "https://authoring-docs-microsoft.poolparty.biz/devrel/b1d2d671-9549-46e8-918c-24349120dbf5\" data-source=\"generated"
+    },
+    {
+      "Key": "scope",
+      "Value": ".NET"
+    },
+    {
+      "Key": "github_feedback_content_git_url",
+      "Value": "https://github.com/dotnet/docs/blob/main/docs/csharp/fundamentals/coding-style/coding-conventions.md"
+    }
+  ]
 }

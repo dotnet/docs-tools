@@ -1,17 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Labels: IRunnerItem
+internal sealed class Labels: IRunnerItem
 {
-    private RunnerItemSubTypes _type;
-    private string[] _labels;
+    private readonly RunnerItemSubTypes _type;
+    private readonly string[] _labels;
 
     public Labels(YamlNode node, RunnerItemSubTypes subType, State state)
     {
@@ -27,15 +22,15 @@ public class Labels: IRunnerItem
         // Check for direct value or array
         if (node.NodeType == YamlNodeType.Scalar)
         {
-            state.Logger.LogDebug($"BUILD: {mode} label: {node}");
+            state.Logger.LogDebugger($"BUILD: {mode} label: {node}");
             labels.Add(node.ToString());
         }
 
         else
         {
-            foreach (var item in node.AsSequenceNode())
+            foreach (YamlNode item in node.AsSequenceNode())
             {
-                state.Logger.LogDebug($"BUILD: {mode} label: {item}");
+                state.Logger.LogDebugger($"BUILD: {mode} label: {item}");
                 labels.Add(item.ToString());
             }
         }
@@ -51,7 +46,7 @@ public class Labels: IRunnerItem
             state.Logger.LogInformation($"Adding remove-labels to pool");
 
             // Add to state pooled labels for add
-            foreach (var item in _labels)
+            foreach (string item in _labels)
                 state.Operations.LabelsAdd.Add(item);
         }
         else
@@ -59,7 +54,7 @@ public class Labels: IRunnerItem
             state.Logger.LogInformation($"Adding add-labels to pool");
 
             // Add to state pooled labels for remove
-            foreach (var item in _labels)
+            foreach (string item in _labels)
                 state.Operations.LabelsRemove.Add(item);
         }
     }

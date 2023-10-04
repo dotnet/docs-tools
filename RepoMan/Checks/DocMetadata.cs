@@ -1,21 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-public class DocMetadata : ICheck
+internal sealed class DocMetadata : ICheck
 {
     public string Name { get; }
     public string Value { get; }
 
     public DocMetadata(YamlMappingNode node, State state)
     {
-        state.Logger.LogDebug($"BUILD: Check-metadata-comment");
+        state.Logger.LogDebugger($"BUILD: Check-metadata-comment");
 
         Name = node["name"].ToString();
         Value = node["value"].ToString();

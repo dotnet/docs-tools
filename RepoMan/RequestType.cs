@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace RepoMan;
 
-namespace RepoMan;
-
-public enum RequestType
+internal enum RequestType
 {
     PullRequest,
     Issue,

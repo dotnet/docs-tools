@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace RepoMan;
 
-namespace RepoMan;
-
-public enum RunnerItemTypes
+internal enum RunnerItemTypes
 {
     Check,
     Label,
@@ -19,10 +13,13 @@ public enum RunnerItemTypes
     Variable,
     Assignee,
     Reviewer,
-    Predefined
+    Predefined,
+    Close,
+    Reopen,
+    ProdTechLabels
 }
 
-public enum RunnerItemSubTypes
+internal enum RunnerItemSubTypes
 {
     Add,
     Remove,
