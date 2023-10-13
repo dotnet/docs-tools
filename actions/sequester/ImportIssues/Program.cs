@@ -36,8 +36,11 @@ internal class Program
 
             branch ??= "main";
             Console.WriteLine($"Using branch: '{branch}'");
-            Console.WriteLine(issue.HasValue && issue > -1
-                ? $"Processing single issue {issue.Value}: https://github.com/{org}/{repo}/issues/{issue.Value}"
+
+            bool singleIssue = (issue is not null && issue.Value != -1);
+
+            Console.WriteLine(singleIssue
+                ? $"Processing single issue {issue!.Value}: https://github.com/{org}/{repo}/issues/{issue.Value}"
                 : $"Processing all open issues: {org}/{repo}");
 
             ImportOptions? importOptions;
@@ -57,8 +60,6 @@ internal class Program
                 throw new ApplicationException(
                     $"Unable to load Quest import configuration options.");
             }
-
-            bool singleIssue = (issue is not null && issue.Value != -1);
 
             using var serviceWorker = await CreateService(importOptions, !singleIssue);
 
