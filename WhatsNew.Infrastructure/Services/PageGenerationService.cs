@@ -150,7 +150,6 @@ public class PageGenerationService
         var allDocs = from change in _majorChanges
                       from area in repo.Areas
                       where change.Value.Heading == area.Heading
-                      orderby area.Heading
                       group change by area.Heading into headingGroup
                       select headingGroup;
 
@@ -158,15 +157,23 @@ public class PageGenerationService
                                     where area.Names.FirstOrDefault() == "."
                                     select area.Heading).FirstOrDefault();
 
-        foreach (var docArea in allDocs)
+        foreach(var area in repo.Areas)
         {
-            var areaHeading = docArea.Key;
-            var isRootDirectoryArea = areaHeading == rootDirectoryHeading;
-
             // Don't write anything for blank areas.
-            if (areaHeading is null)
+            if (area is null)
                 continue;
-            await stream.WriteLineAsync($"{(singleFile ? "###" : "##")} {areaHeading}");
+            var docArea = allDocs.FirstOrDefault(da => da.Key == area.Heading);
+            if (docArea is null)
+            {
+                Console.WriteLine($"No changes found for {area.Heading}");
+                continue;
+            } else
+            {
+                Console.WriteLine($"Writing changes for {area.Heading}");
+            }
+            var isRootDirectoryArea = area.Heading == rootDirectoryHeading;
+
+            await stream.WriteLineAsync($"{(singleFile ? "###" : "##")} {area.Heading}");
             await stream.WriteLineAsync();
 
             writeDocNodes(true);
@@ -274,6 +281,7 @@ public class PageGenerationService
 
     private async Task WriteContributorInformation(TextWriter stream)
     {
+        Console.WriteLine("Writing contributors");
         var allContributors = from c in _contributors
                               orderby c.login
                               group c by (c.login, c.name) into stats

@@ -69,6 +69,16 @@ public class Program
             Console.WriteLine($"Error message: {ex.Message}");
             return;
         }
+
+        Console.WriteLine(whatsNewConfig.LogConfigSettings());
+        if (savefile is not null)
+        {
+            Console.WriteLine($"Writing output to {savefile}");
+        } else
+        {
+            Console.WriteLine($"Writing output to {whatsNewConfig.SaveDir}");
+        }
+
         var pageGenService = new PageGenerationService(whatsNewConfig);
 
         await pageGenService.WriteMarkdownFile(savefile);
