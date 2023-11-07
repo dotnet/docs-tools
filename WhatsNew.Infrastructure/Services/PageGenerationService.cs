@@ -40,7 +40,21 @@ public class PageGenerationService
     /// </summary>
     public async Task WriteMarkdownFile(string? existingMarkdownFile= null)
     {
-        await ProcessPullRequests();
+        var totalPRs = await ProcessPullRequests();
+
+        if (totalPRs == 0)
+        {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("No PRs found.");
+            Console.WriteLine("This is likely a problem with one of:");
+            Console.WriteLine("\t- the date range");
+            Console.WriteLine("\t- the required label");
+            Console.WriteLine("\t- GitHub permissions");
+            Console.WriteLine("Exiting.");
+            Console.ForegroundColor = color;
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(existingMarkdownFile))
         {
@@ -309,23 +323,24 @@ public class PageGenerationService
         }
     }
 
-    private async Task ProcessPullRequests()
+    private async Task<int> ProcessPullRequests()
     {
         var repo = _configuration.Repository;
         var client = _configuration.GitHubClient;
         var ospoClient = _configuration.OspoClient;
 
-        await processPRs();
+        var totalPRs = await processPRs();
 
         // If processing a private repo, fetch the PRs & community contributors from
         // the accompanying public repo. Merge private results with public results.
         if (repo.IsPrivateRepo)
         {
             repo.Name = repo.Name.Replace(PrivateRepoNameSuffix, string.Empty);
-            await processPRs();
+            totalPRs += await processPRs();
         }
+        return totalPRs;
 
-        async Task processPRs()
+        async Task<int> processPRs()
         {
             Console.ForegroundColor = ConsoleColor.DarkMagenta;
             Console.WriteLine($"== {repo.Owner}/{repo.Name} ({repo.Branch}) ==", Console.ForegroundColor);
@@ -336,8 +351,10 @@ public class PageGenerationService
                 client, repo.Owner, repo.Name, repo.Branch, repo.InclusionCriteria.Labels, _configuration.DateRange);
             var authorLoginFTECache = new Dictionary<string, bool?>();
 
+            var totalPRs = 0;
             await foreach (var item in query.PerformQuery())
             {
+                totalPRs++;
                 var prNumber = item.Number;
                 Console.WriteLine($"Processing PR {prNumber}");
 
@@ -366,6 +383,7 @@ public class PageGenerationService
                 Console.WriteLine($"{index}. {distinctExcludedContributors[index - 1]}");
             }
             Console.WriteLine();
+            return totalPRs;
         }
     }
 
