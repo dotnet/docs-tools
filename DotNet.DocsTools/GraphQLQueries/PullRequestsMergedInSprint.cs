@@ -99,7 +99,7 @@ public class PullRequestsMergedInSprint
         while (hasMore)
         {
             queryText.variables["end_cursor"] = cursor!;
-            Console.WriteLine($"Sending query:\n{queryText}\n\n");
+            Console.WriteLine($"Sending query:\n{queryText.ToJsonText()}\n\n");
             var jsonData = await client.PostGraphQLRequestAsync(queryText);
 
             var searchNodes = jsonData.GetProperty("search");
