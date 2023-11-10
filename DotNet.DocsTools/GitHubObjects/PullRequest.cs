@@ -1,4 +1,5 @@
-﻿using DotNetDocs.Tools.GraphQLQueries;
+﻿using DotNet.DocsTools.GitHubObjects;
+using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.Json;
 
 namespace DotNetDocs.Tools.GitHubObjects;

@@ -1,7 +1,7 @@
 ﻿using Microsoft.DotnetOrg.Ospo;
 using System.Text.Json;
 
-namespace DotNetDocs.Tools.GitHubObjects;
+namespace DotNet.DocsTools.GitHubObjects;
 
 /// <summary>
 /// The Actor node of a PR
@@ -9,26 +9,12 @@ namespace DotNetDocs.Tools.GitHubObjects;
 /// <remarks>
 /// This node contains the login, and name for this account.
 /// </remarks>
-public readonly struct Actor
+public readonly struct Actor(JsonElement authorNode)
 {
-    private readonly JsonElement _node;
-
-    /// <summary>
-    /// Construct from a node.
-    /// </summary>
-    /// <param name="authorNode">The author node.</param>
-    public Actor(JsonElement authorNode) => _node = authorNode;
-
     /// <summary>
     /// Access the GitHub login for this actor
     /// </summary>
-    public string Login => _node.ValueKind switch
-    {
-        JsonValueKind.Object => _node.TryGetProperty("login", out var login)
-            ? login.GetString() ?? string.Empty
-            : string.Empty,
-        _ => string.Empty,
-    };
+    public string Login { get; } = ResponseExtractors.LoginFromAuthorNode(authorNode);
 
     /// <summary>
     /// Access the name for this actor.
@@ -40,13 +26,7 @@ public readonly struct Actor
     /// output, this class translates that condition into the
     /// empty string.
     /// </remarks>
-    public string Name => _node.ValueKind switch
-    {
-        JsonValueKind.Object => _node.TryGetProperty("name", out var name)
-            ? name.GetString() ?? string.Empty
-            : string.Empty,
-        _ => string.Empty,
-    };
+    public string Name { get; } = ResponseExtractors.NameFromAuthorNode(authorNode);
 
     /// <summary>
     /// Determine if a GitHub login is a Microsoft FTE
