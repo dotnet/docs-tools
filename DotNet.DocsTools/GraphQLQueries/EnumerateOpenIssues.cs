@@ -1,5 +1,5 @@
-﻿using DotNetDocs.Tools.GitHubCommunications;
-using DotNetDocs.Tools.GitHubObjects;
+﻿using DotNet.DocsTools.GitHubObjects;
+using DotNetDocs.Tools.GitHubCommunications;
 
 namespace DotNetDocs.Tools.GraphQLQueries;
 
@@ -23,7 +23,6 @@ public class EnumerateOpenIssues
       nodes {
         id
         number
-        url
         title
         author {
           login
@@ -78,7 +77,7 @@ public class EnumerateOpenIssues
     /// This query encapsulates the paging API for GitHub's GraphQL 
     /// endpoint.
     /// </remarks>
-    public async IAsyncEnumerable<Issue> PerformQuery()
+    public async IAsyncEnumerable<BankruptcyIssue> PerformQuery()
     {
         var findIssuesPacket = new GraphQLPacket
         {
@@ -101,7 +100,7 @@ public class EnumerateOpenIssues
 
             var elements = jsonData.Descendent("repository", "issues", "nodes").EnumerateArray();
             foreach (var item in elements)
-                yield return new Issue(item);
+                yield return new BankruptcyIssue(item);
         }
     }
 }

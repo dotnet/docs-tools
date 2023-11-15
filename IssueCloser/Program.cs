@@ -87,7 +87,6 @@ That automated process may have closed some issues that should be addressed. If 
             var criteria = new CloseCriteria(priority, isDocIssue, isInternal);
             var number = item.Number;
             var title = item.Title;
-            var url = item.Url;
 
             totalIssues++;
             if (stats[criteria].ShouldCloseIssue(criteria, ageInMonths))

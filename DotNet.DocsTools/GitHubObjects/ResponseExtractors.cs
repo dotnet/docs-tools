@@ -1,5 +1,9 @@
 ﻿using GitHubJwt;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
+
+// Our unit tests validate these utilities:
+[assembly: InternalsVisibleTo("DotnetDocsTools.Tests")]
 
 namespace DotNet.DocsTools.GitHubObjects;
 
@@ -13,10 +17,12 @@ internal static class ResponseExtractors
 
     private static string StringPropertyOrEmpty(JsonElement element, string propertyName)
     {
-        if ((element.ValueKind == JsonValueKind.Object) && element.TryGetProperty(propertyName, out var login))
+        if (element.ValueKind != JsonValueKind.Object) throw new ArgumentException("element is not a Json Object.", nameof(element));
+
+        if (element.TryGetProperty(propertyName, out var propertyString))
         {
-            return login.GetString() ?? string.Empty;
+            return propertyString.GetString() ?? string.Empty;
         }
-        return string.Empty;
+        throw new ArgumentException($"Property {propertyName} not found in Json element. Did you possibly access the parent node?", nameof(element));
     }
 }
