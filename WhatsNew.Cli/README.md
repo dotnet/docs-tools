@@ -93,7 +93,7 @@ dotnet WhatsNew.Cli.dll --owner dotnet --repo docs --startdate 7/1/2020 --enddat
 | `startdate` | A range start date in a valid format. For example, "yyyy-MM-dd" or "MM/dd/yyyy". Any format accepted by [`DateTime.Parse`](https://learn.microsoft.com/dotnet/api/system.datetime.parse)` is accepted. | `--startdate 7/1/2020` |
 | `enddate`  | A range end date in a valid format. For example, "yyyy-MM-dd" or "MM/dd/yyyy". Any format accepted by [`DateTime.Parse`](https://learn.microsoft.com/dotnet/api/system.datetime.parse)` is accepted. | `--enddate 7/15/2020` |
 | `savedir`   | An absolute directory path to which the generated Markdown file should be written. | `--savedir C:\whatsnew` |
-| `savefile`  | The path to an existing file that should be modified by the tool. | `--savefile ./docs/ide/whats-new-visual-studio-docs.md` |
+| `savefile`  | The path to an existing file that should be modified by the tool. If this option isn't supplied, the tool uses the [Navigation options](#navigationoptions-properties) to determine any index and TOC file that should be updated. | `--savefile ./docs/ide/whats-new-visual-studio-docs.md` |
 | `reporoot`   | An absolute directory path to the root folder of your repository. Default is "./" | `--reporoot C:\source\dotnet\docs`|
 | `localconfig` | An absolute file path for a local JSON configuration file. Intended for local testing only. | `--localconfig C:\configs\.whatsnew.json` |
 
@@ -141,7 +141,9 @@ The following properties are supported in the JSON configuration file.
 
 ### `navigationOptions` properties
 
-These options apply in the 2.0 release of the What's New tool. The 2.0 release will update nodes in a TOC and an index file in addition to creating the What's New file. That requires config options for how many What's New files to keep publishing, and where to find the YML nodes to update.
+These options apply in the 2.0 release of the What's New tool. Furthermore, these options are only used when the `--savefile` option isn't included on the command line. When the safe tile isn't included, the tool assumes separate files are created for each month. In addition to updating the files, the tool updates the associated TOC nodes, and any index nodes.
+
+The 2.0 release will update nodes in a TOC and an index file in addition to creating the What's New file. That requires config options for how many What's New files to keep publishing, and where to find the YML nodes to update.
 
 | Property                  | Description | Example |
 | ------------------------- | ----------- | ------- |
