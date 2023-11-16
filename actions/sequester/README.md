@@ -23,6 +23,7 @@ To install the GitHub actions:
    - *OSPO_KEY*: Generate a PAT [here](https://ossmsft.visualstudio.com/_usersSettings/tokens). UserProfile: Read is the only access needed.
    - *SEQUESTER_APPID*: This is the app ID for the Sequester Action. You get this from one of the App administrators (Bill or Immo).
    - *SEQUESTER_PRIVATEKEY*: This is the private key to authorize sequester. You get this from one of the App administrators (Bill or Immo).
+   - *QUEST_KEY*: Generate a PAT [here](https://dev.azure.com/msft-skilling/_usersSettings/tokens). *WorkItems*: Read/Write, *Project & Team*: Read/Write, and *Identity*: Read access are needed.
 1. ***Start applying labels***
    - Add the trigger label to any issue, and it will be imported into Quest.
 
