@@ -18,7 +18,7 @@ public readonly record struct BankruptcyIssueVariables(string Organization, stri
 /// Because many different queries return issues,
 /// not all fields may be filled in on each query.
 /// </remarks>
-public record BankruptcyIssue : Issue, IGitHubQueryResult<BankruptcyIssue, BankruptcyIssueVariables>
+public record BankruptcyIssue : Issue, IGitHubEnumerationQueryResult<BankruptcyIssue, BankruptcyIssueVariables>
 {
     private const string OpenIssuesForBankruptcyQuery = """
         query FindIssuesForBankruptcyQuery($organization: String!, $repository: String!, $cursor: String){
@@ -64,23 +64,10 @@ public record BankruptcyIssue : Issue, IGitHubQueryResult<BankruptcyIssue, Bankr
 
     public BankruptcyIssue(JsonElement element) : base(element)
     {
-        Id = ResponseExtractors.GetIdValue(element);
-        Title = ResponseExtractors.GetTitleValue(element);
         Author = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(element));
         Labels = ResponseExtractors.GetChildArrayNames(element);
-        Body = ResponseExtractors.GetBodyValue(element);
         CreatedDate = ResponseExtractors.GetCreatedAtValue(element);
     }
-
-    /// <summary>
-    /// The node ID for the issue.
-    /// </summary>
-    public string Id { get; }
-
-    /// <summary>
-    /// The title of the issue.
-    /// </summary>
-    public string Title { get; }
 
     /// <summary>
     /// The author of this issue
@@ -92,11 +79,6 @@ public record BankruptcyIssue : Issue, IGitHubQueryResult<BankruptcyIssue, Bankr
     /// </summary>
     public IEnumerable<string> Labels { get; }
     
-    /// <summary>
-    /// The body of the issue
-    /// </summary>
-    public string? Body { get; }
-
     /// <summary>
     /// Retrieve the date time created
     /// </summary>

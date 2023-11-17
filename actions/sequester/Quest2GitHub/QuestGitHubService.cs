@@ -192,8 +192,8 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private Task<GithubIssue> RetrieveIssueAsync(string org, string repo, int issueNumber) =>
-            GithubIssue.QueryIssue(_ghClient, org, repo, issueNumber);
+    private Task<QuestIssue> RetrieveIssueAsync(string org, string repo, int issueNumber) =>
+            QuestIssue.QueryIssue(_ghClient, org, repo, issueNumber);
 
     private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
     {
@@ -219,7 +219,7 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private async Task<QuestWorkItem?> LinkIssueAsync(string organization, string repo, GithubIssue ghIssue, QuestIteration currentIteration, 
+    private async Task<QuestWorkItem?> LinkIssueAsync(string organization, string repo, QuestIssue ghIssue, QuestIteration currentIteration, 
         IEnumerable<QuestIteration> allIterations)
     {
         var workItem = LinkedQuestId(ghIssue);
@@ -264,7 +264,7 @@ public class QuestGitHubService : IDisposable
         }
     }
 
-    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, GithubIssue ghIssue, QuestIteration currentIteration,
+    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, QuestIssue ghIssue, QuestIteration currentIteration,
         IEnumerable<QuestIteration> allIterations)
     {
         var ghAssigneeEmailAddress = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
@@ -347,7 +347,7 @@ public class QuestGitHubService : IDisposable
         return newItem;
     }
 
-    private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(GithubIssue issue)
+    private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(QuestIssue issue)
     {
         int? questId = LinkedQuestId(issue);
         if (questId is null)
@@ -356,7 +356,7 @@ public class QuestGitHubService : IDisposable
             return await QuestWorkItem.QueryWorkItem(_azdoClient, questId.Value);
     }
 
-    private int? LinkedQuestId(GithubIssue issue)
+    private int? LinkedQuestId(QuestIssue issue)
     {
         if (issue.BodyHtml?.Contains(LinkedWorkItemComment) == true)
         {

@@ -11,9 +11,9 @@ namespace DotNetDocs.Tools.GraphQLQueries;
 /// <remarks>
 /// This generic type performs a query of GitHub's GraphQL endpoint, and returns an async
 /// enumerable of the result objects. The query is parameterized by a record type, and the
-/// result type. The result type must implement the <see cref="IGitHubQueryResult{TResult, TVariables}"/>
+/// result type. The result type must implement the <see cref="IGitHubEnumerationQueryResult{TResult, TVariables}"/>
 /// </remarks>
-public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryResult<TResult, TVariables>
+public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubEnumerationQueryResult<TResult, TVariables>
 {
     private readonly IGitHubClient client;
 

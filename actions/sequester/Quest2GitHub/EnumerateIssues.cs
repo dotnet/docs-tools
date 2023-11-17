@@ -88,7 +88,7 @@ public class EnumerateIssues
         }
         """;
 
-    public async IAsyncEnumerable<GithubIssue> AllQuestIssues(IGitHubClient client, 
+    public async IAsyncEnumerable<QuestIssue> AllQuestIssues(IGitHubClient client, 
         string organization, string repository, 
         string importTriggerLabelText, string importedLabelText)
     {
@@ -119,7 +119,7 @@ public class EnumerateIssues
             var elements = jsonData.Descendent("repository", "issues", "nodes").EnumerateArray();
             foreach (var item in elements)
             {
-                yield return GithubIssue.FromJson(item, organization, repository);
+                yield return QuestIssue.FromJsonElement(item, organization, repository);
             }
         }
     }

@@ -91,7 +91,7 @@ public class QuestWorkItem
     /// Finally, create the work item object from the returned
     /// Json element.
     /// </remarks>
-    public static async Task<QuestWorkItem> CreateWorkItemAsync(GithubIssue issue,
+    public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssue issue,
         QuestClient questClient,
         OspoClient ospoClient,
         string path,
@@ -222,7 +222,7 @@ public class QuestWorkItem
         return newItem;
     }
 
-    public static string BuildDescriptionFromIssue(GithubIssue issue, string? requestLabelNodeId)
+    public static string BuildDescriptionFromIssue(QuestIssue issue, string? requestLabelNodeId)
     {
         var body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
         body.AppendLine($"<p>Author: {issue.Author}</p>");

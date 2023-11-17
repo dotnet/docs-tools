@@ -12,7 +12,7 @@ namespace DotNet.DocsTools.GitHubObjects;
 /// text to the GitHub object type.</remarks>
 /// <typeparam name="TResult">The result type of objects returned by the query</typeparam>
 /// <typeparam name="TVariables">A record that has members for each of the variables in the query.</typeparam>
-public interface IGitHubQueryResult<TResult, TVariables> where TResult : IGitHubQueryResult<TResult, TVariables>
+public interface IGitHubEnumerationQueryResult<TResult, TVariables> where TResult : IGitHubEnumerationQueryResult<TResult, TVariables>
 {
     /// <summary>
     /// Construct the <typeparamref name="TResult"/> object from the JsonElement.

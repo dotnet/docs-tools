@@ -15,6 +15,11 @@ public record GitHubLabel(string name, string nodeID);
 /// <param name="Size">The value of the "size" special field</param>
 public record StoryPointSize(int CalendarYear, string Month, string Size);
 
+
+// Questions: Can this type implement both a scalar and an enumeration static abstract interface?
+// Will overrides work, or are different method names required?
+
+
 /// <summary>
 /// Model for a GitHub issue
 /// </summary>
@@ -22,7 +27,7 @@ public record StoryPointSize(int CalendarYear, string Month, string Size);
 /// This class represents a Github issue, including
 /// the fields needed for linking with Quest.
 /// </remarks>
-public class GithubIssue
+public class QuestIssue
 {
     private const string queryText = """
     query IssueDetails($owner_name: String!, $repo: String!, $issueNumber:Int!) {
@@ -114,18 +119,23 @@ public class GithubIssue
     /// <summary>
     /// The issue number.
     /// </summary>
-    public required int IssueNumber { get; init; }
-
-    /// <summary>
-    /// True if the issue is open.
-    /// </summary>
-    public required bool IsOpen { get; init; }
+    public required int Number { get; init; }
 
     /// <summary>
     /// The title of the issue.
     /// </summary>
     // TODO: Should this sync on edits?
     public required string Title { get; init; }
+
+    /// <summary>
+    /// The body of the issue, as markdown.
+    /// </summary>
+    public required string? Body { get; init; }
+
+    /// <summary>
+    /// True if the issue is open.
+    /// </summary>
+    public required bool IsOpen { get; init; }
 
     /// <summary>
     /// The issue author.
@@ -136,11 +146,6 @@ public class GithubIssue
     /// The body of the issue, formatted as HTML
     /// </summary>
     public required string? BodyHtml { get; init; }
-
-    /// <summary>
-    /// The body of the issue, as markdown.
-    /// </summary>
-    public required string? Body { get; init; }
 
     /// <summary>
     /// The list of assignees. Empty if unassigned.
@@ -190,7 +195,7 @@ public class GithubIssue
     /// <returns>That task that will produce the issue
     /// when the task is completed.
     /// </returns>
-    public static async Task<GithubIssue> QueryIssue(IGitHubClient client, 
+    public static async Task<QuestIssue> QueryIssue(IGitHubClient client, 
         string ghOrganization, string ghRepository, int ghIssueNumber)
     {
         var packet = new GraphQLPacket
@@ -207,10 +212,10 @@ public class GithubIssue
         var rootElement = await client.PostGraphQLRequestAsync(packet);
 
         var issueNode = rootElement.Descendent("repository", "issue");
-        return FromJson(issueNode, ghOrganization, ghRepository);
+        return FromJsonElement(issueNode, ghOrganization, ghRepository);
     }
 
-    public static GithubIssue FromJson(
+    public static QuestIssue FromJsonElement(
         JsonElement issueNode, 
         string ghOrganization,
         string ghRepository)
@@ -291,7 +296,7 @@ public class GithubIssue
             ? closedEvent.Descendent("closer", "url").GetString()
             : default;
 
-        return new GithubIssue
+        return new QuestIssue
         {
             LinkText = $"""
             <a href = "https://github.com/{ghOrganization}/{ghRepository}/issues/{number}">
@@ -299,7 +304,7 @@ public class GithubIssue
             </a>
             """,
             Id = id,
-            IssueNumber = number,
+            Number = number,
             IsOpen = isOpen,
             Title = title!,
             Author = author,
@@ -345,7 +350,7 @@ public class GithubIssue
     public override string ToString()
     {
         return $$"""
-        Issue Number: {{IssueNumber}} - {{Title}}
+        Issue Number: {{Number}} - {{Title}}
         {{BodyHtml}}
         Open: {{IsOpen}}
         Assignees: {{String.Join(", ", Assignees)}}
