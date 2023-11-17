@@ -34,11 +34,6 @@ public class EnumerateOpenIssues
             name
           }
         }
-        projectCards(first:25){
-          nodes {
-            id
-          }
-        }
       }
     }
   }

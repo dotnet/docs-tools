@@ -97,7 +97,7 @@ That automated process may have closed some issues that should be addressed. If 
                 totalClosedIssues++;
                 if (!dryRun)
                 {
-                    await CloseIssue(client, issueID, item.ProjectCards, labelID);
+                    await CloseIssue(client, issueID, labelID);
                     Console.WriteLine($"!!!!! Issue  CLOSED {number}-{title} !!!!!");
                 }
             }
@@ -111,25 +111,18 @@ That automated process may have closed some issues that should be addressed. If 
         Console.WriteLine($"Closing {totalClosedIssues} of {totalIssues}");
     }
 
-    private static async Task CloseIssue(IGitHubClient client, string issueID, IEnumerable<string> projects, string labelID)
+    private static async Task CloseIssue(IGitHubClient client, string issueID, string labelID)
     {
         // 1. Add label
         Console.WriteLine($"\tAdding [won't fix] label.");
         var addMutation = new AddOrRemoveLabelMutation(client, issueID, labelID, true);
         await addMutation.PerformMutation();
 
-        // 2. Remove issue from projects:
-        foreach (var projectCardNode in projects)
-        {
-            var projectMutation = new RemoveCardFromProjectMutation(client, projectCardNode);
-            await projectMutation.PerformMutation();
-        }
-
-        // 3. Add comment: body, nodeID
+        // 2. Add comment: body, nodeID
         var comentMutation = new AddCommentMutation(client, issueID, commentText);
         await comentMutation.PerformMutation();
 
-        // 4. Close issue: nodeID
+        // 3. Close issue: nodeID
         var closeMutation = new CloseIssueMutation(client, issueID);
         await closeMutation.PerformMutation();
     }
