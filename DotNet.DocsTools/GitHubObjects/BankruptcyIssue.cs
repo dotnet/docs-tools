@@ -25,7 +25,7 @@ public class BankruptcyIssue(JsonElement element) : Issue(element)
     /// <summary>
     /// The author of this issue
     /// </summary>
-    public Actor Author { get; } = new Actor(ResponseExtractors.GetAuthorChildElement(element));
+    public Actor? Author { get; } = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(element));
 
     /// <summary>
     /// Return the list of labels on this issue.

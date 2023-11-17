@@ -3,6 +3,7 @@ using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.GraphQLQueries;
 using Microsoft.DotnetOrg.Ospo;
 using System.Text.Json;
+using DotNet.DocsTools.GitHubObjects;
 
 namespace IssueCloser;
 

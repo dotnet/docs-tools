@@ -50,7 +50,7 @@ public readonly struct PullRequest
     /// <summary>
     /// Access the author object for this PR.
     /// </summary>
-    public Actor Author => new Actor(node.GetProperty("author"));
+    public Actor? Author => Actor.FromJsonElement(node.GetProperty("author"));
 
     /// <summary>
     /// Retrun the list of labels on this issue.

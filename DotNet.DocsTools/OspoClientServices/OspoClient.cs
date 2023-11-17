@@ -14,7 +14,7 @@ public sealed class OspoClient : IDisposable
 {
     private readonly HttpClient _httpClient;
     private OspoLinkSet? _allLinks = default;
-    private readonly Dictionary<string, OspoLink?> _allEmployeeQueries = new();
+    private readonly Dictionary<string, OspoLink?> _allEmployeeQueries = [];
     private readonly AsyncRetryPolicy _retryPolicy;
     private readonly bool _useAllCache;
 
@@ -52,7 +52,7 @@ public sealed class OspoClient : IDisposable
     {
         if ((_useAllCache) || (_allLinks is not null))
         {
-            _allLinks = _allLinks ?? await GetAllAsync();
+            _allLinks ??= await GetAllAsync();
             return _allLinks.LinkByLogin.GetValueOrDefault(gitHubLogin); 
         }
 

@@ -1,10 +1,6 @@
 ﻿using DotNetDocs.Tools.GraphQLQueries;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Xml.Linq;
-
-// Our unit tests validate these utilities:
-[assembly: InternalsVisibleTo("DotnetDocsTools.Tests")]
 
 namespace DotNet.DocsTools.GitHubObjects;
 
@@ -13,20 +9,6 @@ namespace DotNet.DocsTools.GitHubObjects;
 internal static class ResponseExtractors
 {
     internal static JsonElement GetAuthorChildElement(JsonElement element) => ChildElement(element, "author");
-
-    internal static string? LoginFromAuthorNode(JsonElement authorNode) => authorNode.ValueKind switch
-    {
-        JsonValueKind.Null => null,
-        JsonValueKind.Object => StringProperty(authorNode, "login"),
-        _ => null,
-    };
-
-    internal static string? NameFromAuthorNode(JsonElement authorNode) => authorNode.ValueKind switch
-    { 
-        JsonValueKind.Null => null,
-        JsonValueKind.Object => OptionalStringProperty(authorNode, "name"),
-        _ => null,
-    };
 
     internal static string GetIdValue(JsonElement node) => 
         StringProperty(node, "id");
@@ -56,7 +38,7 @@ internal static class ResponseExtractors
         throw new ArgumentException($"Property {propertyName} not found in Json element. Did you possibly access the parent node?", nameof(element));
     }
 
-    private static string? OptionalStringProperty(JsonElement element, string propertyName)
+    internal static string OptionalStringProperty(JsonElement element, string propertyName)
     {
         if (element.ValueKind != JsonValueKind.Object) throw new ArgumentException("element is not a Json Object.", nameof(element));
 
@@ -67,7 +49,7 @@ internal static class ResponseExtractors
         return string.Empty;
     }
 
-    private static string StringProperty(JsonElement element, string propertyName)
+    internal static string StringProperty(JsonElement element, string propertyName)
     {
         if (element.ValueKind != JsonValueKind.Object) throw new ArgumentException("element is not a Json Object.", nameof(element));
 
