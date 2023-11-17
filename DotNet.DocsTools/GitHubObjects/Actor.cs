@@ -1,5 +1,4 @@
-﻿using Microsoft.DotnetOrg.Ospo;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace DotNet.DocsTools.GitHubObjects;
 

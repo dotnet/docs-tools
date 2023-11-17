@@ -68,20 +68,20 @@ That automated process may have closed some issues that should be addressed. If 
 
     private static async Task ProcessIssues(IGitHubClient client, OspoClient ospoClient, string organization, string repository, bool dryRun, string labelID)
     {
-        var query = new EnumerateOpenIssues(client, organization, repository);
+        var query = new EnumerationQuery<BankruptcyIssue, BankruptcyIssueVariables>(client);
         var now = DateTime.Now;
 
         var stats = await BuildStatsMapAsync();
 
         int totalClosedIssues = 0;
         int totalIssues = 0;
-        await foreach (var item in query.PerformQuery())
+        await foreach (var item in query.PerformQuery(new BankruptcyIssueVariables(organization, repository)))
         {
             var issueID = item.Id;
 
             var priority = Priorities.PriLabel(item.Labels);
             bool isInternal = await item.Author.IsMicrosoftFTE(ospoClient) == true;
-            if (teamAuthors.Contains(item.Author.Login))
+            if (teamAuthors.Contains(item.Author?.Login))
                 isInternal = true;
             bool isDocIssue = IsDocsIssue(item.Body);
             int ageInMonths = (int)(now - item.CreatedDate).TotalDays / 30;
