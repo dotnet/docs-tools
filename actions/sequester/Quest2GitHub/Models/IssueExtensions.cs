@@ -1,4 +1,6 @@
-﻿namespace Quest2GitHub.Models;
+﻿using DotNet.DocsTools.GitHubObjects;
+
+namespace Quest2GitHub.Models;
 
 public static class IssueExtensions
 {

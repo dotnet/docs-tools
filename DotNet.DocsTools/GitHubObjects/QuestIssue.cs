@@ -1,19 +1,9 @@
-﻿namespace Quest2GitHub.Models;
+﻿using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GraphQLQueries;
+using Microsoft.DotnetOrg.Ospo;
+using System.Text.Json;
 
-/// <summary>
-/// Simple record type for a GitHub label
-/// </summary>
-/// <param name="name">The text of the label</param>
-/// <param name="nodeID">the unique node ID for this label</param>
-public record GitHubLabel(string name, string nodeID);
-
-/// <summary>
-/// Record type to store a project name / story point size pair
-/// </summary>
-/// <param name="CalendarYear">The calendar year</param>
-/// <param name="Month">The 3 character month code</param>
-/// <param name="Size">The value of the "size" special field</param>
-public record StoryPointSize(int CalendarYear, string Month, string Size);
+namespace DotNet.DocsTools.GitHubObjects;
 
 
 // Questions: Can this type implement both a scalar and an enumeration static abstract interface?
@@ -237,7 +227,7 @@ public class QuestIssue
         var assignees = from item in issueNode.Descendent("assignees").GetProperty("nodes").EnumerateArray()
                         select item.GetProperty("login").GetString();
         var labels = from item in issueNode.Descendent("labels").GetProperty("nodes").EnumerateArray()
-                     select new GitHubLabel(item.GetProperty("name").GetString()!, item.GetProperty("id").GetString()!);
+                     select new GitHubLabel(item);
         var comments = from item in issueNode.Descendent("comments").GetProperty("nodes").EnumerateArray()
                        let element = item.Descendent("author", "login")
                        select (
@@ -252,35 +242,8 @@ public class QuestIssue
         {
             foreach (var projectItem in issueNode.Descendent("projectItems", "nodes").EnumerateArray())
             {
-                if (projectItem.ValueKind == JsonValueKind.Object)
-                {
-                    // Modify the code to store the optional month in the tuple field.
-                    // Consider: Store YYYY, Month, Size as a threeple.
-                    var projectTitle = projectItem.Descendent("project", "title").GetString();
-                    // size may or may not have been set yet:
-                    string? size = default;
-                    string? sprintMonth = default;
-                    foreach(var field in projectItem.Descendent("fieldValues", "nodes").EnumerateArray())
-                    {
-                        if (field.TryGetProperty("name", out var fieldValue))
-                        {
-                            var fieldName = field.Descendent("field", "name").GetString();
-                            if (fieldName == "Sprint") sprintMonth = fieldValue.GetString();
-                            if (fieldName == "Size") size = fieldValue.GetString();
-                        }
-                    }
-                    if ((projectTitle is not null) && 
-                        (size is not null) &&
-                        projectTitle.ToLower().Contains("sprint"))
-                    {
-                        string[] components = projectTitle.Split(' ');
-                        int yearIndex = (sprintMonth is null) ? 2 : 1;
-                        // Should be in a project variable named "Sprint", take substring 0,3
-                        var Month = sprintMonth ?? components[1].Substring(0, 3);
-                        int.TryParse(components[yearIndex], out var year); 
-                        storyPoints.Add(new StoryPointSize(year, Month.Substring(0,3), size));
-                    }
-                }
+                StoryPointSize? sz = StoryPointSize.OptionalFromJsonElement(projectItem);
+                if (sz is not null) storyPoints.Add(sz);
             }
         }
         // Timeline events are in order, so the last PR is the most recent closing PR
@@ -354,7 +317,7 @@ public class QuestIssue
         {{BodyHtml}}
         Open: {{IsOpen}}
         Assignees: {{String.Join(", ", Assignees)}}
-        Labels: {{String.Join(", ", Labels.Select(l => l.name))}}
+        Labels: {{String.Join(", ", Labels.Select(l => l.Name))}}
         Sizes: {{String.Join("\n", from sp in ProjectStoryPoints select $"Month, Year: {sp.Month}, {sp.CalendarYear}  Size: {sp.Size}")}}
         Comments:
         {{String.Join("\n\n", from c in Comments select $"Author: {c.author}\nText:\n{c.bodyHTML}")}}

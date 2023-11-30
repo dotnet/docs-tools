@@ -1,4 +1,6 @@
-﻿namespace Quest2GitHub.Models;
+﻿using DotNet.DocsTools.GitHubObjects;
+
+namespace Quest2GitHub.Models;
 
 public class QuestWorkItem
 {
@@ -231,9 +233,9 @@ public class QuestWorkItem
         {
             body.AppendLine($"<p><b>Labels:</b></p>");
             body.AppendLine("<ul>");
-            foreach (var item in issue.Labels.Where(l => l.nodeID != requestLabelNodeId))
+            foreach (var item in issue.Labels.Where(l => l.Id != requestLabelNodeId))
             {
-                body.AppendLine($"<li>#{item.name.Replace(' ', '-')}</li>");
+                body.AppendLine($"<li>#{item.Name.Replace(' ', '-')}</li>");
             }
             body.AppendLine("</ul>");
         }

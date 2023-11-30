@@ -15,13 +15,6 @@ namespace DotNet.DocsTools.GitHubObjects;
 public interface IGitHubEnumerationQueryResult<TResult, TVariables> where TResult : IGitHubEnumerationQueryResult<TResult, TVariables>
 {
     /// <summary>
-    /// Construct the <typeparamref name="TResult"/> object from the JsonElement.
-    /// </summary>
-    /// <param name="element">The Json element representing one object.</param>
-    /// <returns>An instance of the result type.</returns>
-    public abstract static TResult FromJsonElement(JsonElement element);
-
-    /// <summary>
     /// Construct the query packet for this query.
     /// </summary>
     /// <param name="variables">
@@ -29,4 +22,12 @@ public interface IGitHubEnumerationQueryResult<TResult, TVariables> where TResul
     /// </param>
     /// <returns>The Packet structure for the query.</returns>
     public abstract static GraphQLPacket GetQueryPacket(TVariables variables);
+
+    /// <summary>
+    /// Construct the <typeparamref name="TResult"/> object from the JsonElement.
+    /// </summary>
+    /// <param name="element">The Json element representing one object.</param>
+    /// <returns>An instance of the result type.</returns>
+    public abstract static TResult FromJsonElement(JsonElement element);
+
 }

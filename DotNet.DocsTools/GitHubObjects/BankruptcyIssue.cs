@@ -18,7 +18,7 @@ public readonly record struct BankruptcyIssueVariables(string Organization, stri
 /// Because many different queries return issues,
 /// not all fields may be filled in on each query.
 /// </remarks>
-public record BankruptcyIssue : Issue, IGitHubEnumerationQueryResult<BankruptcyIssue, BankruptcyIssueVariables>
+sealed public record BankruptcyIssue : Issue, IGitHubEnumerationQueryResult<BankruptcyIssue, BankruptcyIssueVariables>
 {
     private const string OpenIssuesForBankruptcyQuery = """
         query FindIssuesForBankruptcyQuery($organization: String!, $repository: String!, $cursor: String){
@@ -48,9 +48,6 @@ public record BankruptcyIssue : Issue, IGitHubEnumerationQueryResult<BankruptcyI
         }
         """;
 
-    public static BankruptcyIssue FromJsonElement(JsonElement element) => 
-        new(element);
-
     public static GraphQLPacket GetQueryPacket(BankruptcyIssueVariables variables) =>
         new()
         {
@@ -61,6 +58,10 @@ public record BankruptcyIssue : Issue, IGitHubEnumerationQueryResult<BankruptcyI
                 ["repository"] = variables.Repository,
             }
         };
+
+    public static BankruptcyIssue FromJsonElement(JsonElement element) => 
+        new(element);
+
 
     public BankruptcyIssue(JsonElement element) : base(element)
     {

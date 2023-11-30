@@ -1,4 +1,6 @@
-﻿namespace Quest2GitHub;
+﻿using DotNet.DocsTools.GitHubObjects;
+
+namespace Quest2GitHub;
 
 /// <summary>
 /// This class manages the top level workflows to synchronize
@@ -91,7 +93,7 @@ public class QuestGitHubService : IDisposable
             if (item.UpdatedAt < historyThreshold)
                 break;
 
-            if (item.Labels.Any(l => (l.nodeID == _importTriggerLabel?.nodeID) || (l.nodeID == _importedLabel?.nodeID)))
+            if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
             {
                 // Console.WriteLine($"{item.IssueNumber}: {item.Title}");
                 Console.WriteLine(item);
@@ -112,7 +114,7 @@ public class QuestGitHubService : IDisposable
             else
             {
                 totalSkipped++;
-                Console.WriteLine($"{item.IssueNumber}: skipped");
+                Console.WriteLine($"{item.Number}: skipped");
             }
         }
         Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
@@ -144,8 +146,8 @@ public class QuestGitHubService : IDisposable
         var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
 
         // Evaluate the labels to determine the right action.
-        var request = ghIssue.Labels.Any(l => l.nodeID == _importTriggerLabel?.nodeID);
-        var sequestered = ghIssue.Labels.Any(l => l.nodeID == _importedLabel?.nodeID);
+        var request = ghIssue.Labels.Any(l => l.Id == _importTriggerLabel?.Id);
+        var sequestered = ghIssue.Labels.Any(l => l.Id == _importedLabel?.Id);
         // Only query AzDo if needed:
         var questItem = (request || sequestered)
             ? await FindLinkedWorkItemAsync(ghIssue)
@@ -230,10 +232,10 @@ public class QuestGitHubService : IDisposable
             var mutation = new AddAndRemoveLabelMutation(_ghClient, ghIssue.Id);
 
             // Yes, this needs some later refactoring. This call won't update the description.
-            await mutation.PerformMutation("ignored", null, _importTriggerLabel?.nodeID);
+            await mutation.PerformMutation("ignored", null, _importTriggerLabel?.Id);
 
             // Create work item:
-            var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.nodeID, currentIteration, allIterations);
+            var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
             // Add Tagged comment to GH Issue description.
             var updatedBody = $"""
@@ -245,7 +247,7 @@ public class QuestGitHubService : IDisposable
             """;
 
             // Now, update the body, and add the label:
-            await mutation.PerformMutation(updatedBody, _importedLabel?.nodeID, null);
+            await mutation.PerformMutation(updatedBody, _importedLabel?.Id, null);
             return questItem;
         }
         else
@@ -259,8 +261,8 @@ public class QuestGitHubService : IDisposable
         var labelQuery = new EnumerateLabels(_ghClient, org, repo);
         await foreach (var label in labelQuery.AllLabels())
         {
-            if (label.name == _importTriggerLabelText) _importTriggerLabel = label;
-            if (label.name == _importedLabelText) _importedLabel = label;
+            if (label.Name == _importTriggerLabelText) _importTriggerLabel = label;
+            if (label.Name == _importedLabelText) _importedLabel = label;
         }
     }
 

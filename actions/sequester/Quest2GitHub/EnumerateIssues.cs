@@ -1,4 +1,6 @@
-﻿namespace Quest2GitHub;
+﻿using DotNet.DocsTools.GitHubObjects;
+
+namespace Quest2GitHub;
 
 public class EnumerateIssues
 {

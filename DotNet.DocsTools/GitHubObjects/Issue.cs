@@ -3,7 +3,7 @@
 namespace DotNet.DocsTools.GitHubObjects;
 
 public abstract record Issue
-{
+{ 
     public Issue(JsonElement element)
     {
         Id = ResponseExtractors.GetIdValue(element);
@@ -15,6 +15,11 @@ public abstract record Issue
     /// <summary>
     /// The node ID for the issue.
     /// </summary>
+    /// <remarks>
+    /// Every GitHub object has a unique node ID. This is used to identify the issue. 
+    /// It may be that every query uses the nodeID. I haven't verified that yet. If that
+    /// turns out to be true, then this property should be moved to the base class.
+    /// </remarks>
     public string Id { get; }
 
     /// <summary> 
