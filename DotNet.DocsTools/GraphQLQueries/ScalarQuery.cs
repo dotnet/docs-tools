@@ -1,5 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNetDocs.Tools.GitHubCommunications;
+using Org.BouncyCastle.Bcpg;
 
 namespace DotNetDocs.Tools.GraphQLQueries;
 
@@ -13,7 +14,7 @@ namespace DotNetDocs.Tools.GraphQLQueries;
 /// enumerable of the result objects. The query is parameterized by a record type, and the
 /// result type. The result type must implement the <see cref="IGitHubQueryResult{TResult, TVariables}"/>
 /// </remarks>
-public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryResult<TResult, TVariables>
+public class ScalarQuery<TResult, TVariables> where TResult : IGitHubQueryResult<TResult, TVariables>
 {
     private readonly IGitHubClient client;
 
@@ -21,7 +22,7 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
     /// Construct the query object.
     /// </summary>
     /// <param name="client">The GitHub client.</param>
-    public EnumerationQuery(IGitHubClient client)
+    public ScalarQuery(IGitHubClient client)
     {
         this.client = client ?? throw new ArgumentNullException(paramName: nameof(client), message: "Cannot be null");
     }
@@ -34,22 +35,14 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
     /// This query encapsulates the paging API for GitHub's GraphQL 
     /// endpoint.
     /// </remarks>
-    public async IAsyncEnumerable<TResult> PerformQuery(TVariables variables)
+    public async Task<TResult> PerformQuery(TVariables variables)
     {
-        var findIssuesPacket = TResult.GetQueryPacket(variables);
+        var scalarPacket = TResult.GetQueryPacket(variables);
 
-        var cursor = default(string);
-        bool hasMore = true;
-        while (hasMore)
-        {
-            findIssuesPacket.variables["cursor"] = cursor!;
-            var jsonData = await client.PostGraphQLRequestAsync(findIssuesPacket);
+        var rootElement= await client.PostGraphQLRequestAsync(scalarPacket);
 
-            (hasMore, cursor) = jsonData.Descendent("repository", "issues").NextPageInfo();
-
-            var elements = jsonData.Descendent("repository", "issues", "nodes").EnumerateArray();
-            foreach (var item in elements)
-                yield return TResult.FromJsonElement(item, variables);
-        }
+        // TODO: This navigation should likely move to the FromJsonElement.
+        var issueNode = rootElement.Descendent("repository", "issue");
+        return TResult.FromJsonElement(issueNode, variables);
     }
 }

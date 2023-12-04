@@ -194,8 +194,11 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private Task<QuestIssue> RetrieveIssueAsync(string org, string repo, int issueNumber) =>
-            QuestIssue.QueryIssue(_ghClient, org, repo, issueNumber);
+    private Task<QuestIssue> RetrieveIssueAsync(string org, string repo, int issueNumber)
+    {
+        var query = new ScalarQuery<QuestIssue, QuestIssueVariables>(_ghClient);
+        return query.PerformQuery(new QuestIssueVariables(org, repo, issueNumber));
+    }
 
     private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
     {

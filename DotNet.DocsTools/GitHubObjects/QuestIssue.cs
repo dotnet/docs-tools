@@ -5,6 +5,7 @@ using System.Text.Json;
 
 namespace DotNet.DocsTools.GitHubObjects;
 
+public readonly record struct QuestIssueVariables(string Organization, string Repository, int issueNumber);
 
 // Questions: Can this type implement both a scalar and an enumeration static abstract interface?
 // Will overrides work, or are different method names required?
@@ -17,11 +18,11 @@ namespace DotNet.DocsTools.GitHubObjects;
 /// This class represents a Github issue, including
 /// the fields needed for linking with Quest.
 /// </remarks>
-public class QuestIssue
+public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIssueVariables>
 {
-    private const string queryText = """
-    query IssueDetails($owner_name: String!, $repo: String!, $issueNumber:Int!) {
-      repository(owner: $owner_name, name: $repo) {
+    private const string QuestIssuesQueryText = """
+    query GetIssueForQuestImport($organization: String!, $repository: String!, $issueNumber:Int!) {
+      repository(owner: $organization, name: $repository) {
         issue(number: $issueNumber) {
           id
           number
@@ -101,114 +102,23 @@ public class QuestIssue
     }
     """;
 
-    /// <summary>
-    /// The GitHub node id (not the issue number)
-    /// </summary>
-    public required string Id { get; init; }
-
-    /// <summary>
-    /// The issue number.
-    /// </summary>
-    public required int Number { get; init; }
-
-    /// <summary>
-    /// The title of the issue.
-    /// </summary>
-    // TODO: Should this sync on edits?
-    public required string Title { get; init; }
-
-    /// <summary>
-    /// The body of the issue, as markdown.
-    /// </summary>
-    public required string? Body { get; init; }
-
-    /// <summary>
-    /// True if the issue is open.
-    /// </summary>
-    public required bool IsOpen { get; init; }
-
-    /// <summary>
-    /// The issue author.
-    /// </summary>
-    public required string Author { get; init; }
-
-    /// <summary>
-    /// The body of the issue, formatted as HTML
-    /// </summary>
-    public required string? BodyHtml { get; init; }
-
-    /// <summary>
-    /// The list of assignees. Empty if unassigned.
-    /// </summary>
-    public required string[] Assignees { get; init; }
-
-    /// <summary>
-    /// The list of labels. Empty if unassigned.
-    /// </summary>
-    public required GitHubLabel[] Labels { get; init; }
-
-    /// <summary>
-    /// The list of comments. Empty if there are no comments.
-    /// </summary>
-    /// <remarks>
-    /// The tuple includes the author and the body, formatted as HTML.
-    /// </remarks>
-    public required (string author, string bodyHTML)[] Comments { get; init; }
-
-    /// <summary>
-    /// The link text to this GH Issue.
-    /// </summary>
-    /// <remarks>
-    /// the link text is formatted HTML for the link to the issue.
-    /// </remarks>
-    public required string LinkText { get; init; }
-
-    public required DateTime UpdatedAt { get; init; }
-
-    /// <summary>
-    /// Pairs of Project name, story point size values
-    /// </summary>
-    public required IEnumerable<StoryPointSize> ProjectStoryPoints { get; init; }
-
-    /// <summary>
-    /// The Closing PR (if the issue is closed)
-    /// </summary>
-    public required string? ClosingPRUrl { get; init; }
-
-    /// <summary>
-    /// Retrieve an issue
-    /// </summary>
-    /// <param name="client">The Github client service.</param>
-    /// <param name="ghOrganization">The organization.</param>
-    /// <param name="ghRepository">The repository.</param>
-    /// <param name="ghIssueNumber">The issue number</param>
-    /// <returns>That task that will produce the issue
-    /// when the task is completed.
-    /// </returns>
-    public static async Task<QuestIssue> QueryIssue(IGitHubClient client, 
-        string ghOrganization, string ghRepository, int ghIssueNumber)
-    {
-        var packet = new GraphQLPacket
+    public static GraphQLPacket GetQueryPacket(QuestIssueVariables variables) =>
+        new()
         {
-            query = queryText,
+            query = QuestIssuesQueryText,
             variables =
             {
-                ["owner_name"] = ghOrganization,
-                ["repo"] = ghRepository,
-                ["issueNumber"] = ghIssueNumber,
+                ["organization"] = variables.Organization,
+                ["repository"] = variables.Repository,
+                ["issueNumber"] = variables.issueNumber,
             }
         };
 
-        var rootElement = await client.PostGraphQLRequestAsync(packet);
+    public static QuestIssue FromJsonElement(JsonElement issueNode, QuestIssueVariables variables) =>
+        new QuestIssue(issueNode, variables.Organization, variables.Repository);
 
-        var issueNode = rootElement.Descendent("repository", "issue");
-        return FromJsonElement(issueNode, ghOrganization, ghRepository);
-    }
-
-    public static QuestIssue FromJsonElement(
-        JsonElement issueNode, 
-        string ghOrganization,
-        string ghRepository)
+    // TODO: Leverage ResponseExtractors
+    public QuestIssue(JsonElement issueNode, string organization, string repository) : base(issueNode)
     {
         var id = issueNode.Descendent("id").GetString()!;
         var number = issueNode.Descendent("number").GetInt32();
@@ -259,29 +169,74 @@ public class QuestIssue
             ? closedEvent.Descendent("closer", "url").GetString()
             : default;
 
-        return new QuestIssue
-        {
-            LinkText = $"""
-            <a href = "https://github.com/{ghOrganization}/{ghRepository}/issues/{number}">
-              {ghOrganization}/{ghRepository}#{number}
-            </a>
-            """,
-            Id = id,
-            Number = number,
-            IsOpen = isOpen,
-            Title = title!,
-            Author = author,
-            BodyHtml = bodyText,
-            Body = bodyMarkdown,
-            Assignees = assignees.ToArray(),
-            Labels = labels.ToArray(),
-            Comments = comments.ToArray(),
-            UpdatedAt = udpateTime,
-            ProjectStoryPoints = storyPoints,
-            ClosingPRUrl = closingPR,
-        };
+        this.LinkText = $"""
+        <a href = "https://github.com/{organization}/{repository}/issues/{number}">
+            {organization}/{repository}#{number}
+        </a>
+        """;
+        this.IsOpen = isOpen;
+        this.Author = author;
+        this.BodyHtml = bodyText;
+        this.Assignees = assignees.ToArray();
+        this.Labels = labels.ToArray();
+        this.Comments = comments.ToArray();
+        this.UpdatedAt = udpateTime;
+        this.ProjectStoryPoints = storyPoints;
+        this.ClosingPRUrl = closingPR;
     }
 
+    /// <summary>
+    /// True if the issue is open.
+    /// </summary>
+    public bool IsOpen { get; }
+
+    /// <summary>
+    /// The issue author.
+    /// </summary>
+    public string Author { get; }
+
+    /// <summary>
+    /// The body of the issue, formatted as HTML
+    /// </summary>
+    public string? BodyHtml { get; }
+
+    /// <summary>
+    /// The list of assignees. Empty if unassigned.
+    /// </summary>
+    public string[] Assignees { get; }
+
+    /// <summary>
+    /// The list of labels. Empty if unassigned.
+    /// </summary>
+    public GitHubLabel[] Labels { get; }
+
+    /// <summary>
+    /// The list of comments. Empty if there are no comments.
+    /// </summary>
+    /// <remarks>
+    /// The tuple includes the author and the body, formatted as HTML.
+    /// </remarks>
+    public (string author, string bodyHTML)[] Comments { get; }
+
+    /// <summary>
+    /// The link text to this GH Issue.
+    /// </summary>
+    /// <remarks>
+    /// the link text is formatted HTML for the link to the issue.
+    /// </remarks>
+    public string LinkText { get; }
+
+    public DateTime UpdatedAt { get; }
+
+    /// <summary>
+    /// Pairs of Project name, story point size values
+    /// </summary>
+    public IEnumerable<StoryPointSize> ProjectStoryPoints { get; }
+
+    /// <summary>
+    /// The Closing PR (if the issue is closed)
+    /// </summary>
+    public string? ClosingPRUrl { get; }
 
     /// <summary>
     /// Retrieve the assigned name, if an MS employee

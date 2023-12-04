@@ -12,7 +12,7 @@ namespace DotNet.DocsTools.GitHubObjects;
 /// text to the GitHub object type.</remarks>
 /// <typeparam name="TResult">The result type of objects returned by the query</typeparam>
 /// <typeparam name="TVariables">A record that has members for each of the variables in the query.</typeparam>
-public interface IGitHubEnumerationQueryResult<TResult, TVariables> where TResult : IGitHubEnumerationQueryResult<TResult, TVariables>
+public interface IGitHubQueryResult<TResult, TVariables> where TResult : IGitHubQueryResult<TResult, TVariables>
 {
     /// <summary>
     /// Construct the query packet for this query.
@@ -21,13 +21,13 @@ public interface IGitHubEnumerationQueryResult<TResult, TVariables> where TResul
     /// An instance of a record whose members are transformed into the dictionary for the query.
     /// </param>
     /// <returns>The Packet structure for the query.</returns>
-    public abstract static GraphQLPacket GetQueryPacket(TVariables variables);
+    public static abstract GraphQLPacket GetQueryPacket(TVariables variables);
 
     /// <summary>
     /// Construct the <typeparamref name="TResult"/> object from the JsonElement.
     /// </summary>
     /// <param name="element">The Json element representing one object.</param>
     /// <returns>An instance of the result type.</returns>
-    public abstract static TResult FromJsonElement(JsonElement element);
+    public static abstract TResult FromJsonElement(JsonElement element, TVariables variables);
 
 }

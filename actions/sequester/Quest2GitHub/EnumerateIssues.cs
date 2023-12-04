@@ -121,7 +121,8 @@ public class EnumerateIssues
             var elements = jsonData.Descendent("repository", "issues", "nodes").EnumerateArray();
             foreach (var item in elements)
             {
-                yield return QuestIssue.FromJsonElement(item, organization, repository);
+                // TODO:
+                yield return default; // QuestIssue.FromJsonElement(item, organization, repository);
             }
         }
     }
