@@ -1,10 +1,26 @@
 ﻿using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.GraphQLQueries;
 using Microsoft.DotnetOrg.Ospo;
+using System.Reflection.Emit;
 using System.Text.Json;
+using System.Xml.Linq;
 
 namespace DotNet.DocsTools.GitHubObjects;
 
+/// <summary>
+/// This record stores the variables needed to query for a Quest issue
+/// </summary>
+/// <remarks>
+/// The quest app runs with both scalar and enumeration queries.
+/// This record contains variables used in both. The boolean determines
+/// which query is being set, and which query type should be returned.
+/// </remarks>
+/// <param name="isScalar">true for scalar, false for enumeration</param>
+/// <param name="Organization">the GH org</param>
+/// <param name="Repository">The GH repository</param>
+/// <param name="issueNumber">The issue number. Only used for scalar queries</param>
+/// <param name="importTriggerLabelText">The trigger label text. Only used for enumerations</param>
+/// <param name="importedLabelText">The imported label text. Only used for enumerations.</param>
 public readonly record struct QuestIssueVariables(
     bool isScalar, 
     string Organization, 
@@ -12,10 +28,6 @@ public readonly record struct QuestIssueVariables(
     int? issueNumber = null, 
     string? importTriggerLabelText = null, 
     string? importedLabelText = null);
-
-// Questions: Can this type implement both a scalar and an enumeration static abstract interface?
-// Will overrides work, or are different method names required?
-
 
 /// <summary>
 /// Model for a GitHub issue
@@ -194,7 +206,12 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
         }
         """;
 
-
+    /// <summary>
+    /// Construct the query packet for the given variables
+    /// </summary>
+    /// <param name="variables">The variables added to the packet</param>
+    /// <returns>The GraphQL Packet structure.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when one of the required fields in the variables packet is null.</exception>
     public static GraphQLPacket GetQueryPacket(QuestIssueVariables variables) =>
         variables.isScalar ?
             new()
@@ -222,37 +239,41 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
                 }
             };
 
+    /// <summary>
+    /// Construct a QuestIssue from a JsonElement
+    /// </summary>
+    /// <param name="issueNode">The JSON issue node</param>
+    /// <param name="variables">The variables used in the query.</param>
+    /// <returns></returns>
     public static QuestIssue FromJsonElement(JsonElement issueNode, QuestIssueVariables variables) =>
         new QuestIssue(issueNode, variables.Organization, variables.Repository);
 
-    // TODO: Leverage ResponseExtractors
-    public QuestIssue(JsonElement issueNode, string organization, string repository) : base(issueNode)
+    private QuestIssue(JsonElement issueNode, string organization, string repository) : base(issueNode)
     {
-        var id = issueNode.Descendent("id").GetString()!;
-        var number = issueNode.Descendent("number").GetInt32();
         var authorNode = issueNode.Descendent("author", "login");
         var author = authorNode.ValueKind is JsonValueKind.String ?
             authorNode.GetString()! : "Ghost";
         var authorNameNode = issueNode.Descendent("author", "name");
         author += authorNameNode.ValueKind is System.Text.Json.JsonValueKind.String ?
             $" - {authorNameNode.GetString()!}" : "";
-        var title = issueNode.Descendent("title").GetString();
-        bool isOpen = issueNode.Descendent("state").GetString() is "OPEN";
-        var bodyText = issueNode.Descendent("bodyHTML").GetString();
-        var bodyMarkdown = issueNode.Descendent("body").GetString();
-        DateTime udpateTime = issueNode.TryGetProperty("updatedAt"u8, out var updated) ? updated.GetDateTime() : DateTime.Now;
+        this.Author = author;
 
-        var assignees = from item in issueNode.Descendent("assignees").GetProperty("nodes").EnumerateArray()
-                        select item.GetProperty("login").GetString();
-        var labels = from item in issueNode.Descendent("labels").GetProperty("nodes").EnumerateArray()
-                     select new GitHubLabel(item);
-        var comments = from item in issueNode.Descendent("comments").GetProperty("nodes").EnumerateArray()
+        this.IsOpen = issueNode.Descendent("state").GetString() is "OPEN";
+
+        this.BodyHtml = issueNode.Descendent("bodyHTML").GetString();
+        this.UpdatedAt = issueNode.TryGetProperty("updatedAt"u8, out var updated) ? updated.GetDateTime() : DateTime.Now;
+
+        this.Assignees = (from item in issueNode.Descendent("assignees").GetProperty("nodes").EnumerateArray()
+                        select item.GetProperty("login").GetString()).ToArray();
+        this.Labels = (from item in issueNode.Descendent("labels").GetProperty("nodes").EnumerateArray()
+                     select new GitHubLabel(item)).ToArray();
+        this.Comments = (from item in issueNode.Descendent("comments").GetProperty("nodes").EnumerateArray()
                        let element = item.Descendent("author", "login")
                        select (
                          element.ValueKind is JsonValueKind.String ?
                             element.GetString()! : "Ghost",
                          item.GetProperty("bodyHTML").GetString()
-                       );
+                       )).ToArray();
 
         var projectData = issueNode.Descendent("projectItems", "nodes");
         var storyPoints = new List<StoryPointSize>();
@@ -264,6 +285,8 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
                 if (sz is not null) storyPoints.Add(sz);
             }
         }
+        this.ProjectStoryPoints = storyPoints;
+
         // Timeline events are in order, so the last PR is the most recent closing PR
         var timeline = issueNode.Descendent("timelineItems", "nodes");
         var closedEvent = (timeline.ValueKind == JsonValueKind.Array) ?
@@ -273,24 +296,15 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
             closer.ValueKind == JsonValueKind.Object))
             : default;
         // check state. If re-opened, don't reference the (not correct) closing PR
-        string? closingPR = ((closedEvent.ValueKind == JsonValueKind.Object) && !isOpen)
+        this.ClosingPRUrl = ((closedEvent.ValueKind == JsonValueKind.Object) && !IsOpen)
             ? closedEvent.Descendent("closer", "url").GetString()
             : default;
 
         this.LinkText = $"""
-        <a href = "https://github.com/{organization}/{repository}/issues/{number}">
-            {organization}/{repository}#{number}
+        <a href = "https://github.com/{organization}/{repository}/issues/{Number}">
+            {organization}/{repository}#{Number}
         </a>
         """;
-        this.IsOpen = isOpen;
-        this.Author = author;
-        this.BodyHtml = bodyText;
-        this.Assignees = assignees.ToArray();
-        this.Labels = labels.ToArray();
-        this.Comments = comments.ToArray();
-        this.UpdatedAt = udpateTime;
-        this.ProjectStoryPoints = storyPoints;
-        this.ClosingPRUrl = closingPR;
     }
 
     /// <summary>

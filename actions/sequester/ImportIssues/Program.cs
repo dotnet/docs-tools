@@ -1,5 +1,4 @@
 ﻿using DotNetDocs.Tools.GitHubCommunications;
-using Quest2GitHub.Options;
 
 internal class Program
 {
