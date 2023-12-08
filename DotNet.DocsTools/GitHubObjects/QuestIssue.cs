@@ -5,7 +5,13 @@ using System.Text.Json;
 
 namespace DotNet.DocsTools.GitHubObjects;
 
-public readonly record struct QuestIssueVariables(string Organization, string Repository, int issueNumber);
+public readonly record struct QuestIssueVariables(
+    bool isScalar, 
+    string Organization, 
+    string Repository, 
+    int? issueNumber = null, 
+    string? importTriggerLabelText = null, 
+    string? importedLabelText = null);
 
 // Questions: Can this type implement both a scalar and an enumeration static abstract interface?
 // Will overrides work, or are different method names required?
@@ -20,7 +26,7 @@ public readonly record struct QuestIssueVariables(string Organization, string Re
 /// </remarks>
 public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIssueVariables>
 {
-    private const string QuestIssuesQueryText = """
+    private const string QuestIssueScalarQueryText = """
     query GetIssueForQuestImport($organization: String!, $repository: String!, $issueNumber:Int!) {
       repository(owner: $organization, name: $repository) {
         issue(number: $issueNumber) {
@@ -102,17 +108,119 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     }
     """;
 
-    public static GraphQLPacket GetQueryPacket(QuestIssueVariables variables) =>
-        new()
-        {
-            query = QuestIssuesQueryText,
-            variables =
-            {
-                ["organization"] = variables.Organization,
-                ["repository"] = variables.Repository,
-                ["issueNumber"] = variables.issueNumber,
+    private static readonly string EnumerateQuestIssuesQueryText = """
+        query FindUpdatedIssues($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
+          repository(owner: $organization, name: $repository) {
+            issues(
+              first: 25
+              after: $cursor
+              labels: $questlabels
+              orderBy: {
+                field: UPDATED_AT, 
+                direction: DESC
+              }
+            ) {
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+              nodes {
+                id
+                number
+                title
+                state
+                updatedAt
+                author {
+                  login
+                  ... on User {
+                    name
+                  }
+                }
+                projectItems(first: 25) {
+                  ... on ProjectV2ItemConnection {
+                    nodes {
+                      ... on ProjectV2Item {
+                        fieldValues(first:10) {
+                          nodes {
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              field {
+                                ... on ProjectV2FieldCommon {
+                                  name
+                                }
+                              }
+                              name
+                            }
+                          }
+                        }
+                      }
+                      project {
+                        ... on ProjectV2 {
+                          title
+                        }
+                      }
+                    }
+                  }
+                }
+                bodyHTML
+                body
+                assignees(first: 10) {
+                  nodes {
+                    login
+                    ... on User {
+                      name
+                    }
+                  }
+                }
+                labels(first: 15) {
+                  nodes {
+                    name
+                    id
+                  }
+                }
+                comments(first: 50) {
+                  nodes {
+                    author {
+                      login
+                      ... on User {
+                        name
+                      }
+                    }
+                    bodyHTML
+                  }
+                }
+              }
             }
-        };
+          }
+        }
+        """;
+
+
+    public static GraphQLPacket GetQueryPacket(QuestIssueVariables variables) =>
+        variables.isScalar ?
+            new()
+            {
+                query = QuestIssueScalarQueryText,
+                variables =
+                {
+                    ["organization"] = variables.Organization,
+                    ["repository"] = variables.Repository,
+                    ["issueNumber"] = variables.issueNumber ?? throw new ArgumentNullException(nameof(variables.issueNumber)),
+                }
+            } :
+            new GraphQLPacket
+            {
+                query = EnumerateQuestIssuesQueryText,
+                variables =
+                {
+                    ["organization"] = variables.Organization,
+                    ["repository"] = variables.Repository,
+                    ["questlabels"] = new string[]
+                    {
+                        variables.importTriggerLabelText ?? throw new ArgumentNullException(nameof(variables.importTriggerLabelText)),
+                        variables.importedLabelText ?? throw new ArgumentNullException(nameof(variables.importedLabelText))
+                    }
+                }
+            };
 
     public static QuestIssue FromJsonElement(JsonElement issueNode, QuestIssueVariables variables) =>
         new QuestIssue(issueNode, variables.Organization, variables.Repository);

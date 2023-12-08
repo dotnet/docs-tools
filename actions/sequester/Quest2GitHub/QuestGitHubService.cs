@@ -82,13 +82,14 @@ public class QuestGitHubService : IDisposable
         _allIterations ??= await RetrieveIterationLabelsAsync();
 
         var currentIteration = QuestIteration.CurrentIteration(_allIterations);
-        var issueEnumerator = new EnumerateIssues();
+
+        var query = new EnumerationQuery<QuestIssue, QuestIssueVariables>(_ghClient);
 
         var historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
 
         int totalImport = 0;
         int totalSkipped = 0;
-        await foreach (var item in issueEnumerator.AllQuestIssues(_ghClient, organization, repository, _importTriggerLabelText, _importedLabelText))
+        await foreach (var item in query.PerformQuery(new QuestIssueVariables(false, organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText)))
         {
             if (item.UpdatedAt < historyThreshold)
                 break;
@@ -197,7 +198,7 @@ public class QuestGitHubService : IDisposable
     private Task<QuestIssue> RetrieveIssueAsync(string org, string repo, int issueNumber)
     {
         var query = new ScalarQuery<QuestIssue, QuestIssueVariables>(_ghClient);
-        return query.PerformQuery(new QuestIssueVariables(org, repo, issueNumber));
+        return query.PerformQuery(new QuestIssueVariables(true, org, repo, issueNumber));
     }
 
     private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
