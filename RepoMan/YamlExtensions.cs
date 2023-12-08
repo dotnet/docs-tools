@@ -4,7 +4,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
 
-internal static class YamlExtensions
+public static class YamlExtensions
 {
     public static int ToInt(this YamlNode node) =>
         Convert.ToInt32(((YamlScalarNode)node).Value);

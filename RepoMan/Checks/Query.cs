@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-internal sealed class Query : ICheck
+public sealed class Query : ICheck
 {
     public string Value { get; }
 

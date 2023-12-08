@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace RepoMan;
 
-internal static partial class Utilities
+public static partial class Utilities
 {
     private static HttpClient _httpClient;
 

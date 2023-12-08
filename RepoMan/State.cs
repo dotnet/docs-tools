@@ -8,7 +8,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
 
-internal sealed class State
+public sealed class State
 {
     private JObject _cachedStateBody;
 

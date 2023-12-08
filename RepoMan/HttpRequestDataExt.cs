@@ -3,7 +3,7 @@ using System.Net;
 
 namespace RepoMan;
 
-internal static class HttpRequestDataExt
+public static class HttpRequestDataExt
 {
     public static HttpResponseData CreateBadRequestResponse(this HttpRequestData request, string message)
     {

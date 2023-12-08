@@ -1,6 +1,6 @@
 ﻿namespace RepoMan;
 
-internal interface IRunnerItem
+public interface IRunnerItem
 {
     Task Run(State state);
 }

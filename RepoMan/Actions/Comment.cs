@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-internal sealed class Comment : IRunnerItem
+public sealed class Comment : IRunnerItem
 {
     private readonly string _comment;
     private readonly string _value;

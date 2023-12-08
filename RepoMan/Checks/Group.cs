@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-internal sealed class Group: IRunnerItem
+public sealed class Group: IRunnerItem
 {
     public List<ICheck> Checks { get; } = new List<ICheck>();
 

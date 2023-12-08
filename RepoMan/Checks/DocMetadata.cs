@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-internal sealed class DocMetadata : ICheck
+public sealed class DocMetadata : ICheck
 {
     public string Name { get; }
     public string Value { get; }

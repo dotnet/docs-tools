@@ -4,7 +4,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-internal sealed class SetProdTechLabels: IRunnerItem
+public sealed class SetProdTechLabels: IRunnerItem
 {
     public SetProdTechLabels()
     {

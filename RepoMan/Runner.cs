@@ -4,7 +4,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
 
-internal sealed class Runner: IRunnerItem
+public sealed class Runner: IRunnerItem
 {
     public static YamlNode? DebugNode;
 

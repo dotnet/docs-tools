@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace RepoMan;
 
-internal static class ILoggerExtensions
+public static class ILoggerExtensions
 {
     public static void LogDebugger(this ILogger logger, string msg, params object[] args)
     {
