@@ -142,7 +142,7 @@ internal sealed class State
             }
         }
 
-        // After comment has been scanned, if the URL was found in the metaata, load the
+        // After comment has been scanned, if the URL was found in the metadata, load the
         // article page and scrape the metadata from the HTML
         if (DocIssueMetadata.Count != 0)
         {
@@ -162,22 +162,25 @@ internal sealed class State
         {
             Logger.LogInformation("Look for article URL");
 
-            foreach (var regexSearch in Settings.DocMetadata.ContentUrlRegex)
-            {
-               Logger.LogInformation($"Processing regex: {regexSearch}");
-                System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(comment, regexSearch, System.Text.RegularExpressions.RegexOptions.Multiline);
-
-                if (match.Success)
+            if (Settings.DocMetadata.ContentUrlRegex != null)
+                foreach (var regexSearch in Settings.DocMetadata.ContentUrlRegex)
                 {
-                    IsV2Metadata = true;
+                    Logger.LogInformation($"Processing regex: {regexSearch}");
+                    System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(comment, regexSearch, System.Text.RegularExpressions.RegexOptions.Multiline);
 
-                    Dictionary<string, string> newMetadata = Utilities.ScrapeArticleMetadata(new Uri(match.Groups[1].Value.ToLower()), this).Result;
+                    if (match.Success)
+                    {
+                        IsV2Metadata = true;
 
-                    DocIssueMetadata = new(DocIssueMetadata.Union(newMetadata));
+                        Dictionary<string, string> newMetadata = Utilities.ScrapeArticleMetadata(new Uri(match.Groups[1].Value.ToLower()), this).Result;
 
-                    break;
+                        DocIssueMetadata = new(DocIssueMetadata.Union(newMetadata));
+
+                        break;
+                    }
                 }
-            }
+            else
+                Logger.LogInformation("ContentUrlRegex is missing from repo rules metadata settings");
         }
 
         // Load each metadata item into a variable
