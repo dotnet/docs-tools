@@ -375,7 +375,11 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
                 Assert.Equal(labelIds[i], issue.Labels[i].Id);
             }
             Assert.Empty(issue.Comments);
-            Assert.Equal("<a href = \"https://github.com/dotnet/docs/issues/38544\">\r\n    dotnet/docs#38544\r\n</a>", issue.LinkText);
+
+            // This test uses "contains" instead of "equal" because it contains newlines, and must run on both Windwos and Linux.
+            Assert.Contains("<a href = \"https://github.com/dotnet/docs/issues/38544\">", issue.LinkText);
+            Assert.Contains("dotnet/docs#38544", issue.LinkText);
+            Assert.Contains("</a>", issue.LinkText);
             // Skip date time. For a single issue, we don't retrieve it.
             // Assert.Equal(DateTime.Now, issue.UpdatedAt);
             Assert.Single(issue.ProjectStoryPoints);
@@ -411,7 +415,10 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
                 Assert.Equal(closedLabelIds[i], issue.Labels[i].Id);
             }
             Assert.Empty(issue.Comments);
-            Assert.Equal("<a href = \"https://github.com/dotnet/docs/issues/38544\">\r\n    dotnet/docs#38544\r\n</a>", issue.LinkText);
+            // This test uses "contains" instead of "equal" because it contains newlines, and must run on both Windwos and Linux.
+            Assert.Contains("<a href = \"https://github.com/dotnet/docs/issues/38544\">", issue.LinkText);
+            Assert.Contains("dotnet/docs#38544", issue.LinkText);
+            Assert.Contains("</a>", issue.LinkText);
             // Skip date time. For a single issue, we don't retrieve it.
             // Assert.Equal(DateTime.Now, issue.UpdatedAt);
             Assert.Single(issue.ProjectStoryPoints);
@@ -441,7 +448,10 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             Assert.Empty(issue.Assignees);
             Assert.Empty(issue.Labels);
             Assert.Empty(issue.Comments);
-            Assert.Equal("<a href = \"https://github.com/dotnet/docs/issues/38544\">\r\n    dotnet/docs#38544\r\n</a>", issue.LinkText);
+            // This test uses "contains" instead of "equal" because it contains newlines, and must run on both Windwos and Linux.
+            Assert.Contains("<a href = \"https://github.com/dotnet/docs/issues/38544\">", issue.LinkText);
+            Assert.Contains("dotnet/docs#38544", issue.LinkText);
+            Assert.Contains("</a>", issue.LinkText);
             // Skip date time. For a single issue, we don't retrieve it.
             // Assert.Equal(DateTime.Now, issue.UpdatedAt);
             Assert.Empty(issue.ProjectStoryPoints);
@@ -478,7 +488,10 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
                 Assert.Equal(comments[i], issue.Comments[i]);
                 //Assert.Equal(comments[i].bodyHTML, issue.Comments[i].bodyHtml);
             }
-            Assert.Equal("<a href = \"https://github.com/dotnet/csharpstandard/issues/857\">\r\n    dotnet/csharpstandard#857\r\n</a>", issue.LinkText);
+            // This test uses "contains" instead of "equal" because it contains newlines, and must run on both Windwos and Linux.
+            Assert.Contains("<a href = \"https://github.com/dotnet/csharpstandard/issues/857\">", issue.LinkText);
+            Assert.Contains("dotnet/csharpstandard#857", issue.LinkText);
+            Assert.Contains("</a>", issue.LinkText);
             // Skip date time. For a single issue, we don't retrieve it.
             // Assert.Equal(DateTime.Now, issue.UpdatedAt);
             StoryPointSize points = issue.ProjectStoryPoints.First();
