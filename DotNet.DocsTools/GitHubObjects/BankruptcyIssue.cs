@@ -65,7 +65,8 @@ sealed public record BankruptcyIssue : Issue, IGitHubQueryResult<BankruptcyIssue
     public BankruptcyIssue(JsonElement element) : base(element)
     {
         Author = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(element));
-        Labels = ResponseExtractors.GetChildArrayNames(element);
+        Labels = ResponseExtractors.GetChildArrayElements(element, "labels", 
+            label => ResponseExtractors.StringProperty(label, "name"));
         CreatedDate = ResponseExtractors.GetCreatedAtValue(element);
     }
 

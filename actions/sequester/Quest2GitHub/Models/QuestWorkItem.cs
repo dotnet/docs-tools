@@ -227,7 +227,7 @@ public class QuestWorkItem
     public static string BuildDescriptionFromIssue(QuestIssue issue, string? requestLabelNodeId)
     {
         var body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
-        body.AppendLine($"<p>Author: {issue.Author}</p>");
+        body.AppendLine($"<p>Author: {issue.FormattedAuthorLoginName}</p>");
         body.AppendLine(issue.BodyHtml);
         if (issue.Labels.Any())
         {

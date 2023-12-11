@@ -250,55 +250,36 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
 
     private QuestIssue(JsonElement issueNode, string organization, string repository) : base(issueNode)
     {
-        var authorNode = issueNode.Descendent("author", "login");
-        var author = authorNode.ValueKind is JsonValueKind.String ?
-            authorNode.GetString()! : "Ghost";
-        var authorNameNode = issueNode.Descendent("author", "name");
-        author += authorNameNode.ValueKind is System.Text.Json.JsonValueKind.String ?
-            $" - {authorNameNode.GetString()!}" : "";
-        this.Author = author;
+        var author = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(issueNode));
+        this.FormattedAuthorLoginName = (author is not null) ?
+            $"{author.Login} - {author.Name}" :  
+            "Ghost - ";
 
-        this.IsOpen = issueNode.Descendent("state").GetString() is "OPEN";
+        this.IsOpen = ResponseExtractors.StringProperty(issueNode, "state") is "OPEN";
+        this.BodyHtml = ResponseExtractors.StringProperty(issueNode, "bodyHTML");
+        this.UpdatedAt = ResponseExtractors.GetUpdatedAtValueOrNow(issueNode);
 
-        this.BodyHtml = issueNode.Descendent("bodyHTML").GetString();
-        this.UpdatedAt = issueNode.TryGetProperty("updatedAt"u8, out var updated) ? updated.GetDateTime() : DateTime.Now;
-
-        this.Assignees = (from item in issueNode.Descendent("assignees").GetProperty("nodes").EnumerateArray()
-                        select item.GetProperty("login").GetString()).ToArray();
-        this.Labels = (from item in issueNode.Descendent("labels").GetProperty("nodes").EnumerateArray()
-                     select new GitHubLabel(item)).ToArray();
-        this.Comments = (from item in issueNode.Descendent("comments").GetProperty("nodes").EnumerateArray()
-                       let element = item.Descendent("author", "login")
-                       select (
-                         element.ValueKind is JsonValueKind.String ?
-                            element.GetString()! : "Ghost",
-                         item.GetProperty("bodyHTML").GetString()
-                       )).ToArray();
-
-        var projectData = issueNode.Descendent("projectItems", "nodes");
-        var storyPoints = new List<StoryPointSize>();
-        if (projectData.ValueKind is JsonValueKind.Array)
+        this.Assignees = [ ..ResponseExtractors.GetChildArrayElements(issueNode, "assignees", item =>
+            Actor.FromJsonElement(item)).Where(actor => actor is Actor)];
+ 
+        this.Labels = ResponseExtractors.GetChildArrayElements(issueNode, "labels", item => new GitHubLabel(item)); 
+        this.Comments = ResponseExtractors.GetChildArrayElements(issueNode, "comments", item =>
         {
-            foreach (var projectItem in issueNode.Descendent("projectItems", "nodes").EnumerateArray())
-            {
-                StoryPointSize? sz = StoryPointSize.OptionalFromJsonElement(projectItem);
-                if (sz is not null) storyPoints.Add(sz);
+            var actor = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(item));
+            return ((actor is not null) ? actor.Login : "Ghost", 
+                ResponseExtractors.StringProperty(item, "bodyHTML"));
             }
-        }
-        this.ProjectStoryPoints = storyPoints;
+        ).ToArray();
 
-        // Timeline events are in order, so the last PR is the most recent closing PR
-        var timeline = issueNode.Descendent("timelineItems", "nodes");
-        var closedEvent = (timeline.ValueKind == JsonValueKind.Array) ?
-            timeline.EnumerateArray()
-            .LastOrDefault(t =>
-            (t.TryGetProperty("closer", out var closer) &&
-            closer.ValueKind == JsonValueKind.Object))
-            : default;
+        var points = ResponseExtractors.GetChildArrayElements(issueNode, "projectItems", item =>
+            StoryPointSize.OptionalFromJsonElement(item));
+        this.ProjectStoryPoints = [ ..points.Where(sz => sz is not null).ToArray()];
+
         // check state. If re-opened, don't reference the (not correct) closing PR
-        this.ClosingPRUrl = ((closedEvent.ValueKind == JsonValueKind.Object) && !IsOpen)
-            ? closedEvent.Descendent("closer", "url").GetString()
-            : default;
+        this.ClosingPRUrl = ResponseExtractors.GetChildArrayElements(issueNode, "timelineItems", item =>
+            (item.TryGetProperty("closer", out var closer) && closer.ValueKind == JsonValueKind.Object) ?
+            ResponseExtractors.StringProperty(closer, "url")
+            : default).LastOrDefault(url => url is not null);
 
         this.LinkText = $"""
         <a href = "https://github.com/{organization}/{repository}/issues/{Number}">
@@ -315,7 +296,7 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     /// <summary>
     /// The issue author.
     /// </summary>
-    public string Author { get; }
+    public string FormattedAuthorLoginName { get; }
 
     /// <summary>
     /// The body of the issue, formatted as HTML
@@ -325,7 +306,7 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     /// <summary>
     /// The list of assignees. Empty if unassigned.
     /// </summary>
-    public string[] Assignees { get; }
+    public Actor[] Assignees { get; }
 
     /// <summary>
     /// The list of labels. Empty if unassigned.
@@ -370,7 +351,7 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     {
         if (Assignees.Any())
         {
-            var identity = await ospoClient.GetAsync(Assignees.First());
+            var identity = await ospoClient.GetAsync(Assignees.First().Login);
             // This feels like a hack, but it is necessary.
             // The email address is the email address a person configured
             // However, the only guaranteed way to find the person in Quest 
@@ -393,7 +374,7 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
         Issue Number: {{Number}} - {{Title}}
         {{BodyHtml}}
         Open: {{IsOpen}}
-        Assignees: {{String.Join(", ", Assignees)}}
+        Assignees: {{String.Join(", ", Assignees.Select(a => a.ToString()))}}
         Labels: {{String.Join(", ", Labels.Select(l => l.Name))}}
         Sizes: {{String.Join("\n", from sp in ProjectStoryPoints select $"Month, Year: {sp.Month}, {sp.CalendarYear}  Size: {sp.Size}")}}
         Comments:

@@ -21,10 +21,15 @@ internal static class ResponseExtractors
     internal static DateTime GetCreatedAtValue(JsonElement element) => 
         DateProperty(element, "createdAt");
 
-    internal static string[] GetChildArrayNames(JsonElement element) => 
-        (from label in element.Descendent("labels", "nodes").EnumerateArray()
-         select StringProperty(label, "name"))
-        .ToArray();
+    internal static DateTime GetUpdatedAtValueOrNow(JsonElement element) =>
+        OptionalDateProperty(element, "updatedAt") ?? DateTime.Now;
+
+    internal static T[] GetChildArrayElements<T>(
+        JsonElement element, 
+        string elementName,
+        Func<JsonElement, T> selector) => 
+        (from label in element.Descendent(elementName, "nodes").EnumerateArray()
+         select selector(label)).ToArray();
 
     private static JsonElement ChildElement(JsonElement element, string propertyName)
     {
@@ -68,5 +73,19 @@ internal static class ResponseExtractors
             return dateProperty.GetDateTime();
         }
         throw new ArgumentException($"Property {propertyName} not found in Json element. Did you possibly access the parent node?", nameof(element));
+    }
+
+    private static DateTime? OptionalDateProperty(JsonElement element, string propertyName)
+    {
+        if (element.ValueKind != JsonValueKind.Object) throw new ArgumentException("element is not a Json Object.", nameof(element));
+
+        if (element.TryGetProperty(propertyName, out var dateProperty))
+        {
+            return dateProperty.GetDateTime();
+        }
+        else
+        {
+            return null;
+        }
     }
 }

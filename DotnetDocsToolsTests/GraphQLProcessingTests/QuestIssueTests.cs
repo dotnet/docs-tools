@@ -326,22 +326,22 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
                 "nodes": [
                 {
                     "author": {
-                    "login": "KalleOlaviNiemitalo",
-                    "name": "Kalle Olavi Niemitalo"
+                        "login": "KalleOlaviNiemitalo",
+                        "name": "Kalle Olavi Niemitalo"
                     },
                     "bodyHTML": "<p dir=\"auto\">Could perhaps say \"has an <em>effective return type</em> (15.6.11) other than <code class=\"notranslate\">void</code>\", but I did not check whether this would result in a circular definition.</p>"
                 },
                 {
                     "author": {
-                    "login": "jskeet",
-                    "name": "Jon Skeet"
+                        "login": "jskeet",
+                        "name": "Jon Skeet"
                     },
                     "bodyHTML": "<p dir=\"auto\">Again, punting - and this one has probably been broken since C# 5. (I suspect the eventual fix will be a matter of just a few words, but choosing those words will take time...)</p>"
                 },
                 {
                     "author": {
-                    "login": "KalleOlaviNiemitalo",
-                    "name": "Kalle Olavi Niemitalo"
+                        "login": "KalleOlaviNiemitalo",
+                        "name": "Kalle Olavi Niemitalo"
                     },
                     "bodyHTML": "This was a big comment. And, tests have already verified that the JSON parser handles HTML."
                 }
@@ -364,10 +364,10 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             var issue = QuestIssue.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
-            Assert.Equal($"{authorLogin} - {authorName}", issue.Author);
+            Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
             Assert.Equal(bodyHTMLResult, issue.BodyHtml);
             Assert.Single(issue.Assignees);
-            Assert.Equal(authorLogin, issue.Assignees.First());
+            Assert.Equal(authorLogin, issue.Assignees.First().Login);
             Assert.Equal(4, issue.Labels.Length);
             for (int i = 0; i < issue.Labels.Length; i++)
             {
@@ -400,10 +400,10 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             var issue = QuestIssue.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.False(issue.IsOpen);
-            Assert.Equal($"{authorLogin} - {authorName}", issue.Author);
+            Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
             Assert.Equal(closeBodyHTMLResult, issue.BodyHtml);
             Assert.Single(issue.Assignees);
-            Assert.Equal(authorLogin, issue.Assignees.First());
+            Assert.Equal(authorLogin, issue.Assignees.First().Login);
             Assert.Equal(4, issue.Labels.Length);
             for (int i = 0; i < issue.Labels.Length; i++)
             {
@@ -436,7 +436,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             var issue = QuestIssue.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
-            Assert.Equal($"{authorLogin} - {authorName}", issue.Author);
+            Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
             Assert.Equal("<p dir=\"auto\">Just a short description</p>", issue.BodyHtml);
             Assert.Empty(issue.Assignees);
             Assert.Empty(issue.Labels);
@@ -468,7 +468,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             var issue = QuestIssue.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
-            Assert.Equal("KalleOlaviNiemitalo - Kalle Olavi Niemitalo", issue.Author);
+            Assert.Equal("KalleOlaviNiemitalo - Kalle Olavi Niemitalo", issue.FormattedAuthorLoginName);
             Assert.Equal("<p dir=\"auto\">Just a short description</p>", issue.BodyHtml);
             Assert.Single(issue.Assignees);
             Assert.Single(issue.Labels);
