@@ -8,7 +8,6 @@ namespace DotNet.DocsTools.GitHubObjects;
 /// </summary>
 public record StoryPointSize
 {
-
     public static StoryPointSize? OptionalFromJsonElement(JsonElement projectItem)
     {
         StoryPointSize? sz = default;
@@ -55,5 +54,4 @@ public record StoryPointSize
     public string Month { get; }
     public string Size { get; }
 }
-
 

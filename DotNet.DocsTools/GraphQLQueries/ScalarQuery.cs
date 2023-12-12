@@ -16,7 +16,7 @@ namespace DotNetDocs.Tools.GraphQLQueries;
 /// </remarks>
 public class ScalarQuery<TResult, TVariables> where TResult : IGitHubQueryResult<TResult, TVariables>
 {
-    private readonly IGitHubClient client;
+    private readonly IGitHubClient _client;
 
     /// <summary>
     /// Construct the query object.
@@ -24,7 +24,7 @@ public class ScalarQuery<TResult, TVariables> where TResult : IGitHubQueryResult
     /// <param name="client">The GitHub client.</param>
     public ScalarQuery(IGitHubClient client)
     {
-        this.client = client ?? throw new ArgumentNullException(paramName: nameof(client), message: "Cannot be null");
+        _client = client ?? throw new ArgumentNullException(paramName: nameof(client), message: "Cannot be null");
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public class ScalarQuery<TResult, TVariables> where TResult : IGitHubQueryResult
     {
         var scalarPacket = TResult.GetQueryPacket(variables);
 
-        var rootElement= await client.PostGraphQLRequestAsync(scalarPacket);
+        var rootElement= await _client.PostGraphQLRequestAsync(scalarPacket);
 
         // TODO: This navigation should likely move to the FromJsonElement.
         var issueNode = rootElement.Descendent("repository", "issue");

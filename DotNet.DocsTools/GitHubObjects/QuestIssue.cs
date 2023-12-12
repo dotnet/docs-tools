@@ -251,19 +251,19 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     private QuestIssue(JsonElement issueNode, string organization, string repository) : base(issueNode)
     {
         var author = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(issueNode));
-        this.FormattedAuthorLoginName = (author is not null) ?
+        FormattedAuthorLoginName = (author is not null) ?
             $"{author.Login} - {author.Name}" :  
             "Ghost - ";
 
-        this.IsOpen = ResponseExtractors.StringProperty(issueNode, "state") is "OPEN";
-        this.BodyHtml = ResponseExtractors.StringProperty(issueNode, "bodyHTML");
-        this.UpdatedAt = ResponseExtractors.GetUpdatedAtValueOrNow(issueNode);
+        IsOpen = ResponseExtractors.StringProperty(issueNode, "state") is "OPEN";
+        BodyHtml = ResponseExtractors.StringProperty(issueNode, "bodyHTML");
+        UpdatedAt = ResponseExtractors.GetUpdatedAtValueOrNow(issueNode);
 
-        this.Assignees = [ ..ResponseExtractors.GetChildArrayElements(issueNode, "assignees", item =>
+        Assignees = [ ..ResponseExtractors.GetChildArrayElements(issueNode, "assignees", item =>
             Actor.FromJsonElement(item)).Where(actor => actor is Actor)];
  
-        this.Labels = ResponseExtractors.GetChildArrayElements(issueNode, "labels", item => new GitHubLabel(item)); 
-        this.Comments = ResponseExtractors.GetChildArrayElements(issueNode, "comments", item =>
+        Labels = ResponseExtractors.GetChildArrayElements(issueNode, "labels", item => new GitHubLabel(item)); 
+        Comments = ResponseExtractors.GetChildArrayElements(issueNode, "comments", item =>
         {
             var actor = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(item));
             return ((actor is not null) ? actor.Login : "Ghost", 
@@ -273,15 +273,15 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
 
         var points = ResponseExtractors.GetChildArrayElements(issueNode, "projectItems", item =>
             StoryPointSize.OptionalFromJsonElement(item));
-        this.ProjectStoryPoints = [ ..points.Where(sz => sz is not null).ToArray()];
+        ProjectStoryPoints = [ ..points.Where(sz => sz is not null).ToArray()];
 
         // check state. If re-opened, don't reference the (not correct) closing PR
-        this.ClosingPRUrl = ResponseExtractors.GetChildArrayElements(issueNode, "timelineItems", item =>
+        ClosingPRUrl = ResponseExtractors.GetChildArrayElements(issueNode, "timelineItems", item =>
             (item.TryGetProperty("closer", out var closer) && closer.ValueKind == JsonValueKind.Object) ?
             ResponseExtractors.StringProperty(closer, "url")
             : default).LastOrDefault(url => url is not null);
 
-        this.LinkText = $"""
+        LinkText = $"""
         <a href = "https://github.com/{organization}/{repository}/issues/{Number}">
             {organization}/{repository}#{Number}
         </a>

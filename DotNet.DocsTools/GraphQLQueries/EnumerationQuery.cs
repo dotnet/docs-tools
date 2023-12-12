@@ -15,7 +15,7 @@ namespace DotNetDocs.Tools.GraphQLQueries;
 /// </remarks>
 public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryResult<TResult, TVariables>
 {
-    private readonly IGitHubClient client;
+    private readonly IGitHubClient _client;
 
     /// <summary>
     /// Construct the query object.
@@ -23,7 +23,7 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
     /// <param name="client">The GitHub client.</param>
     public EnumerationQuery(IGitHubClient client)
     {
-        this.client = client ?? throw new ArgumentNullException(paramName: nameof(client), message: "Cannot be null");
+        _client = client ?? throw new ArgumentNullException(paramName: nameof(client), message: "Cannot be null");
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
         while (hasMore)
         {
             findIssuesPacket.variables["cursor"] = cursor!;
-            var jsonData = await client.PostGraphQLRequestAsync(findIssuesPacket);
+            var jsonData = await _client.PostGraphQLRequestAsync(findIssuesPacket);
 
             (hasMore, cursor) = jsonData.Descendent("repository", "issues").NextPageInfo();
 
