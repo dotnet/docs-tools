@@ -273,7 +273,7 @@ public class QuestGitHubService : IDisposable
     private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, QuestIssue ghIssue, QuestIteration currentIteration,
         IEnumerable<QuestIteration> allIterations)
     {
-        var ghAssigneeEmailAddress = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
+        var ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(_ospoClient);
         AzDoIdentity? questAssigneeID = default;
         if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
         {

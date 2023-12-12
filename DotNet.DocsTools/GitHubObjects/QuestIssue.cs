@@ -347,7 +347,7 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     /// <param name="ospoClient">The Open Source program office client service.</param>
     /// <returns>The email address of the assignee. Null if unassigned, or the assignee is not a 
     /// Microsoft FTE.</returns>
-    public async Task<string?> AssignedMicrosoftEmailAddress(OspoClient ospoClient)
+    public async Task<string?> QueryAssignedMicrosoftEmailAddressAsync(OspoClient ospoClient)
     {
         if (Assignees.Any())
         {
