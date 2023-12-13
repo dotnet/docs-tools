@@ -233,8 +233,8 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
                     ["repository"] = variables.Repository,
                     ["questlabels"] = new string[]
                     {
-                        variables.importTriggerLabelText ?? throw new new ArgumentException("The issue number can't be null"),
-                        variables.importedLabelText ?? throw new ArgumentException("The issue number can't be null")
+                        variables.importTriggerLabelText ?? throw new ArgumentException("The import trigger label can't be null"),
+                        variables.importedLabelText ?? throw new ArgumentException("The imported label can't be null")
                     }
                 }
             };
