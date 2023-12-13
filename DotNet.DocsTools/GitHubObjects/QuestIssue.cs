@@ -211,7 +211,7 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     /// </summary>
     /// <param name="variables">The variables added to the packet</param>
     /// <returns>The GraphQL Packet structure.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when one of the required fields in the variables packet is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when one of the required fields in the variables packet is null.</exception>
     public static GraphQLPacket GetQueryPacket(QuestIssueVariables variables) =>
         variables.isScalar ?
             new()
@@ -221,7 +221,7 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
                 {
                     ["organization"] = variables.Organization,
                     ["repository"] = variables.Repository,
-                    ["issueNumber"] = variables.issueNumber ?? throw new ArgumentNullException(nameof(variables.issueNumber)),
+                    ["issueNumber"] = variables.issueNumber ?? throw new ArgumentException("The issue number can't be null"),
                 }
             } :
             new GraphQLPacket
@@ -233,8 +233,8 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
                     ["repository"] = variables.Repository,
                     ["questlabels"] = new string[]
                     {
-                        variables.importTriggerLabelText ?? throw new ArgumentNullException(nameof(variables.importTriggerLabelText)),
-                        variables.importedLabelText ?? throw new ArgumentNullException(nameof(variables.importedLabelText))
+                        variables.importTriggerLabelText ?? throw new new ArgumentException("The issue number can't be null"),
+                        variables.importedLabelText ?? throw new ArgumentException("The issue number can't be null")
                     }
                 }
             };
