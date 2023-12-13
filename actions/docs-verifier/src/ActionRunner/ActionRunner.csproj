@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8</TargetFramework>
-    <nulable>enable</nulable>
+    <nullable>enable</nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
