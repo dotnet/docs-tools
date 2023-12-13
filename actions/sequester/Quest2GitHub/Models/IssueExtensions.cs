@@ -1,4 +1,6 @@
-﻿namespace Quest2GitHub.Models;
+﻿using DotNet.DocsTools.GitHubObjects;
+
+namespace Quest2GitHub.Models;
 
 public static class IssueExtensions
 {
@@ -17,7 +19,7 @@ public static class IssueExtensions
         ["Nov"] = 11, // 2
         ["Dec"] = 12  // 2
     };
-    public static StoryPointSize? LatestStoryPointSize(this GithubIssue issue)
+    public static StoryPointSize? LatestStoryPointSize(this QuestIssue issue)
     {
         var sizes = from size in issue.ProjectStoryPoints
                     let month = Months[size.Month]

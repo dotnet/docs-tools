@@ -3,6 +3,7 @@ using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.GraphQLQueries;
 using Microsoft.DotnetOrg.Ospo;
 using System.Text.Json;
+using DotNet.DocsTools.GitHubObjects;
 
 namespace IssueCloser;
 
@@ -67,27 +68,26 @@ That automated process may have closed some issues that should be addressed. If 
 
     private static async Task ProcessIssues(IGitHubClient client, OspoClient ospoClient, string organization, string repository, bool dryRun, string labelID)
     {
-        var query = new EnumerateOpenIssues(client, organization, repository);
+        var query = new EnumerationQuery<BankruptcyIssue, BankruptcyIssueVariables>(client);
         var now = DateTime.Now;
 
         var stats = await BuildStatsMapAsync();
 
         int totalClosedIssues = 0;
         int totalIssues = 0;
-        await foreach (var item in query.PerformQuery())
+        await foreach (var item in query.PerformQuery(new BankruptcyIssueVariables(organization, repository)))
         {
             var issueID = item.Id;
 
             var priority = Priorities.PriLabel(item.Labels);
             bool isInternal = await item.Author.IsMicrosoftFTE(ospoClient) == true;
-            if (teamAuthors.Contains(item.Author.Login))
+            if (teamAuthors.Contains(item.Author?.Login))
                 isInternal = true;
             bool isDocIssue = IsDocsIssue(item.Body);
             int ageInMonths = (int)(now - item.CreatedDate).TotalDays / 30;
             var criteria = new CloseCriteria(priority, isDocIssue, isInternal);
             var number = item.Number;
             var title = item.Title;
-            var url = item.Url;
 
             totalIssues++;
             if (stats[criteria].ShouldCloseIssue(criteria, ageInMonths))
@@ -98,7 +98,7 @@ That automated process may have closed some issues that should be addressed. If 
                 totalClosedIssues++;
                 if (!dryRun)
                 {
-                    await CloseIssue(client, issueID, item.ProjectCards, labelID);
+                    await CloseIssue(client, issueID, labelID);
                     Console.WriteLine($"!!!!! Issue  CLOSED {number}-{title} !!!!!");
                 }
             }
@@ -112,25 +112,18 @@ That automated process may have closed some issues that should be addressed. If 
         Console.WriteLine($"Closing {totalClosedIssues} of {totalIssues}");
     }
 
-    private static async Task CloseIssue(IGitHubClient client, string issueID, IEnumerable<string> projects, string labelID)
+    private static async Task CloseIssue(IGitHubClient client, string issueID, string labelID)
     {
         // 1. Add label
         Console.WriteLine($"\tAdding [won't fix] label.");
         var addMutation = new AddOrRemoveLabelMutation(client, issueID, labelID, true);
         await addMutation.PerformMutation();
 
-        // 2. Remove issue from projects:
-        foreach (var projectCardNode in projects)
-        {
-            var projectMutation = new RemoveCardFromProjectMutation(client, projectCardNode);
-            await projectMutation.PerformMutation();
-        }
-
-        // 3. Add comment: body, nodeID
+        // 2. Add comment: body, nodeID
         var comentMutation = new AddCommentMutation(client, issueID, commentText);
         await comentMutation.PerformMutation();
 
-        // 4. Close issue: nodeID
+        // 3. Close issue: nodeID
         var closeMutation = new CloseIssueMutation(client, issueID);
         await closeMutation.PerformMutation();
     }

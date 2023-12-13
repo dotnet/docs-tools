@@ -4,7 +4,6 @@ namespace DotNetDocs.Tools.GraphQLQueries;
 
 public static class Common
 {
-    // If this becomes public, add tests.
     public static JsonElement Descendent(this JsonElement element, params string[] path)
     {
         foreach (var item in path)

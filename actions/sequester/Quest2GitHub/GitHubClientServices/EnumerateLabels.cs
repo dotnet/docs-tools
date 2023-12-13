@@ -1,4 +1,6 @@
-﻿namespace DotNetDocs.Tools.GraphQLQueries;
+﻿using DotNet.DocsTools.GitHubObjects;
+
+namespace DotNetDocs.Tools.GraphQLQueries;
 
 /// <summary>
 /// This query returns a single label nodeID
@@ -76,9 +78,7 @@ public class EnumerateLabels
             var elements = jsonData.Descendent("repository", "labels", "nodes").EnumerateArray();
             foreach (var item in elements)
             {
-                string name = item.Descendent("name").GetString()!;
-                string id = item.Descendent("id").GetString()!;
-                yield return new GitHubLabel(name, id);
+                yield return new GitHubLabel(item);
             }
         }
     }

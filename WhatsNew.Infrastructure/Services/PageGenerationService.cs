@@ -1,4 +1,5 @@
-﻿using DotNetDocs.Tools.GitHubCommunications;
+﻿using DotNet.DocsTools.GitHubObjects;
+using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.GraphQLQueries;
 using DotNetDocs.Tools.RESTQueries;
 using DotNetDocs.Tools.Utility;
