@@ -25,11 +25,17 @@ internal static class ResponseExtractors
         OptionalDateProperty(element, "updatedAt") ?? DateTime.Now;
 
     internal static T[] GetChildArrayElements<T>(
-        JsonElement element, 
+        JsonElement element,
         string elementName,
-        Func<JsonElement, T> selector) => 
-        (from label in element.Descendent(elementName, "nodes").EnumerateArray()
-         select selector(label)).ToArray();
+        Func<JsonElement, T> selector)
+    {
+        var array = element.Descendent(elementName, "nodes");
+        
+        return array.ValueKind == JsonValueKind.Array ? 
+            (from child in array.EnumerateArray()
+                select selector(child)).ToArray() :
+                [];
+    }
 
     private static JsonElement ChildElement(JsonElement element, string propertyName)
     {
