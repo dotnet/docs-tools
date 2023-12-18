@@ -236,6 +236,8 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
                 }
             };
 
+    public static IEnumerable<string> NavigationToNodes(bool isScalar) => ["repository", "issues"];
+
     /// <summary>
     /// Construct a QuestIssue from a JsonElement
     /// </summary>

@@ -1,6 +1,5 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNetDocs.Tools.GitHubCommunications;
-using Org.BouncyCastle.Bcpg;
 
 namespace DotNetDocs.Tools.GraphQLQueries;
 
@@ -42,7 +41,7 @@ public class ScalarQuery<TResult, TVariables> where TResult : IGitHubQueryResult
         var rootElement= await _client.PostGraphQLRequestAsync(scalarPacket);
 
         // TODO: This navigation should likely move to the FromJsonElement.
-        var issueNode = rootElement.Descendent("repository", "issue");
+        var issueNode = rootElement.Descendent(TResult.NavigationToNodes(true));
         return TResult.FromJsonElement(issueNode, variables);
     }
 }

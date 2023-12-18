@@ -62,6 +62,11 @@ sealed public record BankruptcyIssue : Issue, IGitHubQueryResult<BankruptcyIssue
     public static BankruptcyIssue FromJsonElement(JsonElement element, BankruptcyIssueVariables unused) => 
         new(element);
 
+    public static IEnumerable<string> NavigationToNodes(bool isScalar) =>
+        isScalar
+            ? throw new InvalidOperationException("This query doesn't support scalar queries")
+            : ["repository", "issues"];
+
     public BankruptcyIssue(JsonElement element) : base(element)
     {
         Author = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(element));

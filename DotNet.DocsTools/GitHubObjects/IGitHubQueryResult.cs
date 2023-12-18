@@ -30,4 +30,18 @@ public interface IGitHubQueryResult<TResult, TVariables> where TResult : IGitHub
     /// <returns>An instance of the result type.</returns>
     public static abstract TResult FromJsonElement(JsonElement element, TVariables variables);
 
+    /// <summary>
+    /// Retrieve the path to the correct data node from the "data" JsonElement node.
+    /// </summary>
+    /// <param name="isScalar">True if the query is a scalar query. False if it's enumerating an array</param>
+    /// <returns>
+    /// The sequence of node names to traverse from the "data" node to the node representing
+    /// the object being returned.
+    /// </returns>
+    /// <remarks>
+    /// For scalar queries, this navigation should return the node containing the result.
+    /// For array queries, this navigation should return the parent of the "nodes" element,
+    /// where the "nodes" element contains the array being enumerated.
+    /// </remarks>
+    public static abstract IEnumerable<string> NavigationToNodes(bool isScalar);
 }

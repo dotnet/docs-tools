@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WhatsNew.Infrastructure.Models;
 using DotNetDocs.Tools.GraphQLQueries;
+using DotNet.DocsTools.GitHubObjects;
 
 namespace WhatsNew.Infrastructure.Services;
 
@@ -46,9 +47,9 @@ public class ConfigurationService
 
         if (string.IsNullOrWhiteSpace(input.Branch))
         {
-            var query = new DefaultBranchQuery(client, input.Owner, input.Repository);
-            if (await query.PerformQuery())
-                input.Branch = query.DefaultBranch;
+            var query = new ScalarQuery<DefaultBranchResult, DefaultBranchVariables>(client);
+            var result = await query.PerformQuery(new DefaultBranchVariables(input.Owner, input.Repository));
+            input.Branch = result.DefaultBranchName;
         }
 
         JToken configToken;
