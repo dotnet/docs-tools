@@ -23,6 +23,6 @@ public class DefaultBranchTests
         };
 
         JsonElement element = JsonDocument.Parse(ValidResult).RootElement;
-        var issue = DefaultBranchResult.FromJsonElement(element, variables);
+        var issue = DefaultBranch.FromJsonElement(element, variables);
     }
 }

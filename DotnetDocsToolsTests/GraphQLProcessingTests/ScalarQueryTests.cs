@@ -37,8 +37,8 @@ public class ScalarQueryTests
     public async Task ScalarQueryNavigationIsCorrect()
     {
         using FakeClient client = new();
-        var query = new ScalarQuery<DefaultBranchResult, DefaultBranchVariables>(client);
+        var query = new ScalarQuery<DefaultBranch, DefaultBranchVariables>(client);
         var result = await query.PerformQuery(new DefaultBranchVariables("dotnet","docs"));
-        Assert.Equal("main", result.DefaultBranchName);
+        Assert.Equal("main", result?.DefaultBranchName);
     }
 }

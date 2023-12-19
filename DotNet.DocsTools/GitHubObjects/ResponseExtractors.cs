@@ -33,7 +33,9 @@ internal static class ResponseExtractors
         
         return array.ValueKind == JsonValueKind.Array ? 
             (from child in array.EnumerateArray()
-                select selector(child)).ToArray() :
+             let childElement = selector(child)
+             where childElement != null
+                select childElement).ToArray() :
                 [];
     }
 

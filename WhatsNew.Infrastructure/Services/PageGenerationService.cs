@@ -359,19 +359,21 @@ public class PageGenerationService
                 var prNumber = item.Number;
                 Console.WriteLine($"Processing PR {prNumber}");
 
-                if (!authorLoginFTECache.TryGetValue(item.Author.Login, out var isFTE))
+                if (item.Author?.Login is not null)
                 {
-                    isFTE = await item.Author.IsMicrosoftFTE(ospoClient);
-                    authorLoginFTECache[item.Author.Login] = isFTE;
+                    if (!authorLoginFTECache.TryGetValue(item.Author!.Login!, out var isFTE))
+                    {
+                        isFTE = await item.Author.IsMicrosoftFTE(ospoClient);
+                        authorLoginFTECache[item.Author.Login] = isFTE;
+                    }
+
+                    if (isFTE == false)
+                        _contributors.Add((login: item.Author.Login, name: item.Author.Name));
+                    else if (isFTE == true)
+                        // If a user account was deleted, it's replaced with the "ghost" account.
+                        // For example, https://github.com/MicrosoftDocs/visualstudio-docs/pull/5837.
+                        excludedContributors.Add(!string.IsNullOrEmpty(item.Author.Login) ? item.Author.Login : "ghost");
                 }
-
-                if (isFTE == false)
-                    _contributors.Add((login: item.Author.Login, name: item.Author.Name));
-                else if (isFTE == true)
-                    // If a user account was deleted, it's replaced with the "ghost" account.
-                    // For example, https://github.com/MicrosoftDocs/visualstudio-docs/pull/5837.
-                    excludedContributors.Add(!string.IsNullOrEmpty(item.Author.Login) ? item.Author.Login : "ghost");
-
                 await ProcessSinglePullRequest(client, prNumber, item.Title, item.ChangedFiles, repo);
             }
 

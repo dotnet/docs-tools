@@ -12,14 +12,12 @@ namespace DotNet.DocsTools.GitHubObjects;
 /// This record contains variables used in both. The boolean determines
 /// which query is being set, and which query type should be returned.
 /// </remarks>
-/// <param name="isScalar">true for scalar, false for enumeration</param>
 /// <param name="Organization">the GH org</param>
 /// <param name="Repository">The GH repository</param>
 /// <param name="issueNumber">The issue number. Only used for scalar queries</param>
 /// <param name="importTriggerLabelText">The trigger label text. Only used for enumerations</param>
 /// <param name="importedLabelText">The imported label text. Only used for enumerations.</param>
 public readonly record struct QuestIssueVariables(
-    bool isScalar, 
     string Organization, 
     string Repository, 
     int? issueNumber = null, 
@@ -209,9 +207,8 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     /// <param name="variables">The variables added to the packet</param>
     /// <returns>The GraphQL Packet structure.</returns>
     /// <exception cref="ArgumentException">Thrown when one of the required fields in the variables packet is null.</exception>
-    public static GraphQLPacket GetQueryPacket(QuestIssueVariables variables) =>
-        variables.isScalar ?
-            new()
+    public static GraphQLPacket GetQueryPacket(QuestIssueVariables variables, bool isScalar) => isScalar
+        ? new()
             {
                 query = QuestIssueScalarQueryText,
                 variables =
@@ -220,8 +217,8 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
                     ["repository"] = variables.Repository,
                     ["issueNumber"] = variables.issueNumber ?? throw new ArgumentException("The issue number can't be null"),
                 }
-            } :
-            new GraphQLPacket
+            }
+        : new GraphQLPacket
             {
                 query = EnumerateQuestIssuesQueryText,
                 variables =
@@ -261,7 +258,7 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
         Assignees = [ ..ResponseExtractors.GetChildArrayElements(issueNode, "assignees", item =>
             Actor.FromJsonElement(item)).Where(actor => actor is Actor)];
  
-        Labels = ResponseExtractors.GetChildArrayElements(issueNode, "labels", item => new GitHubLabel(item)); 
+        Labels = ResponseExtractors.GetChildArrayElements(issueNode, "labels", item => GitHubLabel.FromJsonElement(item, default)!); 
         Comments = ResponseExtractors.GetChildArrayElements(issueNode, "comments", item =>
         {
             var actor = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(item));

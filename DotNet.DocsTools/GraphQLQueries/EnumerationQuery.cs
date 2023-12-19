@@ -36,7 +36,7 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
     /// </remarks>
     public async IAsyncEnumerable<TResult> PerformQuery(TVariables variables)
     {
-        var findIssuesPacket = TResult.GetQueryPacket(variables);
+        var findIssuesPacket = TResult.GetQueryPacket(variables, false);
 
         var cursor = default(string);
         bool hasMore = true;
@@ -49,7 +49,13 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
 
             var elements = jsonData.Descendent(TResult.NavigationToNodes(false).Append("nodes")).EnumerateArray();
             foreach (var item in elements)
-                yield return TResult.FromJsonElement(item, variables);
+            {
+                var result = TResult.FromJsonElement(item, variables);
+                if (result is not null)
+                {
+                    yield return result;
+                }
+            }
         }
     }
 }

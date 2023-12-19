@@ -44,13 +44,16 @@ That automated process may have closed some issues that should be addressed. If 
 
         var client = IGitHubClient.CreateGitHubClient(key);
         var ospoClient = new OspoClient(ospoKey, true);
-        var labelQuery = new FindLabelQuery(client, organization, repository, "won't fix");
-        if (!(await labelQuery.PerformQuery()))
+
+        var labelQuery = new ScalarQuery<GitHubLabel, FindLabelQueryVariables>(client);
+
+        var label = await labelQuery.PerformQuery(new FindLabelQueryVariables(organization, repository, "won't fix"));
+        if (label is null)
         {
             Console.WriteLine($"Could not find label [won't fix]");
             return -1;
         }
-        var labelID = labelQuery.Id;
+        var labelID = label.Id;
 
         try
         {

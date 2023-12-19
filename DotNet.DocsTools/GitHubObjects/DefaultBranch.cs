@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace DotNet.DocsTools.GitHubObjects;
 
 public readonly record struct DefaultBranchVariables(string Organization, string Repository);
-public class DefaultBranchResult : IGitHubQueryResult<DefaultBranchResult, DefaultBranchVariables>
+public record DefaultBranch : IGitHubQueryResult<DefaultBranch, DefaultBranchVariables>
 {
     private const string Query = """
       query GetDefaultBranch($organization: String!, $repository: String!) {
@@ -16,15 +16,17 @@ public class DefaultBranchResult : IGitHubQueryResult<DefaultBranchResult, Defau
       }
       """;
 
-    public static GraphQLPacket GetQueryPacket(DefaultBranchVariables variables) => new()
-    {
-        query = Query,
-        variables =
+    public static GraphQLPacket GetQueryPacket(DefaultBranchVariables variables, bool isScalar) => isScalar
+        ? new()
         {
-            ["organization"] = variables.Organization,
-            ["repository"] = variables.Repository,
+            query = Query,
+            variables =
+            {
+                ["organization"] = variables.Organization,
+                ["repository"] = variables.Repository,
+            }
         }
-    };
+        : throw new InvalidOperationException("This query doesn't support enumerations");
 
     public static IEnumerable<string> NavigationToNodes(bool isScalar) =>
         isScalar
@@ -33,11 +35,11 @@ public class DefaultBranchResult : IGitHubQueryResult<DefaultBranchResult, Defau
 
     public string DefaultBranchName { get; }
 
-    private DefaultBranchResult(string defaultBranchName) => DefaultBranchName = defaultBranchName;
+    private DefaultBranch(string defaultBranchName) => DefaultBranchName = defaultBranchName;
 
-    public static DefaultBranchResult FromJsonElement(JsonElement branchRefNode, DefaultBranchVariables _)
+    public static DefaultBranch FromJsonElement(JsonElement branchRefNode, DefaultBranchVariables _)
     {
         var branchName = ResponseExtractors.StringProperty(branchRefNode, "name");
-        return new DefaultBranchResult(branchName);
+        return new DefaultBranch(branchName);
     }
 }

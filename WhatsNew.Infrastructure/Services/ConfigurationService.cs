@@ -47,8 +47,11 @@ public class ConfigurationService
 
         if (string.IsNullOrWhiteSpace(input.Branch))
         {
-            var query = new ScalarQuery<DefaultBranchResult, DefaultBranchVariables>(client);
+            var query = new ScalarQuery<DefaultBranch, DefaultBranchVariables>(client);
             var result = await query.PerformQuery(new DefaultBranchVariables(input.Owner, input.Repository));
+
+            // There should never be a case where the default branch is null, but just in case...
+            if (result is null) throw new InvalidOperationException("Could not find default branch");
             input.Branch = result.DefaultBranchName;
         }
 

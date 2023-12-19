@@ -34,9 +34,9 @@ public class ScalarQuery<TResult, TVariables> where TResult : IGitHubQueryResult
     /// This query encapsulates the paging API for GitHub's GraphQL 
     /// endpoint.
     /// </remarks>
-    public async Task<TResult> PerformQuery(TVariables variables)
+    public async Task<TResult?> PerformQuery(TVariables variables)
     {
-        var scalarPacket = TResult.GetQueryPacket(variables);
+        var scalarPacket = TResult.GetQueryPacket(variables, true);
 
         var rootElement= await _client.PostGraphQLRequestAsync(scalarPacket);
 

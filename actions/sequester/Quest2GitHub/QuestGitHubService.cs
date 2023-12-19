@@ -89,7 +89,7 @@ public class QuestGitHubService : IDisposable
 
         int totalImport = 0;
         int totalSkipped = 0;
-        await foreach (var item in query.PerformQuery(new QuestIssueVariables(false, organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText)))
+        await foreach (var item in query.PerformQuery(new QuestIssueVariables(organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText)))
         {
             if (item.UpdatedAt < historyThreshold)
                 break;
@@ -146,6 +146,11 @@ public class QuestGitHubService : IDisposable
         //Retrieve the GitHub issue.
         var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
 
+        if (ghIssue is null)
+        {
+            throw new InvalidOperationException("Issue not found");
+        }
+
         // Evaluate the labels to determine the right action.
         var request = ghIssue.Labels.Any(l => l.Id == _importTriggerLabel?.Id);
         var sequestered = ghIssue.Labels.Any(l => l.Id == _importedLabel?.Id);
@@ -195,10 +200,10 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private Task<QuestIssue> RetrieveIssueAsync(string org, string repo, int issueNumber)
+    private Task<QuestIssue?> RetrieveIssueAsync(string org, string repo, int issueNumber)
     {
         var query = new ScalarQuery<QuestIssue, QuestIssueVariables>(_ghClient);
-        return query.PerformQuery(new QuestIssueVariables(true, org, repo, issueNumber));
+        return query.PerformQuery(new QuestIssueVariables(org, repo, issueNumber));
     }
 
     private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
@@ -262,8 +267,9 @@ public class QuestGitHubService : IDisposable
 
     private async Task RetrieveLabelIdsAsync(string org, string repo)
     {
-        var labelQuery = new EnumerateLabels(_ghClient, org, repo);
-        await foreach (var label in labelQuery.AllLabels())
+        var labelQuery = new EnumerationQuery<GitHubLabel, FindLabelQueryVariables>(_ghClient);
+            
+        await foreach (var label in labelQuery.PerformQuery(new FindLabelQueryVariables(org, repo, "")))
         {
             if (label.Name == _importTriggerLabelText) _importTriggerLabel = label;
             if (label.Name == _importedLabelText) _importedLabel = label;
