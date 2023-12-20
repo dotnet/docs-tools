@@ -92,12 +92,10 @@ public sealed record WhatsNewPullRequest : IssueOrPullRequest, IGitHubQueryResul
     /// <param name="pullRequestNode"></param>
     private WhatsNewPullRequest(JsonElement pullRequestNode) : base(pullRequestNode)
     {
-        Url = pullRequestNode.GetProperty("url").GetString() ?? string.Empty;
-        ChangedFiles = pullRequestNode.GetProperty("changedFiles").GetInt32();
+        Url = ResponseExtractors.OptionalStringProperty(pullRequestNode, "url");
+        ChangedFiles = ResponseExtractors.IntProperty(pullRequestNode, "changedFiles");
         Author = Actor.FromJsonElement(pullRequestNode.GetProperty("author"));
-        Labels = (from label in pullRequestNode.Descendent("labels", "nodes").EnumerateArray()
-                 select label.GetProperty("name").GetString()).ToArray();
-
+        Labels = ResponseExtractors.GetChildArrayElements(pullRequestNode, "labels", item => ResponseExtractors.StringProperty(item, "name"));
     }
 
     /// <summary>
@@ -116,7 +114,7 @@ public sealed record WhatsNewPullRequest : IssueOrPullRequest, IGitHubQueryResul
     public Actor? Author { get; }
 
     /// <summary>
-    /// Retrun the list of labels on this issue.
+    /// Return the list of labels on this issue.
     /// </summary>
     public IEnumerable<string> Labels { get; }
 }

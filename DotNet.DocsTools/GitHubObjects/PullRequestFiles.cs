@@ -62,13 +62,8 @@ public sealed record PullRequestFiles : IGitHubQueryResult<PullRequestFiles, Fil
         return ["repository", "pullRequest", "files"];
     }
 
-    public static PullRequestFiles? FromJsonElement(JsonElement element, FilesModifiedVariables variables)
-    {
-        var path = element.GetProperty("path").GetString();
-        return path is not null 
-            ? new PullRequestFiles(path) 
-            : throw new ArgumentException("Path element not found");
-    }
+    public static PullRequestFiles? FromJsonElement(JsonElement element, FilesModifiedVariables variables) =>
+        new(ResponseExtractors.StringProperty(element, "path"));
 
     private PullRequestFiles(string path) => Path = path;
 
