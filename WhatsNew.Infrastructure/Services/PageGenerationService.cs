@@ -1,5 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GitHubObjects;
 using DotNetDocs.Tools.GraphQLQueries;
 using DotNetDocs.Tools.RESTQueries;
 using DotNetDocs.Tools.Utility;
@@ -226,7 +227,7 @@ public class PageGenerationService
                                     prs += $"#{pr.PrNumber}";
                                 }
                             } 
-                            catch (IOException e)
+                            catch (IOException)
                             {
                                 Console.WriteLine("PR includes what's new file. Ignoring");
                             }
@@ -348,12 +349,12 @@ public class PageGenerationService
             Console.ForegroundColor = ConsoleColor.Gray;
 
             var excludedContributors = new List<string>();
-            var query = new PullRequestsMergedInSprint(
-                client, repo.Owner, repo.Name, repo.Branch, repo.InclusionCriteria.Labels, _configuration.DateRange);
+            var query = new EnumerationQuery<WhatsNewPullRequest, WhatsNewVariables>(client);
+            var queryParms = new WhatsNewVariables(repo.Owner, repo.Name, repo.Branch, repo.InclusionCriteria.Labels, _configuration.DateRange);
             var authorLoginFTECache = new Dictionary<string, bool?>();
 
             var totalPRs = 0;
-            await foreach (var item in query.PerformQuery())
+            await foreach (var item in query.PerformQuery(queryParms))
             {
                 totalPRs++;
                 var prNumber = item.Number;
