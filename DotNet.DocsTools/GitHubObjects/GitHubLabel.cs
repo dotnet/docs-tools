@@ -68,7 +68,9 @@ public sealed record GitHubLabel : IGitHubQueryResult<GitHubLabel, FindLabelQuer
             }
         };
 
-    public static IEnumerable<string> NavigationToNodes(bool isScalar) => ["repository", "label"];
+    public static IEnumerable<string> NavigationToNodes(bool isScalar) => isScalar
+        ? ["repository", "label"]
+        : ["repository", "labels"];
 
     /// <summary>
     /// Construct a GitHub label from a JsonElement

@@ -1,4 +1,5 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
+using DotNet.DocsTools.GraphQLQueries;
 
 namespace Quest2GitHub;
 
@@ -236,13 +237,6 @@ public class QuestGitHubService : IDisposable
         var workItem = LinkedQuestId(ghIssue);
         if (workItem is null)
         {
-            // Remove the trigger label before doing anything. That prevents
-            // a race condition causing multiple imports:
-            var mutation = new AddAndRemoveLabelMutation(_ghClient, ghIssue.Id);
-
-            // Yes, this needs some later refactoring. This call won't update the description.
-            await mutation.PerformMutation("ignored", null, _importTriggerLabel?.Id);
-
             // Create work item:
             var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
@@ -255,8 +249,9 @@ public class QuestGitHubService : IDisposable
             [Associated WorkItem - {questItem.Id}]({_questLinkString}{questItem.Id})
             """;
 
-            // Now, update the body, and add the label:
-            await mutation.PerformMutation(updatedBody, _importedLabel?.Id, null);
+            var mutation = new Mutation<SequesteredIssueMutation, SequesterVariables>(_ghClient);
+
+            await mutation.PerformMutation(new SequesterVariables(ghIssue.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
             return questItem;
         }
         else

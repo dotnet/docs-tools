@@ -23,7 +23,8 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
     /// <param name="client">The GitHub client.</param>
     public EnumerationQuery(IGitHubClient client)
     {
-        _client = client ?? throw new ArgumentNullException(paramName: nameof(client), message: "Cannot be null");
+        ArgumentNullException.ThrowIfNull(client, nameof(client));
+        _client = client;
     }
 
     /// <summary>

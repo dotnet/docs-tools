@@ -4,6 +4,7 @@ using DotNetDocs.Tools.GraphQLQueries;
 using Microsoft.DotnetOrg.Ospo;
 using System.Text.Json;
 using DotNet.DocsTools.GitHubObjects;
+using DotNet.DocsTools.GraphQLQueries;
 
 namespace IssueCloser;
 
@@ -119,16 +120,10 @@ That automated process may have closed some issues that should be addressed. If 
     {
         // 1. Add label
         Console.WriteLine($"\tAdding [won't fix] label.");
-        var addMutation = new AddOrRemoveLabelMutation(client, issueID, labelID, true);
-        await addMutation.PerformMutation();
-
-        // 2. Add comment: body, nodeID
-        var comentMutation = new AddCommentMutation(client, issueID, commentText);
-        await comentMutation.PerformMutation();
-
-        // 3. Close issue: nodeID
-        var closeMutation = new CloseIssueMutation(client, issueID);
-        await closeMutation.PerformMutation();
+        Console.WriteLine($"\tAdding Closing comment.");
+        Console.WriteLine($"\tClosing issue.");
+        var closeIssueMutation = new Mutation<CloseBankruptyIssueMutation, CloseBankruptcyIssueVariables>(client);
+        await closeIssueMutation.PerformMutation(new CloseBankruptcyIssueVariables(issueID, labelID, commentText));
     }
 
     private static async Task<Dictionary<CloseCriteria, IssueSet>> BuildStatsMapAsync()
