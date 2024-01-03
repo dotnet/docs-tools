@@ -29,8 +29,12 @@ function getHeadingTextFrom(path) {
                 console.log(`Unable to read content for '${path}'.`);
                 return null;
             }
-            const result = (_a = tryGetRegExpMatch(h1RegExp, "h1", content)) !== null && _a !== void 0 ? _a : tryGetRegExpMatch(titleRegExp, "title", content);
+            let result = (_a = tryGetRegExpMatch(h1RegExp, "h1", content)) !== null && _a !== void 0 ? _a : tryGetRegExpMatch(titleRegExp, "title", content);
             console.log(`Found ${result} from '${path}' contents.`);
+            if (result && result.indexOf("<xref:") > -1) {
+                result = normalizeHeadingOrTitleText(result);
+                console.log(`  normalized as ${result}`);
+            }
             return result;
         }
         catch (error) {
@@ -45,6 +49,18 @@ function getHeadingTextFrom(path) {
     });
 }
 exports.getHeadingTextFrom = getHeadingTextFrom;
+const xrefRegExp = /<xref:([^>]+)>/gim;
+function normalizeHeadingOrTitleText(headingText) {
+    // If contains xref markdown, extract only the text from it.
+    // Example: "<xref:System.Globalization.CompareInfo> class" 
+    //       or "<xref:System.Globalization.CompareInfo /> class"
+    // Result: "`System.Globalization.CompareInfo` class"
+    const xrefMatch = xrefRegExp.exec(headingText);
+    if (xrefMatch && xrefMatch[1]) {
+        headingText = headingText.replace(xrefRegExp, `\`${xrefMatch[1]}\``);
+    }
+    return headingText;
+}
 function tryGetRegExpMatch(expression, groupName, content) {
     var _a;
     let result = null;
