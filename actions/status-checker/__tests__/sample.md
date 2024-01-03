@@ -3,7 +3,6 @@
 # The heading <xref:System.Console> class
 
 An h1 header
-
 ============
 
 Paragraphs are separated by a blank line.
@@ -29,7 +28,6 @@ in chapters 12--14"). Three dots ... will be converted to an ellipsis.
 Unicode is supported. ☺
 
 An h2 header
-
 ------------
 
 Here's a numbered list:

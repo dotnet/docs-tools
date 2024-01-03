@@ -52,7 +52,7 @@ exports.getHeadingTextFrom = getHeadingTextFrom;
 const xrefRegExp = /<xref:([^>]+)>/gim;
 function normalizeHeadingOrTitleText(headingText) {
     // If contains xref markdown, extract only the text from it.
-    // Example: "<xref:System.Globalization.CompareInfo> class" 
+    // Example: "<xref:System.Globalization.CompareInfo> class"
     //       or "<xref:System.Globalization.CompareInfo /> class"
     // Result: "`System.Globalization.CompareInfo` class"
     const xrefMatch = xrefRegExp.exec(headingText);
