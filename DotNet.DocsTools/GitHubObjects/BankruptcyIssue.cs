@@ -48,19 +48,25 @@ sealed public record BankruptcyIssue : Issue, IGitHubQueryResult<BankruptcyIssue
         }
         """;
 
-    public static GraphQLPacket GetQueryPacket(BankruptcyIssueVariables variables) =>
-        new()
-        {
-            query = OpenIssuesForBankruptcyQuery,
-            variables =
-            {
-                ["organization"] = variables.Organization,
-                ["repository"] = variables.Repository,
-            }
-        };
+    public static GraphQLPacket GetQueryPacket(BankruptcyIssueVariables variables, bool isScalar) => isScalar
+        ? throw new InvalidOperationException("This query doesn't support scalar queries")
+        : new()
+          {
+              query = OpenIssuesForBankruptcyQuery,
+              variables =
+              {
+                  ["organization"] = variables.Organization,
+                  ["repository"] = variables.Repository,
+              }
+          };
 
     public static BankruptcyIssue FromJsonElement(JsonElement element, BankruptcyIssueVariables unused) => 
         new(element);
+
+    public static IEnumerable<string> NavigationToNodes(bool isScalar) =>
+        isScalar
+            ? throw new InvalidOperationException("This query doesn't support scalar queries")
+            : ["repository", "issues"];
 
     public BankruptcyIssue(JsonElement element) : base(element)
     {

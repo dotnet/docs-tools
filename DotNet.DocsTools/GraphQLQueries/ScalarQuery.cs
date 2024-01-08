@@ -1,6 +1,5 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNetDocs.Tools.GitHubCommunications;
-using Org.BouncyCastle.Bcpg;
 
 namespace DotNetDocs.Tools.GraphQLQueries;
 
@@ -24,7 +23,8 @@ public class ScalarQuery<TResult, TVariables> where TResult : IGitHubQueryResult
     /// <param name="client">The GitHub client.</param>
     public ScalarQuery(IGitHubClient client)
     {
-        _client = client ?? throw new ArgumentNullException(paramName: nameof(client), message: "Cannot be null");
+        ArgumentNullException.ThrowIfNull(client, nameof(client));
+        _client = client;
     }
 
     /// <summary>
@@ -35,14 +35,14 @@ public class ScalarQuery<TResult, TVariables> where TResult : IGitHubQueryResult
     /// This query encapsulates the paging API for GitHub's GraphQL 
     /// endpoint.
     /// </remarks>
-    public async Task<TResult> PerformQuery(TVariables variables)
+    public async Task<TResult?> PerformQuery(TVariables variables)
     {
-        var scalarPacket = TResult.GetQueryPacket(variables);
+        var scalarPacket = TResult.GetQueryPacket(variables, true);
 
         var rootElement= await _client.PostGraphQLRequestAsync(scalarPacket);
 
         // TODO: This navigation should likely move to the FromJsonElement.
-        var issueNode = rootElement.Descendent("repository", "issue");
+        var issueNode = rootElement.Descendent(TResult.NavigationToNodes(true));
         return TResult.FromJsonElement(issueNode, variables);
     }
 }

@@ -2,6 +2,7 @@
 using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.RegularExpressions;
+using DotNet.DocsTools.GitHubObjects;
 
 namespace Snippets5000;
 
@@ -56,11 +57,12 @@ internal class PullRequestProcessor
     private async IAsyncEnumerable<DiscoveryResult> FindAllSolutionsAndProjects(string key)
     {
         var client = IGitHubClient.CreateGitHubClient(key);
-        var files = new FilesInPullRequest(client, _owner, _repo, _prNumber);
 
-        await foreach (var item in files.PerformQuery())
+        var filesQuery = new EnumerationQuery<PullRequestFiles, FilesModifiedVariables>(client);
+
+        await foreach (var item in filesQuery.PerformQuery(new FilesModifiedVariables(_owner, _repo, _prNumber)))
         {
-            DiscoveryResult? resultValue = GenerateItemResult(_rootDir, item);
+            DiscoveryResult? resultValue = GenerateItemResult(_rootDir, item.Path);
 
             if (resultValue != null)
                 yield return resultValue.Value;

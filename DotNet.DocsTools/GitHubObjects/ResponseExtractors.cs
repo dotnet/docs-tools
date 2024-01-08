@@ -1,5 +1,6 @@
 ﻿using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.Json;
+using System.Xml.Linq;
 
 namespace DotNet.DocsTools.GitHubObjects;
 
@@ -33,7 +34,9 @@ internal static class ResponseExtractors
         
         return array.ValueKind == JsonValueKind.Array ? 
             (from child in array.EnumerateArray()
-                select selector(child)).ToArray() :
+             let childElement = selector(child)
+             where childElement != null
+                select childElement).ToArray() :
                 [];
     }
 
@@ -93,5 +96,16 @@ internal static class ResponseExtractors
         {
             return null;
         }
+    }
+
+    internal static int IntProperty(JsonElement element, string propertyName)
+    {
+        if (element.ValueKind != JsonValueKind.Object) throw new ArgumentException("element is not a Json Object.", nameof(element));
+
+        if (element.TryGetProperty(propertyName, out var intProperty))
+        {
+            return intProperty.GetInt32();
+        }
+        throw new ArgumentException($"Property {propertyName} not found in Json element. Did you possibly access the parent node?", nameof(element));
     }
 }
