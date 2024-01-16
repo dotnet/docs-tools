@@ -6,7 +6,6 @@ using YamlDotNet.RepresentationModel;
 using Octokit;
 using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Logging;
-using Grpc.Core;
 
 [assembly: InternalsVisibleTo("RepoManConfigTest")]
 
@@ -78,18 +77,12 @@ public class Function1
                 state.RepositoryOwner = issuePayload.Repository.Owner.Login;
                 state.RequestType = RequestType.Issue;
 
-                (bool Success, bool GhalFileExists) rulesResult = await ReadRepoRulesFile(state);
+                bool rulesResult = await ReadRepoRulesFile(state);
 
                 // Check if rules failed to load
-                if (!rulesResult.Success)
+                if (!rulesResult)
                 {
-                    string error;
-
-                    if (rulesResult.GhalFileExists)
-                        error = "Legacy .ghal.rules.json exists in repository. Contact adegeo@ms to upgrade.";
-                    else
-                        error = $"The rules file ({RulesFileName}) is missing in repository.";
-
+                    string error = $"The rules file ({RulesFileName}) is missing in repository.";
                     state.Logger.LogError(error);
                     return req.CreateBadRequestResponse(error);
                 }
@@ -131,18 +124,12 @@ public class Function1
                 state.RepositoryOwner = pullPayload.Repository.Owner.Login;
                 state.RequestType = RequestType.PullRequest;
 
-                (bool Success, bool GhalFileExists) rulesResult = await ReadRepoRulesFile(state);
+                bool rulesResult = await ReadRepoRulesFile(state);
 
                 // Check if rules failed to load
-                if (!rulesResult.Success)
+                if (!rulesResult)
                 {
-                    string error;
-
-                    if (rulesResult.GhalFileExists)
-                        error = "Legacy .ghal.rules.json exists in repository. Contact adegeo@ms to upgrade.";
-                    else
-                        error = $"The rules file ({RulesFileName}) is missing in repository.";
-
+                    string error = $"The rules file ({RulesFileName}) is missing in repository.";
                     state.Logger.LogError(error);
                     return req.CreateBadRequestResponse(error);
                 }
@@ -180,18 +167,12 @@ public class Function1
                 state.RepositoryOwner = commentPayload.Repository.Owner.Login;
                 state.RequestType = RequestType.Comment;
 
-                (bool Success, bool GhalFileExists) rulesResult = await ReadRepoRulesFile(state);
+                bool rulesResult = await ReadRepoRulesFile(state);
 
                 // Check if rules failed to load
-                if (!rulesResult.Success)
+                if (!rulesResult)
                 {
-                    string error;
-
-                    if (rulesResult.GhalFileExists)
-                        error = "Legacy .ghal.rules.json exists in repository. Contact adegeo@ms to upgrade.";
-                    else
-                        error = $"The rules file ({RulesFileName}) is missing in repository.";
-
+                    string error = $"The rules file ({RulesFileName}) is missing in repository.";
                     state.Logger.LogError(error);
                     return req.CreateBadRequestResponse(error);
                 }
@@ -361,60 +342,37 @@ public class Function1
     /// </summary>
     /// <param name="state">The state object.</param>
     /// <returns>A bool, bool tuple to indicate the success of finding the rules file and the old rules (ghal) files from the repo.</returns>
-    private static async Task<(bool Success, bool GhalFileExists)> ReadRepoRulesFile(State state)
+    private static async Task<bool> ReadRepoRulesFile(State state)
     {
-        // Make sure old config file doesn't exist:
-        try
-        {
-            IReadOnlyList<RepositoryContent> oldConfig = await state.Client.Repository.Content.GetAllContents(state.RepositoryId, ".ghal.rules.json");
-            return (false, true);
-        }
-        catch (Octokit.NotFoundException)
-        {
-            // Do nothing, we want this to happen.
-        }
-        catch
-        {
-            state.Logger.LogError("Unknown error testing for .ghal.rules.json");
-            return (false, true);
-        }
-
-        // Get repo settings
         try
         {
             IReadOnlyList<RepositoryContent> rulesResponse = await state.Client.Repository.Content.GetAllContents(state.RepositoryId, RulesFileName);
             string repoRulesFile = rulesResponse[0].Content;
 
-            ///* HACK This is broken... github is adding byte 63 to the start of the file which breaks the parser
-            byte[] bytes = System.Text.Encoding.ASCII.GetBytes(repoRulesFile);
-            if (bytes[0] == 63)
-                repoRulesFile = System.Text.Encoding.UTF8.GetString(bytes.AsSpan(1));
-
             if (repoRulesFile == null)
-                return (false, false);
+                return false;
 
-            // Read config for the repo
             state.Logger.LogInformation($"Reading repo rules file: {RulesFileName}");
-            using StringReader reader = new StringReader(repoRulesFile);
-            YamlStream parser = new YamlStream();
-            parser.Load(reader);
-
-            // Convert string content into YAML object
-            state.RepoRulesYaml = (YamlMappingNode)parser.Documents[0].RootNode;
+            state.ReadYamlContent(repoRulesFile);
 
             // Read settings
             state.LoadSettings(state.RepoRulesYaml["config"]);
 
-            return (true, false);
+            return true;
         }
         catch (Octokit.NotFoundException)
         {
-            return (false, false);
+            return false;
         }
-        catch
+        catch (YamlDotNet.Core.SyntaxErrorException e)
         {
-            state.Logger.LogError("Unknown error retreiving or loading the yaml file");
-            return (false, false);
+            state.Logger.LogError($"Unable to parse repo rules:\nDescription: {e.Message}\nLine info:{e.Start}");
+            return false;
+        }
+        catch (Exception e)
+        {
+            state.Logger.LogError($"Unknown error retrieving or loading the yaml file\n{e}");
+            return false;
         }
     }
 

@@ -16,7 +16,7 @@ public enum RunnerItemTypes
     Predefined,
     Close,
     Reopen,
-    ProdTechLabels
+    SvcSubSvcLabels
 }
 
 public enum RunnerItemSubTypes

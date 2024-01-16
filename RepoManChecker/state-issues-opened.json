@@ -1,0 +1,439 @@
+{
+  "Issue": {
+    "url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130",
+    "repository_url": "https://api.github.com/repos/adegeo/issuestestingadegeo",
+    "labels_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/labels{/name}",
+    "comments_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/comments",
+    "events_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/events",
+    "html_url": "https://github.com/adegeo/issuestestingadegeo/issues/130",
+    "id": 2047036356,
+    "node_id": "I_kwDOCJoZP856A0vE",
+    "number": 130,
+    "title": "Test issue",
+    "user": {
+      "login": "adegeo",
+      "id": 67293991,
+      "node_id": "MDQ6VXNlcjY3MjkzOTkx",
+      "avatar_url": "https://avatars.githubusercontent.com/u/67293991?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/adegeo",
+      "html_url": "https://github.com/adegeo",
+      "followers_url": "https://api.github.com/users/adegeo/followers",
+      "following_url": "https://api.github.com/users/adegeo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/adegeo/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/adegeo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/adegeo/subscriptions",
+      "organizations_url": "https://api.github.com/users/adegeo/orgs",
+      "repos_url": "https://api.github.com/users/adegeo/repos",
+      "events_url": "https://api.github.com/users/adegeo/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/adegeo/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "labels": [
+      {
+        "id": 6339058947,
+        "node_id": "LA_kwDOCJoZP88AAAABedZdAw",
+        "url": "https://api.github.com/repos/adegeo/issuestestingadegeo/labels/dotnet-desktop/prod",
+        "name": "dotnet-desktop/prod",
+        "color": "ededed",
+        "default": false,
+        "description": null
+      },
+      {
+        "id": 6339058949,
+        "node_id": "LA_kwDOCJoZP88AAAABedZdBQ",
+        "url": "https://api.github.com/repos/adegeo/issuestestingadegeo/labels/dotnet-winforms/tech",
+        "name": "dotnet-winforms/tech",
+        "color": "ededed",
+        "default": false,
+        "description": null
+      },
+      {
+        "id": 6339157357,
+        "node_id": "LA_kwDOCJoZP88AAAABedfdbQ",
+        "url": "https://api.github.com/repos/adegeo/issuestestingadegeo/labels/needs-more-info",
+        "name": "needs-more-info",
+        "color": "ededed",
+        "default": false,
+        "description": null
+      }
+    ],
+    "state": "open",
+    "locked": false,
+    "assignee": null,
+    "assignees": [],
+    "milestone": null,
+    "comments": 6,
+    "created_at": "2023-12-18T16:35:55Z",
+    "updated_at": "2023-12-18T17:23:39Z",
+    "closed_at": null,
+    "author_association": "OWNER",
+    "active_lock_reason": null,
+    "body": "### Type of issue\n\nTypo\n\n### Description\n\n\r\n\r\n[Enter feedback here]\r\n\n\n### Page URL\n\nhttps://learn.microsoft.com/en-us/dotnet/desktop/winforms/whats-new/net80?view=netdesktop-8.0\n\n### Content source URL\n\nhttps://github.com/dotnet/docs-desktop/blob/main/dotnet-desktop-guide/net/winforms/whats-new/net80.md\n\n### Document Version Independent Id\n\nedf53f35-f11e-0884-195c-83bc621cb0c8\n\n### Article author\n\n@adegeo",
+    "closed_by": {
+      "login": "adegeo",
+      "id": 67293991,
+      "node_id": "MDQ6VXNlcjY3MjkzOTkx",
+      "avatar_url": "https://avatars.githubusercontent.com/u/67293991?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/adegeo",
+      "html_url": "https://github.com/adegeo",
+      "followers_url": "https://api.github.com/users/adegeo/followers",
+      "following_url": "https://api.github.com/users/adegeo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/adegeo/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/adegeo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/adegeo/subscriptions",
+      "organizations_url": "https://api.github.com/users/adegeo/orgs",
+      "repos_url": "https://api.github.com/users/adegeo/repos",
+      "events_url": "https://api.github.com/users/adegeo/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/adegeo/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "timeline_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/timeline",
+    "performed_via_github_app": null,
+    "state_reason": "reopened"
+  },
+  "PullRequest": null,
+  "PullRequestFiles": [],
+  "PullRequestReviews": [],
+  "Comment": null,
+  "EventPayload": {
+    "action": "opened",
+    "issue": {
+      "url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130",
+      "repository_url": "https://api.github.com/repos/adegeo/issuestestingadegeo",
+      "labels_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/labels{/name}",
+      "comments_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/comments",
+      "events_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/events",
+      "html_url": "https://github.com/adegeo/issuestestingadegeo/issues/130",
+      "id": 2047036356,
+      "node_id": "I_kwDOCJoZP856A0vE",
+      "number": 130,
+      "title": "Test issue",
+      "user": {
+        "login": "adegeo",
+        "id": 67293991,
+        "node_id": "MDQ6VXNlcjY3MjkzOTkx",
+        "avatar_url": "https://avatars.githubusercontent.com/u/67293991?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/adegeo",
+        "html_url": "https://github.com/adegeo",
+        "followers_url": "https://api.github.com/users/adegeo/followers",
+        "following_url": "https://api.github.com/users/adegeo/following{/other_user}",
+        "gists_url": "https://api.github.com/users/adegeo/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/adegeo/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/adegeo/subscriptions",
+        "organizations_url": "https://api.github.com/users/adegeo/orgs",
+        "repos_url": "https://api.github.com/users/adegeo/repos",
+        "events_url": "https://api.github.com/users/adegeo/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/adegeo/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "labels": [],
+      "state": "open",
+      "locked": false,
+      "assignee": null,
+      "assignees": [],
+      "milestone": null,
+      "comments": 0,
+      "created_at": "2023-12-18T16:35:55Z",
+      "updated_at": "2023-12-18T16:35:55Z",
+      "closed_at": null,
+      "author_association": "OWNER",
+      "active_lock_reason": null,
+      "body": "### Type of issue\n\nTypo\n\n### Description\n\n\r\n\r\n[Enter feedback here]\r\n\n\n### Page URL\n\nhttps://learn.microsoft.com/en-us/dotnet/desktop/winforms/whats-new/net80?view=netdesktop-8.0\n\n### Content source URL\n\nhttps://github.com/dotnet/docs-desktop/blob/main/dotnet-desktop-guide/net/winforms/whats-new/net80.md\n\n### Document Version Independent Id\n\nedf53f35-f11e-0884-195c-83bc621cb0c8\n\n### Article author\n\n@adegeo",
+      "reactions": {
+        "url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/reactions",
+        "total_count": 0,
+        "+1": 0,
+        "-1": 0,
+        "laugh": 0,
+        "hooray": 0,
+        "confused": 0,
+        "heart": 0,
+        "rocket": 0,
+        "eyes": 0
+      },
+      "timeline_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/130/timeline",
+      "performed_via_github_app": null,
+      "state_reason": null
+    },
+    "repository": {
+      "id": 144316735,
+      "node_id": "MDEwOlJlcG9zaXRvcnkxNDQzMTY3MzU=",
+      "name": "issuestestingadegeo",
+      "full_name": "adegeo/issuestestingadegeo",
+      "private": false,
+      "owner": {
+        "login": "adegeo",
+        "id": 67293991,
+        "node_id": "MDQ6VXNlcjY3MjkzOTkx",
+        "avatar_url": "https://avatars.githubusercontent.com/u/67293991?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/adegeo",
+        "html_url": "https://github.com/adegeo",
+        "followers_url": "https://api.github.com/users/adegeo/followers",
+        "following_url": "https://api.github.com/users/adegeo/following{/other_user}",
+        "gists_url": "https://api.github.com/users/adegeo/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/adegeo/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/adegeo/subscriptions",
+        "organizations_url": "https://api.github.com/users/adegeo/orgs",
+        "repos_url": "https://api.github.com/users/adegeo/repos",
+        "events_url": "https://api.github.com/users/adegeo/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/adegeo/received_events",
+        "type": "User",
+        "site_admin": false
+      },
+      "html_url": "https://github.com/adegeo/issuestestingadegeo",
+      "description": null,
+      "fork": false,
+      "url": "https://api.github.com/repos/adegeo/issuestestingadegeo",
+      "forks_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/forks",
+      "keys_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/keys{/key_id}",
+      "collaborators_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/collaborators{/collaborator}",
+      "teams_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/teams",
+      "hooks_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/hooks",
+      "issue_events_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/events{/number}",
+      "events_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/events",
+      "assignees_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/assignees{/user}",
+      "branches_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/branches{/branch}",
+      "tags_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/tags",
+      "blobs_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/git/blobs{/sha}",
+      "git_tags_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/git/tags{/sha}",
+      "git_refs_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/git/refs{/sha}",
+      "trees_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/git/trees{/sha}",
+      "statuses_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/statuses/{sha}",
+      "languages_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/languages",
+      "stargazers_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/stargazers",
+      "contributors_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/contributors",
+      "subscribers_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/subscribers",
+      "subscription_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/subscription",
+      "commits_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/commits{/sha}",
+      "git_commits_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/git/commits{/sha}",
+      "comments_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/comments{/number}",
+      "issue_comment_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues/comments{/number}",
+      "contents_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/contents/{+path}",
+      "compare_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/compare/{base}...{head}",
+      "merges_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/merges",
+      "archive_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/{archive_format}{/ref}",
+      "downloads_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/downloads",
+      "issues_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/issues{/number}",
+      "pulls_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/pulls{/number}",
+      "milestones_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/milestones{/number}",
+      "notifications_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/notifications{?since,all,participating}",
+      "labels_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/labels{/name}",
+      "releases_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/releases{/id}",
+      "deployments_url": "https://api.github.com/repos/adegeo/issuestestingadegeo/deployments",
+      "created_at": "2018-08-10T17:51:04Z",
+      "updated_at": "2022-10-05T21:36:43Z",
+      "pushed_at": "2023-12-18T16:32:24Z",
+      "git_url": "git://github.com/adegeo/issuestestingadegeo.git",
+      "ssh_url": "git@github.com:adegeo/issuestestingadegeo.git",
+      "clone_url": "https://github.com/adegeo/issuestestingadegeo.git",
+      "svn_url": "https://github.com/adegeo/issuestestingadegeo",
+      "homepage": null,
+      "size": 1399,
+      "stargazers_count": 0,
+      "watchers_count": 0,
+      "language": null,
+      "has_issues": true,
+      "has_projects": true,
+      "has_downloads": true,
+      "has_wiki": true,
+      "has_pages": false,
+      "has_discussions": false,
+      "forks_count": 1,
+      "mirror_url": null,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 3,
+      "license": null,
+      "allow_forking": true,
+      "is_template": false,
+      "web_commit_signoff_required": false,
+      "topics": [],
+      "visibility": "public",
+      "forks": 1,
+      "open_issues": 3,
+      "watchers": 0,
+      "default_branch": "master"
+    },
+    "sender": {
+      "login": "adegeo",
+      "id": 67293991,
+      "node_id": "MDQ6VXNlcjY3MjkzOTkx",
+      "avatar_url": "https://avatars.githubusercontent.com/u/67293991?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/adegeo",
+      "html_url": "https://github.com/adegeo",
+      "followers_url": "https://api.github.com/users/adegeo/followers",
+      "following_url": "https://api.github.com/users/adegeo/following{/other_user}",
+      "gists_url": "https://api.github.com/users/adegeo/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/adegeo/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/adegeo/subscriptions",
+      "organizations_url": "https://api.github.com/users/adegeo/orgs",
+      "repos_url": "https://api.github.com/users/adegeo/repos",
+      "events_url": "https://api.github.com/users/adegeo/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/adegeo/received_events",
+      "type": "User",
+      "site_admin": false
+    }
+  },
+  "Variables": [
+    {
+      "Key": "viewport",
+      "Value": "width=device-width, initial-scale=1.0"
+    },
+    {
+      "Key": "twitter:card",
+      "Value": "summary_large_image"
+    },
+    {
+      "Key": "twitter:site",
+      "Value": "@MicrosoftLearn"
+    },
+    {
+      "Key": "author",
+      "Value": "adegeo"
+    },
+    {
+      "Key": "breadcrumb_path",
+      "Value": "/dotnet/desktop/breadcrumb/toc.json"
+    },
+    {
+      "Key": "default_moniker",
+      "Value": "netdesktop-8.0"
+    },
+    {
+      "Key": "depot_name",
+      "Value": "MSDN.dotnet-desktop-guide"
+    },
+    {
+      "Key": "description",
+      "Value": "Learn about what's new in Windows Forms for .NET 8. Windows Forms. .NET provides new features and enhancements over .NET 7."
+    },
+    {
+      "Key": "document_id",
+      "Value": "a4fe50a3-a4d2-4611-d7b6-64aa4785eb62"
+    },
+    {
+      "Key": "document_version_independent_id",
+      "Value": "edf53f35-f11e-0884-195c-83bc621cb0c8"
+    },
+    {
+      "Key": "feedback_help_link_type",
+      "Value": ""
+    },
+    {
+      "Key": "feedback_help_link_url",
+      "Value": ""
+    },
+    {
+      "Key": "feedback_product_url",
+      "Value": "https://developercommunity.visualstudio.com/spaces/61/index.html"
+    },
+    {
+      "Key": "feedback_system",
+      "Value": "OpenSource"
+    },
+    {
+      "Key": "git_commit_id",
+      "Value": "e711de52436afb66f01624fe64c489a9f64940e9"
+    },
+    {
+      "Key": "gitcommit",
+      "Value": "https://github.com/dotnet/docs-desktop/blob/e711de52436afb66f01624fe64c489a9f64940e9/dotnet-desktop-guide/net/winforms/whats-new/net80.md"
+    },
+    {
+      "Key": "locale",
+      "Value": "en-us"
+    },
+    {
+      "Key": "monikers",
+      "Value": "netdesktop-8.0"
+    },
+    {
+      "Key": "ms.author",
+      "Value": "adegeo"
+    },
+    {
+      "Key": "ms.date",
+      "Value": "11/29/2023"
+    },
+    {
+      "Key": "ms.prod",
+      "Value": "dotnet-desktop"
+    },
+    {
+      "Key": "ms.technology",
+      "Value": "dotnet-winforms"
+    },
+    {
+      "Key": "ms.topic",
+      "Value": "conceptual"
+    },
+    {
+      "Key": "original_content_git_url",
+      "Value": "https://github.com/dotnet/docs-desktop/blob/live/dotnet-desktop-guide/net/winforms/whats-new/net80.md"
+    },
+    {
+      "Key": "page_type",
+      "Value": "conceptual"
+    },
+    {
+      "Key": "pdf_url_template",
+      "Value": "https://learn.microsoft.com/pdfstore/en-us/MSDN.dotnet-desktop-guide/{branchName}{pdfName}"
+    },
+    {
+      "Key": "schema",
+      "Value": "Conceptual"
+    },
+    {
+      "Key": "site_name",
+      "Value": "Docs"
+    },
+    {
+      "Key": "toc_rel",
+      "Value": "../toc.json"
+    },
+    {
+      "Key": "uhfHeaderId",
+      "Value": "MSDocsHeader-DotNet"
+    },
+    {
+      "Key": "updated_at",
+      "Value": "2023-12-15 06:04 AM"
+    },
+    {
+      "Key": "word_count",
+      "Value": "664"
+    },
+    {
+      "Key": "recommendation_types",
+      "Value": "Certification"
+    },
+    {
+      "Key": "persistent_id",
+      "Value": "b3efaac3-5f72-16a3-8922-33cb45f20948"
+    },
+    {
+      "Key": "github_feedback_content_git_url",
+      "Value": "https://github.com/dotnet/docs-desktop/blob/main/dotnet-desktop-guide/net/winforms/whats-new/net80.md"
+    }
+  ]
+}

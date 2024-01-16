@@ -289,7 +289,26 @@ public sealed class State
         Settings = deserializer.Deserialize<SettingsConfig>(builder.ToString());
     }
 
+    /// <summary>
+    /// Reads a YAML file string into the <see cref="RepoRulesYaml"/> property.
+    /// </summary>
+    /// <param name="fileContent">The content of a YAML file.</param>
+    /// <returns>True when the content is parsed into a YAML object.</returns>
+    public void ReadYamlContent(string fileContent)
+    {
+        ///* HACK This is broken... github sometimes adds byte 63 to the start of the file which breaks the parser. Trim it off
+        byte[] bytes = Encoding.ASCII.GetBytes(fileContent);
+        if (bytes[0] == 63)
+            fileContent = Encoding.UTF8.GetString(bytes.AsSpan(1));
 
+        // Parse the file content into the Yaml object
+        using StringReader reader = new StringReader(fileContent);
+        YamlStream parser = new YamlStream();
+        parser.Load(reader);
+
+        // Convert string content into YAML object
+        RepoRulesYaml = (YamlMappingNode)parser.Documents[0].RootNode;
+    }
 
     public class SettingsConfig
     {

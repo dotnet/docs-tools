@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoMan", "RepoMan.csproj",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.DocsTools", "..\DotNet.DocsTools\DotNet.DocsTools.csproj", "{ECFDB1ED-C2D4-4B89-86E8-A9B1509C3D9A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoManChecker", "..\RepoManChecker\RepoManChecker.csproj", "{E24D5FD0-E3E9-4DF4-BD02-8FF5652814DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoManCheckerCLI", "..\RepoManChecker\RepoManCheckerCLI.csproj", "{E24D5FD0-E3E9-4DF4-BD02-8FF5652814DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
