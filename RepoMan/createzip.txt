@@ -1,0 +1,1 @@
+dotnet build -c release /p:DeployOnBuild=true /p:DeployTarget=Package;CreatePackageOnPublish=true
