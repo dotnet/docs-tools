@@ -1,4 +1,7 @@
-﻿namespace Quest2GitHub;
+﻿using DotNet.DocsTools.GitHubObjects;
+using DotNet.DocsTools.GraphQLQueries;
+
+namespace Quest2GitHub;
 
 /// <summary>
 /// This class manages the top level workflows to synchronize
@@ -80,18 +83,19 @@ public class QuestGitHubService : IDisposable
         _allIterations ??= await RetrieveIterationLabelsAsync();
 
         var currentIteration = QuestIteration.CurrentIteration(_allIterations);
-        var issueEnumerator = new EnumerateIssues();
+
+        var query = new EnumerationQuery<QuestIssue, QuestIssueVariables>(_ghClient);
 
         var historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
 
         int totalImport = 0;
         int totalSkipped = 0;
-        await foreach (var item in issueEnumerator.AllQuestIssues(_ghClient, organization, repository, _importTriggerLabelText, _importedLabelText))
+        await foreach (var item in query.PerformQuery(new QuestIssueVariables(organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText)))
         {
             if (item.UpdatedAt < historyThreshold)
                 break;
 
-            if (item.Labels.Any(l => (l.nodeID == _importTriggerLabel?.nodeID) || (l.nodeID == _importedLabel?.nodeID)))
+            if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
             {
                 // Console.WriteLine($"{item.IssueNumber}: {item.Title}");
                 Console.WriteLine(item);
@@ -112,7 +116,7 @@ public class QuestGitHubService : IDisposable
             else
             {
                 totalSkipped++;
-                Console.WriteLine($"{item.IssueNumber}: skipped");
+                Console.WriteLine($"{item.Number}: skipped");
             }
         }
         Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
@@ -143,9 +147,14 @@ public class QuestGitHubService : IDisposable
         //Retrieve the GitHub issue.
         var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
 
+        if (ghIssue is null)
+        {
+            throw new InvalidOperationException("Issue not found");
+        }
+
         // Evaluate the labels to determine the right action.
-        var request = ghIssue.Labels.Any(l => l.nodeID == _importTriggerLabel?.nodeID);
-        var sequestered = ghIssue.Labels.Any(l => l.nodeID == _importedLabel?.nodeID);
+        var request = ghIssue.Labels.Any(l => l.Id == _importTriggerLabel?.Id);
+        var sequestered = ghIssue.Labels.Any(l => l.Id == _importedLabel?.Id);
         // Only query AzDo if needed:
         var questItem = (request || sequestered)
             ? await FindLinkedWorkItemAsync(ghIssue)
@@ -192,8 +201,11 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private Task<GithubIssue> RetrieveIssueAsync(string org, string repo, int issueNumber) =>
-            GithubIssue.QueryIssue(_ghClient, org, repo, issueNumber);
+    private Task<QuestIssue?> RetrieveIssueAsync(string org, string repo, int issueNumber)
+    {
+        var query = new ScalarQuery<QuestIssue, QuestIssueVariables>(_ghClient);
+        return query.PerformQuery(new QuestIssueVariables(org, repo, issueNumber));
+    }
 
     private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
     {
@@ -219,21 +231,14 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private async Task<QuestWorkItem?> LinkIssueAsync(string organization, string repo, GithubIssue ghIssue, QuestIteration currentIteration, 
+    private async Task<QuestWorkItem?> LinkIssueAsync(string organization, string repo, QuestIssue ghIssue, QuestIteration currentIteration, 
         IEnumerable<QuestIteration> allIterations)
     {
         var workItem = LinkedQuestId(ghIssue);
         if (workItem is null)
         {
-            // Remove the trigger label before doing anything. That prevents
-            // a race condition causing multiple imports:
-            var mutation = new AddAndRemoveLabelMutation(_ghClient, ghIssue.Id);
-
-            // Yes, this needs some later refactoring. This call won't update the description.
-            await mutation.PerformMutation("ignored", null, _importTriggerLabel?.nodeID);
-
             // Create work item:
-            var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.nodeID, currentIteration, allIterations);
+            var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
             // Add Tagged comment to GH Issue description.
             var updatedBody = $"""
@@ -244,8 +249,9 @@ public class QuestGitHubService : IDisposable
             [Associated WorkItem - {questItem.Id}]({_questLinkString}{questItem.Id})
             """;
 
-            // Now, update the body, and add the label:
-            await mutation.PerformMutation(updatedBody, _importedLabel?.nodeID, null);
+            var mutation = new Mutation<SequesteredIssueMutation, SequesterVariables>(_ghClient);
+
+            await mutation.PerformMutation(new SequesterVariables(ghIssue.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
             return questItem;
         }
         else
@@ -256,18 +262,19 @@ public class QuestGitHubService : IDisposable
 
     private async Task RetrieveLabelIdsAsync(string org, string repo)
     {
-        var labelQuery = new EnumerateLabels(_ghClient, org, repo);
-        await foreach (var label in labelQuery.AllLabels())
+        var labelQuery = new EnumerationQuery<GitHubLabel, FindLabelQueryVariables>(_ghClient);
+            
+        await foreach (var label in labelQuery.PerformQuery(new FindLabelQueryVariables(org, repo, "")))
         {
-            if (label.name == _importTriggerLabelText) _importTriggerLabel = label;
-            if (label.name == _importedLabelText) _importedLabel = label;
+            if (label.Name == _importTriggerLabelText) _importTriggerLabel = label;
+            if (label.Name == _importedLabelText) _importedLabel = label;
         }
     }
 
-    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, GithubIssue ghIssue, QuestIteration currentIteration,
+    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, QuestIssue ghIssue, QuestIteration currentIteration,
         IEnumerable<QuestIteration> allIterations)
     {
-        var ghAssigneeEmailAddress = await ghIssue.AssignedMicrosoftEmailAddress(_ospoClient);
+        var ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(_ospoClient);
         AzDoIdentity? questAssigneeID = default;
         if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
         {
@@ -347,7 +354,7 @@ public class QuestGitHubService : IDisposable
         return newItem;
     }
 
-    private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(GithubIssue issue)
+    private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(QuestIssue issue)
     {
         int? questId = LinkedQuestId(issue);
         if (questId is null)
@@ -356,7 +363,7 @@ public class QuestGitHubService : IDisposable
             return await QuestWorkItem.QueryWorkItem(_azdoClient, questId.Value);
     }
 
-    private int? LinkedQuestId(GithubIssue issue)
+    private int? LinkedQuestId(QuestIssue issue)
     {
         if (issue.BodyHtml?.Contains(LinkedWorkItemComment) == true)
         {

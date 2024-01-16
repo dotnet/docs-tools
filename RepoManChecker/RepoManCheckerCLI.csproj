@@ -1,11 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+<<<<<<< HEAD:RepoManChecker/RepoManCheckerCLI.csproj
     <OutputType>exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>RepoMan</RootNamespace>
+=======
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8</TargetFramework>
+    <Nullable>enable</Nullable>
+	<ImplicitUsings>enable</ImplicitUsings>
+>>>>>>> dbcfe0289de8c2d5142ab04552a518952665ecef:RepoManConfigTest/RepoManConfigTest.csproj
   </PropertyGroup>
 
   <!--
@@ -17,12 +24,19 @@
   -->
   
   <ItemGroup>
+<<<<<<< HEAD:RepoManChecker/RepoManCheckerCLI.csproj
     <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
     <PackageReference Include="Octokit" Version="7.1.0" />
     <PackageReference Include="Spectre.Console" Version="0.48.1-preview.0.5" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="YamlDotNet" Version="13.3.1" />
+=======
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageReference Include="Octokit" Version="9.0.0" />
+    <PackageReference Include="YamlDotNet" Version="13.7.1" />
+>>>>>>> dbcfe0289de8c2d5142ab04552a518952665ecef:RepoManConfigTest/RepoManConfigTest.csproj
   </ItemGroup>
 
   <ItemGroup>

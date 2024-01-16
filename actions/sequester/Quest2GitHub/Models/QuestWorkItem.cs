@@ -1,4 +1,6 @@
-﻿namespace Quest2GitHub.Models;
+﻿using DotNet.DocsTools.GitHubObjects;
+
+namespace Quest2GitHub.Models;
 
 public class QuestWorkItem
 {
@@ -91,7 +93,7 @@ public class QuestWorkItem
     /// Finally, create the work item object from the returned
     /// Json element.
     /// </remarks>
-    public static async Task<QuestWorkItem> CreateWorkItemAsync(GithubIssue issue,
+    public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssue issue,
         QuestClient questClient,
         OspoClient ospoClient,
         string path,
@@ -128,7 +130,7 @@ public class QuestWorkItem
         };
 
         // Query if the Github ID maps to an FTE id, add that one:
-        var assigneeEmail = await issue.AssignedMicrosoftEmailAddress(ospoClient);
+        var assigneeEmail = await issue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
         AzDoIdentity? assigneeID = default;
         if (assigneeEmail?.EndsWith("@microsoft.com") == true)
         {
@@ -222,18 +224,18 @@ public class QuestWorkItem
         return newItem;
     }
 
-    public static string BuildDescriptionFromIssue(GithubIssue issue, string? requestLabelNodeId)
+    public static string BuildDescriptionFromIssue(QuestIssue issue, string? requestLabelNodeId)
     {
         var body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
-        body.AppendLine($"<p>Author: {issue.Author}</p>");
+        body.AppendLine($"<p>Author: {issue.FormattedAuthorLoginName}</p>");
         body.AppendLine(issue.BodyHtml);
         if (issue.Labels.Any())
         {
             body.AppendLine($"<p><b>Labels:</b></p>");
             body.AppendLine("<ul>");
-            foreach (var item in issue.Labels.Where(l => l.nodeID != requestLabelNodeId))
+            foreach (var item in issue.Labels.Where(l => l.Id != requestLabelNodeId))
             {
-                body.AppendLine($"<li>#{item.name.Replace(' ', '-')}</li>");
+                body.AppendLine($"<li>#{item.Name.Replace(' ', '-')}</li>");
             }
             body.AppendLine("</ul>");
         }

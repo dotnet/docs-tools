@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Runtime.CompilerServices;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -401,7 +401,9 @@ public class Function1
         byte[] secret = System.Text.Encoding.ASCII.GetBytes(token);
         byte[] payloadBytes = System.Text.Encoding.UTF8.GetBytes(body);
 
+#pragma warning disable CA5350 // Do Not Use Weak Cryptographic Algorithms
         using System.Security.Cryptography.HMACSHA1 sha1 = new(secret);
+#pragma warning restore CA5350 // Do Not Use Weak Cryptographic Algorithms
         string result = ToHexString(sha1.ComputeHash(payloadBytes));
 
         if (string.Equals(result, signature, StringComparison.OrdinalIgnoreCase))

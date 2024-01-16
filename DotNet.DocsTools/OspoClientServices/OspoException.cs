@@ -22,11 +22,6 @@ public class OspoException : Exception
     {
     }
 
-    protected OspoException(SerializationInfo info, StreamingContext context)
-        : base(info, context)
-    {
-    }
-
     public OspoException(string? message, HttpStatusCode code)
         : this(message)
     {
