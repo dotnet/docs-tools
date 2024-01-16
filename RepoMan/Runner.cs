@@ -105,8 +105,8 @@ public sealed class Runner: IRunnerItem
                             // Should have child property specifying the action, open/close/move/whatever
                             break;
                         case RunnerItemTypes.SvcSubSvcLabels:
-                            state.Logger.LogDebugger($"BUILD: Product/Tech labels");
-                            runner.Actions.Add(new Actions.SetProdTechLabels());
+                            state.Logger.LogDebugger($"BUILD: Service/SubService labels");
+                            runner.Actions.Add(new Actions.SetSvcSubSvcLabels());
                             break;
                         default:
                             break;
@@ -206,6 +206,10 @@ public sealed class Runner: IRunnerItem
             return RunnerItemTypes.Reopen;
 
         else if (nodeName.Equals("svc_subsvc_labels", StringComparison.OrdinalIgnoreCase))
+            return RunnerItemTypes.SvcSubSvcLabels;
+
+        // Deprecated... remove in next update
+        else if (nodeName.Equals("prod_tech_labels", StringComparison.OrdinalIgnoreCase))
             return RunnerItemTypes.SvcSubSvcLabels;
 
         throw new Exception($"Invalid item type: {nodeName}");
