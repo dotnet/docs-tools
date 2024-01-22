@@ -23,7 +23,8 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
     /// <param name="client">The GitHub client.</param>
     public EnumerationQuery(IGitHubClient client)
     {
-        _client = client ?? throw new ArgumentNullException(paramName: nameof(client), message: "Cannot be null");
+        ArgumentNullException.ThrowIfNull(client, nameof(client));
+        _client = client;
     }
 
     /// <summary>
@@ -36,7 +37,7 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
     /// </remarks>
     public async IAsyncEnumerable<TResult> PerformQuery(TVariables variables)
     {
-        var findIssuesPacket = TResult.GetQueryPacket(variables);
+        var findIssuesPacket = TResult.GetQueryPacket(variables, false);
 
         var cursor = default(string);
         bool hasMore = true;
@@ -45,11 +46,17 @@ public class EnumerationQuery<TResult, TVariables> where TResult : IGitHubQueryR
             findIssuesPacket.variables["cursor"] = cursor!;
             var jsonData = await _client.PostGraphQLRequestAsync(findIssuesPacket);
 
-            (hasMore, cursor) = jsonData.Descendent("repository", "issues").NextPageInfo();
+            (hasMore, cursor) = jsonData.Descendent(TResult.NavigationToNodes(false)).NextPageInfo();
 
-            var elements = jsonData.Descendent("repository", "issues", "nodes").EnumerateArray();
+            var elements = jsonData.Descendent(TResult.NavigationToNodes(false).Append("nodes")).EnumerateArray();
             foreach (var item in elements)
-                yield return TResult.FromJsonElement(item, variables);
+            {
+                var result = TResult.FromJsonElement(item, variables);
+                if (result is not null)
+                {
+                    yield return result;
+                }
+            }
         }
     }
 }

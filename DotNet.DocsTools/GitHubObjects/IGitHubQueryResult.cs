@@ -20,14 +20,29 @@ public interface IGitHubQueryResult<TResult, TVariables> where TResult : IGitHub
     /// <param name="variables">
     /// An instance of a record whose members are transformed into the dictionary for the query.
     /// </param>
+    /// <param name="isScalar">True to return the query for a scalar query. False for an enumeration query.</param>
     /// <returns>The Packet structure for the query.</returns>
-    public static abstract GraphQLPacket GetQueryPacket(TVariables variables);
+    public static abstract GraphQLPacket GetQueryPacket(TVariables variables, bool isScalar);
 
     /// <summary>
     /// Construct the <typeparamref name="TResult"/> object from the JsonElement.
     /// </summary>
     /// <param name="element">The Json element representing one object.</param>
     /// <returns>An instance of the result type.</returns>
-    public static abstract TResult FromJsonElement(JsonElement element, TVariables variables);
+    public static abstract TResult? FromJsonElement(JsonElement element, TVariables variables);
 
+    /// <summary>
+    /// Retrieve the path to the correct data node from the "data" JsonElement node.
+    /// </summary>
+    /// <param name="isScalar">True if the query is a scalar query. False if it's enumerating an array</param>
+    /// <returns>
+    /// The sequence of node names to traverse from the "data" node to the node representing
+    /// the object being returned.
+    /// </returns>
+    /// <remarks>
+    /// For scalar queries, this navigation should return the node containing the result.
+    /// For array queries, this navigation should return the parent of the "nodes" element,
+    /// where the "nodes" element contains the array being enumerated.
+    /// </remarks>
+    public static abstract IEnumerable<string> NavigationToNodes(bool isScalar);
 }
