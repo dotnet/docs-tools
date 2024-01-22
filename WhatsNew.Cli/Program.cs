@@ -64,7 +64,7 @@ public class Program
             Console.WriteLine("\tIs the GitHub token valid?");
             Console.WriteLine("\tIs the GitHub token authorized for single sign-on (SSO)?");
             Console.WriteLine("\tDoes the GitHub token have the correct scopes?");
-            Console.WriteLine("See https://github.com/dotnet/docs-tools/blob/main/WhatsNew.Cli/README.md#usage for detailed instrucions");
+            Console.WriteLine("See https://github.com/dotnet/docs-tools/blob/main/WhatsNew.Cli/README.md#usage for detailed instructions");
 
             Console.WriteLine($"Error message: {ex.Message}");
             return;
@@ -74,7 +74,8 @@ public class Program
         if (savefile is not null)
         {
             Console.WriteLine($"Writing output to {savefile}");
-        } else
+        }
+        else
         {
             Console.WriteLine($"Writing output to {whatsNewConfig.SaveDir}");
         }
