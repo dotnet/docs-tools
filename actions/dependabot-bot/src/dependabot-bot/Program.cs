@@ -52,7 +52,7 @@ buffer.WriteLineToBufferAndOutput(gitHubActions, UpdateNodeLimit == updateNodeCo
       interval: ""weekly""
       day: ""wednesday""
   open-pull-requests-limit: 5
-  group:
+  groups:
     # Group .NET updates together
     dotnet:
       patterns:
@@ -83,7 +83,7 @@ foreach (var solution in result.Solutions.OrderBy(static sln => sln.FullPath))
                   interval: "weekly"
                   day: "wednesday"
                 open-pull-requests-limit: 5
-                group:
+                groups:
                   # Group .NET updates together for solutions.
                   dotnet:
                     patterns:
@@ -135,7 +135,7 @@ foreach (var fileInfo in result.StandaloneProjects.Select(static p => new FileIn
                   interval: "weekly"
                   day: "wednesday"
                 open-pull-requests-limit: 5
-                group:
+                groups:
                   # Group .NET updates together for projects.
                   dotnet:
                     patterns:
