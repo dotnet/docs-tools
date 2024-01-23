@@ -4,7 +4,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
 
-internal sealed class Runner: IRunnerItem
+public sealed class Runner: IRunnerItem
 {
     public static YamlNode? DebugNode;
 
@@ -104,9 +104,9 @@ internal sealed class Runner: IRunnerItem
                             // Future
                             // Should have child property specifying the action, open/close/move/whatever
                             break;
-                        case RunnerItemTypes.ProdTechLabels:
-                            state.Logger.LogDebugger($"BUILD: Product/Tech labels");
-                            runner.Actions.Add(new Actions.SetProdTechLabels());
+                        case RunnerItemTypes.SvcSubSvcLabels:
+                            state.Logger.LogDebugger($"BUILD: Service/SubService labels");
+                            runner.Actions.Add(new Actions.SetSvcSubSvcLabels());
                             break;
                         default:
                             break;
@@ -205,8 +205,12 @@ internal sealed class Runner: IRunnerItem
         else if (nodeName.Equals("reopen", StringComparison.OrdinalIgnoreCase))
             return RunnerItemTypes.Reopen;
 
+        else if (nodeName.Equals("svc_subsvc_labels", StringComparison.OrdinalIgnoreCase))
+            return RunnerItemTypes.SvcSubSvcLabels;
+
+        // Deprecated... remove in next update
         else if (nodeName.Equals("prod_tech_labels", StringComparison.OrdinalIgnoreCase))
-            return RunnerItemTypes.ProdTechLabels;
+            return RunnerItemTypes.SvcSubSvcLabels;
 
         throw new Exception($"Invalid item type: {nodeName}");
     }

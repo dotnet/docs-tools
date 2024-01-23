@@ -8,7 +8,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
 
-internal sealed class State
+public sealed class State
 {
     private JObject _cachedStateBody;
 
@@ -142,7 +142,7 @@ internal sealed class State
             }
         }
 
-        // After comment has been scanned, if the URL was found in the metaata, load the
+        // After comment has been scanned, if the URL was found in the metadata, load the
         // article page and scrape the metadata from the HTML
         if (DocIssueMetadata.Count != 0)
         {
@@ -162,22 +162,25 @@ internal sealed class State
         {
             Logger.LogInformation("Look for article URL");
 
-            foreach (var regexSearch in Settings.DocMetadata.ContentUrlRegex)
-            {
-               Logger.LogInformation($"Processing regex: {regexSearch}");
-                System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(comment, regexSearch, System.Text.RegularExpressions.RegexOptions.Multiline);
-
-                if (match.Success)
+            if (Settings.DocMetadata.ContentUrlRegex != null)
+                foreach (var regexSearch in Settings.DocMetadata.ContentUrlRegex)
                 {
-                    IsV2Metadata = true;
+                    Logger.LogInformation($"Processing regex: {regexSearch}");
+                    System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(comment, regexSearch, System.Text.RegularExpressions.RegexOptions.Multiline);
 
-                    Dictionary<string, string> newMetadata = Utilities.ScrapeArticleMetadata(new Uri(match.Groups[1].Value.ToLower()), this).Result;
+                    if (match.Success)
+                    {
+                        IsV2Metadata = true;
 
-                    DocIssueMetadata = new(DocIssueMetadata.Union(newMetadata));
+                        Dictionary<string, string> newMetadata = Utilities.ScrapeArticleMetadata(new Uri(match.Groups[1].Value.ToLower()), this).Result;
 
-                    break;
+                        DocIssueMetadata = new(DocIssueMetadata.Union(newMetadata));
+
+                        break;
+                    }
                 }
-            }
+            else
+                Logger.LogInformation("ContentUrlRegex is missing from repo rules metadata settings");
         }
 
         // Load each metadata item into a variable
@@ -286,7 +289,26 @@ internal sealed class State
         Settings = deserializer.Deserialize<SettingsConfig>(builder.ToString());
     }
 
+    /// <summary>
+    /// Reads a YAML file string into the <see cref="RepoRulesYaml"/> property.
+    /// </summary>
+    /// <param name="fileContent">The content of a YAML file.</param>
+    /// <returns>True when the content is parsed into a YAML object.</returns>
+    public void ReadYamlContent(string fileContent)
+    {
+        ///* HACK This is broken... github sometimes adds byte 63 to the start of the file which breaks the parser. Trim it off
+        byte[] bytes = Encoding.ASCII.GetBytes(fileContent);
+        if (bytes[0] == 63)
+            fileContent = Encoding.UTF8.GetString(bytes.AsSpan(1));
 
+        // Parse the file content into the Yaml object
+        using StringReader reader = new StringReader(fileContent);
+        YamlStream parser = new YamlStream();
+        parser.Load(reader);
+
+        // Convert string content into YAML object
+        RepoRulesYaml = (YamlMappingNode)parser.Documents[0].RootNode;
+    }
 
     public class SettingsConfig
     {

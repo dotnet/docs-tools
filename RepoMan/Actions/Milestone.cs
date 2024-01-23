@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-internal sealed class Milestone: IRunnerItem
+public sealed class Milestone: IRunnerItem
 {
     private const int InvalidMilestone = -1;
 

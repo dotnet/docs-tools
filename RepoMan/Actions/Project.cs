@@ -4,7 +4,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-internal sealed class Projects: IRunnerItem
+public sealed class Projects: IRunnerItem
 {
     private readonly RunnerItemSubTypes _type;
     private readonly int[] _projects;

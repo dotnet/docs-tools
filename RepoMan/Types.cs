@@ -1,6 +1,6 @@
 ﻿namespace RepoMan;
 
-internal enum RunnerItemTypes
+public enum RunnerItemTypes
 {
     Check,
     Label,
@@ -16,10 +16,10 @@ internal enum RunnerItemTypes
     Predefined,
     Close,
     Reopen,
-    ProdTechLabels
+    SvcSubSvcLabels
 }
 
-internal enum RunnerItemSubTypes
+public enum RunnerItemSubTypes
 {
     Add,
     Remove,

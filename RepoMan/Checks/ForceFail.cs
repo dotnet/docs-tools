@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-internal sealed class ForceFail : ICheck
+public sealed class ForceFail : ICheck
 {
     public ForceFail()
     {

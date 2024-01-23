@@ -3,7 +3,7 @@ using Octokit;
 
 namespace RepoMan;
 
-internal static class GithubCommand
+public static class GithubCommand
 {
     /// <summary>
     /// Caches and returns a list of all milestones associated with the repository.

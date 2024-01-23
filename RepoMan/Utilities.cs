@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace RepoMan;
 
-internal static partial class Utilities
+public static partial class Utilities
 {
     private static HttpClient _httpClient;
 
@@ -45,7 +45,8 @@ internal static partial class Utilities
     public static bool MatchRegex(string pattern, string source, State state)
     {
         state.Logger.LogTrace($"Using regex: {pattern} to match {source}");
-        return Regex.IsMatch(source, pattern);
+        source = source.Replace("\r", null);
+        return Regex.IsMatch(source.Replace("\r", null), pattern);
     }
 
     public static string StripMarkdown(string content)

@@ -2,7 +2,7 @@
 
 namespace RepoMan.Checks;
 
-internal sealed class DocNewMetadataExists : ICheck
+public sealed class DocNewMetadataExists : ICheck
 {
     public DocNewMetadataExists(State state)
     {

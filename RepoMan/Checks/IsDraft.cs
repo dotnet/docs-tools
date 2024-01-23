@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-internal sealed class IsDraft : ICheck
+public sealed class IsDraft : ICheck
 {
     public bool Condition { get; }
 

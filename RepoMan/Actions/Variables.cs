@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-internal sealed class Variable: IRunnerItem
+public sealed class Variable: IRunnerItem
 {
     private readonly RunnerItemSubTypes _type;
     private readonly string _id;

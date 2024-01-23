@@ -1,6 +1,6 @@
 ﻿namespace RepoMan;
 
-internal enum RequestType
+public enum RequestType
 {
     PullRequest,
     Issue,

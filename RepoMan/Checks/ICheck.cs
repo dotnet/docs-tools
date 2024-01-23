@@ -1,6 +1,6 @@
 ﻿namespace RepoMan.Checks;
 
-internal interface ICheck
+public interface ICheck
 {
     Task<bool> Run(State state);
 }

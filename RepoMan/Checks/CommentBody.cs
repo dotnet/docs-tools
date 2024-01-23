@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-internal sealed class CommentBody : ICheck
+public sealed class CommentBody : ICheck
 {
     public string RegEx { get; }
 

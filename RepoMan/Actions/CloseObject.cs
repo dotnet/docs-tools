@@ -3,7 +3,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-internal sealed class CloseObject: IRunnerItem
+public sealed class CloseObject: IRunnerItem
 {
     public CloseObject()
     {
