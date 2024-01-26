@@ -13,4 +13,6 @@ public class QuestIteration
         return IssueExtensions.ProjectIteration(currentMonth, currentYear, iterations);
     }
 
+    override public string ToString() => $"{Id} {Name} ({Path})";
+
 }

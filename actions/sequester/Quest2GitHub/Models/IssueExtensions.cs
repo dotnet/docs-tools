@@ -19,7 +19,7 @@ public static class IssueExtensions
         ["Nov"] = 11, // 2
         ["Dec"] = 12  // 2
     };
-    public static StoryPointSize? LatestStoryPointSize(this QuestIssue issue)
+    public static StoryPointSize? LatestStoryPointSize(this QuestIssueOrPullRequest issue)
     {
         var sizes = from size in issue.ProjectStoryPoints
                     let month = Months[size.Month]
@@ -47,7 +47,6 @@ public static class IssueExtensions
 
     public static QuestIteration? ProjectIteration(this StoryPointSize storyPoints, IEnumerable<QuestIteration> iterations)
     {
-        // Old form: Content\CY_2023\03
         // New form: Content\Gallium\FY24Q1\07
         string month = storyPoints.Month;
         int calendarYear = storyPoints.CalendarYear;
@@ -64,15 +63,18 @@ public static class IssueExtensions
     /// <param name="iterations">All iterations</param>
     /// <returns>The current iteration</returns>
     public static QuestIteration? ProjectIteration(string month, int calendarYear, IEnumerable<QuestIteration> iterations)
-    { 
-        var oldPattern = $"""CY_{calendarYear:D4}\{Months[month]:D2}""";
-        int fy = ((Months[month] > 6 ? calendarYear + 1 : calendarYear)) % 100;
-        int q = ((((Months[month]-1) / 3) + 2) % 4) + 1; // Yeah, this is weird. But, it does convert the current month to the FY quarter
-        var newPattern = $"""FY{fy:D2}Q{q:D1}\{Months[month]:D2}""";
+    {
+        if (!Months.TryGetValue(month, out var monthNumber))
+        {
+            return default;
+        }
+        int fy = ((monthNumber > 6 ? calendarYear + 1 : calendarYear)) % 100;
+        var fiscalYearPattern = $"FY{fy:D2}";
+        var monthPattern = $"{monthNumber:D2} {month}";
 
         foreach(var iteration in iterations)
         {
-            if (iteration.Path.Contains(oldPattern) || iteration.Path.Contains(newPattern))
+            if (iteration.Path.Contains(fiscalYearPattern) && iteration.Path.Contains(monthPattern))
             {
                 return iteration;
             }

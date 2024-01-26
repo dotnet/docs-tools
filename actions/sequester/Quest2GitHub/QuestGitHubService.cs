@@ -84,13 +84,13 @@ public class QuestGitHubService : IDisposable
 
         var currentIteration = QuestIteration.CurrentIteration(_allIterations);
 
-        var query = new EnumerationQuery<QuestIssue, QuestIssueVariables>(_ghClient);
+        var query = new EnumerationQuery<QuestIssueOrPullRequest, QuestIssueOrPullRequestVariables>(_ghClient);
 
         var historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
 
         int totalImport = 0;
         int totalSkipped = 0;
-        await foreach (var item in query.PerformQuery(new QuestIssueVariables(organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText)))
+        await foreach (var item in query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText)))
         {
             if (item.UpdatedAt < historyThreshold)
                 break;
@@ -201,10 +201,10 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private Task<QuestIssue?> RetrieveIssueAsync(string org, string repo, int issueNumber)
+    private Task<QuestIssueOrPullRequest?> RetrieveIssueAsync(string org, string repo, int issueNumber)
     {
-        var query = new ScalarQuery<QuestIssue, QuestIssueVariables>(_ghClient);
-        return query.PerformQuery(new QuestIssueVariables(org, repo, issueNumber));
+        var query = new ScalarQuery<QuestIssueOrPullRequest, QuestIssueOrPullRequestVariables>(_ghClient);
+        return query.PerformQuery(new QuestIssueOrPullRequestVariables(org, repo, issueNumber));
     }
 
     private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
@@ -231,7 +231,7 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private async Task<QuestWorkItem?> LinkIssueAsync(string organization, string repo, QuestIssue ghIssue, QuestIteration currentIteration, 
+    private async Task<QuestWorkItem?> LinkIssueAsync(string organization, string repo, QuestIssueOrPullRequest ghIssue, QuestIteration currentIteration, 
         IEnumerable<QuestIteration> allIterations)
     {
         var workItem = LinkedQuestId(ghIssue);
@@ -271,7 +271,7 @@ public class QuestGitHubService : IDisposable
         }
     }
 
-    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, QuestIssue ghIssue, QuestIteration currentIteration,
+    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, QuestIssueOrPullRequest ghIssue, QuestIteration currentIteration,
         IEnumerable<QuestIteration> allIterations)
     {
         var ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(_ospoClient);
@@ -322,6 +322,13 @@ public class QuestGitHubService : IDisposable
             });
         }
         var iterationSize = ghIssue.LatestStoryPointSize();
+        if (iterationSize != null)
+        {
+            Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
+        } else
+        {
+            Console.WriteLine("No GitHub sprint project found - using current iteration.");
+        }
         var iteration = iterationSize?.ProjectIteration(allIterations);
         if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
         {
@@ -354,7 +361,7 @@ public class QuestGitHubService : IDisposable
         return newItem;
     }
 
-    private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(QuestIssue issue)
+    private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(QuestIssueOrPullRequest issue)
     {
         int? questId = LinkedQuestId(issue);
         if (questId is null)
@@ -363,7 +370,7 @@ public class QuestGitHubService : IDisposable
             return await QuestWorkItem.QueryWorkItem(_azdoClient, questId.Value);
     }
 
-    private int? LinkedQuestId(QuestIssue issue)
+    private int? LinkedQuestId(QuestIssueOrPullRequest issue)
     {
         if (issue.BodyHtml?.Contains(LinkedWorkItemComment) == true)
         {

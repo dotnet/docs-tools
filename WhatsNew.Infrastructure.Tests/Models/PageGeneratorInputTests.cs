@@ -7,12 +7,14 @@ public class PageGeneratorInputTests
 {
     [Theory]
     [InlineData("", "")]
+#pragma warning disable xUnit1012 // Null should only be used for nullable parameters
     [InlineData(null, "")]
     [InlineData("", null)]
-    [InlineData("2020-05-01", "")]
     [InlineData("2020-05-01", null)]
-    [InlineData("", "2020-05-31")]
     [InlineData(null, "2020-05-31")]
+#pragma warning restore xUnit1012 // Null should only be used for nullable parameters
+    [InlineData("2020-05-01", "")]
+    [InlineData("", "2020-05-31")]
     public void Empty_Or_Null_Date_Throws_ArgumentException(string startDate, string endDate)
     {
         var exception = Assert.Throws<ArgumentException>(() =>
@@ -29,7 +31,9 @@ public class PageGeneratorInputTests
     [Theory]
     [InlineData("")]
     [InlineData("  ")]
+#pragma warning disable xUnit1012 // Null should only be used for nullable parameters
     [InlineData(null)]
+#pragma warning restore xUnit1012 // Null should only be used for nullable parameters
     public void Empty_Or_Null_Owner_Name_Throws_ArgumentException(string ownerName)
     {
         var exception = Assert.Throws<ArgumentException>(() =>
@@ -45,7 +49,9 @@ public class PageGeneratorInputTests
     [Theory]
     [InlineData("")]
     [InlineData("  ")]
+#pragma warning disable xUnit1012 // Null should only be used for nullable parameters
     [InlineData(null)]
+#pragma warning restore xUnit1012 // Null should only be used for nullable parameters
     public void Empty_Or_Null_Repo_Name_Throws_ArgumentException(string repoName)
     {
         var exception = Assert.Throws<ArgumentException>(() =>

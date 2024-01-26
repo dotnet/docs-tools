@@ -17,12 +17,14 @@ namespace DotNet.DocsTools.GitHubObjects;
 /// <param name="issueNumber">The issue number. Only used for scalar queries</param>
 /// <param name="importTriggerLabelText">The trigger label text. Only used for enumerations</param>
 /// <param name="importedLabelText">The imported label text. Only used for enumerations.</param>
-public readonly record struct QuestIssueVariables(
+/// <param name="searchPRs">True if the query should search PRs. False to search Issues.</param>
+public readonly record struct QuestIssueOrPullRequestVariables(
     string Organization, 
     string Repository, 
     int? issueNumber = null, 
     string? importTriggerLabelText = null, 
-    string? importedLabelText = null);
+    string? importedLabelText = null,
+    bool searchPRs = false);
 
 /// <summary>
 /// Model for a GitHub issue
@@ -31,7 +33,7 @@ public readonly record struct QuestIssueVariables(
 /// This class represents a Github issue, including
 /// the fields needed for linking with Quest.
 /// </remarks>
-public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIssueVariables>
+public sealed record QuestIssueOrPullRequest : Issue, IGitHubQueryResult<QuestIssueOrPullRequest, QuestIssueOrPullRequestVariables>
 {
     private const string QuestIssueScalarQueryText = """
     query GetIssueForQuestImport($organization: String!, $repository: String!, $issueNumber:Int!) {
@@ -115,7 +117,7 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     }
     """;
 
-    private static readonly string EnumerateQuestIssuesQueryText = """
+    private const string EnumerateQuestIssuesQueryText = """
         query FindUpdatedIssues($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
           repository(owner: $organization, name: $repository) {
             issues(
@@ -218,10 +220,12 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     /// <param name="variables">The variables added to the packet</param>
     /// <returns>The GraphQL Packet structure.</returns>
     /// <exception cref="ArgumentException">Thrown when one of the required fields in the variables packet is null.</exception>
-    public static GraphQLPacket GetQueryPacket(QuestIssueVariables variables, bool isScalar) => isScalar
+    public static GraphQLPacket GetQueryPacket(QuestIssueOrPullRequestVariables variables, bool isScalar) => isScalar
         ? new()
             {
-                query = QuestIssueScalarQueryText,
+                query = variables.searchPRs
+                    ? QuestIssueScalarQueryText.Replace("issue(number: $issueNumber)", "pullRequest(number: $issueNumber)")
+                    : QuestIssueScalarQueryText,
                 variables =
                 {
                     ["organization"] = variables.Organization,
@@ -231,7 +235,9 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
             }
         : new GraphQLPacket
             {
-                query = EnumerateQuestIssuesQueryText,
+                query = variables.searchPRs
+                    ? EnumerateQuestIssuesQueryText.Replace("issues(", "pullRequests(")
+                    : EnumerateQuestIssuesQueryText,
                 variables =
                 {
                     ["organization"] = variables.Organization,
@@ -252,10 +258,10 @@ public sealed record QuestIssue : Issue, IGitHubQueryResult<QuestIssue, QuestIss
     /// <param name="issueNode">The JSON issue node</param>
     /// <param name="variables">The variables used in the query.</param>
     /// <returns></returns>
-    public static QuestIssue FromJsonElement(JsonElement issueNode, QuestIssueVariables variables) =>
-        new QuestIssue(issueNode, variables.Organization, variables.Repository);
+    public static QuestIssueOrPullRequest FromJsonElement(JsonElement issueNode, QuestIssueOrPullRequestVariables variables) =>
+        new QuestIssueOrPullRequest(issueNode, variables.Organization, variables.Repository);
 
-    private QuestIssue(JsonElement issueNode, string organization, string repository) : base(issueNode)
+    private QuestIssueOrPullRequest(JsonElement issueNode, string organization, string repository) : base(issueNode)
     {
         var author = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(issueNode));
         FormattedAuthorLoginName = (author is not null) ?

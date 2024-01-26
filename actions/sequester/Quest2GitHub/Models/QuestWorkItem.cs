@@ -93,7 +93,7 @@ public class QuestWorkItem
     /// Finally, create the work item object from the returned
     /// Json element.
     /// </remarks>
-    public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssue issue,
+    public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssueOrPullRequest issue,
         QuestClient questClient,
         OspoClient ospoClient,
         string path,
@@ -145,6 +145,14 @@ public class QuestWorkItem
         };
         patchDocument.Add(assignPatch);
         var iterationSize = issue.LatestStoryPointSize();
+        if (iterationSize != null)
+        {
+            Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
+        }
+        else
+        {
+            Console.WriteLine("No GitHub sprint project found - using current iteration");
+        }
         var iteration = iterationSize?.ProjectIteration(allIterations);
         if (iteration is not null)
         {
@@ -224,7 +232,7 @@ public class QuestWorkItem
         return newItem;
     }
 
-    public static string BuildDescriptionFromIssue(QuestIssue issue, string? requestLabelNodeId)
+    public static string BuildDescriptionFromIssue(QuestIssueOrPullRequest issue, string? requestLabelNodeId)
     {
         var body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
         body.AppendLine($"<p>Author: {issue.FormattedAuthorLoginName}</p>");

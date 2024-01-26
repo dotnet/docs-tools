@@ -1,4 +1,4 @@
-using WhatsNew.Infrastructure.Models;
+﻿using WhatsNew.Infrastructure.Models;
 using WhatsNew.Infrastructure.Services;
 using Xunit;
 
@@ -36,7 +36,9 @@ public class ConfigurationServiceTests
     [Theory(Skip = "Flaky in Az Pipelines build")]
     [InlineData("")]
     [InlineData("  ")]
+#pragma warning disable xUnit1012 // Null should only be used for nullable parameters
     [InlineData(null)]
+#pragma warning restore xUnit1012 // Null should only be used for nullable parameters
     public async Task Empty_GitHub_Personal_Access_Token_Throws_InvalidOperationException(
         string gitHubKey)
     {

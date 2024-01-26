@@ -35,9 +35,9 @@ public record StoryPointSize
                 string[] components = projectTitle.Split(' ');
                 int yearIndex = (sprintMonth is null) ? 2 : 1;
                 // Should be in a project variable named "Sprint", take substring 0,3
-                var Month = sprintMonth ?? components[1].Substring(0, 3);
+                var month = sprintMonth ?? components[1];
                 int.TryParse(components[yearIndex], out var year);
-                sz = new StoryPointSize(year, Month.Substring(0, 3), size);
+                sz = new StoryPointSize(year, month.Substring(0, 3), size);
             }
         }
         return sz;

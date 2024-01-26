@@ -436,7 +436,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
         [Fact]
         public void OpenQuestIssueFromJsonNode()
         {
-            var variables = new QuestIssueVariables
+            var variables = new QuestIssueOrPullRequestVariables
             {
                 Organization = "dotnet",
                 Repository = "docs",
@@ -444,7 +444,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(ValidOpenIssueResult).RootElement;
-            var issue = QuestIssue.FromJsonElement(element, variables);
+            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
             Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
@@ -476,7 +476,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
         [Fact]
         public void ClosedQuestIssueFromJsonNode()
         {
-            var variables = new QuestIssueVariables
+            var variables = new QuestIssueOrPullRequestVariables
             {
                 Organization = "dotnet",
                 Repository = "docs",
@@ -484,7 +484,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(ValidClosedIssueResult).RootElement;
-            var issue = QuestIssue.FromJsonElement(element, variables);
+            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.False(issue.IsOpen);
             Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
@@ -515,7 +515,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
         [Fact]
         public void ParseIssueMissingOptionalFields()
         {
-            var variables = new QuestIssueVariables
+            var variables = new QuestIssueOrPullRequestVariables
             {
                 Organization = "dotnet",
                 Repository = "docs",
@@ -523,7 +523,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(IssueMissingFields).RootElement;
-            var issue = QuestIssue.FromJsonElement(element, variables);
+            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
             Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
@@ -550,7 +550,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
                 ("KalleOlaviNiemitalo", "This was a big comment. And, tests have already verified that the JSON parser handles HTML.")
             ];
 
-            var variables = new QuestIssueVariables
+            var variables = new QuestIssueOrPullRequestVariables
             {
                 Organization = "dotnet",
                 Repository = "csharpstandard",
@@ -558,7 +558,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(IssueWithComments).RootElement;
-            var issue = QuestIssue.FromJsonElement(element, variables);
+            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
             Assert.Equal("KalleOlaviNiemitalo - Kalle Olavi Niemitalo", issue.FormattedAuthorLoginName);
@@ -591,7 +591,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
         [Fact]
         public void OpenIssueMissingTimeLine()
         {
-            var variables = new QuestIssueVariables
+            var variables = new QuestIssueOrPullRequestVariables
             {
                 Organization = "dotnet",
                 Repository = "docs",
@@ -599,7 +599,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(MissingTimeLine).RootElement;
-            var issue = QuestIssue.FromJsonElement(element, variables);
+            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
             Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
