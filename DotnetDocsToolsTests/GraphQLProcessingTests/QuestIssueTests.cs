@@ -444,7 +444,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(ValidOpenIssueResult).RootElement;
-            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
+            var issue = QuestIssue.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
             Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
@@ -484,7 +484,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(ValidClosedIssueResult).RootElement;
-            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
+            var issue = QuestPullRequest.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.False(issue.IsOpen);
             Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
@@ -523,7 +523,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(IssueMissingFields).RootElement;
-            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
+            var issue = QuestIssue.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
             Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);
@@ -558,7 +558,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(IssueWithComments).RootElement;
-            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
+            var issue = QuestPullRequest.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
             Assert.Equal("KalleOlaviNiemitalo - Kalle Olavi Niemitalo", issue.FormattedAuthorLoginName);
@@ -599,7 +599,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             };
 
             JsonElement element = JsonDocument.Parse(MissingTimeLine).RootElement;
-            var issue = QuestIssueOrPullRequest.FromJsonElement(element, variables);
+            var issue = QuestIssue.FromJsonElement(element, variables);
             Assert.NotNull(issue);
             Assert.True(issue.IsOpen);
             Assert.Equal($"{authorLogin} - {authorName}", issue.FormattedAuthorLoginName);

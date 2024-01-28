@@ -84,17 +84,18 @@ public class QuestGitHubService : IDisposable
 
         var currentIteration = QuestIteration.CurrentIteration(_allIterations);
 
-        var query = new EnumerationQuery<QuestIssueOrPullRequest, QuestIssueOrPullRequestVariables>(_ghClient);
+        var issueQuery = new EnumerationQuery<QuestIssue, QuestIssueOrPullRequestVariables>(_ghClient);
+        var prQuery = new EnumerationQuery<QuestPullRequest, QuestIssueOrPullRequestVariables>(_ghClient);
 
         var historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
 
         int totalImport = 0;
         int totalSkipped = 0;
-        await foreach (var item in query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText)))
+        await foreach (var item in ConcatQueries(
+            issueQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText)),
+            prQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText))
+        ))
         {
-            if (item.UpdatedAt < historyThreshold)
-                break;
-
             if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
             {
                 // Console.WriteLine($"{item.IssueNumber}: {item.Title}");
@@ -120,6 +121,24 @@ public class QuestGitHubService : IDisposable
             }
         }
         Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
+
+        // This is a very general method, and could be moved into a library and utility class.
+        async IAsyncEnumerable<QuestIssueOrPullRequest> ConcatQueries(IAsyncEnumerable<QuestIssueOrPullRequest> issues, IAsyncEnumerable<QuestIssueOrPullRequest> pullRequests)
+        {
+            await foreach (QuestIssueOrPullRequest issue in issues)
+            {
+                if (issue.UpdatedAt < historyThreshold)
+                    break;
+            
+                yield return issue;
+            }
+            await foreach (QuestIssueOrPullRequest pr in pullRequests)
+            {
+                if (pr.UpdatedAt < historyThreshold)
+                    break;
+                yield return pr;
+            }
+        }
     }
 
     /// <summary>
@@ -145,13 +164,22 @@ public class QuestGitHubService : IDisposable
             ?? throw new Exception("No current iteration found");
 
         //Retrieve the GitHub issue.
-        var ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
-
+        QuestIssueOrPullRequest? ghIssue = null;
+        try {
+            ghIssue = await RetrieveIssueAsync(gitHubOrganization, gitHubRepository, issueNumber);
+        }
+        catch (InvalidOperationException)
+        {
+            Console.WriteLine($"Issue not found, trying a Pull request");
+        }
         if (ghIssue is null)
         {
-            throw new InvalidOperationException("Issue not found");
+            ghIssue = await RetrievePullRequestAsync(gitHubOrganization, gitHubRepository, issueNumber);
         }
-
+        if (ghIssue is null)
+        {
+            throw new InvalidOperationException("Neither issue nor pull request found");
+        }
         // Evaluate the labels to determine the right action.
         var request = ghIssue.Labels.Any(l => l.Id == _importTriggerLabel?.Id);
         var sequestered = ghIssue.Labels.Any(l => l.Id == _importedLabel?.Id);
@@ -201,12 +229,17 @@ public class QuestGitHubService : IDisposable
     }
 
 
-    private Task<QuestIssueOrPullRequest?> RetrieveIssueAsync(string org, string repo, int issueNumber)
+    private Task<QuestIssue?> RetrieveIssueAsync(string org, string repo, int issueNumber)
     {
-        var query = new ScalarQuery<QuestIssueOrPullRequest, QuestIssueOrPullRequestVariables>(_ghClient);
+        var query = new ScalarQuery<QuestIssue, QuestIssueOrPullRequestVariables>(_ghClient);
         return query.PerformQuery(new QuestIssueOrPullRequestVariables(org, repo, issueNumber));
     }
 
+    private Task<QuestPullRequest?> RetrievePullRequestAsync(string org, string repo, int issueNumber)
+    {
+        var query = new ScalarQuery<QuestPullRequest, QuestIssueOrPullRequestVariables>(_ghClient);
+        return query.PerformQuery(new QuestIssueOrPullRequestVariables(org, repo, issueNumber));
+    }
     private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
     {
         var sprintPackets = await _azdoClient.RetrieveAllIterations();

@@ -66,7 +66,6 @@ public sealed class QuestClient : IDisposable
     {
         string getIterationsUrl =
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/work/teamsettings/iterations?api-version=7.1-preview.1";
-        Console.WriteLine($"Get Iterations URL: \"{getIterationsUrl}\"");
 
         using var response = await InitiateRequestAsync(
             client => client.GetAsync(getIterationsUrl));
