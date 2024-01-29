@@ -14,29 +14,30 @@ public record StoryPointSize
         if (projectItem.ValueKind == JsonValueKind.Object)
         {
             // Modify the code to store the optional month in the tuple field.
-            // Consider: Store YYYY, Month, Size as a threeple.
-            var projectTitle = projectItem.Descendent("project", "title").GetString();
+            string? projectTitle = projectItem.Descendent("project", "title").GetString();
             // size may or may not have been set yet:
             string size = "🐂 Medium";
             string? sprintMonth = default;
-            foreach (var field in projectItem.Descendent("fieldValues", "nodes").EnumerateArray())
+            foreach (JsonElement field in projectItem.Descendent("fieldValues", "nodes").EnumerateArray())
             {
-                if (field.TryGetProperty("name", out var fieldValue))
+                if (field.TryGetProperty("name", out JsonElement fieldValue))
                 {
-                    var fieldName = field.Descendent("field", "name").GetString();
+                    string? fieldName = field.Descendent("field", "name").GetString();
                     if (fieldName == "Sprint") sprintMonth = fieldValue.GetString();
-                    if (fieldName == "Size") size = fieldValue.GetString();
+                    if (fieldName == "Size") size = fieldValue.GetString() ?? "🐂 Medium";
                 }
             }
             if ((projectTitle is not null) &&
-                projectTitle.ToLower().Contains("sprint"))
+                projectTitle.Contains("sprint", StringComparison.CurrentCultureIgnoreCase))
             {
                 string[] components = projectTitle.Split(' ');
                 int yearIndex = (sprintMonth is null) ? 2 : 1;
                 // Should be in a project variable named "Sprint", take substring 0,3
-                var month = sprintMonth ?? components[1];
-                int.TryParse(components[yearIndex], out var year);
-                sz = new StoryPointSize(year, month.Substring(0, 3), size);
+                string month = sprintMonth ?? components[1];
+                if (int.TryParse(components[yearIndex], out int year))
+                {
+                    sz = new StoryPointSize(year, month.Substring(0, 3), size);
+                }
             }
         }
         return sz;

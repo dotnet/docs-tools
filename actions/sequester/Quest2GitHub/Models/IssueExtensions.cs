@@ -4,7 +4,7 @@ namespace Quest2GitHub.Models;
 
 public static class IssueExtensions
 {
-    private static readonly Dictionary<string, int> Months = new ()
+    private static readonly Dictionary<string, int> s_months = new ()
     {
         ["Jan"] =  1, // 3
         ["Feb"] =  2, // 3
@@ -21,8 +21,8 @@ public static class IssueExtensions
     };
     public static StoryPointSize? LatestStoryPointSize(this QuestIssueOrPullRequest issue)
     {
-        var sizes = from size in issue.ProjectStoryPoints
-                    let month = Months[size.Month]
+        IEnumerable<StoryPointSize> sizes = from size in issue.ProjectStoryPoints
+                    let month = s_months[size.Month]
                     orderby size.CalendarYear descending,
                     month descending
                     select size;
@@ -64,15 +64,15 @@ public static class IssueExtensions
     /// <returns>The current iteration</returns>
     public static QuestIteration? ProjectIteration(string month, int calendarYear, IEnumerable<QuestIteration> iterations)
     {
-        if (!Months.TryGetValue(month, out var monthNumber))
+        if (!s_months.TryGetValue(month, out int monthNumber))
         {
             return default;
         }
         int fy = ((monthNumber > 6 ? calendarYear + 1 : calendarYear)) % 100;
-        var fiscalYearPattern = $"FY{fy:D2}";
-        var monthPattern = $"{monthNumber:D2} {month}";
+        string fiscalYearPattern = $"FY{fy:D2}";
+        string monthPattern = $"{monthNumber:D2} {month}";
 
-        foreach(var iteration in iterations)
+        foreach(QuestIteration iteration in iterations)
         {
             if (iteration.Path.Contains(fiscalYearPattern) && iteration.Path.Contains(monthPattern))
             {

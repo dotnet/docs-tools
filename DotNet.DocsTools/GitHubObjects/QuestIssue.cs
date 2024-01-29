@@ -46,7 +46,7 @@ public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssu
     /// <param name="variables">The variables used in the query.</param>
     /// <returns></returns>
     public static QuestIssue FromJsonElement(JsonElement issueNode, QuestIssueOrPullRequestVariables variables) =>
-        new QuestIssue(issueNode, variables.Organization, variables.Repository);
+        new(issueNode, variables.Organization, variables.Repository);
 
     private QuestIssue(JsonElement issueNode, string organization, string repository) : base(issueNode, organization, repository)
     {

@@ -46,7 +46,7 @@ public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryRes
     /// <param name="variables">The variables used in the query.</param>
     /// <returns></returns>
     public static QuestPullRequest FromJsonElement(JsonElement issueNode, QuestIssueOrPullRequestVariables variables) =>
-        new QuestPullRequest (issueNode, variables.Organization, variables.Repository);
+        new(issueNode, variables.Organization, variables.Repository);
 
     private QuestPullRequest(JsonElement issueNode, string organization, string repository) : base(issueNode, organization, repository) { }
 }

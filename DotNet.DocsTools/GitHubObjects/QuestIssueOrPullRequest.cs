@@ -27,7 +27,7 @@ public readonly record struct QuestIssueOrPullRequestVariables(
 /// Model for a GitHub issue
 /// </summary>
 /// <remarks>
-/// This class represents a Github issue, including
+/// This class represents a GitHub issue, including
 /// the fields needed for linking with Quest.
 /// </remarks>
 public abstract record QuestIssueOrPullRequest : Issue
@@ -37,17 +37,17 @@ public abstract record QuestIssueOrPullRequest : Issue
       repository(owner: $organization, name: $repository) {
         issue(number: $issueNumber) {    
     """
-    + scalarQueryBody;
+    + ScalarQueryBody;
 
     protected const string QuestPullRequestScalarQueryText = """
     query GetPullRequestForQuestImport($organization: String!, $repository: String!, $issueNumber:Int!) {
       repository(owner: $organization, name: $repository) {
         pullRequest(number: $issueNumber) {    
     """
-    + scalarQueryBody;
+    + ScalarQueryBody;
 
 
-    private const string scalarQueryBody = """
+    private const string ScalarQueryBody = """
           id
           number
           title
@@ -130,15 +130,15 @@ public abstract record QuestIssueOrPullRequest : Issue
         query FindUpdatedIssues($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
           repository(owner: $organization, name: $repository) {
             issues(
-    """ + enumerationQueryBody;
+    """ + EnumerationQueryBody;
 
     protected const string EnumerateQuestPullRequestQueryText = """
         query FindUpdatedPullRequests($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
           repository(owner: $organization, name: $repository) {
             pullRequests(
-    """ + enumerationQueryBody;
+    """ + EnumerationQueryBody;
 
-    private const string enumerationQueryBody = """
+    private const string EnumerationQueryBody = """
               first: 25
               after: $cursor
               labels: $questlabels
@@ -244,24 +244,24 @@ public abstract record QuestIssueOrPullRequest : Issue
         UpdatedAt = ResponseExtractors.GetUpdatedAtValueOrNow(issueNode);
 
         Assignees = [ ..ResponseExtractors.GetChildArrayElements(issueNode, "assignees", item =>
-            Actor.FromJsonElement(item)).Where(actor => actor is Actor)];
+            Actor.FromJsonElement(item)).Where(actor => actor is not null)];
  
         Labels = ResponseExtractors.GetChildArrayElements(issueNode, "labels", item => GitHubLabel.FromJsonElement(item, default)!); 
-        Comments = ResponseExtractors.GetChildArrayElements(issueNode, "comments", item =>
+        Comments = [.. ResponseExtractors.GetChildArrayElements(issueNode, "comments", item =>
         {
             var actor = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(item));
             return ((actor is not null) ? actor.Login : "Ghost", 
                 ResponseExtractors.StringProperty(item, "bodyHTML"));
             }
-        ).ToArray();
+        )];
 
-        var points = ResponseExtractors.GetChildArrayElements(issueNode, "projectItems", item =>
+        StoryPointSize?[] points = ResponseExtractors.GetChildArrayElements(issueNode, "projectItems", item =>
             StoryPointSize.OptionalFromJsonElement(item));
-        ProjectStoryPoints = [ ..points.Where(sz => sz is not null).ToArray()];
+        ProjectStoryPoints = [ ..points.ToArray()];
 
         // check state. If re-opened, don't reference the (not correct) closing PR
         ClosingPRUrl = ResponseExtractors.GetChildArrayElements(issueNode, "timelineItems", item =>
-            (item.TryGetProperty("closer", out var closer) && closer.ValueKind == JsonValueKind.Object) ?
+            (item.TryGetProperty("closer", out JsonElement closer) && closer.ValueKind == JsonValueKind.Object) ?
             ResponseExtractors.OptionalStringProperty(closer, "url")
             : default).LastOrDefault(url => url is not null);
 
@@ -333,9 +333,9 @@ public abstract record QuestIssueOrPullRequest : Issue
     /// Microsoft FTE.</returns>
     public async Task<string?> QueryAssignedMicrosoftEmailAddressAsync(OspoClient ospoClient)
     {
-        if (Assignees.Any())
+        if (Assignees.Length != 0)
         {
-            var identity = await ospoClient.GetAsync(Assignees.First().Login);
+            OspoLink? identity = await ospoClient.GetAsync(Assignees.First().Login);
             // This feels like a hack, but it is necessary.
             // The email address is the email address a person configured
             // However, the only guaranteed way to find the person in Quest 
@@ -358,11 +358,11 @@ public abstract record QuestIssueOrPullRequest : Issue
         Issue Number: {{Number}} - {{Title}}
         {{BodyHtml}}
         Open: {{IsOpen}}
-        Assignees: {{String.Join(", ", Assignees.Select(a => a.ToString()))}}
-        Labels: {{String.Join(", ", Labels.Select(l => l.Name))}}
-        Sizes: {{String.Join("\n", from sp in ProjectStoryPoints select $"Month, Year: {sp.Month}, {sp.CalendarYear}  Size: {sp.Size}")}}
+        Assignees: {{string.Join(", ", Assignees.Select(a => a.ToString()))}}
+        Labels: {{string.Join(", ", Labels.Select(l => l.Name))}}
+        Sizes: {{string.Join("\n", from sp in ProjectStoryPoints select $"Month, Year: {sp.Month}, {sp.CalendarYear}  Size: {sp.Size}")}}
         Comments:
-        {{String.Join("\n\n", from c in Comments select $"Author: {c.author}\nText:\n{c.bodyHTML}")}}
+        {{string.Join("\n\n", from c in Comments select $"Author: {c.author}\nText:\n{c.bodyHTML}")}}
         """;
     }
 }
