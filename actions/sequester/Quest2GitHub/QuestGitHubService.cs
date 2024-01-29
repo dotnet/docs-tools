@@ -98,8 +98,8 @@ public class QuestGitHubService : IDisposable
         {
             if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
             {
-                // Console.WriteLine($"{item.IssueNumber}: {item.Title}");
-                Console.WriteLine(item);
+                Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
+                // Console.WriteLine(item);
                 var questItem = await FindLinkedWorkItemAsync(item);
                 if (dryRun is false && currentIteration is not null)
                 {

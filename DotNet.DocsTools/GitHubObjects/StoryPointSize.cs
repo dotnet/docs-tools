@@ -17,7 +17,7 @@ public record StoryPointSize
             // Consider: Store YYYY, Month, Size as a threeple.
             var projectTitle = projectItem.Descendent("project", "title").GetString();
             // size may or may not have been set yet:
-            string? size = default;
+            string size = "🐂 Medium";
             string? sprintMonth = default;
             foreach (var field in projectItem.Descendent("fieldValues", "nodes").EnumerateArray())
             {
@@ -29,7 +29,6 @@ public record StoryPointSize
                 }
             }
             if ((projectTitle is not null) &&
-                (size is not null) &&
                 projectTitle.ToLower().Contains("sprint"))
             {
                 string[] components = projectTitle.Split(' ');

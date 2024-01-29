@@ -36,7 +36,8 @@ public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssu
                 }
         };
 
-    public static IEnumerable<string> NavigationToNodes(bool isScalar) => ["repository", "issues"];
+    public static IEnumerable<string> NavigationToNodes(bool isScalar) =>
+        (isScalar) ?["repository", "issue"] : ["repository", "issues"];
 
     /// <summary>
     /// Construct a QuestIssue from a JsonElement

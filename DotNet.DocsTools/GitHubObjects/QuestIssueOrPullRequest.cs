@@ -1,5 +1,4 @@
-﻿using DotNetDocs.Tools.GitHubCommunications;
-using Microsoft.DotnetOrg.Ospo;
+﻿using Microsoft.DotnetOrg.Ospo;
 using System.Text.Json;
 
 namespace DotNet.DocsTools.GitHubObjects;
@@ -36,7 +35,19 @@ public abstract record QuestIssueOrPullRequest : Issue
     protected const string QuestIssueScalarQueryText = """
     query GetIssueForQuestImport($organization: String!, $repository: String!, $issueNumber:Int!) {
       repository(owner: $organization, name: $repository) {
-        issue(number: $issueNumber) {
+        issue(number: $issueNumber) {    
+    """
+    + scalarQueryBody;
+
+    protected const string QuestPullRequestScalarQueryText = """
+    query GetPullRequestForQuestImport($organization: String!, $repository: String!, $issueNumber:Int!) {
+      repository(owner: $organization, name: $repository) {
+        pullRequest(number: $issueNumber) {    
+    """
+    + scalarQueryBody;
+
+
+    private const string scalarQueryBody = """
           id
           number
           title
@@ -119,6 +130,15 @@ public abstract record QuestIssueOrPullRequest : Issue
         query FindUpdatedIssues($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
           repository(owner: $organization, name: $repository) {
             issues(
+    """ + enumerationQueryBody;
+
+    protected const string EnumerateQuestPullRequestQueryText = """
+        query FindUpdatedPullRequests($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
+          repository(owner: $organization, name: $repository) {
+            pullRequests(
+    """ + enumerationQueryBody;
+
+    private const string enumerationQueryBody = """
               first: 25
               after: $cursor
               labels: $questlabels

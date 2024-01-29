@@ -13,7 +13,7 @@ public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryRes
     public static GraphQLPacket GetQueryPacket(QuestIssueOrPullRequestVariables variables, bool isScalar) => isScalar
         ? new()
         {
-            query =QuestIssueScalarQueryText.Replace("issue(number: $issueNumber)", "pullRequest(number: $issueNumber)"),
+            query = QuestPullRequestScalarQueryText,
             variables =
                 {
                     ["organization"] = variables.Organization,
@@ -23,7 +23,7 @@ public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryRes
         }
         : new GraphQLPacket
         {
-            query = EnumerateQuestIssuesQueryText.Replace("issues(", "pullRequests("),
+            query = EnumerateQuestPullRequestQueryText,
             variables =
                 {
                     ["organization"] = variables.Organization,
@@ -36,7 +36,8 @@ public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryRes
                 }
         };
 
-    public static IEnumerable<string> NavigationToNodes(bool isScalar) => ["repository", "pullRequests"];
+    public static IEnumerable<string> NavigationToNodes(bool isScalar) =>
+        (isScalar) ? ["repository", "pullRequest"] : ["repository", "pullRequests"];
 
     /// <summary>
     /// Construct a QuestIssue from a JsonElement
