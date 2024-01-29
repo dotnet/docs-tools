@@ -13,7 +13,7 @@ namespace Quest2GitHub;
 public class QuestGitHubService : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
-
+    private const string PreviewBuildComment = "<!-- PREVIEW-TABLE-START -->";
     private readonly IGitHubClient _ghClient;
     private readonly QuestClient _azdoClient;
     private readonly OspoClient _ospoClient;
@@ -273,14 +273,29 @@ public class QuestGitHubService : IDisposable
             // Create work item:
             var questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
+            var linkText = $"{LinkedWorkItemComment} - {questItem.Id}]({_questLinkString}{questItem.Id})";
+            // For PRs, the body includes a preview table from our build.
+            // The link to the work item should be above it,
+            // with the existing preview table below it.
+            var previewLinkTableIndex = ghIssue.Body?.IndexOf(PreviewBuildComment);
             // Add Tagged comment to GH Issue description.
-            var updatedBody = $"""
-            {ghIssue.Body}
+            var updatedBody = (previewLinkTableIndex > 0)
+            ? $"""
+               {ghIssue.Body?.Substring(0, previewLinkTableIndex.Value)}
 
 
-            ---
-            [Associated WorkItem - {questItem.Id}]({_questLinkString}{questItem.Id})
-            """;
+               ---
+               {linkText}
+
+               {ghIssue.Body?.Substring(previewLinkTableIndex.Value + PreviewBuildComment.Length)}
+               """
+            : $"""
+               {ghIssue.Body}
+
+
+               ---
+               {linkText}
+               """;
 
             var mutation = new Mutation<SequesteredIssueMutation, SequesterVariables>(_ghClient);
 
