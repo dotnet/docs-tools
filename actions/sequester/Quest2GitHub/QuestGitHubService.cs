@@ -39,13 +39,9 @@ public class QuestGitHubService(
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
     private const string PreviewBuildComment = "<!-- PREVIEW-TABLE-START -->";
-    private readonly IGitHubClient _ghClient = client;
     private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
     private readonly OspoClient _ospoClient = new(ospoKey, bulkImport);
-    private readonly string _areaPath = areaPath;
     private readonly string _questLinkString = $"https://dev.azure.com/{questOrg}/{questProject}/_workitems/edit/";
-    private readonly string _importTriggerLabelText = importTriggerLabel;
-    private readonly string _importedLabelText = importedLabel;
 
     private GitHubLabel? _importTriggerLabel;
     private GitHubLabel? _importedLabel;

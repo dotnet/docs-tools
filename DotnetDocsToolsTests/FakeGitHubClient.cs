@@ -6,7 +6,7 @@ namespace DotNetDocs.Tools.Tests;
 class FakeGitHubClient : IGitHubClient
 {
     private readonly JsonDocument _document = JsonDocument.Parse("{}");
-    private readonly JsonDocument[] _additional = Array.Empty<JsonDocument>();
+    private readonly JsonDocument[] _additional = [];
     private readonly string[]? _lines;
 
     public FakeGitHubClient() { }
