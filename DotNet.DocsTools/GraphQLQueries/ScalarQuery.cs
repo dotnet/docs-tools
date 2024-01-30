@@ -1,4 +1,5 @@
-﻿using DotNet.DocsTools.GitHubObjects;
+﻿using System.Text.Json;
+using DotNet.DocsTools.GitHubObjects;
 using DotNetDocs.Tools.GitHubCommunications;
 
 namespace DotNetDocs.Tools.GraphQLQueries;
@@ -37,12 +38,12 @@ public class ScalarQuery<TResult, TVariables> where TResult : IGitHubQueryResult
     /// </remarks>
     public async Task<TResult?> PerformQuery(TVariables variables)
     {
-        var scalarPacket = TResult.GetQueryPacket(variables, true);
+        GraphQLPacket scalarPacket = TResult.GetQueryPacket(variables, true);
 
-        var rootElement= await _client.PostGraphQLRequestAsync(scalarPacket);
+        JsonElement rootElement = await _client.PostGraphQLRequestAsync(scalarPacket);
 
         // TODO: This navigation should likely move to the FromJsonElement.
-        var issueNode = rootElement.Descendent(TResult.NavigationToNodes(true));
+        JsonElement issueNode = rootElement.Descendent(TResult.NavigationToNodes(true));
         return TResult.FromJsonElement(issueNode, variables);
     }
 }

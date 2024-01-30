@@ -2,7 +2,7 @@
 using DotNetDocs.Tools.GitHubCommunications;
 
 namespace DotNet.DocsTools.GitHubObjects;
-public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssue, QuestIssueOrPullRequestVariables>
+public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryResult<QuestPullRequest, QuestIssueOrPullRequestVariables>
 {
     /// <summary>
     /// Construct the query packet for the given variables
@@ -13,7 +13,7 @@ public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssu
     public static GraphQLPacket GetQueryPacket(QuestIssueOrPullRequestVariables variables, bool isScalar) => isScalar
         ? new()
         {
-            query = QuestIssueScalarQueryText,
+            query = QuestPullRequestScalarQueryText,
             variables =
                 {
                     ["organization"] = variables.Organization,
@@ -23,7 +23,7 @@ public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssu
         }
         : new GraphQLPacket
         {
-            query = EnumerateQuestIssuesQueryText,
+            query = EnumerateQuestPullRequestQueryText,
             variables =
                 {
                     ["organization"] = variables.Organization,
@@ -37,7 +37,7 @@ public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssu
         };
 
     public static IEnumerable<string> NavigationToNodes(bool isScalar) =>
-        (isScalar) ?["repository", "issue"] : ["repository", "issues"];
+        (isScalar) ? ["repository", "pullRequest"] : ["repository", "pullRequests"];
 
     /// <summary>
     /// Construct a QuestIssue from a JsonElement
@@ -45,11 +45,8 @@ public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssu
     /// <param name="issueNode">The JSON issue node</param>
     /// <param name="variables">The variables used in the query.</param>
     /// <returns></returns>
-    public static QuestIssue FromJsonElement(JsonElement issueNode, QuestIssueOrPullRequestVariables variables) =>
+    public static QuestPullRequest FromJsonElement(JsonElement issueNode, QuestIssueOrPullRequestVariables variables) =>
         new(issueNode, variables.Organization, variables.Repository);
 
-    private QuestIssue(JsonElement issueNode, string organization, string repository) : base(issueNode, organization, repository)
-    {
-    }
-
+    private QuestPullRequest(JsonElement issueNode, string organization, string repository) : base(issueNode, organization, repository) { }
 }

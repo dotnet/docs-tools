@@ -29,7 +29,7 @@ internal class Program
         {
             if (repo.Contains('/'))
             {
-                var split = repo.Split("/");
+                string[] split = repo.Split("/");
                 repo = split[1];
             }
 
@@ -60,7 +60,7 @@ internal class Program
                     $"Unable to load Quest import configuration options.");
             }
 
-            using var serviceWorker = await CreateService(importOptions, !singleIssue);
+            using QuestGitHubService serviceWorker = await CreateService(importOptions, !singleIssue);
 
             if (singleIssue)
             {
