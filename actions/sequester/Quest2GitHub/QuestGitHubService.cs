@@ -38,7 +38,6 @@ public class QuestGitHubService(
     bool bulkImport) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
-    private const string PreviewBuildComment = "<!-- PREVIEW-TABLE-START -->";
     private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
     private readonly OspoClient _ospoClient = new(ospoKey, bulkImport);
     private readonly string _questLinkString = $"https://dev.azure.com/{questOrg}/{questProject}/_workitems/edit/";
@@ -256,24 +255,8 @@ public class QuestGitHubService(
             QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
             string linkText = $"{LinkedWorkItemComment} - {questItem.Id}]({_questLinkString}{questItem.Id})";
-            // For PRs, the body includes a preview table from our build.
-            // The link to the work item should be above it,
-            // with the existing preview table below it.
-            int? previewLinkTableIndex = ghIssue.Body?.IndexOf(PreviewBuildComment);
-            // Add Tagged comment to GH Issue description.
-            string updatedBody = (previewLinkTableIndex > 0)
-            ? $"""
-               {ghIssue.Body?.Substring(0, previewLinkTableIndex.Value)}
-
-
-               ---
-               {linkText}
-
-               {ghIssue.Body?.Substring(previewLinkTableIndex.Value + PreviewBuildComment.Length)}
-               """
-            : $"""
+            string updatedBody = $"""
                {ghIssue.Body}
-
 
                ---
                {linkText}
