@@ -13,28 +13,28 @@ namespace Quest2GitHub;
 /// <remarks>
 /// Initialize the service.
 /// </remarks>
-/// <param name="client">GitHub client</param>
+/// <param name="ghClient">GitHub client</param>
 /// <param name="ospoKey">MS Open Source Programs Office personal access token</param>
 /// <param name="azdoKey">Azure Dev Ops personal access token</param>
 /// <param name="questOrg">The Azure Dev ops organization</param>
 /// <param name="questProject">The Azure Dev ops project</param>
 /// <param name="areaPath">The area path for work items from this repo</param>
-/// <param name="importTriggerLabel">The text of the label that triggers an import</param>
-/// <param name="importedLabel">The text of the label that indicates an issue has been imported</param>
+/// <param name="importTriggerLabelText">The text of the label that triggers an import</param>
+/// <param name="importedLabelText">The text of the label that indicates an issue has been imported</param>
 /// <param name="bulkImport">True if this run is doing a bulk import.</param>
 /// <remarks>
 /// The OAuth token takes precedence over the GitHub token, if both are 
 /// present.
 /// </remarks>
 public class QuestGitHubService(
-    IGitHubClient client,
+    IGitHubClient ghClient,
     string ospoKey,
     string azdoKey,
     string questOrg,
     string questProject,
     string areaPath,
-    string importTriggerLabel,
-    string importedLabel,
+    string importTriggerLabelText,
+    string importedLabelText,
     bool bulkImport) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
@@ -69,16 +69,16 @@ public class QuestGitHubService(
 
         var currentIteration = QuestIteration.CurrentIteration(_allIterations);
 
-        var issueQuery = new EnumerationQuery<QuestIssue, QuestIssueOrPullRequestVariables>(_ghClient);
-        var prQuery = new EnumerationQuery<QuestPullRequest, QuestIssueOrPullRequestVariables>(_ghClient);
+        var issueQuery = new EnumerationQuery<QuestIssue, QuestIssueOrPullRequestVariables>(ghClient);
+        var prQuery = new EnumerationQuery<QuestPullRequest, QuestIssueOrPullRequestVariables>(ghClient);
 
         DateTime historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
 
         int totalImport = 0;
         int totalSkipped = 0;
         await foreach (QuestIssueOrPullRequest item in ConcatQueries(
-            issueQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText)),
-            prQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: _importTriggerLabelText, importedLabelText: _importedLabelText))
+            issueQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText)),
+            prQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText))
         ))
         {
             if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
@@ -205,7 +205,7 @@ public class QuestGitHubService(
     /// </summary>
     public void Dispose()
     {
-        _ghClient?.Dispose();
+        ghClient?.Dispose();
         _azdoClient?.Dispose();
         _ospoClient?.Dispose();
         GC.SuppressFinalize(this);
@@ -214,13 +214,13 @@ public class QuestGitHubService(
 
     private Task<QuestIssue?> RetrieveIssueAsync(string org, string repo, int issueNumber)
     {
-        var query = new ScalarQuery<QuestIssue, QuestIssueOrPullRequestVariables>(_ghClient);
+        var query = new ScalarQuery<QuestIssue, QuestIssueOrPullRequestVariables>(ghClient);
         return query.PerformQuery(new QuestIssueOrPullRequestVariables(org, repo, issueNumber));
     }
 
     private Task<QuestPullRequest?> RetrievePullRequestAsync(string org, string repo, int issueNumber)
     {
-        var query = new ScalarQuery<QuestPullRequest, QuestIssueOrPullRequestVariables>(_ghClient);
+        var query = new ScalarQuery<QuestPullRequest, QuestIssueOrPullRequestVariables>(ghClient);
         return query.PerformQuery(new QuestIssueOrPullRequestVariables(org, repo, issueNumber));
     }
     private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
@@ -253,7 +253,7 @@ public class QuestGitHubService(
         if (workItem is null)
         {
             // Create work item:
-            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, _areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
             string linkText = $"{LinkedWorkItemComment} - {questItem.Id}]({_questLinkString}{questItem.Id})";
             // For PRs, the body includes a preview table from our build.
@@ -279,7 +279,7 @@ public class QuestGitHubService(
                {linkText}
                """;
 
-            var mutation = new Mutation<SequesteredIssueMutation, SequesterVariables>(_ghClient);
+            var mutation = new Mutation<SequesteredIssueMutation, SequesterVariables>(ghClient);
 
             await mutation.PerformMutation(new SequesterVariables(ghIssue.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
             return questItem;
@@ -292,12 +292,12 @@ public class QuestGitHubService(
 
     private async Task RetrieveLabelIdsAsync(string org, string repo)
     {
-        var labelQuery = new EnumerationQuery<GitHubLabel, FindLabelQueryVariables>(_ghClient);
+        var labelQuery = new EnumerationQuery<GitHubLabel, FindLabelQueryVariables>(ghClient);
             
         await foreach (GitHubLabel label in labelQuery.PerformQuery(new FindLabelQueryVariables(org, repo, "")))
         {
-            if (label.Name == _importTriggerLabelText) _importTriggerLabel = label;
-            if (label.Name == _importedLabelText) _importedLabel = label;
+            if (label.Name == importTriggerLabelText) _importTriggerLabel = label;
+            if (label.Name == importedLabelText) _importedLabel = label;
         }
     }
 
