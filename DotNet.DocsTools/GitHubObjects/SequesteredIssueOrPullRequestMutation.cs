@@ -56,7 +56,7 @@ public abstract class SequesteredIssueOrPullRequestMutation
         """;
     private const string updatePullRequestMutation = """
           updatePullRequest (
-            input: {body: $bodyText, clientMutationId:"dotnet-docs-tools", id:$nodeID }
+            input: {body: $bodyText, clientMutationId:"dotnet-docs-tools", pullRequestId:$nodeID }
           ) {
             clientMutationId
           }

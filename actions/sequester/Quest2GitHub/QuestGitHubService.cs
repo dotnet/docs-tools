@@ -254,7 +254,7 @@ public class QuestGitHubService(
             // Create work item:
             QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
-            string linkText = $"[{LinkedWorkItemComment} - {questItem.Id}]({_questLinkString}{questItem.Id})";
+            string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
             string updatedBody = $"""
                {issueOrPullRequest.Body}
 
