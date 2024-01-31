@@ -83,7 +83,7 @@ public sealed class QuestClient : IDisposable
     public async Task<JsonElement> CreateWorkItem(List<JsonPatchDocument> document)
     {
         string? json = JsonSerializer.Serialize(document, s_options);
-        Console.WriteLine($"Creating work item with:\n{json}");
+        // Console.WriteLine($"Creating work item with:\n{json}");
 
         using var request = new StringContent(json);
         request.Headers.ContentType = new MediaTypeHeaderValue("application/json-patch+json");
@@ -91,7 +91,7 @@ public sealed class QuestClient : IDisposable
 
         string createWorkItemUrl =
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/$User%20Story?api-version=6.0&expand=Fields";
-        Console.WriteLine($"Create work item URL: \"{createWorkItemUrl}\"");
+        // Console.WriteLine($"Create work item URL: \"{createWorkItemUrl}\"");
 
         using HttpResponseMessage response = await InitiateRequestAsync(client =>
             client.PostAsync(createWorkItemUrl, request));
@@ -125,7 +125,7 @@ public sealed class QuestClient : IDisposable
     public async Task<JsonElement> PatchWorkItem(int id, List<JsonPatchDocument> document)
     {
         string? json = JsonSerializer.Serialize(document, s_options);
-        Console.WriteLine($"Patching {id} with:\n{json}");
+        // Console.WriteLine($"Patching {id} with:\n{json}");
 
         using var request = new StringContent(json);
         request.Headers.ContentType = new MediaTypeHeaderValue("application/json-patch+json");
@@ -133,7 +133,7 @@ public sealed class QuestClient : IDisposable
 
         string patchWorkItemUrl = 
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
-        Console.WriteLine($"Patch work item URL: \"{patchWorkItemUrl}\"");
+        // Console.WriteLine($"Patch work item URL: \"{patchWorkItemUrl}\"");
 
         using HttpResponseMessage response = await InitiateRequestAsync(
             client => client.PatchAsync(patchWorkItemUrl, request));
