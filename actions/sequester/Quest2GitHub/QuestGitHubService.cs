@@ -246,25 +246,32 @@ public class QuestGitHubService(
     }
 
 
-    private async Task<QuestWorkItem?> LinkIssueAsync(QuestIssueOrPullRequest ghIssue, QuestIteration currentIteration, IEnumerable<QuestIteration> allIterations)
+    private async Task<QuestWorkItem?> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, QuestIteration currentIteration, IEnumerable<QuestIteration> allIterations)
     {
-        int? workItem = LinkedQuestId(ghIssue);
+        int? workItem = LinkedQuestId(issueOrPullRequest);
         if (workItem is null)
         {
             // Create work item:
-            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
-            string linkText = $"{LinkedWorkItemComment} - {questItem.Id}]({_questLinkString}{questItem.Id})";
+            string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
             string updatedBody = $"""
-               {ghIssue.Body}
+               {issueOrPullRequest.Body}
 
                ---
                {linkText}
                """;
 
-            var mutation = new Mutation<SequesteredIssueMutation, SequesterVariables>(ghClient);
-
-            await mutation.PerformMutation(new SequesterVariables(ghIssue.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
+            if (issueOrPullRequest is QuestIssue issue)
+            {
+                var issueMutation = new Mutation<SequesteredIssueMutation, SequesterVariables>(ghClient);
+                await issueMutation.PerformMutation(new SequesterVariables(issue.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
+            }
+            else if (issueOrPullRequest is QuestPullRequest pr)
+            {
+                var prMutation = new Mutation<SequesteredPullRequestMutation, SequesterVariables>(ghClient);
+                await prMutation.PerformMutation(new SequesterVariables(pr.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
+            }
             return questItem;
         }
         else
