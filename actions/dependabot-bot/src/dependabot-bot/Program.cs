@@ -40,7 +40,7 @@ string gitHubActions = """
       open-pull-requests-limit: 10
   """;
 
-buffer.WriteLineToBufferAndOutput(gitHubActions, UpdateNodeLimit == updateNodeCount++);
+buffer.WriteLineToBufferAndOutput(gitHubActions, updateNodeCount++ >= UpdateNodeLimit);
 
 /* Generate the following pattern for each project file:
 
@@ -141,7 +141,7 @@ foreach (var fileInfo in result.StandaloneProjects.Select(static p => new FileIn
                     patterns:
                       - "*" # Prefer a single PR per project update.
             """,
-        UpdateNodeLimit == updateNodeCount++);
+        updateNodeCount++ >= UpdateNodeLimit);
 
     if (mappings.Count is 0)
     {
