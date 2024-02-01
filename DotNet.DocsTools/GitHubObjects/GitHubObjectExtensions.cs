@@ -5,6 +5,19 @@ namespace DotNet.DocsTools.GitHubObjects;
 public static class GitHubObjectExtensions
 {
     /// <summary>
+    /// Represents a list of well-known excluded actors, most commonly bots.
+    /// </summary>
+    private static readonly string[] s_wellKnownExcludedActors =
+    [
+        "dependabot",
+        "github-actions",
+        "dotnet-bot",
+        "dotnet-maestro",
+        "dotnet-policy-service",
+        "learn-build-service-prod"
+    ];
+
+    /// <summary>
     /// Determine if a GitHub login is a Microsoft FTE
     /// </summary>
     /// <param name="ospoClient">The Open Source office client.</param>
@@ -13,8 +26,12 @@ public static class GitHubObjectExtensions
     public static async Task<bool?> IsMicrosoftFTE(this Actor? actor, OspoClient? ospoClient)
     {
         if ((actor is null) || (ospoClient is null) ||
-            (actor.Login == "dependabot") || (actor.Login == "github-actions"))
+            (s_wellKnownExcludedActors.Any(
+                 excludedActor => string.Equals(actor.Login, excludedActor, StringComparison.OrdinalIgnoreCase))))
+        {
             return null;
+        }
+
         // Non-Microsoft accounts have null for the info
         // Microsoft accounts have non-null. Our bots have no orgs.
         // Note that for "ghost", the gitHubLogin is null or empty here.
