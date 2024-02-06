@@ -39,6 +39,9 @@ public record StoryPointSize
                     sz = new StoryPointSize(year, month.Substring(0, 3), size);
                 }
             }
+        } else
+        {
+            Console.WriteLine("Expect project node wasn't a JSON object");
         }
         return sz;
     }
