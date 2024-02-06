@@ -257,7 +257,7 @@ public abstract record QuestIssueOrPullRequest : Issue
 
         StoryPointSize?[] points = ResponseExtractors.GetChildArrayElements(issueNode, "projectItems", item =>
             StoryPointSize.OptionalFromJsonElement(item));
-        ProjectStoryPoints = [ ..points.ToArray()];
+        ProjectStoryPoints = [ ..points.Where(p => p is not null).ToArray()];
 
         // check state. If re-opened, don't reference the (not correct) closing PR
         ClosingPRUrl = ResponseExtractors.GetChildArrayElements(issueNode, "timelineItems", item =>
