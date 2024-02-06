@@ -31,7 +31,12 @@ internal static class ResponseExtractors
         Func<JsonElement, T> selector)
     {
         var array = element.Descendent(elementName, "nodes");
-        
+
+        // Debugging code:
+        if (array.ValueKind != JsonValueKind.Array)
+        {
+            Console.WriteLine($"No array of {elementName} found!");
+        }
         return array.ValueKind == JsonValueKind.Array ? 
             (from child in array.EnumerateArray()
              let childElement = selector(child)

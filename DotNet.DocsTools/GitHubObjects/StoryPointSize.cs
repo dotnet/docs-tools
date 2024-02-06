@@ -15,6 +15,9 @@ public record StoryPointSize
         {
             // Modify the code to store the optional month in the tuple field.
             string? projectTitle = projectItem.Descendent("project", "title").GetString();
+
+            Console.WriteLine($"Project title: {projectTitle}");
+
             // size may or may not have been set yet:
             string size = "🐂 Medium";
             string? sprintMonth = default;
@@ -39,6 +42,9 @@ public record StoryPointSize
                     sz = new StoryPointSize(year, month.Substring(0, 3), size);
                 }
             }
+        } else
+        {
+            Console.WriteLine("Expect project node wasn't a JSON object");
         }
         return sz;
     }
