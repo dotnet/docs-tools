@@ -70,7 +70,7 @@ internal class Program
             else
             {
                 await serviceWorker.ProcessIssues(
-                    org, repo, duration ?? -1, true);
+                    org, repo, duration ?? -1, false);
             }
         }
         catch (Exception ex)
