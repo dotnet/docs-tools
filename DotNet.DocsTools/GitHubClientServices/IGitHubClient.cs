@@ -58,6 +58,7 @@ public interface IGitHubClient : IDisposable
     /// <returns>The GitHub client.</returns>
     public static async Task<IGitHubClient> CreateGitHubAppClient(int appID, string oauthPrivateKey)
     {
+        Console.WriteLine("Using AppID, Private Key tokens.");
         var client = new GitHubAppClient(appID, oauthPrivateKey);
         await client.GenerateTokenAsync();
 
