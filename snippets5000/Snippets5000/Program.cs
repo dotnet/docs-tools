@@ -21,7 +21,11 @@ class Program
     const int EXITCODE_GOOD = 0;
     const int EXITCODE_BAD = 1;
 
+#if LINUX
+    const string FANCY_BATCH_FILENAME = "snippets5000_runner.sh";
+#else
     const string FANCY_BATCH_FILENAME = "snippets5000_runner.bat";
+#endif
 
     public const string ENV_EXTENSIONS_PROJECTS_NAME = "ExtensionsProjects";
     public const string ENV_EXTENSIONS_CODE_TRIGGERS_NAME = "ExtensionsCodeTriggers";
@@ -232,7 +236,11 @@ class Program
 
             if (config.Host == "dotnet")
             {
+#if LINUX
+                await File.WriteAllTextAsync(FANCY_BATCH_FILENAME, $"#!/bin/bash\ndotnet build \"{projectPath}\"");
+#else
                 await File.WriteAllTextAsync(FANCY_BATCH_FILENAME, $"dotnet build \"{projectPath}\"");
+#endif
             }
             else if (config.Host == "visualstudio")
             {
@@ -270,6 +278,16 @@ class Program
             // Run the batch file to do the compile.
             if (config.RunConsideredGood)
             {
+#if LINUX
+                Log.Write(2, $"Running linux, setting +x on {FANCY_BATCH_FILENAME}");
+                await Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = "chmod",
+                        ArgumentList = { "+x", FANCY_BATCH_FILENAME }
+                    })!.WaitForExitAsync();
+#endif
+
                 Log.Write(2, $"Contents of {FANCY_BATCH_FILENAME}:");
                 foreach (var line in File.ReadAllLines(FANCY_BATCH_FILENAME))
                     Log.Write(4, line);

@@ -72,7 +72,7 @@ internal class PullRequestProcessor
     static internal DiscoveryResult? GenerateItemResult(string rootDir, string item)
     {
         // Get components of the file path
-        string fullPath = Path.Combine(rootDir.Replace('/', '\\'), item.Replace('/', '\\'));
+        string fullPath = Path.Combine(rootDir, item);
         string itemFileName = Path.GetFileName(fullPath);
         string itemPath = Path.GetDirectoryName(fullPath)!;
 
