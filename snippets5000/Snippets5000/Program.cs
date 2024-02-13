@@ -21,7 +21,11 @@ class Program
     const int EXITCODE_GOOD = 0;
     const int EXITCODE_BAD = 1;
 
+#if LINUX
+    const string FANCY_BATCH_FILENAME = "snippets5000_runner.sh";
+#else
     const string FANCY_BATCH_FILENAME = "snippets5000_runner.bat";
+#endif
 
     public const string ENV_EXTENSIONS_PROJECTS_NAME = "ExtensionsProjects";
     public const string ENV_EXTENSIONS_CODE_TRIGGERS_NAME = "ExtensionsCodeTriggers";
@@ -55,6 +59,7 @@ class Program
             // Normal github PR
             if (string.IsNullOrEmpty(dryrunTestId))
             {
+                Log.Write(0, "Processing ");
                 var key = CommandLineUtility.GetEnvVariable("GitHubKey", "You must store your GitHub key in the 'GitHubKey' environment variable", null);
 
                 List<DiscoveryResult> localResults = new();
@@ -273,6 +278,16 @@ class Program
                 Log.Write(2, $"Contents of {FANCY_BATCH_FILENAME}:");
                 foreach (var line in File.ReadAllLines(FANCY_BATCH_FILENAME))
                     Log.Write(4, line);
+
+#if LINUX
+                Log.Write(2, "Running linux, setting +x");
+                await Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = "chmod",
+                        ArgumentList = { $"+x {FANCY_BATCH_FILENAME}" }
+                    })!.WaitForExitAsync();
+#endif
 
                 ProcessStartInfo processInfo = new(FANCY_BATCH_FILENAME)
                 {
