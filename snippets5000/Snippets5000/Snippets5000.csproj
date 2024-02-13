@@ -10,8 +10,11 @@
     <AssemblyTitle>Snippets 5000</AssemblyTitle>
     <Authors>Andy De George</Authors>
     <Company>Microsoft</Company>
+
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('linux'))">$(DefineConstants);LINUX</DefineConstants>
   </PropertyGroup>
 
+  
   <ItemGroup>
     <PackageReference Include="System.CommandLine.DragonFruit" Version="0.4.0-alpha.22272.1" />
   </ItemGroup>
