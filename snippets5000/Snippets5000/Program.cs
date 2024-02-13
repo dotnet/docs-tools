@@ -274,12 +274,8 @@ class Program
             // Run the batch file to do the compile.
             if (config.RunConsideredGood)
             {
-                Log.Write(2, $"Contents of {FANCY_BATCH_FILENAME}:");
-                foreach (var line in File.ReadAllLines(FANCY_BATCH_FILENAME))
-                    Log.Write(4, line);
-
 #if LINUX
-                Log.Write(2, "Running linux, setting +x");
+                Log.Write(2, $"Running linux, setting +x on {FANCY_BATCH_FILENAME}");
                 await Process.Start(
                     new ProcessStartInfo
                     {
@@ -287,6 +283,10 @@ class Program
                         ArgumentList = { "+x", FANCY_BATCH_FILENAME }
                     })!.WaitForExitAsync();
 #endif
+
+                Log.Write(2, $"Contents of {FANCY_BATCH_FILENAME}:");
+                foreach (var line in File.ReadAllLines(FANCY_BATCH_FILENAME))
+                    Log.Write(4, line);
 
                 ProcessStartInfo processInfo = new(FANCY_BATCH_FILENAME)
                 {
