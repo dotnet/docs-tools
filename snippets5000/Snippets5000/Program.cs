@@ -284,7 +284,7 @@ class Program
                     new ProcessStartInfo
                     {
                         FileName = "chmod",
-                        ArgumentList = { "+x", "FANCY_BATCH_FILENAME" }
+                        ArgumentList = { "+x", FANCY_BATCH_FILENAME }
                     })!.WaitForExitAsync();
 #endif
 
