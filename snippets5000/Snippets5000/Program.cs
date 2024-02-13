@@ -59,7 +59,6 @@ class Program
             // Normal github PR
             if (string.IsNullOrEmpty(dryrunTestId))
             {
-                Log.Write(0, "Processing ");
                 var key = CommandLineUtility.GetEnvVariable("GitHubKey", "You must store your GitHub key in the 'GitHubKey' environment variable", null);
 
                 List<DiscoveryResult> localResults = new();
@@ -285,7 +284,7 @@ class Program
                     new ProcessStartInfo
                     {
                         FileName = "chmod",
-                        ArgumentList = { $"+x {FANCY_BATCH_FILENAME}" }
+                        ArgumentList = { "+x", "FANCY_BATCH_FILENAME" }
                     })!.WaitForExitAsync();
 #endif
 
