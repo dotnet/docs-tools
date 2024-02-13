@@ -236,7 +236,11 @@ class Program
 
             if (config.Host == "dotnet")
             {
+#if LINUX
+                await File.WriteAllTextAsync(FANCY_BATCH_FILENAME, $"#!/bin/bash\ndotnet build \"{projectPath}\"");
+#else
                 await File.WriteAllTextAsync(FANCY_BATCH_FILENAME, $"dotnet build \"{projectPath}\"");
+#endif
             }
             else if (config.Host == "visualstudio")
             {
