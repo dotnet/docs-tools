@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 
 namespace DotNet.DocsTools.Utility;
+
 public static partial class ContentScrubber
 {
     private const string Replacement = "<i>Image link removed to protect against security vulnerability.</i>";
@@ -21,9 +22,7 @@ public static partial class ContentScrubber
     /// </remarks>
     public static string ScrubContent(this string content)
     {
-        Regex pattern = ImageAnchorRegEx();
-        var result = pattern.Replace(content, Replacement);
-        return result;
+        return ImageAnchorRegEx().Replace(content, Replacement);
     }
 
     [GeneratedRegex("""<a.+href="https:\/\/private-user-images\.githubusercontent\.com\/.+".+><\/a>""")]

@@ -2,6 +2,7 @@
 using Xunit;
 
 namespace DotnetDocsTools.Tests.Utility;
+
 public class ContentScrubberTests
 {
     private const string _contentWithImageLink = """
