@@ -1,4 +1,5 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
+using DotNet.DocsTools.Utility;
 
 namespace Quest2GitHub.Models;
 
@@ -233,7 +234,7 @@ public class QuestWorkItem
     {
         var body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
         body.AppendLine($"<p>Author: {issue.FormattedAuthorLoginName}</p>");
-        body.AppendLine(issue.BodyHtml);
+        body.AppendLine(issue.BodyHtml.ScrubContent());
         if (issue.Labels.Length != 0)
         {
             body.AppendLine($"<p><b>Labels:</b></p>");
@@ -251,7 +252,7 @@ public class QuestWorkItem
             foreach ((string author, string bodyHTML) in issue.Comments)
             {
                 body.AppendLine($"<dt>{author}</dt>");
-                body.AppendLine($"<dd>{bodyHTML}</dd>");
+                body.AppendLine($"<dd>{bodyHTML.ScrubContent()}</dd>");
             }
             body.AppendLine("</dl>");
         }
