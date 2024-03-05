@@ -20,10 +20,16 @@ To install the GitHub actions:
 1. ***Add the `quest.yml` and `quest-bulk.yml` action workflow files***
    - For an example, see the [`dotnet/docs` installation](https://github.com/dotnet/docs/blob/main/.github/workflows/quest.yml). You'll likely need to change the checks on the labels.
 1. ***Add secrets for Azure Dev Ops and Microsoft Open Source Programs Office*** You'll need to add three secret tokens to access the OSPO REST APIs and Quest Azure DevOps APIs.
-   - *OSPO_KEY*: Generate a PAT [here](https://ossmsft.visualstudio.com/_usersSettings/tokens). UserProfile: Read is the only access needed.
-   - *SEQUESTER_APPID*: This is the app ID for the Sequester Action. You get this from one of the App administrators (Bill or Immo).
-   - *SEQUESTER_PRIVATEKEY*: This is the private key to authorize sequester. You get this from one of the App administrators (Bill or Immo).
-   - *QUEST_KEY*: Generate a PAT [here](https://dev.azure.com/msft-skilling/_usersSettings/tokens). *WorkItems*: Read/Write, *Project & Team*: Read/Write, and *Identity*: Read access are needed.
+
+   - **SEQUESTER_APPID**: This is the app ID for the Sequester Action. Get this from one of the App admins (Bill or Immo).
+   - **SEQUESTER_PRIVATEKEY**: This is the private key to authorize sequester. Get this from one of the App admins (Bill or Immo).
+   - **OSPO_KEY**: Generate a PAT at [OSSMSFT](https://ossmsft.visualstudio.com/_usersSettings/tokens) with the following permissions:
+     - *UserProfile*: Read
+   - **QUEST_KEY**: Generate a PAT at [MSFT-SKILLING](https://dev.azure.com/msft-skilling/_usersSettings/tokens) with the following permissions:
+     - *Identity*: Read
+     - *Project & Team*: Read/Write
+     - *WorkItems*: Read/Write
+
 1. ***Start applying labels***
    - Add the trigger label to any issue, and it will be imported into Quest.
 
