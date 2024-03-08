@@ -152,29 +152,18 @@ public class QuestWorkItem
             Console.WriteLine("No GitHub sprint project found - using current iteration");
         }
         QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
-        if (iteration is not null)
+        patchDocument.Add(new JsonPatchDocument
         {
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.IterationPath",
-                Value = iteration.Path,
-            });
-        }
-        else
-        { // default to the current iteration:
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.IterationPath",
-                Value = currentIteration.Path,
-            });
-        }
+            Operation = Op.Add,
+            Path = "/fields/System.IterationPath",
+            Value = iteration?.Path ?? currentIteration.Path,
+        });
         if (iterationSize?.QuestStoryPoint() is not null)
         {
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
+                From = default,
                 Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
                 Value = iterationSize.QuestStoryPoint(),
             });
