@@ -30,20 +30,30 @@ public static class IssueExtensions
         return sizes.FirstOrDefault();
     }
 
-    public static int? QuestStoryPoint(this StoryPointSize storyPointSize) => 
-        storyPointSize.Size.Length switch
+    public static int? QuestStoryPoint(this StoryPointSize storyPointSize)
+    {
+        if (storyPointSize.Size.Contains("Tiny"))
         {
-            < 6 => null,
-            _ => storyPointSize.Size[..6] switch
-            {
-                "🦔 Tiny" => 1,
-                "🐇 Smal" => 3,
-                "🐂 Medi" => 5,
-                "🦑 Larg" => 8,
-                "🐋 X-La" => 13,
-                _ => null,
-            }
-        };
+            return 1;
+        }
+        else if (storyPointSize.Size.Contains("Small"))
+        {
+            return 3;
+        }
+        else if (storyPointSize.Size.Contains("Medium"))
+        {
+            return 5;
+        }
+        else if (storyPointSize.Size.Contains("Large"))
+        {
+            return 8;
+        }
+        else if (storyPointSize.Size.Contains("X-Large"))
+        {
+            return 13;
+        }
+        return null;
+    }
 
     public static QuestIteration? ProjectIteration(this StoryPointSize storyPoints, IEnumerable<QuestIteration> iterations)
     {

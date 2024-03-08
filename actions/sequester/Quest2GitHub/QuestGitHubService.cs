@@ -362,6 +362,7 @@ public class QuestGitHubService(
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
+                From = default,
                 Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
                 Value = iterationSize.QuestStoryPoint(),
             });
