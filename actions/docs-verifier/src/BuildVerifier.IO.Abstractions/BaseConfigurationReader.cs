@@ -20,7 +20,7 @@ public abstract class BaseConfigurationReader<TConfigurationFile>
     /// The name of the configuration file on disk.
     /// The name is used relatively with <see cref="File.Exists(string)"/>.
     /// </summary>
-    public abstract string ConfigurationFileName { get; }
+    public string? ConfigurationFileName { get; set; }
 
     /// <summary>
     /// Reads (or returns the cached) <typeparamref name="TConfigurationFile"/> file.
@@ -31,6 +31,16 @@ public abstract class BaseConfigurationReader<TConfigurationFile>
         if (_fileExists is null)
         {
             _fileExists = File.Exists(ConfigurationFileName);
+
+            // Try one level deeper.
+            if ((bool)!_fileExists)
+            {
+                if (File.Exists($"docs/{ConfigurationFileName}"))
+                {
+                    ConfigurationFileName = $"docs/{ConfigurationFileName}";
+                    _fileExists = true;
+                }
+            }
         }
 
         // If there are cached configuration values, use 'em.
@@ -41,16 +51,11 @@ public abstract class BaseConfigurationReader<TConfigurationFile>
 
         if (_fileExists.Value)
         {
-            string json = await File.ReadAllTextAsync(ConfigurationFileName);
+            string json = await File.ReadAllTextAsync(ConfigurationFileName!);
 
             TConfigurationFile? configuration =
-                JsonSerializer.Deserialize<TConfigurationFile>(json, s_options);
-
-            if (configuration is null)
-            {
-                throw new InvalidOperationException($"Failed to read '{ConfigurationFileName}'.");
-            }
-
+                JsonSerializer.Deserialize<TConfigurationFile>(json, s_options) ??
+                    throw new InvalidOperationException($"Failed to read '{ConfigurationFileName}'.");
             _cachedConfiguration = configuration;
         }
         else
