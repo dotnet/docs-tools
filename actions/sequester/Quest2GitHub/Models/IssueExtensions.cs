@@ -1,8 +1,10 @@
-﻿namespace Quest2GitHub.Models;
+﻿using DotNet.DocsTools.GitHubObjects;
+
+namespace Quest2GitHub.Models;
 
 public static class IssueExtensions
 {
-    private static readonly Dictionary<string, int> Months = new ()
+    private static readonly Dictionary<string, int> s_months = new ()
     {
         ["Jan"] =  1, // 3
         ["Feb"] =  2, // 3
@@ -17,10 +19,10 @@ public static class IssueExtensions
         ["Nov"] = 11, // 2
         ["Dec"] = 12  // 2
     };
-    public static StoryPointSize? LatestStoryPointSize(this GithubIssue issue)
+    public static StoryPointSize? LatestStoryPointSize(this QuestIssueOrPullRequest issue)
     {
-        var sizes = from size in issue.ProjectStoryPoints
-                    let month = Months[size.Month]
+        IEnumerable<StoryPointSize> sizes = from size in issue.ProjectStoryPoints
+                    let month = s_months[size.Month]
                     orderby size.CalendarYear descending,
                     month descending
                     select size;
@@ -30,23 +32,31 @@ public static class IssueExtensions
 
     public static int? QuestStoryPoint(this StoryPointSize storyPointSize)
     {
-        if (storyPointSize.Size.Length < 6)
-            return null;
-
-        return storyPointSize.Size.Substring(0, 6) switch
+        if (storyPointSize.Size.Contains("Tiny"))
         {
-            "🦔 Tiny" => 1,
-            "🐇 Smal" => 3,
-            "🐂 Medi" => 5,
-            "🦑 Larg" => 8,
-            "🐋 X-La" => 13,
-            _ => null,
-        };
+            return 1;
+        }
+        else if (storyPointSize.Size.Contains("Small"))
+        {
+            return 3;
+        }
+        else if (storyPointSize.Size.Contains("Medium"))
+        {
+            return 5;
+        }
+        else if (storyPointSize.Size.Contains("Large"))
+        {
+            return 8;
+        }
+        else if (storyPointSize.Size.Contains("X-Large"))
+        {
+            return 13;
+        }
+        return null;
     }
 
     public static QuestIteration? ProjectIteration(this StoryPointSize storyPoints, IEnumerable<QuestIteration> iterations)
     {
-        // Old form: Content\CY_2023\03
         // New form: Content\Gallium\FY24Q1\07
         string month = storyPoints.Month;
         int calendarYear = storyPoints.CalendarYear;
@@ -63,15 +73,18 @@ public static class IssueExtensions
     /// <param name="iterations">All iterations</param>
     /// <returns>The current iteration</returns>
     public static QuestIteration? ProjectIteration(string month, int calendarYear, IEnumerable<QuestIteration> iterations)
-    { 
-        var oldPattern = $"""CY_{calendarYear:D4}\{Months[month]:D2}""";
-        int fy = ((Months[month] > 6 ? calendarYear + 1 : calendarYear)) % 100;
-        int q = ((((Months[month]-1) / 3) + 2) % 4) + 1; // Yeah, this is weird. But, it does convert the current month to the FY quarter
-        var newPattern = $"""FY{fy:D2}Q{q:D1}\{Months[month]:D2}""";
-
-        foreach(var iteration in iterations)
+    {
+        if (!s_months.TryGetValue(month, out int monthNumber))
         {
-            if (iteration.Path.Contains(oldPattern) || iteration.Path.Contains(newPattern))
+            return default;
+        }
+        int fy = ((monthNumber > 6 ? calendarYear + 1 : calendarYear)) % 100;
+        string fiscalYearPattern = $"FY{fy:D2}";
+        string monthPattern = $"{monthNumber:D2} {month}";
+
+        foreach(QuestIteration iteration in iterations)
+        {
+            if (iteration.Path.Contains(fiscalYearPattern) && iteration.Path.Contains(monthPattern))
             {
                 return iteration;
             }

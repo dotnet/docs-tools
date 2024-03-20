@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.4.33213.308
+VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoMan", "RepoMan.csproj", "{28964A8C-4570-44FF-A320-18EAE7BF7DBD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoMan", "RepoMan.csproj", "{833DF5EB-827C-4983-8EA5-5BD73957824B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoManConfigTest", "..\RepoManConfigTest\RepoManConfigTest.csproj", "{6E47083E-E62A-40F8-8833-42CC8F273D1F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.DocsTools", "..\DotNet.DocsTools\DotNet.DocsTools.csproj", "{ECFDB1ED-C2D4-4B89-86E8-A9B1509C3D9A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.DocsTools", "..\DotNet.DocsTools\DotNet.DocsTools.csproj", "{2ADA2CD5-9776-44FE-892F-A4235A62BF31}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoManCheckerCLI", "..\RepoManChecker\RepoManCheckerCLI.csproj", "{E24D5FD0-E3E9-4DF4-BD02-8FF5652814DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,23 +15,23 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{28964A8C-4570-44FF-A320-18EAE7BF7DBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{28964A8C-4570-44FF-A320-18EAE7BF7DBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{28964A8C-4570-44FF-A320-18EAE7BF7DBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{28964A8C-4570-44FF-A320-18EAE7BF7DBD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6E47083E-E62A-40F8-8833-42CC8F273D1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6E47083E-E62A-40F8-8833-42CC8F273D1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6E47083E-E62A-40F8-8833-42CC8F273D1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6E47083E-E62A-40F8-8833-42CC8F273D1F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2ADA2CD5-9776-44FE-892F-A4235A62BF31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2ADA2CD5-9776-44FE-892F-A4235A62BF31}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2ADA2CD5-9776-44FE-892F-A4235A62BF31}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2ADA2CD5-9776-44FE-892F-A4235A62BF31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{833DF5EB-827C-4983-8EA5-5BD73957824B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{833DF5EB-827C-4983-8EA5-5BD73957824B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{833DF5EB-827C-4983-8EA5-5BD73957824B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{833DF5EB-827C-4983-8EA5-5BD73957824B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECFDB1ED-C2D4-4B89-86E8-A9B1509C3D9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECFDB1ED-C2D4-4B89-86E8-A9B1509C3D9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECFDB1ED-C2D4-4B89-86E8-A9B1509C3D9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECFDB1ED-C2D4-4B89-86E8-A9B1509C3D9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E24D5FD0-E3E9-4DF4-BD02-8FF5652814DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E24D5FD0-E3E9-4DF4-BD02-8FF5652814DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E24D5FD0-E3E9-4DF4-BD02-8FF5652814DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E24D5FD0-E3E9-4DF4-BD02-8FF5652814DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {77B596D3-F38F-41C9-A1B1-F4503E7F349B}
+		SolutionGuid = {681B8ACC-F042-47C3-84AF-3BE59C2D7F00}
 	EndGlobalSection
 EndGlobal

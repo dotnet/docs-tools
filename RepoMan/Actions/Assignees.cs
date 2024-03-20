@@ -1,17 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Assignees: IRunnerItem
+public sealed class Assignees: IRunnerItem
 {
-    private RunnerItemSubTypes _type;
-    private string[] _names;
+    private readonly RunnerItemSubTypes _type;
+    private readonly string[] _names;
 
     public Assignees(YamlNode node, RunnerItemSubTypes subType, State state)
     {
@@ -25,15 +20,15 @@ public class Assignees: IRunnerItem
         // Check for direct value or array
         if (node.NodeType == YamlNodeType.Scalar)
         {
-            state.Logger.LogDebug($"BUILD: Assignee: {node}");
+            state.Logger.LogDebugger($"BUILD: Assignee: {node}");
             names.Add(node.ToString());
         }
 
         else
         {
-            foreach (var item in node.AsSequenceNode())
+            foreach (YamlNode item in node.AsSequenceNode())
             {
-                state.Logger.LogDebug($"BUILD: Assignee: {item}");
+                state.Logger.LogDebugger($"BUILD: Assignee: {item}");
                 names.Add(item.ToString());
             }
         }
@@ -49,7 +44,7 @@ public class Assignees: IRunnerItem
             state.Logger.LogInformation($"Adding assignees to pool");
 
             // Add to state pooled labels for add
-            foreach (var item in _names)
+            foreach (string item in _names)
                 state.Operations.Assignees.Add(item);
         }
     }

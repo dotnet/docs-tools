@@ -1,4 +1,5 @@
-﻿using DotNetDocs.Tools.GraphQLQueries;
+﻿using DotNet.DocsTools.GitHubObjects;
+using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.Json;
 using Xunit;
 
@@ -32,67 +33,15 @@ public class FilesInPrTests
     {
         var responseDoc = JsonDocument.Parse(singlePageREsponse);
         var client = new FakeGitHubClient(responseDoc);
-
-        var filesInPR = new FilesInPullRequest(client, "dotnet", "samples", 1876);
-
         var count = 0;
-        await foreach(var path in filesInPR.PerformQuery())
+
+        var filesQuery = new EnumerationQuery<PullRequestFiles, FilesModifiedVariables>(client);
+
+        await foreach (var item in filesQuery.PerformQuery(new FilesModifiedVariables("dotnet", "samples", 1876)))
         {
-            Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.False(string.IsNullOrWhiteSpace(item.Path));
             count++;
         }
         Assert.Equal(1, count);
-    }
-
-    [Fact]
-    public void GitHubClientMustNotBeNull()
-    {
-        Assert.Throws<ArgumentNullException>(() => new FilesInPullRequest(
-            default!, 
-            "dotnet", 
-            "samples", 
-            1876));
-    }
-
-    [Fact]
-    public void OrgMustBeNonWhitespace()
-    {
-        Assert.Throws<ArgumentException>(() => new FilesInPullRequest(
-            new FakeGitHubClient(),
-            null!,
-            "samples",
-            1876));
-
-        Assert.Throws<ArgumentException>(() => new FilesInPullRequest(
-            new FakeGitHubClient(),
-            "",
-            "samples",
-            1876));
-        Assert.Throws<ArgumentException>(() => new FilesInPullRequest(
-            new FakeGitHubClient(),
-            "     ",
-            "samples",
-            1876));
-    }
-
-    [Fact]
-    public void RepositoryMustBeNonWhitespace()
-    {
-        Assert.Throws<ArgumentException>(() => new FilesInPullRequest(
-            new FakeGitHubClient(),
-            "dotnet",
-            null!,
-            1876));
-
-        Assert.Throws<ArgumentException>(() => new FilesInPullRequest(
-            new FakeGitHubClient(),
-            "dotnet",
-            "",
-            1876));
-        Assert.Throws<ArgumentException>(() => new FilesInPullRequest(
-            new FakeGitHubClient(),
-            "dotnet",
-            "     ",
-            1876));
     }
 }

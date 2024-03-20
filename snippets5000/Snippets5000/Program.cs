@@ -21,7 +21,11 @@ class Program
     const int EXITCODE_GOOD = 0;
     const int EXITCODE_BAD = 1;
 
+#if LINUX
+    const string FANCY_BATCH_FILENAME = "snippets5000_runner.sh";
+#else
     const string FANCY_BATCH_FILENAME = "snippets5000_runner.bat";
+#endif
 
     public const string ENV_EXTENSIONS_PROJECTS_NAME = "ExtensionsProjects";
     public const string ENV_EXTENSIONS_CODE_TRIGGERS_NAME = "ExtensionsCodeTriggers";
@@ -50,7 +54,7 @@ class Program
             !string.IsNullOrEmpty(owner) &&
             !string.IsNullOrEmpty(repo))
         {
-            IEnumerable<DiscoveryResult> projects;
+            List<DiscoveryResult> projects;
 
             // Normal github PR
             if (string.IsNullOrEmpty(dryrunTestId))
@@ -68,8 +72,9 @@ class Program
             else if (string.IsNullOrEmpty(dryrunTestDataFile))
                 throw new ArgumentNullException(nameof(dryrunTestDataFile), "The dryrun Test DataFile must be set");
             else
-                projects = new TestingProjectList(dryrunTestId, dryrunTestDataFile, sourcepath).GenerateBuildList();
+                projects = new TestingProjectList(dryrunTestId, dryrunTestDataFile, sourcepath).GenerateBuildList().ToList();
 
+            Log.Write(0, $"{projects.Count} items found.");
             Log.Write(0, "\r\nOutput all items found, grouped by status...");
 
             // Start processing all of the discovered projects
@@ -231,7 +236,11 @@ class Program
 
             if (config.Host == "dotnet")
             {
+#if LINUX
+                await File.WriteAllTextAsync(FANCY_BATCH_FILENAME, $"#!/bin/bash\ndotnet build \"{projectPath}\"");
+#else
                 await File.WriteAllTextAsync(FANCY_BATCH_FILENAME, $"dotnet build \"{projectPath}\"");
+#endif
             }
             else if (config.Host == "visualstudio")
             {
@@ -269,6 +278,16 @@ class Program
             // Run the batch file to do the compile.
             if (config.RunConsideredGood)
             {
+#if LINUX
+                Log.Write(2, $"Running linux, setting +x on {FANCY_BATCH_FILENAME}");
+                await Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = "chmod",
+                        ArgumentList = { "+x", FANCY_BATCH_FILENAME }
+                    })!.WaitForExitAsync();
+#endif
+
                 Log.Write(2, $"Contents of {FANCY_BATCH_FILENAME}:");
                 foreach (var line in File.ReadAllLines(FANCY_BATCH_FILENAME))
                     Log.Write(4, line);
@@ -389,7 +408,6 @@ class Program
                 {
                     Log.Write(0, "");
                     Log.Write(0, $"Found error code: {item.ErrorCode} on line\r\n{Log.Ind(4)}{item.ErrorLine!}");
-
                     Match match = Regex.Match(item.ErrorLine!, "(^.*)\\((\\d*),(\\d*)\\)");
 
                     if (match.Success)

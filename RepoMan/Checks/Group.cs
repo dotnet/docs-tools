@@ -1,14 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-public class Group: IRunnerItem
+public sealed class Group: IRunnerItem
 {
     public List<ICheck> Checks { get; } = new List<ICheck>();
 
@@ -19,9 +14,9 @@ public class Group: IRunnerItem
     {
         state.Logger.LogInformation($"Running check group; count: {Checks.Count}");
 
-        var result = true;
+        bool result = true;
 
-        foreach (var check in Checks)
+        foreach (ICheck check in Checks)
         {
             if (!await check.Run(state))
             {
@@ -47,17 +42,17 @@ public class Group: IRunnerItem
 
     public static Group Build(YamlMappingNode node, State state)
     {
-        state.Logger.LogDebug("BUILD: Check group start");
+        state.Logger.LogDebugger("BUILD: Check group start");
 
-        var checkGroup = new Group();
+        Group checkGroup = new Group();
 
-        var checkItems = node["check"].AsSequenceNode().Children;
+        IList<YamlNode> checkItems = node["check"].AsSequenceNode().Children;
 
-        foreach (var item in checkItems)
+        foreach (YamlNode item in checkItems)
         {
-            var typeProperty = item["type"].ToString();
+            string typeProperty = item["type"].ToString();
 
-            state.Logger.LogDebug($"BUILD: Finding check type {typeProperty}");
+            state.Logger.LogDebugger($"BUILD: Finding check type {typeProperty}");
 
             if (typeProperty.Equals("query", StringComparison.OrdinalIgnoreCase))
                 checkGroup.Checks.Add(new Query(item.AsMappingNode(), state));
@@ -67,6 +62,9 @@ public class Group: IRunnerItem
 
             else if (typeProperty.Equals("metadata-exists", StringComparison.OrdinalIgnoreCase))
                 checkGroup.Checks.Add(new DocMetadataExists(state));
+
+            else if (typeProperty.Equals("metadata-new-exists", StringComparison.OrdinalIgnoreCase))
+                checkGroup.Checks.Add(new DocNewMetadataExists(state));
 
             else if (typeProperty.Equals("isdraft", StringComparison.OrdinalIgnoreCase))
                 checkGroup.Checks.Add(new IsDraft(item.AsMappingNode(), state));
@@ -78,11 +76,13 @@ public class Group: IRunnerItem
             {
                 // Future
             }
-            else if (typeProperty.Equals("comment", StringComparison.OrdinalIgnoreCase))
+            else if (typeProperty.Equals("comment-body", StringComparison.OrdinalIgnoreCase))
+                checkGroup.Checks.Add(new CommentBody(item.AsMappingNode(), state));
+            else
             {
-                // Future
+                state.Logger.LogError($"Check type not found: {typeProperty}");
+                checkGroup.Checks.Add(new ForceFail());
             }
-            
         }
 
         if (node.Exists("pass", out YamlSequenceNode? values))

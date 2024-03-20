@@ -34,8 +34,8 @@ public sealed class QuestClient : IDisposable
     /// Create the quest client services object
     /// </summary>
     /// <param name="token">The personal access token</param>
-    /// <param name="org">The Azure devops organization</param>
-    /// <param name="project">The Azure devops project</param>
+    /// <param name="org">The Azure DevOps organization</param>
+    /// <param name="project">The Azure DevOps project</param>
     public QuestClient(string token, string org, string project)
     {
         _questOrg = org;
@@ -47,7 +47,7 @@ public sealed class QuestClient : IDisposable
             new AuthenticationHeaderValue("Basic",
                 Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
 
-        var delay = Backoff.DecorrelatedJitterBackoffV2(
+        IEnumerable<TimeSpan> delay = Backoff.DecorrelatedJitterBackoffV2(
             medianFirstRetryDelay: TimeSpan.FromSeconds(15), retryCount: 5);
         _retryPolicy = Policy
             .Handle<HttpRequestException>(ex =>
@@ -66,9 +66,8 @@ public sealed class QuestClient : IDisposable
     {
         string getIterationsUrl =
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/work/teamsettings/iterations?api-version=7.1-preview.1";
-        Console.WriteLine($"Get Iterations URL: \"{getIterationsUrl}\"");
 
-        using var response = await InitiateRequestAsync(
+        using HttpResponseMessage response = await InitiateRequestAsync(
             client => client.GetAsync(getIterationsUrl));
 
         return await HandleResponseAsync(response);
@@ -83,8 +82,8 @@ public sealed class QuestClient : IDisposable
     /// <returns>The JSON packet representing the new item.</returns>
     public async Task<JsonElement> CreateWorkItem(List<JsonPatchDocument> document)
     {
-        var json = JsonSerializer.Serialize(document, s_options);
-        Console.WriteLine($"Creating work item with:\n{json}");
+        string? json = JsonSerializer.Serialize(document, s_options);
+        // Console.WriteLine($"Creating work item with:\n{json}");
 
         using var request = new StringContent(json);
         request.Headers.ContentType = new MediaTypeHeaderValue("application/json-patch+json");
@@ -92,9 +91,9 @@ public sealed class QuestClient : IDisposable
 
         string createWorkItemUrl =
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/$User%20Story?api-version=6.0&expand=Fields";
-        Console.WriteLine($"Create work item URL: \"{createWorkItemUrl}\"");
+        // Console.WriteLine($"Create work item URL: \"{createWorkItemUrl}\"");
 
-        using var response = await InitiateRequestAsync(client =>
+        using HttpResponseMessage response = await InitiateRequestAsync(client =>
             client.PostAsync(createWorkItemUrl, request));
         
         return await HandleResponseAsync(response);
@@ -111,7 +110,7 @@ public sealed class QuestClient : IDisposable
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
         Console.WriteLine($"Get work item URL: \"{getWorkItemUrl}\"");
 
-        using var response = await InitiateRequestAsync(
+        using HttpResponseMessage response = await InitiateRequestAsync(
             client => client.GetAsync(getWorkItemUrl));
         
         return await HandleResponseAsync(response);
@@ -125,8 +124,8 @@ public sealed class QuestClient : IDisposable
     /// <returns>The JSON element that represents the updated work item.</returns>
     public async Task<JsonElement> PatchWorkItem(int id, List<JsonPatchDocument> document)
     {
-        var json = JsonSerializer.Serialize(document, s_options);
-        Console.WriteLine($"Patching {id} with:\n{json}");
+        string? json = JsonSerializer.Serialize(document, s_options);
+        // Console.WriteLine($"Patching {id} with:\n{json}");
 
         using var request = new StringContent(json);
         request.Headers.ContentType = new MediaTypeHeaderValue("application/json-patch+json");
@@ -134,9 +133,9 @@ public sealed class QuestClient : IDisposable
 
         string patchWorkItemUrl = 
             $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
-        Console.WriteLine($"Patch work item URL: \"{patchWorkItemUrl}\"");
+        // Console.WriteLine($"Patch work item URL: \"{patchWorkItemUrl}\"");
 
-        using var response = await InitiateRequestAsync(
+        using HttpResponseMessage response = await InitiateRequestAsync(
             client => client.PatchAsync(patchWorkItemUrl, request));
 
         return await HandleResponseAsync(response);
@@ -145,7 +144,7 @@ public sealed class QuestClient : IDisposable
     async Task<HttpResponseMessage> InitiateRequestAsync(
         Func<HttpClient, Task<HttpResponseMessage>> httpFunc)
     {
-        var result = 
+        PolicyResult<HttpResponseMessage> result = 
             await _retryPolicy.ExecuteAndCaptureAsync(() => httpFunc(_client));
         
         return result.Result;
@@ -155,13 +154,13 @@ public sealed class QuestClient : IDisposable
     {
         if (response.IsSuccessStatusCode)
         {
-            var jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+            JsonDocument jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
             return jsonDocument.RootElement;
         }
         else
         {
-            var text = $"HTTP error:\n{response}";
-            var content = await response.Content.ReadAsStringAsync();
+            string? text = $"HTTP error:\n{response}";
+            string? content = await response.Content.ReadAsStringAsync();
             text += $"\nContent: \"{content}\"";
 
             throw new InvalidOperationException(text);
@@ -171,22 +170,22 @@ public sealed class QuestClient : IDisposable
     public async Task<AzDoIdentity?> GetIDFromEmail(string emailAddress)
     {
         string url = $"https://vssps.dev.azure.com/{_questOrg}/_apis/identities?searchFilter=General&filterValue={emailAddress}&queryMembership=None&api-version=7.1-preview.1";
-        using var response = await InitiateRequestAsync(
+        using HttpResponseMessage response = await InitiateRequestAsync(
             client => client.GetAsync(url));
 
-        var rootElement = await HandleResponseAsync(response);
-        var count = rootElement.Descendent("count").GetInt32();
+        JsonElement rootElement = await HandleResponseAsync(response);
+        int count = rootElement.Descendent("count").GetInt32();
         if (count != 1)
         {
             return null;
         }
-        var values = rootElement.Descendent("value");
-        var user = values.EnumerateArray().First();
-        bool success = user.Descendent("id").TryGetGuid(out var id);
-        var uniqueName = user.Descendent("properties", "Account", "$value").GetString()!;
+        JsonElement values = rootElement.Descendent("value");
+        JsonElement user = values.EnumerateArray().First();
+        bool success = user.Descendent("id").TryGetGuid(out Guid id);
+        string? uniqueName = user.Descendent("properties", "Account", "$value").GetString()!;
         // When retrieving the user identity, the property is called "subjectDescriptor".
         // But, when sending a user ID, the property name is "descriptor".
-        var descriptor = user.Descendent("subjectDescriptor").GetString()!;
+        string? descriptor = user.Descendent("subjectDescriptor").GetString()!;
         var identity = new AzDoIdentity { Id = id, UniqueName = uniqueName, Descriptor = descriptor };
         return success ? identity : null;
     }

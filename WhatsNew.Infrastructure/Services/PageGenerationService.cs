@@ -1,4 +1,6 @@
-﻿using DotNetDocs.Tools.GitHubCommunications;
+﻿using DotNet.DocsTools.GitHubObjects;
+using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GitHubObjects;
 using DotNetDocs.Tools.GraphQLQueries;
 using DotNetDocs.Tools.RESTQueries;
 using DotNetDocs.Tools.Utility;
@@ -40,7 +42,21 @@ public class PageGenerationService
     /// </summary>
     public async Task WriteMarkdownFile(string? existingMarkdownFile= null)
     {
-        await ProcessPullRequests();
+        var totalPRs = await ProcessPullRequests();
+
+        if (totalPRs == 0)
+        {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("No PRs found.");
+            Console.WriteLine("This is likely a problem with one of:");
+            Console.WriteLine("\t- the date range");
+            Console.WriteLine("\t- the required label");
+            Console.WriteLine("\t- GitHub permissions");
+            Console.WriteLine("Exiting.");
+            Console.ForegroundColor = color;
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(existingMarkdownFile))
         {
@@ -77,7 +93,8 @@ public class PageGenerationService
                 {
                     sectionsWritten++;
                 }
-                if ((sectionsWritten <= 3) || dontTrim)
+                if ((sectionsWritten <= (_configuration.Repository.NavigationOptions?.MaximumNumberOfArticles ?? 3))
+                    || dontTrim)
                 {
                     await stream.WriteLineAsync(line);
                 }
@@ -149,7 +166,6 @@ public class PageGenerationService
         var allDocs = from change in _majorChanges
                       from area in repo.Areas
                       where change.Value.Heading == area.Heading
-                      orderby area.Heading
                       group change by area.Heading into headingGroup
                       select headingGroup;
 
@@ -157,15 +173,23 @@ public class PageGenerationService
                                     where area.Names.FirstOrDefault() == "."
                                     select area.Heading).FirstOrDefault();
 
-        foreach (var docArea in allDocs)
+        foreach(var area in repo.Areas)
         {
-            var areaHeading = docArea.Key;
-            var isRootDirectoryArea = areaHeading == rootDirectoryHeading;
-
             // Don't write anything for blank areas.
-            if (areaHeading is null)
+            if (area is null)
                 continue;
-            await stream.WriteLineAsync($"{(singleFile ? "###" : "##")} {areaHeading}");
+            var docArea = allDocs.FirstOrDefault(da => da.Key == area.Heading);
+            if (docArea is null)
+            {
+                Console.WriteLine($"No changes found for {area.Heading}");
+                continue;
+            } else
+            {
+                Console.WriteLine($"Writing changes for {area.Heading}");
+            }
+            var isRootDirectoryArea = area.Heading == rootDirectoryHeading;
+
+            await stream.WriteLineAsync($"{(singleFile ? "###" : "##")} {area.Heading}");
             await stream.WriteLineAsync();
 
             writeDocNodes(true);
@@ -203,7 +227,7 @@ public class PageGenerationService
                                     prs += $"#{pr.PrNumber}";
                                 }
                             } 
-                            catch (IOException e)
+                            catch (IOException)
                             {
                                 Console.WriteLine("PR includes what's new file. Ignoring");
                             }
@@ -273,6 +297,7 @@ public class PageGenerationService
 
     private async Task WriteContributorInformation(TextWriter stream)
     {
+        Console.WriteLine("Writing contributors");
         var allContributors = from c in _contributors
                               orderby c.login
                               group c by (c.login, c.name) into stats
@@ -300,51 +325,56 @@ public class PageGenerationService
         }
     }
 
-    private async Task ProcessPullRequests()
+    private async Task<int> ProcessPullRequests()
     {
         var repo = _configuration.Repository;
         var client = _configuration.GitHubClient;
         var ospoClient = _configuration.OspoClient;
 
-        await processPRs();
+        var totalPRs = await processPRs();
 
         // If processing a private repo, fetch the PRs & community contributors from
         // the accompanying public repo. Merge private results with public results.
         if (repo.IsPrivateRepo)
         {
             repo.Name = repo.Name.Replace(PrivateRepoNameSuffix, string.Empty);
-            await processPRs();
+            totalPRs += await processPRs();
         }
+        return totalPRs;
 
-        async Task processPRs()
+        async Task<int> processPRs()
         {
             Console.ForegroundColor = ConsoleColor.DarkMagenta;
             Console.WriteLine($"== {repo.Owner}/{repo.Name} ({repo.Branch}) ==", Console.ForegroundColor);
             Console.ForegroundColor = ConsoleColor.Gray;
 
             var excludedContributors = new List<string>();
-            var query = new PullRequestsMergedInSprint(
-                client, repo.Owner, repo.Name, repo.Branch, repo.InclusionCriteria.Labels, _configuration.DateRange);
+            var query = new EnumerationQuery<WhatsNewPullRequest, WhatsNewVariables>(client);
+            var queryParms = new WhatsNewVariables(repo.Owner, repo.Name, repo.Branch, repo.InclusionCriteria.Labels, _configuration.DateRange);
             var authorLoginFTECache = new Dictionary<string, bool?>();
 
-            await foreach (var item in query.PerformQuery())
+            var totalPRs = 0;
+            await foreach (var item in query.PerformQuery(queryParms))
             {
+                totalPRs++;
                 var prNumber = item.Number;
                 Console.WriteLine($"Processing PR {prNumber}");
 
-                if (!authorLoginFTECache.TryGetValue(item.Author.Login, out var isFTE))
+                if (item.Author?.Login is not null)
                 {
-                    isFTE = await item.Author.IsMicrosoftFTE(ospoClient);
-                    authorLoginFTECache[item.Author.Login] = isFTE;
+                    if (!authorLoginFTECache.TryGetValue(item.Author!.Login!, out var isFTE))
+                    {
+                        isFTE = await item.Author.IsMicrosoftFTE(ospoClient);
+                        authorLoginFTECache[item.Author.Login] = isFTE;
+                    }
+
+                    if (isFTE == false)
+                        _contributors.Add((login: item.Author.Login, name: item.Author.Name));
+                    else if (isFTE == true)
+                        // If a user account was deleted, it's replaced with the "ghost" account.
+                        // For example, https://github.com/MicrosoftDocs/visualstudio-docs/pull/5837.
+                        excludedContributors.Add(!string.IsNullOrEmpty(item.Author.Login) ? item.Author.Login : "ghost");
                 }
-
-                if (isFTE == false)
-                    _contributors.Add((login: item.Author.Login, name: item.Author.Name));
-                else if (isFTE == true)
-                    // If a user account was deleted, it's replaced with the "ghost" account.
-                    // For example, https://github.com/MicrosoftDocs/visualstudio-docs/pull/5837.
-                    excludedContributors.Add(!string.IsNullOrEmpty(item.Author.Login) ? item.Author.Login : "ghost");
-
                 await ProcessSinglePullRequest(client, prNumber, item.Title, item.ChangedFiles, repo);
             }
 
@@ -357,6 +387,7 @@ public class PageGenerationService
                 Console.WriteLine($"{index}. {distinctExcludedContributors[index - 1]}");
             }
             Console.WriteLine();
+            return totalPRs;
         }
     }
 

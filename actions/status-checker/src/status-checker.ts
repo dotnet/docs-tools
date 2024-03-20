@@ -39,7 +39,7 @@ export async function isSuccessStatus(token: string) {
     // Loop and wait if there's no OPS build status yet.
     // (This is unusual.)
     const loops = 30;
-    for (let i = 0; i < loops && buildStatus === null; i++) {
+    for (let i = 0; i < loops && !buildStatus; i++) {
       // Sleep for 10 seconds.
       await wait(10000);
 
@@ -61,7 +61,7 @@ export async function isSuccessStatus(token: string) {
     }
 
     // Didn't find OPS status. This is bad.
-    if (buildStatus === null) {
+    if (!buildStatus) {
       setFailed(
         `Did not find OPS status check after waiting for ${
           (loops * 10) / 60
@@ -96,7 +96,7 @@ export async function isSuccessStatus(token: string) {
 
       // This should never happen since if nothing else,
       // we'll find the OPS status we found initially.
-      if (buildStatus === null) {
+      if (!buildStatus) {
         throw new Error("Did not find OPS status check.");
       }
     }

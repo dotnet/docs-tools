@@ -1,21 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-public class Query : ICheck
+public sealed class Query : ICheck
 {
     public string Value { get; }
 
     public Query(YamlMappingNode node, State state)
     {
         Value = node["value"].ToString();
-        state.Logger.LogDebug($"BUILD: Check-Query");
+        state.Logger.LogDebugger($"BUILD: Check-Query");
         state.Logger.LogTrace($"BUILD: {Value}");
     }
 
@@ -23,7 +18,7 @@ public class Query : ICheck
     {
         state.Logger.LogInformation($"Evaluating: {Value}");
 
-        var result = Utilities.TestStateJMES(Value, state);
+        bool result = Utilities.TestStateJMES(Value, state);
 
         if (result)
             state.Logger.LogInformation($"PASS");

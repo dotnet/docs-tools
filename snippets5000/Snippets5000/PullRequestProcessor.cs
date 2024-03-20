@@ -2,6 +2,7 @@
 using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.RegularExpressions;
+using DotNet.DocsTools.GitHubObjects;
 
 namespace Snippets5000;
 
@@ -56,11 +57,12 @@ internal class PullRequestProcessor
     private async IAsyncEnumerable<DiscoveryResult> FindAllSolutionsAndProjects(string key)
     {
         var client = IGitHubClient.CreateGitHubClient(key);
-        var files = new FilesInPullRequest(client, _owner, _repo, _prNumber);
 
-        await foreach (var item in files.PerformQuery())
+        var filesQuery = new EnumerationQuery<PullRequestFiles, FilesModifiedVariables>(client);
+
+        await foreach (var item in filesQuery.PerformQuery(new FilesModifiedVariables(_owner, _repo, _prNumber)))
         {
-            DiscoveryResult? resultValue = GenerateItemResult(_rootDir, item);
+            DiscoveryResult? resultValue = GenerateItemResult(_rootDir, item.Path);
 
             if (resultValue != null)
                 yield return resultValue.Value;
@@ -70,13 +72,14 @@ internal class PullRequestProcessor
     static internal DiscoveryResult? GenerateItemResult(string rootDir, string item)
     {
         // Get components of the file path
-        string fullPath = Path.Combine(rootDir.Replace('/', '\\'), item.Replace('/', '\\'));
+        string fullPath = Path.Combine(rootDir, item);
         string itemFileName = Path.GetFileName(fullPath);
         string itemPath = Path.GetDirectoryName(fullPath)!;
 
         // The file must be in the list of file name triggers or its extension must be one we care about
         if (!EnvFileTriggers.Contains(itemFileName, StringComparer.OrdinalIgnoreCase) &&
-            !EnvExtensionsCodeTriggers.Contains(Path.GetExtension(itemFileName), StringComparer.OrdinalIgnoreCase))
+            !EnvExtensionsCodeTriggers.Contains(Path.GetExtension(itemFileName), StringComparer.OrdinalIgnoreCase) &&
+            !EnvExtensionsProjects.Contains(Path.GetExtension(itemFileName), StringComparer.OrdinalIgnoreCase))
             return null;
 
         bool itemWasDeleted = !File.Exists(fullPath);
