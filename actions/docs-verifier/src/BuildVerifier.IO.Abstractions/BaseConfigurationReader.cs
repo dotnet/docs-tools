@@ -27,18 +27,22 @@ public abstract class BaseConfigurationReader<TConfigurationFile>
     /// </summary>
     public async ValueTask<TConfigurationFile?> ReadConfigurationAsync()
     {
-        // Only check if the file exists one time.
         if (_fileExists is null)
         {
             _fileExists = File.Exists(ConfigurationFileName);
 
             // Try one level deeper.
-            if ((bool)!_fileExists)
+            if (!(bool)_fileExists)
             {
-                if (File.Exists($"docs/{ConfigurationFileName}"))
+                string[] subDirs = Directory.GetDirectories(".", "*", SearchOption.TopDirectoryOnly);
+                foreach (string dir in subDirs)
                 {
-                    ConfigurationFileName = $"docs/{ConfigurationFileName}";
-                    _fileExists = true;
+                    if (File.Exists($"{dir}/{ConfigurationFileName}"))
+                    {
+                        ConfigurationFileName = $"{dir}/{ConfigurationFileName}";
+                        _fileExists = true;
+                        break;
+                    }
                 }
             }
         }
