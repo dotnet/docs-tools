@@ -1,28 +1,12 @@
 {
-  "version": "2.0",
-  "logging": {
-    "logLevel": {
-      "default": "None",
-      "Host.Results": "None",
-      "Host.Aggregator": "None",
-      "Function": "Debug",
-      "Function.RepoMan.Function1": "Debug",
-      "Function.RepoMan.Function1.User": "Debug",
-      "RepoMan.Function1": "Debug",
-      "RepoMan.Function1.User": "Debug",
-      "Function1": "Debug",
-      "Function1.User": "Debug"
-    },
-    "console": {
-      "isEnabled": true
-    },
-    "fileLoggingMode": "always",
-    "applicationInsights": {
-      "samplingSettings": {
-        "isEnabled": true,
-        "excludedTypes": "Request"
-      },
-      "enableLiveMetricsFilters": true
+    "version": "2.0",
+    "logging": {
+        "applicationInsights": {
+            "samplingSettings": {
+                "isEnabled": true,
+                "excludedTypes": "Request"
+            },
+            "enableLiveMetricsFilters": true
+        }
     }
-  }
 }
