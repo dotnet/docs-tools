@@ -99,6 +99,8 @@ internal class Program
                 options.AzureDevOps.AreaPath,
                 options.ImportTriggerLabel,
                 options.ImportedLabel,
+                options.DefaultParentNode,
+                options.ParentNodes,
                 bulkImport);
     }
 }
