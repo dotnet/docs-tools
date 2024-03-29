@@ -338,13 +338,13 @@ public class QuestWorkItem
     {
         int id = root.GetProperty("id").GetInt32();
         JsonElement fields = root.GetProperty("fields");
-        int? parentID = fields.TryGetProperty("System.Parent", out var parentNode) ?
+        int? parentID = fields.TryGetProperty("System.Parent", out JsonElement parentNode) ?
             parentNode.GetInt32() : null;
         int? parentRelationIndex = null;
         if (parentID is not null)
         {
-            var relType = "System.LinkTypes.Hierarchy-Reverse";
-            var parentRelation = root.GetProperty("relations")
+            string relType = "System.LinkTypes.Hierarchy-Reverse";
+            (JsonElement r, int Index) parentRelation = root.GetProperty("relations")
                 .EnumerateArray().Select((r,Index) => (r,Index))
                 .FirstOrDefault(t => t.r.GetProperty("rel").GetString() == relType);
             parentRelationIndex = parentRelation.Index;
