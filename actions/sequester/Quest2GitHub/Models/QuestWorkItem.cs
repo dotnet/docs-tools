@@ -348,7 +348,6 @@ public class QuestWorkItem
                 .EnumerateArray().Select((r,Index) => (r,Index))
                 .FirstOrDefault(t => t.r.GetProperty("rel").GetString() == relType);
             parentRelationIndex = parentRelation.Index;
-
         }
 
         string title = fields.GetProperty("System.Title").GetString()!;
