@@ -24,7 +24,6 @@ internal class Program
         string? questConfigPath = null,
         string? branch = null)
     {
-        Console.WriteLine(duration);
         try
         {
             if (repo.Contains('/'))

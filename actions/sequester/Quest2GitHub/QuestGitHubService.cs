@@ -1,5 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
+using Quest2GitHub.AzureDevOpsCommunications;
 
 namespace Quest2GitHub;
 
@@ -308,13 +309,24 @@ public class QuestGitHubService(
         List<JsonPatchDocument> patchDocument = [];
         if ((parentId != 0) && (parentId != questItem.ParentWorkItemId))
         {
-            JsonPatchDocument parentPatch = new()
+            var parentRelation = new Relation
+            {
+                RelationName = "System.LinkTypes.Hierarchy-Reverse",
+                Url = $"https://dev.azure.com/{_azdoClient.QuestOrg}/{_azdoClient.QuestProject}/_apis/wit/workItems/{parentId}",
+                Attributes =
+                {
+                    ["name"] = "Parent",
+                    ["isLocked"] = false
+                }
+            };
+
+            patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
-                Path = "/fields/System.Parent",
-                Value = parentId
-            };
-            patchDocument.Add(parentPatch);
+                Path = "/relations/-",
+                From = default,
+                Value = parentRelation
+            });
         }
         if ((questAssigneeID is not null) && (questAssigneeID?.Id != questItem.AssignedToId))
         {

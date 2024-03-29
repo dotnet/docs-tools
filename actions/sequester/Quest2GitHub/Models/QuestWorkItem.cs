@@ -141,12 +141,22 @@ public class QuestWorkItem
         ];
         if (parentId is not null)
         {
+            var parentRelation = new Relation
+            {
+                RelationName = "System.LinkTypes.Hierarchy-Reverse",
+                Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{parentId}",
+                Attributes =
+                {
+                    ["name"] = "Parent",
+                    ["isLocked"] = false
+                }
+            };
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
-                Path = "/fields/System.Parent",
+                Path = "/relations/-",
                 From = default,
-                Value = parentId
+                Value = parentRelation
             });
         }
 
