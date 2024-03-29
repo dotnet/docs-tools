@@ -309,6 +309,15 @@ public class QuestGitHubService(
         List<JsonPatchDocument> patchDocument = [];
         if ((parentId != 0) && (parentId != questItem.ParentWorkItemId))
         {
+            if (questItem.ParentWorkItemId != 0)
+            {
+                // Remove the existing parent relation.
+                patchDocument.Add(new JsonPatchDocument
+                {
+                    Operation = Op.Remove,
+                    Path = "/relations/" + questItem.ParentRelationIndex,
+                });
+            };
             var parentRelation = new Relation
             {
                 RelationName = "System.LinkTypes.Hierarchy-Reverse",

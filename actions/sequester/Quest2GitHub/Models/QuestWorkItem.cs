@@ -79,6 +79,16 @@ public class QuestWorkItem
     public required int? ParentWorkItemId { get; init; }
 
     /// <summary>
+    /// The index of the parent relation in the relations array.
+    /// </summary>
+    /// <remarks>
+    /// The relations array items can't be updated. Therefore,
+    /// to edit the parent, we need to know the index of the
+    /// existing relationship so we can remove it first.
+    /// </remarks>
+    public required int? ParentRelationIndex { get; init; }
+
+    /// <summary>
     /// Create a work item object from the ID
     /// </summary>
     /// <param name="client">The client services object.</param>
@@ -330,6 +340,17 @@ public class QuestWorkItem
         JsonElement fields = root.GetProperty("fields");
         int? parentID = fields.TryGetProperty("System.Parent", out var parentNode) ?
             parentNode.GetInt32() : null;
+        int? parentRelationIndex = null;
+        if (parentID is not null)
+        {
+            var relType = "System.LinkTypes.Hierarchy-Reverse";
+            var parentRelation = root.GetProperty("relations")
+                .EnumerateArray().Select((r,Index) => (r,Index))
+                .FirstOrDefault(t => t.r.GetProperty("rel").GetString() == relType);
+            parentRelationIndex = parentRelation.Index;
+
+        }
+
         string title = fields.GetProperty("System.Title").GetString()!;
         string state = fields.GetProperty("System.State").GetString()!;
         string description = fields.GetProperty("System.Description").GetString()!;
@@ -344,6 +365,7 @@ public class QuestWorkItem
         {
             Id = id,
             ParentWorkItemId = parentID,
+            ParentRelationIndex = parentRelationIndex,
             Title = title,
             State = state,
             Description = description,
