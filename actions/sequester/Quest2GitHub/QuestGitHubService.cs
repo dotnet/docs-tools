@@ -300,21 +300,15 @@ public class QuestGitHubService(
             questAssigneeID = await _azdoClient.GetIDFromEmail(ghAssigneeEmailAddress);
         }
         List<JsonPatchDocument> patchDocument = [];
-        if (questAssigneeID?.Id != questItem.AssignedToId)
+        if ((questAssigneeID is not null) && (questAssigneeID?.Id != questItem.AssignedToId))
         {
             // build patch document for assignment.
-            JsonPatchDocument? assignPatch = (questAssigneeID is null) ?
-                new JsonPatchDocument
-                {
-                    Operation = Op.Remove,
-                    Path = "/fields/System.AssignedTo",
-                } :
-                new JsonPatchDocument
-                {
-                    Operation = Op.Add,
-                    Path = "/fields/System.AssignedTo",
-                    Value = questAssigneeID,
-                };
+            JsonPatchDocument assignPatch = new ()
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.AssignedTo",
+                Value = questAssigneeID,
+            };
             patchDocument.Add(assignPatch);
         }
         bool questItemOpen = questItem.State is not "Closed";
