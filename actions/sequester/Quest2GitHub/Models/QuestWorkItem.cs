@@ -223,7 +223,9 @@ public class QuestWorkItem
     {
         var body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
         body.AppendLine($"<p>Author: {issue.FormattedAuthorLoginName}</p>");
-        body.AppendLine(issue.BodyHtml.ScrubContent());
+        var assigneeStrings = issue.Assignees.Select(a => $"{a.Login}-({a.Name})").ToArray();
+        body.AppendLine($"<p>Assignees: {string.Join(", ", assigneeStrings)}</p>");  
+        body.AppendLine(issue.BodyHtml?.ScrubContent());
         if (issue.Labels.Length != 0)
         {
             body.AppendLine($"<p><b>Labels:</b></p>");
