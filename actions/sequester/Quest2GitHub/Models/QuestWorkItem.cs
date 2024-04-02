@@ -68,6 +68,27 @@ public class QuestWorkItem
     public required int? StoryPoints { get; init; }
 
     /// <summary>
+    /// The ID of the parent work item.
+    /// </summary>
+    /// <remarks>
+    /// Starting with the next semester, our work items
+    /// must have a parent Epic or Feature.
+    /// Note that existing work items may not have
+    /// a current parent, which would make a null parent ID.
+    /// </remarks>
+    public required int? ParentWorkItemId { get; init; }
+
+    /// <summary>
+    /// The index of the parent relation in the relations array.
+    /// </summary>
+    /// <remarks>
+    /// The relations array items can't be updated. Therefore,
+    /// to edit the parent, we need to know the index of the
+    /// existing relationship so we can remove it first.
+    /// </remarks>
+    public required int? ParentRelationIndex { get; init; }
+
+    /// <summary>
     /// Create a work item object from the ID
     /// </summary>
     /// <param name="client">The client services object.</param>
@@ -83,10 +104,12 @@ public class QuestWorkItem
     /// Create a work item from a GitHub issue.
     /// </summary>
     /// <param name="issue">The GitHub issue.</param>
+    /// <param name="parentId">The ID of the parent ID</param>
     /// <param name="questClient">The quest client.</param>
     /// <param name="ospoClient">the MS open source programs office client.</param>
     /// <param name="path">The path component for the area path.</param>
     /// <param name="currentIteration">The current AzDo iteration</param>
+    /// <param name="allIterations">The set of all iterations to search</param>
     /// <returns>The newly created linked Quest work item.</returns>
     /// <remarks>
     /// Fill in the Json patch document from the GitHub issue.
@@ -95,6 +118,7 @@ public class QuestWorkItem
     /// Json element.
     /// </remarks>
     public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssueOrPullRequest issue,
+        int? parentId,
         QuestClient questClient,
         OspoClient ospoClient,
         string path,
@@ -104,8 +128,8 @@ public class QuestWorkItem
     {
         string areaPath = $"""{questClient.QuestProject}\{path}""";
 
-        var patchDocument = new List<JsonPatchDocument>()
-        {
+        List<JsonPatchDocument> patchDocument =
+        [
             new() {
                 Operation = Op.Add,
                 Path = "/fields/System.Title",
@@ -123,9 +147,28 @@ public class QuestWorkItem
                 Path = "/fields/System.AreaPath",
                 From = default,
                 Value = areaPath,
-            },
-
-        };
+            }
+        ];
+        if (parentId is not null)
+        {
+            var parentRelation = new Relation
+            {
+                RelationName = "System.LinkTypes.Hierarchy-Reverse",
+                Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{parentId}",
+                Attributes =
+                {
+                    ["name"] = "Parent",
+                    ["isLocked"] = false
+                }
+            };
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/relations/-",
+                From = default,
+                Value = parentRelation
+            });
+        }
 
         // Query if the GitHub ID maps to an FTE id, add that one:
         string? assigneeEmail = await issue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
@@ -295,6 +338,18 @@ public class QuestWorkItem
     {
         int id = root.GetProperty("id").GetInt32();
         JsonElement fields = root.GetProperty("fields");
+        int? parentID = fields.TryGetProperty("System.Parent", out JsonElement parentNode) ?
+            parentNode.GetInt32() : null;
+        int? parentRelationIndex = null;
+        if (parentID is not null)
+        {
+            string relType = "System.LinkTypes.Hierarchy-Reverse";
+            (JsonElement r, int Index) parentRelation = root.GetProperty("relations")
+                .EnumerateArray().Select((r,Index) => (r,Index))
+                .FirstOrDefault(t => t.r.GetProperty("rel").GetString() == relType);
+            parentRelationIndex = parentRelation.Index;
+        }
+
         string title = fields.GetProperty("System.Title").GetString()!;
         string state = fields.GetProperty("System.State").GetString()!;
         string description = fields.GetProperty("System.Description").GetString()!;
@@ -308,6 +363,8 @@ public class QuestWorkItem
         return new QuestWorkItem
         {
             Id = id,
+            ParentWorkItemId = parentID,
+            ParentRelationIndex = parentRelationIndex,
             Title = title,
             State = state,
             Description = description,

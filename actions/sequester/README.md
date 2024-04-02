@@ -38,7 +38,7 @@ To install the GitHub actions:
 ## Suggestions for future releases
 
 - [ ] Populate the "GitHub Repo" field in Azure DevOps to make reporting by repository easier.
-- [ ] Add Epics (configurable) as a parent of user stories on import.
+- [X] Add Epics (configurable) as a parent of user stories on import.
 - [X] Update the label block in Quest when an issue is closed. That way, any "OKR" labels get added when the work item is completed. This would be a simplified version of updating all labels when labels are added or removed.
 - [ ] Integrate with Repoman. That tool already performs a number of actions on different events in the repo. The code underlying these events could be ported there.
 - [ ] Encapsulate services into their own projects/packages, and share them as needed.
@@ -63,6 +63,17 @@ The consuming repository would ideally define the config file. As an example, it
   },
   "ImportTriggerLabel": ":world_map: reQUEST",
   "ImportedLabel": ":pushpin: seQUESTered"
+  "ParentNodes": [
+  {
+    "Label": "okr-health",
+    "ParentNodeId": 199082
+  },
+  {
+    "Label": "dotnet-csharp/svc",
+    "ParentNodeId": 227484
+  }
+  ],
+  "DefaultParentNode": 228485
 }
 ```
 

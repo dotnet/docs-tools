@@ -1,5 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
+using Quest2GitHub.AzureDevOpsCommunications;
 
 namespace Quest2GitHub;
 
@@ -21,6 +22,8 @@ namespace Quest2GitHub;
 /// <param name="areaPath">The area path for work items from this repo</param>
 /// <param name="importTriggerLabelText">The text of the label that triggers an import</param>
 /// <param name="importedLabelText">The text of the label that indicates an issue has been imported</param>
+/// <param name="defaultParentNode">The ID of the default parent work item ID.</param>
+/// <param name="parentNodes">A dictionary of label / parent ID pairs.</param>
 /// <param name="bulkImport">True if this run is doing a bulk import.</param>
 /// <remarks>
 /// The OAuth token takes precedence over the GitHub token, if both are 
@@ -35,6 +38,8 @@ public class QuestGitHubService(
     string areaPath,
     string importTriggerLabelText,
     string importedLabelText,
+    int defaultParentNode,
+    List<ParentForLabel> parentNodes,
     bool bulkImport) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
@@ -249,10 +254,11 @@ public class QuestGitHubService(
     private async Task<QuestWorkItem?> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, QuestIteration currentIteration, IEnumerable<QuestIteration> allIterations)
     {
         int? workItem = LinkedQuestId(issueOrPullRequest);
+        int parentId = parentIdFromIssue(issueOrPullRequest);
         if (workItem is null)
         {
             // Create work item:
-            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, parentId, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
             string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
             string updatedBody = $"""
@@ -293,6 +299,7 @@ public class QuestGitHubService(
 
     private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, QuestIssueOrPullRequest ghIssue, IEnumerable<QuestIteration> allIterations)
     {
+        int parentId = parentIdFromIssue(ghIssue);
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(_ospoClient);
         AzDoIdentity? questAssigneeID = default;
         if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
@@ -300,6 +307,36 @@ public class QuestGitHubService(
             questAssigneeID = await _azdoClient.GetIDFromEmail(ghAssigneeEmailAddress);
         }
         List<JsonPatchDocument> patchDocument = [];
+        if ((parentId != 0) && (parentId != questItem.ParentWorkItemId))
+        {
+            if (questItem.ParentWorkItemId != 0)
+            {
+                // Remove the existing parent relation.
+                patchDocument.Add(new JsonPatchDocument
+                {
+                    Operation = Op.Remove,
+                    Path = "/relations/" + questItem.ParentRelationIndex,
+                });
+            };
+            var parentRelation = new Relation
+            {
+                RelationName = "System.LinkTypes.Hierarchy-Reverse",
+                Url = $"https://dev.azure.com/{_azdoClient.QuestOrg}/{_azdoClient.QuestProject}/_apis/wit/workItems/{parentId}",
+                Attributes =
+                {
+                    ["name"] = "Parent",
+                    ["isLocked"] = false
+                }
+            };
+
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/relations/-",
+                From = default,
+                Value = parentRelation
+            });
+        }
         if ((questAssigneeID is not null) && (questAssigneeID?.Id != questItem.AssignedToId))
         {
             // build patch document for assignment.
@@ -372,6 +409,18 @@ public class QuestGitHubService(
             newItem = await questItem.AddClosingPR(_azdoClient, ghIssue.ClosingPRUrl) ?? newItem;
         }
         return newItem;
+    }
+
+    private int parentIdFromIssue(QuestIssueOrPullRequest ghIssue)
+    {
+        foreach (ParentForLabel pair in parentNodes)
+        {
+            if (ghIssue.Labels.Any(l => l.Name == pair.Label))
+            {
+                return pair.ParentNodeId;
+            }
+        }
+        return defaultParentNode;
     }
 
     private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(QuestIssueOrPullRequest issue)

@@ -25,9 +25,9 @@ public sealed class QuestClient : IDisposable
     };
 
     private readonly HttpClient _client;
-    private readonly string _questOrg;
     private readonly AsyncRetryPolicy _retryPolicy;
 
+    public string QuestOrg { get; }
     public string QuestProject { get; }
 
     /// <summary>
@@ -38,7 +38,7 @@ public sealed class QuestClient : IDisposable
     /// <param name="project">The Azure DevOps project</param>
     public QuestClient(string token, string org, string project)
     {
-        _questOrg = org;
+        QuestOrg = org;
         QuestProject = project;
         _client = new HttpClient();
         _client.DefaultRequestHeaders.Accept.Add(
@@ -65,7 +65,7 @@ public sealed class QuestClient : IDisposable
     public async Task<JsonElement> RetrieveAllIterations()
     {
         string getIterationsUrl =
-            $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/work/teamsettings/iterations?api-version=7.1-preview.1";
+            $"https://dev.azure.com/{QuestOrg}/{QuestProject}/_apis/work/teamsettings/iterations?api-version=7.1-preview.1";
 
         using HttpResponseMessage response = await InitiateRequestAsync(
             client => client.GetAsync(getIterationsUrl));
@@ -90,7 +90,7 @@ public sealed class QuestClient : IDisposable
         request.Headers.Add("Accepts", MediaTypeNames.Application.Json);
 
         string createWorkItemUrl =
-            $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/$User%20Story?api-version=6.0&expand=Fields";
+            $"https://dev.azure.com/{QuestOrg}/{QuestProject}/_apis/wit/workitems/$User%20Story?api-version=7.1&$expand=relations";
         // Console.WriteLine($"Create work item URL: \"{createWorkItemUrl}\"");
 
         using HttpResponseMessage response = await InitiateRequestAsync(client =>
@@ -107,7 +107,7 @@ public sealed class QuestClient : IDisposable
     public async Task<JsonElement> GetWorkItem(int id)
     {
         string getWorkItemUrl = 
-            $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
+            $"https://dev.azure.com/{QuestOrg}/{QuestProject}/_apis/wit/workitems/{id}?$expand=relations";
         Console.WriteLine($"Get work item URL: \"{getWorkItemUrl}\"");
 
         using HttpResponseMessage response = await InitiateRequestAsync(
@@ -132,7 +132,7 @@ public sealed class QuestClient : IDisposable
         request.Headers.Add("Accepts", MediaTypeNames.Application.Json);
 
         string patchWorkItemUrl = 
-            $"https://dev.azure.com/{_questOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=6.0&expand=Fields";
+            $"https://dev.azure.com/{QuestOrg}/{QuestProject}/_apis/wit/workitems/{id}?api-version=7.1&$expand=relations";
         // Console.WriteLine($"Patch work item URL: \"{patchWorkItemUrl}\"");
 
         using HttpResponseMessage response = await InitiateRequestAsync(
@@ -169,7 +169,7 @@ public sealed class QuestClient : IDisposable
 
     public async Task<AzDoIdentity?> GetIDFromEmail(string emailAddress)
     {
-        string url = $"https://vssps.dev.azure.com/{_questOrg}/_apis/identities?searchFilter=General&filterValue={emailAddress}&queryMembership=None&api-version=7.1-preview.1";
+        string url = $"https://vssps.dev.azure.com/{QuestOrg}/_apis/identities?searchFilter=General&filterValue={emailAddress}&queryMembership=None&api-version=7.1-preview.1";
         using HttpResponseMessage response = await InitiateRequestAsync(
             client => client.GetAsync(url));
 
