@@ -4,6 +4,7 @@ using DotNetDocs.Tools.Serialization;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Retry;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
@@ -38,6 +39,10 @@ public sealed class OspoClient : IDisposable
             .Handle<HttpRequestException>(ex =>
             {
                 Console.WriteLine($"::warning::{ex}");
+                if (ex.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    return false;
+                }
                 return true;
             })
             .WaitAndRetryAsync(delay);
@@ -67,9 +72,10 @@ public sealed class OspoClient : IDisposable
         });
         if (result.Outcome == OutcomeType.Failure)
         {
-            throw new InvalidOperationException("OSPO REST API failure. Check access token rights");
+            Console.WriteLine("WARNING: OSPO REST API failure. Check access token rights");
+            Console.WriteLine("WARNING: App running in degraded mode.");
+            return default;
         }
-
         return result.Result;
     }
     
@@ -93,10 +99,15 @@ public sealed class OspoClient : IDisposable
 
         if (result.Outcome == OutcomeType.Failure)
         {
-            throw new InvalidOperationException("OSPO REST API failure. Check access token rights");
+            Console.WriteLine("WARNING: OSPO REST API failure. Check access token rights");
+            Console.WriteLine("WARNING: App running in degraded mode.");
+            _allLinks = new();
         }
+        else
 
-        _allLinks = result.Result;
-        return result.Result;
+        {
+            _allLinks = result.Result;
+        }
+        return _allLinks;
     }
 }
