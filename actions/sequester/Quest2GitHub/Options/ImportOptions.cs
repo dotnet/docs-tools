@@ -54,7 +54,7 @@ public sealed record class ImportOptions
     /// This is a list of pairs rather than a dictionary because we want them
     /// ordered. The first label found on an issue will be used for the parent.
     /// </remarks>
-    public required List<ParentForLabel> ParentNodes { get; init; } = [];
+    public List<ParentForLabel> ParentNodes { get; init; } = [];
 
     /// <summary>
     /// The default parent node for any quest item.
@@ -63,5 +63,5 @@ public sealed record class ImportOptions
     /// If an issue doesn't match any of the configured labels
     /// the default parent node is set for the work item.
     /// </remarks>
-    public required int DefaultParentNode { get; init; }
+    public int DefaultParentNode { get; init; }
 }

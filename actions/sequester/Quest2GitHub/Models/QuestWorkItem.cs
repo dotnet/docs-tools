@@ -74,9 +74,9 @@ public class QuestWorkItem
     /// Starting with the next semester, our work items
     /// must have a parent Epic or Feature.
     /// Note that existing work items may not have
-    /// a current parent, which would make a null parent ID.
+    /// a current parent, which would make a 0 parent ID.
     /// </remarks>
-    public required int? ParentWorkItemId { get; init; }
+    public required int ParentWorkItemId { get; init; }
 
     /// <summary>
     /// The index of the parent relation in the relations array.
@@ -118,7 +118,7 @@ public class QuestWorkItem
     /// Json element.
     /// </remarks>
     public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssueOrPullRequest issue,
-        int? parentId,
+        int parentId,
         QuestClient questClient,
         OspoClient ospoClient,
         string path,
@@ -149,7 +149,7 @@ public class QuestWorkItem
                 Value = areaPath,
             }
         ];
-        if (parentId is not null)
+        if (parentId != 0)
         {
             var parentRelation = new Relation
             {
@@ -338,10 +338,10 @@ public class QuestWorkItem
     {
         int id = root.GetProperty("id").GetInt32();
         JsonElement fields = root.GetProperty("fields");
-        int? parentID = fields.TryGetProperty("System.Parent", out JsonElement parentNode) ?
-            parentNode.GetInt32() : null;
+        int parentID = fields.TryGetProperty("System.Parent", out JsonElement parentNode) ?
+            parentNode.GetInt32() : 0;
         int? parentRelationIndex = null;
-        if (parentID is not null)
+        if (parentID != 0)
         {
             string relType = "System.LinkTypes.Hierarchy-Reverse";
             (JsonElement r, int Index) parentRelation = root.GetProperty("relations")
