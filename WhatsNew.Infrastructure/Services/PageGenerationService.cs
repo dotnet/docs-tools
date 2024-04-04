@@ -208,7 +208,7 @@ public class PageGenerationService
                     foreach (var doc in prQuery)
                     {
                         // Potential problem: Why only look at the first source? 
-                        List<PrDetail> docPullRequests = doc.Value.Changes;
+                        List<PrDetail> docPullRequests = doc.Value.Changes.OrderBy(pr => getDocTitle(pr.Source)).ToList();
                         // Check all PRs to get a title.
                         // If a single PR title fails, write a warning to the console.
                         // If all PRs fail to retrieve the title, put a warning in the output.
@@ -236,8 +236,8 @@ public class PageGenerationService
                         {
                             // root directory:
                             docLink = isRootDirectoryArea ? 
-                                $"[Title not found in: {prs}]({doc.Key.Replace("./", string.Empty)})" :
-                                $"[Title not found in: {prs}]({repo.DocLinkSettings.RelativeLinkPrefix}{doc.Key.Replace("./", string.Empty)})";
+                                $"[ZZZ - Title not found in: {prs}]({doc.Key.Replace("./", string.Empty)})" :
+                                $"[ZZZ - Title not found in: {prs}]({repo.DocLinkSettings.RelativeLinkPrefix}{doc.Key.Replace("./", string.Empty)})";
                         }
 
                         if (!string.IsNullOrEmpty(docLink))
@@ -291,6 +291,15 @@ public class PageGenerationService
                     _fileExtensions.ForEach(extension => docLink = docLink?.Replace(extension, string.Empty));
 
                 return docLink;
+            }
+
+            string getDocTitle(string source)
+            {
+                var path = Path.Combine(_configuration.PathToRepoRoot, source);
+
+                return File.Exists(path)
+                    ? RawContentFromLocalFile.RetrieveTitleFromFile(path)
+                    : "ZZZ - Title Not Found";
             }
         }
     }
