@@ -4,6 +4,8 @@ using DotNetDocs.Tools.GitHubObjects;
 using DotNetDocs.Tools.GraphQLQueries;
 using DotNetDocs.Tools.RESTQueries;
 using DotNetDocs.Tools.Utility;
+using System.Net.Http.Metrics;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using WhatsNew.Infrastructure.Models;
@@ -205,21 +207,25 @@ public class PageGenerationService
                     stream.WriteLine(singleFile ? $"**{header}**" : $"### {header}");
                     stream.WriteLine();
 
+                    List<(string title, string line)> sectionItems = new();
+
                     foreach (var doc in prQuery)
                     {
                         // Potential problem: Why only look at the first source? 
-                        List<PrDetail> docPullRequests = doc.Value.Changes.OrderBy(pr => getDocTitle(pr.Source)).ToList();
+                        List<PrDetail> docPullRequests = doc.Value.Changes;
                         // Check all PRs to get a title.
                         // If a single PR title fails, write a warning to the console.
                         // If all PRs fail to retrieve the title, put a warning in the output.
                         var value = docPullRequests.First();
                         string? docLink = default;
+                        string? docTitle = default;
                         string prs = "";
                         foreach (var pr in docPullRequests)
                         {
                             // First title wins (it's the newest), but keep checking to issue warnings.
                             try
                             {
+                                docTitle ??= getDocTitle(pr.Source);
                                 docLink ??= getDocLink(pr.Source, doc.Key, isRootDirectoryArea);
                                 if (docLink == null)
                                 {
@@ -240,31 +246,35 @@ public class PageGenerationService
                                 $"[ZZZ - Title not found in: {prs}]({repo.DocLinkSettings.RelativeLinkPrefix}{doc.Key.Replace("./", string.Empty)})";
                         }
 
-                        if (!string.IsNullOrEmpty(docLink))
+                        if (!string.IsNullOrEmpty(docLink) && !string.IsNullOrEmpty(docTitle))
                         {
-                            stream.Write($"- {docLink}");
+                            string docListing = $"- {docLink}";
 
                             if (isNew || repo.InclusionCriteria.OmitPullRequestTitles)
                             {
-                                stream.WriteLine();
+                                sectionItems.Add((docTitle, docListing));
                             }
                             else
                             {
                                 for (int prIndex = 0; prIndex < docPullRequests.Count; prIndex++)
                                 {
-                                    if (prIndex == 0 && docPullRequests.Count > 1)
-                                        stream.WriteLine();
+                                    if (docPullRequests.Count > 1)
+                                        docListing += Environment.NewLine;
 
                                     var (_, _, PrTitle, PrNumber) = docPullRequests[prIndex];
                                     int prTitleLeftPadding = docPullRequests.Count > 1 ? 2 : 1;
                                     var trimmedPrTitle = $"- {PrTitle.Trim()}";
                                     int paddedTitleLength = prTitleLeftPadding + trimmedPrTitle.Length;
-                                    stream.WriteLine(trimmedPrTitle.PadLeft(paddedTitleLength));
+                                    docListing += trimmedPrTitle.PadLeft(paddedTitleLength);
                                 }
+                                sectionItems.Add((docTitle, docListing));
                             }
                         }
                     }
-
+                    foreach(var item in sectionItems.OrderBy(item => item.title))
+                    {
+                        stream.WriteLine(item.line);
+                    }
                     stream.WriteLine();
                 }
             }
