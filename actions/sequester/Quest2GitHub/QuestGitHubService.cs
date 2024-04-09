@@ -73,59 +73,55 @@ public class QuestGitHubService(
 
         var currentIteration = QuestIteration.CurrentIteration(_allIterations);
 
-        var issueQuery = new EnumerationQuery<QuestIssue, QuestIssueOrPullRequestVariables>(ghClient);
-        var prQuery = new EnumerationQuery<QuestPullRequest, QuestIssueOrPullRequestVariables>(ghClient);
-
         DateTime historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
-
         int totalImport = 0;
         int totalSkipped = 0;
-        await foreach (QuestIssueOrPullRequest item in ConcatQueries(
-            issueQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText)),
-            prQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText))
-        ))
+        var issueQueryEnumerable = QueryIssuesOrPullRequests<QuestIssue>();
+        await ProcessItems(issueQueryEnumerable);
+        var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
+        await ProcessItems(prQueryEnumerable);
+
+        async Task ProcessItems(IAsyncEnumerable<QuestIssueOrPullRequest> items)
         {
-            if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
+            await foreach (QuestIssueOrPullRequest item in items)
             {
-                Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
-                // Console.WriteLine(item);
-                QuestWorkItem? questItem = await FindLinkedWorkItemAsync(item);
-                if (dryRun is false && currentIteration is not null)
+                if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
                 {
-                    if (questItem != null)
+                    Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
+                    // Console.WriteLine(item);
+                    QuestWorkItem? questItem = await FindLinkedWorkItemAsync(item);
+                    if (dryRun is false && currentIteration is not null)
                     {
-                        await UpdateWorkItemAsync(questItem, item, _allIterations);
+                        if (questItem != null)
+                        {
+                            await UpdateWorkItemAsync(questItem, item, _allIterations);
+                        }
+                        else
+                        {
+                            questItem = await LinkIssueAsync(item, currentIteration, _allIterations);
+                        }
                     }
-                    else
-                    {
-                        questItem = await LinkIssueAsync(item, currentIteration, _allIterations);
-                    }
+                    totalImport++;
                 }
-                totalImport++;
-            }
-            else
-            {
-                totalSkipped++;
-                Console.WriteLine($"{item.Number}: skipped");
+                else
+                {
+                    totalSkipped++;
+                    Console.WriteLine($"{item.Number}: skipped");
+                }
             }
         }
         Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
 
-        // This is a very general method, and could be moved into a library and utility class.
-        async IAsyncEnumerable<QuestIssueOrPullRequest> ConcatQueries(IAsyncEnumerable<QuestIssueOrPullRequest> issues, IAsyncEnumerable<QuestIssueOrPullRequest> pullRequests)
+        async IAsyncEnumerable<QuestIssueOrPullRequest> QueryIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
         {
-            await foreach (QuestIssueOrPullRequest issue in issues)
+            var query = new EnumerationQuery<T, QuestIssueOrPullRequestVariables>(ghClient);
+            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText));
+            await foreach (QuestIssueOrPullRequest item in queryEnumerable)
             {
-                if (issue.UpdatedAt < historyThreshold)
+                if (item.UpdatedAt < historyThreshold)
                     break;
-            
-                yield return issue;
-            }
-            await foreach (QuestIssueOrPullRequest pr in pullRequests)
-            {
-                if (pr.UpdatedAt < historyThreshold)
-                    break;
-                yield return pr;
+
+                yield return item;
             }
         }
     }
