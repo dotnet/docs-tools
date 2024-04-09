@@ -20,17 +20,31 @@ public abstract class BaseConfigurationReader<TConfigurationFile>
     /// The name of the configuration file on disk.
     /// The name is used relatively with <see cref="File.Exists(string)"/>.
     /// </summary>
-    public abstract string ConfigurationFileName { get; }
+    public string? ConfigurationFileName { get; set; }
 
     /// <summary>
     /// Reads (or returns the cached) <typeparamref name="TConfigurationFile"/> file.
     /// </summary>
     public async ValueTask<TConfigurationFile?> ReadConfigurationAsync()
     {
-        // Only check if the file exists one time.
         if (_fileExists is null)
         {
             _fileExists = File.Exists(ConfigurationFileName);
+
+            // Try one level deeper.
+            if (!(bool)_fileExists)
+            {
+                string[] subDirs = Directory.GetDirectories(".", "*", SearchOption.TopDirectoryOnly);
+                foreach (string dir in subDirs)
+                {
+                    if (File.Exists($"{dir}/{ConfigurationFileName}"))
+                    {
+                        ConfigurationFileName = $"{dir}/{ConfigurationFileName}";
+                        _fileExists = true;
+                        break;
+                    }
+                }
+            }
         }
 
         // If there are cached configuration values, use 'em.
@@ -41,16 +55,11 @@ public abstract class BaseConfigurationReader<TConfigurationFile>
 
         if (_fileExists.Value)
         {
-            string json = await File.ReadAllTextAsync(ConfigurationFileName);
+            string json = await File.ReadAllTextAsync(ConfigurationFileName!);
 
             TConfigurationFile? configuration =
-                JsonSerializer.Deserialize<TConfigurationFile>(json, s_options);
-
-            if (configuration is null)
-            {
-                throw new InvalidOperationException($"Failed to read '{ConfigurationFileName}'.");
-            }
-
+                JsonSerializer.Deserialize<TConfigurationFile>(json, s_options) ??
+                    throw new InvalidOperationException($"Failed to read '{ConfigurationFileName}'.");
             _cachedConfiguration = configuration;
         }
         else

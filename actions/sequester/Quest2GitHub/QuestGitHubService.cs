@@ -1,5 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
+using Quest2GitHub.AzureDevOpsCommunications;
 
 namespace Quest2GitHub;
 
@@ -21,6 +22,8 @@ namespace Quest2GitHub;
 /// <param name="areaPath">The area path for work items from this repo</param>
 /// <param name="importTriggerLabelText">The text of the label that triggers an import</param>
 /// <param name="importedLabelText">The text of the label that indicates an issue has been imported</param>
+/// <param name="defaultParentNode">The ID of the default parent work item ID.</param>
+/// <param name="parentNodes">A dictionary of label / parent ID pairs.</param>
 /// <param name="bulkImport">True if this run is doing a bulk import.</param>
 /// <remarks>
 /// The OAuth token takes precedence over the GitHub token, if both are 
@@ -35,6 +38,8 @@ public class QuestGitHubService(
     string areaPath,
     string importTriggerLabelText,
     string importedLabelText,
+    int defaultParentNode,
+    List<ParentForLabel> parentNodes,
     bool bulkImport) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
@@ -68,59 +73,55 @@ public class QuestGitHubService(
 
         var currentIteration = QuestIteration.CurrentIteration(_allIterations);
 
-        var issueQuery = new EnumerationQuery<QuestIssue, QuestIssueOrPullRequestVariables>(ghClient);
-        var prQuery = new EnumerationQuery<QuestPullRequest, QuestIssueOrPullRequestVariables>(ghClient);
-
         DateTime historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
-
         int totalImport = 0;
         int totalSkipped = 0;
-        await foreach (QuestIssueOrPullRequest item in ConcatQueries(
-            issueQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText)),
-            prQuery.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText))
-        ))
+        var issueQueryEnumerable = QueryIssuesOrPullRequests<QuestIssue>();
+        await ProcessItems(issueQueryEnumerable);
+        var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
+        await ProcessItems(prQueryEnumerable);
+
+        async Task ProcessItems(IAsyncEnumerable<QuestIssueOrPullRequest> items)
         {
-            if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
+            await foreach (QuestIssueOrPullRequest item in items)
             {
-                Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
-                // Console.WriteLine(item);
-                QuestWorkItem? questItem = await FindLinkedWorkItemAsync(item);
-                if (dryRun is false && currentIteration is not null)
+                if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
                 {
-                    if (questItem != null)
+                    Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
+                    // Console.WriteLine(item);
+                    QuestWorkItem? questItem = await FindLinkedWorkItemAsync(item);
+                    if (dryRun is false && currentIteration is not null)
                     {
-                        await UpdateWorkItemAsync(questItem, item, _allIterations);
+                        if (questItem != null)
+                        {
+                            await UpdateWorkItemAsync(questItem, item, _allIterations);
+                        }
+                        else
+                        {
+                            questItem = await LinkIssueAsync(item, currentIteration, _allIterations);
+                        }
                     }
-                    else
-                    {
-                        questItem = await LinkIssueAsync(item, currentIteration, _allIterations);
-                    }
+                    totalImport++;
                 }
-                totalImport++;
-            }
-            else
-            {
-                totalSkipped++;
-                Console.WriteLine($"{item.Number}: skipped");
+                else
+                {
+                    totalSkipped++;
+                    Console.WriteLine($"{item.Number}: skipped");
+                }
             }
         }
         Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
 
-        // This is a very general method, and could be moved into a library and utility class.
-        async IAsyncEnumerable<QuestIssueOrPullRequest> ConcatQueries(IAsyncEnumerable<QuestIssueOrPullRequest> issues, IAsyncEnumerable<QuestIssueOrPullRequest> pullRequests)
+        async IAsyncEnumerable<QuestIssueOrPullRequest> QueryIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
         {
-            await foreach (QuestIssueOrPullRequest issue in issues)
+            var query = new EnumerationQuery<T, QuestIssueOrPullRequestVariables>(ghClient);
+            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText));
+            await foreach (QuestIssueOrPullRequest item in queryEnumerable)
             {
-                if (issue.UpdatedAt < historyThreshold)
+                if (item.UpdatedAt < historyThreshold)
                     break;
-            
-                yield return issue;
-            }
-            await foreach (QuestIssueOrPullRequest pr in pullRequests)
-            {
-                if (pr.UpdatedAt < historyThreshold)
-                    break;
-                yield return pr;
+
+                yield return item;
             }
         }
     }
@@ -249,10 +250,11 @@ public class QuestGitHubService(
     private async Task<QuestWorkItem?> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, QuestIteration currentIteration, IEnumerable<QuestIteration> allIterations)
     {
         int? workItem = LinkedQuestId(issueOrPullRequest);
+        int parentId = parentIdFromIssue(issueOrPullRequest);
         if (workItem is null)
         {
             // Create work item:
-            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, parentId, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
 
             string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
             string updatedBody = $"""
@@ -293,6 +295,7 @@ public class QuestGitHubService(
 
     private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, QuestIssueOrPullRequest ghIssue, IEnumerable<QuestIteration> allIterations)
     {
+        int parentId = parentIdFromIssue(ghIssue);
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(_ospoClient);
         AzDoIdentity? questAssigneeID = default;
         if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
@@ -300,21 +303,45 @@ public class QuestGitHubService(
             questAssigneeID = await _azdoClient.GetIDFromEmail(ghAssigneeEmailAddress);
         }
         List<JsonPatchDocument> patchDocument = [];
-        if (questAssigneeID?.Id != questItem.AssignedToId)
+        if ((parentId != 0) && (parentId != questItem.ParentWorkItemId))
         {
-            // build patch document for assignment.
-            JsonPatchDocument? assignPatch = (questAssigneeID is null) ?
-                new JsonPatchDocument
+            if (questItem.ParentWorkItemId != 0)
+            {
+                // Remove the existing parent relation.
+                patchDocument.Add(new JsonPatchDocument
                 {
                     Operation = Op.Remove,
-                    Path = "/fields/System.AssignedTo",
-                } :
-                new JsonPatchDocument
+                    Path = "/relations/" + questItem.ParentRelationIndex,
+                });
+            };
+            var parentRelation = new Relation
+            {
+                RelationName = "System.LinkTypes.Hierarchy-Reverse",
+                Url = $"https://dev.azure.com/{_azdoClient.QuestOrg}/{_azdoClient.QuestProject}/_apis/wit/workItems/{parentId}",
+                Attributes =
                 {
-                    Operation = Op.Add,
-                    Path = "/fields/System.AssignedTo",
-                    Value = questAssigneeID,
-                };
+                    ["name"] = "Parent",
+                    ["isLocked"] = false
+                }
+            };
+
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/relations/-",
+                From = default,
+                Value = parentRelation
+            });
+        }
+        if ((questAssigneeID is not null) && (questAssigneeID?.Id != questItem.AssignedToId))
+        {
+            // build patch document for assignment.
+            JsonPatchDocument assignPatch = new ()
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.AssignedTo",
+                Value = questAssigneeID,
+            };
             patchDocument.Add(assignPatch);
         }
         bool questItemOpen = questItem.State is not "Closed";
@@ -362,6 +389,7 @@ public class QuestGitHubService(
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
+                From = default,
                 Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
                 Value = iterationSize.QuestStoryPoint(),
             });
@@ -377,6 +405,18 @@ public class QuestGitHubService(
             newItem = await questItem.AddClosingPR(_azdoClient, ghIssue.ClosingPRUrl) ?? newItem;
         }
         return newItem;
+    }
+
+    private int parentIdFromIssue(QuestIssueOrPullRequest ghIssue)
+    {
+        foreach (ParentForLabel pair in parentNodes)
+        {
+            if (ghIssue.Labels.Any(l => l.Name == pair.Label))
+            {
+                return pair.ParentNodeId;
+            }
+        }
+        return defaultParentNode;
     }
 
     private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(QuestIssueOrPullRequest issue)

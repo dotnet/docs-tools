@@ -7,14 +7,10 @@ namespace RedirectionVerifier;
 public class OpenPublishingRedirectionReader
     : BaseMappedConfigurationReader<OpenPublishingRedirections, ImmutableArray<Redirection>>
 {
-    private readonly string _configFileName;
-
     public OpenPublishingRedirectionReader(string configFileName)
     {
-        _configFileName = configFileName;
+        ConfigurationFileName = configFileName;
     }
-
-    public override string ConfigurationFileName => _configFileName;
 
     public override async ValueTask<ImmutableArray<Redirection>> MapConfigurationAsync()
     {

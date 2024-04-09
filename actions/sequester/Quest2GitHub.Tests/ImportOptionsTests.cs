@@ -1,4 +1,4 @@
-namespace Quest2GitHub.Tests;
+﻿namespace Quest2GitHub.Tests;
 
 public class ImportOptionsTests
 {
@@ -16,6 +16,8 @@ public class ImportOptionsTests
         // Top-level options
         Assert.Equal(":world_map: reQUEST", actual.ImportTriggerLabel);
         Assert.Equal(":pushpin: seQUESTered", actual.ImportedLabel);
+        Assert.Equal(0, actual.DefaultParentNode);
+        Assert.Empty(actual.ParentNodes);
 
         // API keys object
         Assert.Null(actual.ApiKeys);
@@ -69,6 +71,9 @@ public class ImportOptionsTests
         // Top-level options
         Assert.Equal("trigger-import", actual.ImportTriggerLabel);
         Assert.Equal("imported", actual.ImportedLabel);
+        Assert.Equal(228485, actual.DefaultParentNode);
+        Assert.Equal(199082, actual.ParentNodes.Single(p => p.Label == "okr-health").ParentNodeId);
+        Assert.Equal(227484, actual.ParentNodes.Single(p => p.Label == "dotnet-csharp/svc").ParentNodeId);
 
         // Azure DevOps nested options
         Assert.Equal("org", actual.AzureDevOps.Org);
@@ -164,6 +169,8 @@ public class ImportOptionsTests
         // Top-level options
         Assert.Equal("trigger-label", actual.ImportTriggerLabel);
         Assert.Equal("imported-label", actual.ImportedLabel);
+        Assert.Equal(0, actual.DefaultParentNode);
+        Assert.Empty(actual.ParentNodes);
 
         // Azure DevOps nested options
         Assert.Equal("fake-ado-org", actual.AzureDevOps.Org);

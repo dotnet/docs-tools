@@ -36,7 +36,7 @@ Metrics for the "what's new" pages are made available at [aka.ms/whatsnewindocs]
 
    The OSPO personal access token is required to access the OSPO API. This API determines community contributors and Microsoft employee and vendor contributors.
 1. Request a token at [Visual Studio Online](https://ossmsft.visualstudio.com/_usersSettings/tokens). You can disable all scopes *except* read:user profile.
-1. Store the token in an environment variable named "OSPO_KEY". **If you are using the GitHub Action to generate the PR automatically**, add the key as a secret in your repository:
+1. Store the token in an environment variable named "OspoKey". **If you are using the GitHub Action to generate the PR automatically**, add the key as a secret in your repository:
    - Go to **Settings** on your repo.
    - Select **Secrets**
    - Add "OSPO_KEY" as a **Repository Secret**.
