@@ -1,13 +1,10 @@
-﻿using System.Net;
-using System.Runtime.CompilerServices;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
-using YamlDotNet.RepresentationModel;
-using Octokit;
-using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Logging;
-
-[assembly: InternalsVisibleTo("RepoManConfigTest")]
+using Newtonsoft.Json.Linq;
+using Octokit;
+using YamlDotNet.RepresentationModel;
 
 namespace RepoMan;
 
@@ -19,20 +16,20 @@ public class Function1
     public const int SchemaVersionMinimum = 1;
     public const string RulesFileName = ".repoman.yml";
 
-    private readonly ILogger _logger;
+    private readonly ILogger<Function1> _logger;
 
-    public Function1(ILoggerFactory loggerFactory)
+    public Function1(ILogger<Function1> logger)
     {
-        _logger = loggerFactory.CreateLogger<Function1>();
+        _logger = logger;
     }
 
     [Function("Function1")]
-    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req)
     {
         try
         {
             State state = new() { Logger = _logger };
-            
+
             _logger.LogInformation($"RepoMan v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
 
             // Prep for auth
@@ -42,8 +39,8 @@ public class Function1
             {
                 string error = "GithubToken setting is missing";
                 _logger.LogError(error);
-                
-                return  req.CreateBadRequestResponse(error);
+
+                return new BadRequestObjectResult(error);
             }
 
             // Github client
@@ -53,14 +50,29 @@ public class Function1
             };
 
             // Validate signature of payload
-            string requestBody = new StreamReader(req.Body).ReadToEnd();
-            string eventType = req.Headers.GetValues("X-GitHub-Event").First();
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
 
-            if (!IsSecure(requestBody, req.Headers.GetValues("X-Hub-Signature").First(), _logger))
+            string? eventType = null;
+            string? signature = null;
+
+            if (req.Headers.TryGetValue("X-GitHub-Event", out var vals1))
+                eventType = vals1.FirstOrDefault();
+
+            if (req.Headers.TryGetValue("X-Hub-Signature", out var vals2))
+                signature = vals2.FirstOrDefault();
+
+            if (signature is null || !IsSecure(requestBody, signature, _logger))
             {
                 string error = "Sig is missing";
                 _logger.LogError(error);
-                return req.CreateBadRequestResponse(error);
+                return new BadRequestObjectResult(error);
+            }
+
+            if (eventType is null)
+            {
+                string error = "Event is missing from github";
+                _logger.LogError(error);
+                return new BadRequestObjectResult(error);
             }
 
             // =================
@@ -84,7 +96,7 @@ public class Function1
                 {
                     string error = $"The rules file ({RulesFileName}) is missing in repository.";
                     state.Logger.LogError(error);
-                    return req.CreateBadRequestResponse(error);
+                    return new BadRequestObjectResult(error);
                 }
 
                 // Make sure rules version is correct
@@ -92,7 +104,7 @@ public class Function1
                 {
                     string error = "Rules file is out-of-date. Contact adegeo@ms to upgrade.";
                     state.Logger.LogError(error);
-                    return req.CreateBadRequestResponse(error);
+                    return new BadRequestObjectResult(error);
                 }
 
                 state.EventAction = issuePayload.Action;
@@ -131,7 +143,7 @@ public class Function1
                 {
                     string error = $"The rules file ({RulesFileName}) is missing in repository.";
                     state.Logger.LogError(error);
-                    return req.CreateBadRequestResponse(error);
+                    return new BadRequestObjectResult(error);
                 }
 
                 // Make sure rules version is correct
@@ -139,7 +151,7 @@ public class Function1
                 {
                     string error = "Rules file is out-of-date. Contact adegeo@ms to upgrade.";
                     state.Logger.LogError(error);
-                    return req.CreateBadRequestResponse(error);
+                    return new BadRequestObjectResult(error);
                 }
 
                 state.IsPullRequest = true;
@@ -174,7 +186,7 @@ public class Function1
                 {
                     string error = $"The rules file ({RulesFileName}) is missing in repository.";
                     state.Logger.LogError(error);
-                    return req.CreateBadRequestResponse(error);
+                    return new BadRequestObjectResult(error);
                 }
 
                 // Make sure rules version is correct
@@ -182,7 +194,7 @@ public class Function1
                 {
                     string error = "Rules file is out-of-date. Contact adegeo@ms to upgrade.";
                     state.Logger.LogError(error);
-                    return req.CreateBadRequestResponse(error);
+                    return new BadRequestObjectResult(error);
                 }
 
                 state.EventAction = commentPayload.Action;
@@ -203,7 +215,7 @@ public class Function1
             else
             {
                 state.Logger.LogError($"Event isn't supported {eventType}");
-                return req.CreateBadRequestResponse();
+                return new BadRequestObjectResult("Event isn't supported.");
             }
 
             // Check if a magic label was sent, modify the state accordingly
@@ -221,7 +233,7 @@ public class Function1
                 {
                     bool remappedEvent = false;
 
-                    restart_node_check:
+                restart_node_check:
                     YamlNode actionNode = eventNode[state.EventAction];
 
                     // Remapping
@@ -231,7 +243,7 @@ public class Function1
                         if (remappedEvent)
                         {
                             state.Logger.LogError($"Remapping already happened once. Can't remap an event into another remap.");
-                            return req.CreateBadRequestResponse();
+                            return new BadRequestObjectResult("Remapped twice.");
                         }
 
                         state.Logger.LogInformation($"Remap found in rules. From: {state.EventAction} To: {actionNode}");
@@ -240,7 +252,7 @@ public class Function1
                         if (state.EventAction == actionNode.ToString())
                         {
                             state.Logger.LogError($"Remapped to self.");
-                            return req.CreateBadRequestResponse();
+                            return new BadRequestObjectResult("Remapped to self.");
                         }
 
                         state.EventAction = actionNode.ToString();
@@ -249,7 +261,7 @@ public class Function1
                     else if (actionNode.NodeType != YamlNodeType.Sequence)
                     {
                         state.Logger.LogError($"Event should use a sequence.");
-                        return req.CreateBadRequestResponse();
+                        return new BadRequestObjectResult("Event should use a sequence.");
                     }
 
                     state.Logger.LogInformation($"Processing action: {state.EventAction}");
@@ -263,12 +275,12 @@ public class Function1
             else
                 state.Logger.LogInformation($"Event {eventType} not defined in rules. Nothing to do.");
 
-            return req.CreateResponse(HttpStatusCode.OK);
+            return new OkResult();
         }
         catch (Exception e)
         {
             _logger.LogError("Problem parsing: " + e);
-            return req.CreateBadRequestResponse();
+            return new BadRequestObjectResult("Problem parsing: " + e);
         }
     }
 
