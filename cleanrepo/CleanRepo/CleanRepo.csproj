@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8</TargetFramework>
-	<nullable>enable</nullable>
-	<ImplicitUsings>enable</ImplicitUsings>
     <OutputType>Exe</OutputType>
-	<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <TargetFramework>net8</TargetFramework>
+    <nullable>enable</nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="multiplexer.sh" />

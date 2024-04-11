@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace CleanRepo.Extensions;
+﻿namespace CleanRepo.Extensions;
 
 // Inspired/Borrowed from: https://stackoverflow.com/a/21649465/2410379
 static class TimeSpanExtensions
 {
-    static readonly SortedList<long, string> CutOff = new SortedList<long, string>
+    static readonly SortedList<long, string> s_cutOff = new()
     {
         [59] = "{3:S}",
         [60] = "{2:M}",
@@ -20,16 +16,16 @@ static class TimeSpanExtensions
 
     internal static string ToHumanReadableString(this TimeSpan ts)
     {
-        var find =
-            CutOff.Keys
+        int find =
+            s_cutOff.Keys
                   .ToList()
                   .BinarySearch((long)ts.TotalSeconds);
 
-        var near = find < 0 ? Math.Abs(find) - 1 : find;
+        int near = find < 0 ? Math.Abs(find) - 1 : find;
 
         return string.Format(
             TimeSpanFormatter.Instance,
-            CutOff[CutOff.Keys[near]],
+            s_cutOff[s_cutOff.Keys[near]],
             ts.Days,
             ts.Hours,
             ts.Minutes,
@@ -40,7 +36,7 @@ static class TimeSpanExtensions
     {
         internal static IFormatProvider Instance { get; } = new TimeSpanFormatter();
 
-        static readonly Dictionary<string, string> TimeFormats = new Dictionary<string, string>
+        static readonly Dictionary<string, string> s_timeFormats = new()
         {
             ["S"] = "{0:P:Seconds:Second}",
             ["M"] = "{0:P:Minutes:Minute}",
@@ -50,10 +46,15 @@ static class TimeSpanExtensions
 
         private TimeSpanFormatter() { }
 
-        public string Format(string format, object arg, IFormatProvider formatProvider)
-            => string.Format(PluralFormatter.Instance, TimeFormats[format], arg);
+        public string Format(string? format, object? arg, IFormatProvider? formatProvider)
+        {
+            if (format is null)
+                return $"{arg}";
 
-        public object GetFormat(Type formatType)
+            return string.Format(PluralFormatter.Instance, s_timeFormats[format], arg);
+        }
+
+        public object? GetFormat(Type? formatType)
             => formatType == typeof(ICustomFormatter) ? this : null;
     }
 
@@ -63,21 +64,24 @@ static class TimeSpanExtensions
 
         private PluralFormatter() { }
 
-        public string Format(string format, object arg, IFormatProvider formatProvider)
+        public string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
+            if (format is null)
+                return $"{arg}";
+
             if (arg != null)
             {
-                var parts = format.Split(':');
+                string[] parts = format.Split(':');
                 if (parts[0] == "P")
                 {
-                    var partIndex = (arg.ToString() == "1") ? 2 : 1;
+                    int partIndex = (arg.ToString() == "1") ? 2 : 1;
                     return $"{arg} {(parts.Length > partIndex ? parts[partIndex] : "")}";
                 }
             }
             return string.Format(formatProvider, format, arg);
         }
 
-        public object GetFormat(Type formatType)
+        public object? GetFormat(Type? formatType)
             => formatType == typeof(ICustomFormatter) ? this : null;
     }
 }

@@ -43,20 +43,33 @@ static class Program
 
     static void RunOptions(Options options)
     {
+        // Nothing to do.
+        if (options.FindOrphanedArticles is false &&
+            options.FindOrphanedImages is false &&
+            options.CatalogImages is false &&
+            options.FindOrphanedIncludes is false &&
+            options.FindOrphanedSnippets is false &&
+            options.ReplaceRedirectTargets is false &&
+            options.ReplaceWithRelativeLinks is false &&
+            options.RemoveRedirectHops is false)
+        {
+            Console.WriteLine("\nYou didn't specify which function to perform. To see options, use 'CleanRepo.exe -?'.");
+            return;
+        }
+
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        string startDirectory = null;
-
-        if (!String.IsNullOrEmpty(options.DocFxDirectory))
+        string? startDirectory;
+        if (!string.IsNullOrEmpty(options.DocFxDirectory))
             startDirectory = options.DocFxDirectory;
-        else if (!String.IsNullOrEmpty(options.ArticlesDirectory))
+        else if (!string.IsNullOrEmpty(options.ArticlesDirectory))
             startDirectory = options.ArticlesDirectory;
-        else if (!String.IsNullOrEmpty(options.MediaDirectory))
+        else if (!string.IsNullOrEmpty(options.MediaDirectory))
             startDirectory = options.MediaDirectory;
-        else if (!String.IsNullOrEmpty(options.SnippetsDirectory))
+        else if (!string.IsNullOrEmpty(options.SnippetsDirectory))
             startDirectory = options.SnippetsDirectory;
-        else if (!String.IsNullOrEmpty(options.IncludesDirectory))
+        else if (!string.IsNullOrEmpty(options.IncludesDirectory))
             startDirectory = options.IncludesDirectory;
         else
         {
@@ -65,14 +78,25 @@ static class Program
             startDirectory = options.DocFxDirectory;
         }
 
-        if (String.IsNullOrEmpty(startDirectory) || !Directory.Exists(startDirectory))
+        if (string.IsNullOrEmpty(startDirectory) || !Directory.Exists(startDirectory))
         {
             Console.WriteLine($"\nThe {startDirectory} directory doesn't exist.");
             return;
         }
 
+        if (string.IsNullOrEmpty(options.UrlBasePath))
+        {
+            Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
+            options.UrlBasePath = Console.ReadLine();
+        }
+
         // Initialize the DocFxRepo object for all options.
-        var docFxRepo = new DocFxRepo(startDirectory);
+        var docFxRepo = new DocFxRepo(startDirectory, options.UrlBasePath!);
+        if (docFxRepo.DocFxDirectory is null)
+        {
+            Console.WriteLine($"\nCouldn't find docfx.json file in '{startDirectory}' or an ancestor directory...exiting.");
+            return;
+        }
 
         // Determine if we're to delete orphans (or just report them).
         if (options.FindOrphanedImages
@@ -84,7 +108,7 @@ static class Program
             {
                 options.Delete = false;
                 Console.WriteLine("\nDo you want to delete orphans (y or n)?");
-                var info = Console.ReadKey();
+                ConsoleKeyInfo info = Console.ReadKey();
                 if (info.KeyChar == 'y' || info.KeyChar == 'Y')
                     options.Delete = true;
             }
@@ -93,19 +117,19 @@ static class Program
         // Find orphaned articles.
         if (options.FindOrphanedArticles)
         {
-            if (String.IsNullOrEmpty(options.ArticlesDirectory))
+            if (string.IsNullOrEmpty(options.ArticlesDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that you want to check for orphaned articles:\n");
                 options.ArticlesDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.ArticlesDirectory) || !Directory.Exists(options.ArticlesDirectory))
+            if (string.IsNullOrEmpty(options.ArticlesDirectory) || !Directory.Exists(options.ArticlesDirectory))
             {
                 Console.WriteLine($"\nThe {options.ArticlesDirectory} directory doesn't exist.");
                 return;
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
-            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
+            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory!.FullName))
             {
                 Console.WriteLine($"'{options.ArticlesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
@@ -118,87 +142,71 @@ static class Program
             if (docFxRepo.AllTocFiles is null || markdownFiles is null)
                 return;
 
-            ListOrphanedArticles(docFxRepo.AllTocFiles, markdownFiles, options.Delete.Value);
+            ListOrphanedArticles(docFxRepo.AllTocFiles, markdownFiles, options.Delete!.Value);
         }
 
         // Find orphaned images
         if (options.FindOrphanedImages)
         {
-            if (String.IsNullOrEmpty(options.MediaDirectory))
+            if (string.IsNullOrEmpty(options.MediaDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that you want to check for orphaned media files:\n");
                 options.MediaDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.MediaDirectory) || !Directory.Exists(options.MediaDirectory))
+            if (string.IsNullOrEmpty(options.MediaDirectory) || !Directory.Exists(options.MediaDirectory))
             {
                 Console.WriteLine($"\nThe {options.MediaDirectory} directory doesn't exist.");
                 return;
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
-            if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
+            if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory!.FullName))
             {
                 Console.WriteLine($"'{options.MediaDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
-            if (String.IsNullOrEmpty(options.UrlBasePath))
-            {
-                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
-                options.UrlBasePath = Console.ReadLine();
-            }
-
-            docFxRepo.UrlBasePath = options.UrlBasePath;
-
             // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
             // This is done here (dynamically) because it relies on knowing the base path URL.
-            docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?(?<path>{docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
+            docFxRepo._imageLinkRegExes.Add($"social_image_url: ?\"?(?<path>{docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
 
             // Gather media file names.
-            if (docFxRepo.ImageRefs is null)
-                docFxRepo.ImageRefs = GetMediaFiles(options.MediaDirectory);
+            if (docFxRepo._imageRefs is null)
+                docFxRepo._imageRefs = GetMediaFiles(options.MediaDirectory);
 
             Console.WriteLine($"\nSearching the '{options.MediaDirectory}' directory recursively for orphaned .png/.jpg/.gif/.svg files...\n");
 
-            docFxRepo.ListOrphanedImages(options.Delete.Value, "snippets");
+            docFxRepo.ListOrphanedImages(options.Delete!.Value, "snippets");
         }
 
         // Catalog images
         if (options.CatalogImages)
         {
-            if (String.IsNullOrEmpty(options.MediaDirectory))
+            if (string.IsNullOrEmpty(options.MediaDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory where you want to catalog media files:\n");
                 options.MediaDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.MediaDirectory) || !Directory.Exists(options.MediaDirectory))
+            if (string.IsNullOrEmpty(options.MediaDirectory) || !Directory.Exists(options.MediaDirectory))
             {
                 Console.WriteLine($"\nThe {options.MediaDirectory} directory doesn't exist.");
                 return;
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
-            if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
+            if (!options.MediaDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory!.FullName))
             {
                 Console.WriteLine($"'{options.MediaDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
-            if (String.IsNullOrEmpty(options.UrlBasePath))
-            {
-                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
-                options.UrlBasePath = Console.ReadLine();
-            }
-
-            docFxRepo.UrlBasePath = options.UrlBasePath;
-
             // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
             // This is done here (dynamically) because it relies on knowing the base path URL.
-            docFxRepo.ImageLinkRegExes.Add($"social_image_url: ?\"?(?<path>{docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
+            docFxRepo._imageLinkRegExes.Add($"social_image_url: ?\"?(?<path>{docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
 
             // Gather media file names.
-            if (docFxRepo.ImageRefs is null)
-                docFxRepo.ImageRefs = GetMediaFiles(options.MediaDirectory);
+            if (docFxRepo._imageRefs is null)
+                docFxRepo._imageRefs = GetMediaFiles(options.MediaDirectory);
 
             Console.WriteLine($"\nCataloging the images in the '{options.MediaDirectory}' directory...\n");
 
@@ -208,19 +216,19 @@ static class Program
         // Find orphaned include-type files
         if (options.FindOrphanedIncludes)
         {
-            if (String.IsNullOrEmpty(options.IncludesDirectory))
+            if (string.IsNullOrEmpty(options.IncludesDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that you want to check for orphaned include files:\n");
                 options.IncludesDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.IncludesDirectory) || !Directory.Exists(options.IncludesDirectory))
+            if (string.IsNullOrEmpty(options.IncludesDirectory) || !Directory.Exists(options.IncludesDirectory))
             {
                 Console.WriteLine($"\nThe {options.IncludesDirectory} directory doesn't exist.");
                 return;
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
-            if (!options.IncludesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
+            if (!options.IncludesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory!.FullName))
             {
                 Console.WriteLine($"'{options.IncludesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
@@ -239,25 +247,25 @@ static class Program
             else
                 Console.WriteLine($"\nChecking {includeFiles.Count} include files.");
 
-            ListOrphanedIncludes(options.IncludesDirectory, includeFiles, options.Delete.Value);
+            ListOrphanedIncludes(options.IncludesDirectory, includeFiles, options.Delete!.Value);
         }
 
         // Find orphaned snippet files
         if (options.FindOrphanedSnippets)
         {
-            if (String.IsNullOrEmpty(options.SnippetsDirectory))
+            if (string.IsNullOrEmpty(options.SnippetsDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that you want to check for orphaned snippet files:\n");
                 options.SnippetsDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.SnippetsDirectory) || !Directory.Exists(options.SnippetsDirectory))
+            if (string.IsNullOrEmpty(options.SnippetsDirectory) || !Directory.Exists(options.SnippetsDirectory))
             {
                 Console.WriteLine($"\nThe {options.SnippetsDirectory} directory doesn't exist.");
                 return;
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
-            if (!options.SnippetsDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
+            if (!options.SnippetsDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory!.FullName))
             {
                 Console.WriteLine($"'{options.SnippetsDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
@@ -266,7 +274,7 @@ static class Program
             Console.WriteLine($"\nSearching the '{options.SnippetsDirectory}' directory recursively for orphaned snippet files.");
 
             // Get all snippet files.
-            List<(string, string)> snippetFiles = GetSnippetFiles(options.SnippetsDirectory);
+            List<(string, string?)> snippetFiles = GetSnippetFiles(options.SnippetsDirectory);
             if (snippetFiles.Count == 0)
             {
                 Console.WriteLine("\nNo files with matching extensions were found.");
@@ -277,41 +285,33 @@ static class Program
             AddProjectInfo(ref snippetFiles);
 
             // Catalog all the solution files and the project (directories) they reference.
-            List<(string, List<string>)> solutionFiles = GetSolutionFiles(options.SnippetsDirectory);
+            List<(string, List<string?>)> solutionFiles = GetSolutionFiles(options.SnippetsDirectory);
 
             ListOrphanedSnippets(options.SnippetsDirectory, snippetFiles, solutionFiles,
-                options.Delete.Value, options.XmlSource.Value);
+                options.Delete!.Value, options.XmlSource);
         }
 
         // Replace links to articles that are redirected in the master redirection files.
         if (options.ReplaceRedirectTargets)
         {
             // Get the directory that represents the docset.
-            if (String.IsNullOrEmpty(options.ArticlesDirectory))
+            if (string.IsNullOrEmpty(options.ArticlesDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that contains the articles with links to fix up:\n");
                 options.ArticlesDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.ArticlesDirectory) || !Directory.Exists(options.ArticlesDirectory))
+            if (string.IsNullOrEmpty(options.ArticlesDirectory) || !Directory.Exists(options.ArticlesDirectory))
             {
                 Console.WriteLine($"\nThe {options.ArticlesDirectory} directory doesn't exist.");
                 return;
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
-            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
+            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory!.FullName))
             {
                 Console.WriteLine($"'{options.ArticlesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
-
-            if (String.IsNullOrEmpty(options.UrlBasePath))
-            {
-                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
-                options.UrlBasePath = Console.ReadLine();
-            }
-
-            docFxRepo.UrlBasePath = options.UrlBasePath;
 
             Console.WriteLine($"\nSearching the '{options.ArticlesDirectory}' directory for links to redirected topics...\n");
 
@@ -333,19 +333,19 @@ static class Program
         if (options.ReplaceWithRelativeLinks)
         {
             // Get the directory that represents the docset.
-            if (String.IsNullOrEmpty(options.ArticlesDirectory))
+            if (string.IsNullOrEmpty(options.ArticlesDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that contains the articles with links to fix up:\n");
                 options.ArticlesDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.ArticlesDirectory) || !Directory.Exists(options.ArticlesDirectory))
+            if (string.IsNullOrEmpty(options.ArticlesDirectory) || !Directory.Exists(options.ArticlesDirectory))
             {
                 Console.WriteLine($"\nThe {options.ArticlesDirectory} directory doesn't exist.");
                 return;
             }
 
             // Make sure the searchable directory is part of the same DocFx docset.
-            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
+            if (!options.ArticlesDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory!.FullName))
             {
                 Console.WriteLine($"'{options.ArticlesDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
@@ -353,28 +353,20 @@ static class Program
 
             // Check that this isn't the root directory of the repo. The code doesn't handle that case currently
             // because it can't always determine the base path of the docset (e.g. for dotnet/docs repo).
-            if (String.Equals(docFxRepo.OpsConfigFile.DirectoryName, options.ArticlesDirectory, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(docFxRepo.OpsConfigFile.DirectoryName, options.ArticlesDirectory, StringComparison.OrdinalIgnoreCase))
             {
                 Console.WriteLine($"\nYou entered the repo root directory. Please enter a subdirectory in which to replace links.");
                 return;
             }
 
             // Get the absolute path to the base directory for this docset.
-            string rootDirectory = docFxRepo.GetDocsetAbsolutePath(options.ArticlesDirectory);
+            string? rootDirectory = docFxRepo.GetDocsetAbsolutePath(options.ArticlesDirectory);
 
             if (rootDirectory is null)
             {
                 Console.WriteLine($"\nThe docfx.json file for {options.ArticlesDirectory} is invalid.");
                 return;
             }
-
-            if (String.IsNullOrEmpty(options.UrlBasePath))
-            {
-                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
-                options.UrlBasePath = Console.ReadLine();
-            }
-
-            docFxRepo.UrlBasePath = options.UrlBasePath;
 
             Console.WriteLine($"\nReplacing site-relative links to '{docFxRepo.UrlBasePath}/' in " +
                 $"the '{options.ArticlesDirectory}' directory with file-relative links.\n");
@@ -393,12 +385,12 @@ static class Program
         if (options.RemoveRedirectHops)
         {
             // Get the directory that represents the docset.
-            if (String.IsNullOrEmpty(options.DocFxDirectory))
+            if (string.IsNullOrEmpty(options.DocFxDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory that contains the docfx.json file:\n");
                 options.DocFxDirectory = Console.ReadLine();
             }
-            if (String.IsNullOrEmpty(options.DocFxDirectory) || !Directory.Exists(options.DocFxDirectory))
+            if (string.IsNullOrEmpty(options.DocFxDirectory) || !Directory.Exists(options.DocFxDirectory))
             {
                 Console.WriteLine($"\nThe {options.DocFxDirectory} directory doesn't exist.");
                 return;
@@ -406,37 +398,15 @@ static class Program
 
             // Make sure the searchable directory is part of the same DocFx docset.
             // These can be different if docFxRepo was constructed using a different directory (e.g. articles/media/snippets/include).
-            if (!options.DocFxDirectory.IsSubdirectoryOf(docFxRepo.DocFxDirectory.FullName))
+            if (!options.DocFxDirectory!.IsSubdirectoryOf(docFxRepo.DocFxDirectory!.FullName))
             {
                 Console.WriteLine($"'{options.DocFxDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
 
-            if (String.IsNullOrEmpty(options.UrlBasePath))
-            {
-                Console.WriteLine("\nEnter the URL base path for this docset, for example, '/dotnet' or '/windows/uwp':\n");
-                options.UrlBasePath = Console.ReadLine();
-            }
-
-            docFxRepo.UrlBasePath = options.UrlBasePath;
-
             docFxRepo.RemoveAllRedirectHops();
 
             Console.WriteLine("\nFinished removing redirect hops.");
-        }
-
-        // Nothing to do.
-        if (options.FindOrphanedArticles is false &&
-            options.FindOrphanedImages is false &&
-            options.CatalogImages is false &&
-            options.FindOrphanedIncludes is false &&
-            options.FindOrphanedSnippets is false &&
-            options.ReplaceRedirectTargets is false &&
-            options.ReplaceWithRelativeLinks is false &&
-            options.RemoveRedirectHops is false)
-        {
-            Console.WriteLine("\nYou didn't specify which function to perform. To see options, use 'CleanRepo.exe -?'.");
-            return;
         }
 
         stopwatch.Stop();
@@ -449,17 +419,17 @@ static class Program
         // Strip preceding / off urlBasePath, if it exists.
         urlBasePath = urlBasePath.TrimStart('/');
 
-        List<string> regexes = new List<string>()
-            {
+        List<string> regexes =
+            [
                 @"\]\(<?(/" + urlBasePath + @"/([^\)\s]*)>?)\)",                                    // [link text](/basepath/some other text)
                 @"\]:\s(/" + urlBasePath + @"/([^\s]*))",                                           // [ref link]: /basepath/some other text
                 "<img[^>]*?src[ ]*=[ ]*\"(/" + urlBasePath + "/([^>]*?.(png|gif|jpg|svg)))[ ]*\"",  // <img src="/azure/mydocs/media/pic3.png">
                 @"\[.*\]:[ ]*(/" + urlBasePath + @"/(.*\.(png|gif|jpg|svg)))",                      // [0]: /azure/mydocs/media/pic1.png
                 @"imageSrc:[ ]*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))",                 // imageSrc: /azure/mydocs/media/pic1.png
                 @":::image[^:]*source=""(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))""[^:]*:::" // :::image type="complex" source="/azure/mydocs/media/pic1.png" alt-text="Screenshot.":::
-            };
+            ];
 
-        foreach (var linkingFile in linkingFiles)
+        foreach (FileInfo linkingFile in linkingFiles)
         {
             // Read the whole file up front because we might change the file mid-flight.
             string originalFileText = File.ReadAllText(linkingFile.FullName);
@@ -469,7 +439,7 @@ static class Program
             // ![VisualizerIcon](/test-repo/debugger/dbg-tips.png)
             // For more information, see [this page](/test-repo/debugger/dbg-tips).
 
-            foreach (var regex in regexes)
+            foreach (string regex in regexes)
             {
                 // Regex ignores case.
                 foreach (Match match in Regex.Matches(originalFileText, regex, RegexOptions.IgnoreCase))
@@ -479,7 +449,7 @@ static class Program
 
                     // If the path contains a ?, ignore this link as replacing it might not be ideal.
                     // For example, if the link is to a specific version like "?view=vs-2015".
-                    if (siteRelativePath.IndexOf('?') >= 0)
+                    if (siteRelativePath.Contains('?'))
                         continue;
 
                     ReplaceLinkText(siteRelativePath, rootDirectory, linkingFile, match.Groups[0].Value, match.Groups[1].Value);
@@ -488,12 +458,18 @@ static class Program
         }
     }
 
-    private static void ReplaceLinkText(string siteRelativePath, string rootDirectory, FileInfo linkingFile, string originalMatch, string originalLink)
+    private static void ReplaceLinkText(
+        string siteRelativePath,
+        string rootDirectory,
+        FileInfo linkingFile,
+        string originalMatch,
+        string originalLink
+        )
     {
         // If the link contains a bookmark, trim it off and add it back later.
         // If there are two hash characters, this pattern is greedy and finds the last one.
         string bookmarkPattern = @"(.*)(#.*)";
-        string bookmark = null;
+        string? bookmark = null;
         if (Regex.IsMatch(siteRelativePath, bookmarkPattern))
         {
             Match bookmarkMatch = Regex.Match(siteRelativePath, bookmarkPattern);
@@ -522,7 +498,7 @@ static class Program
         if (absolutePath != null)
         {
             // Determine the file-relative path to absolutePath.
-            string fileRelativePath = Path.GetRelativePath(linkingFile.DirectoryName, absolutePath);
+            string fileRelativePath = Path.GetRelativePath(linkingFile.DirectoryName!, absolutePath);
 
             // Replace any backslashes with forward slashes.
             fileRelativePath = fileRelativePath.Replace('\\', '/');
@@ -530,9 +506,9 @@ static class Program
             if (fileRelativePath != null)
             {
                 // Add the bookmark back onto the end, if there is one.
-                if (!String.IsNullOrEmpty(bookmark))
+                if (!string.IsNullOrEmpty(bookmark))
                 {
-                    fileRelativePath = fileRelativePath + bookmark;
+                    fileRelativePath += bookmark;
                 }
 
                 string newText = originalMatch.Replace(originalLink, fileRelativePath);
@@ -558,9 +534,9 @@ static class Program
     private static void ListOrphanedIncludes(string inputDirectory, Dictionary<string, int> includeFiles, bool deleteOrphanedIncludes)
     {
         // Get all files that could possibly link to the include files
-        var files = GetAllMarkdownFiles(inputDirectory, out DirectoryInfo rootDirectory);
+        List<FileInfo>? files = GetAllMarkdownFiles(inputDirectory, out DirectoryInfo? rootDirectory);
 
-        if (files is null)
+        if (files is null || rootDirectory is null)
             return;
 
         // Gather up all the include references and increment the count for that include file in the Dictionary.
@@ -598,7 +574,7 @@ static class Program
                         else
                         {
                             // Construct the full path to the referenced INCLUDE file
-                            fullPath = Path.Combine(markdownFile.DirectoryName, relativePath);
+                            fullPath = Path.Combine(markdownFile.DirectoryName!, relativePath);
                         }
 
                         // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
@@ -607,8 +583,8 @@ static class Program
                         if (fullPath != null)
                         {
                             // Increment the count for this INCLUDE file in our dictionary
-                            if (includeFiles.ContainsKey(fullPath))
-                                includeFiles[fullPath]++;
+                            if (includeFiles.TryGetValue(fullPath, out int value))
+                                includeFiles[fullPath] = ++value;
                         }
                     }
                 }
@@ -618,8 +594,8 @@ static class Program
         int count = 0;
 
         // Print out the INCLUDE files that have zero references.
-        StringBuilder output = new StringBuilder();
-        foreach (var includeFile in includeFiles)
+        StringBuilder output = new();
+        foreach (KeyValuePair<string, int> includeFile in includeFiles)
         {
             if (includeFile.Value == 0)
             {
@@ -631,7 +607,7 @@ static class Program
         if (deleteOrphanedIncludes)
         {
             // Delete orphaned image files
-            foreach (var includeFile in includeFiles)
+            foreach (KeyValuePair<string, int> includeFile in includeFiles)
             {
                 if (includeFile.Value == 0)
                     File.Delete(includeFile.Key);
@@ -654,38 +630,38 @@ static class Program
     {
         const string includesDirectoryName = "includes";
 
-        DirectoryInfo dir = new DirectoryInfo(inputDirectory);
+        DirectoryInfo dir = new(inputDirectory);
 
         // Create the dictionary with a case-insensitive comparer,
         // because links in Markdown don't have to match the actual file path casing.
-        Dictionary<string, int> includeFiles = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
+        Dictionary<string, int> includeFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
         // Determine if this directory or one of its ancestors is named "includes".
         bool startDirIsIncludesDir = false;
-        DirectoryInfo dirIterator = dir;
+        DirectoryInfo? dirIterator = dir;
         while (dirIterator != null)
         {
-            if (String.Compare(dirIterator.Name, includesDirectoryName, true) == 0)
+            if (string.Compare(dirIterator.Name, includesDirectoryName, true) == 0)
             {
                 startDirIsIncludesDir = true;
                 break;
             }
 
-            dirIterator = dirIterator.Parent;
+            dirIterator = dirIterator.Parent ?? null;
         }
 
         if (startDirIsIncludesDir)
         {
-            foreach (var file in dir.EnumerateFiles("*.md", SearchOption.AllDirectories))
+            foreach (FileInfo file in dir.EnumerateFiles("*.md", SearchOption.AllDirectories))
             {
                 includeFiles.Add(file.FullName, 0);
             }
         }
         else
         {
-            foreach (var subdirectory in dir.EnumerateDirectories(includesDirectoryName, SearchOption.AllDirectories))
+            foreach (DirectoryInfo subdirectory in dir.EnumerateDirectories(includesDirectoryName, SearchOption.AllDirectories))
             {
-                foreach (var file in subdirectory.EnumerateFiles("*.md", SearchOption.AllDirectories))
+                foreach (FileInfo file in subdirectory.EnumerateFiles("*.md", SearchOption.AllDirectories))
                 {
                     try
                     {
@@ -708,26 +684,26 @@ static class Program
     /// <summary>
     /// Returns a list of code files in the specified directory and its subdirectories.
     /// </summary>
-    private static List<(string, string)> GetSnippetFiles(string inputDirectory)
+    private static List<(string, string?)> GetSnippetFiles(string inputDirectory)
     {
-        List<string> fileExtensions = new() { ".cs", ".vb", ".fs", ".cpp", ".xaml" };
+        List<string> fileExtensions = [".cs", ".vb", ".fs", ".cpp", ".xaml"];
 
         var dir = new DirectoryInfo(inputDirectory);
-        var snippetFiles = new List<(string, string)>();
+        var snippetFiles = new List<(string, string?)>();
 
-        foreach (var extension in fileExtensions)
+        foreach (string extension in fileExtensions)
         {
-            foreach (var file in dir.EnumerateFiles($"*{extension}"))
+            foreach (FileInfo file in dir.EnumerateFiles($"*{extension}"))
             {
                 snippetFiles.Add((file.FullName, null));
             }
         }
 
-        foreach (var subDirectory in dir.EnumerateDirectories("*", SearchOption.AllDirectories))
+        foreach (DirectoryInfo subDirectory in dir.EnumerateDirectories("*", SearchOption.AllDirectories))
         {
-            foreach (var extension in fileExtensions)
+            foreach (string extension in fileExtensions)
             {
-                foreach (var file in subDirectory.EnumerateFiles($"*{extension}"))
+                foreach (FileInfo file in subDirectory.EnumerateFiles($"*{extension}"))
                 {
                     snippetFiles.Add((file.FullName, null));
                 }
@@ -740,7 +716,7 @@ static class Program
     /// <summary>
     /// Adds an associated project file to each applicable snippet file in the specified list.
     /// </summary>
-    private static void AddProjectInfo(ref List<(string, string)> snippetFiles)
+    private static void AddProjectInfo(ref List<(string, string?)> snippetFiles)
     {
         //foreach (var snippetFile in snippetFiles)
         for (int i = 0; i < snippetFiles.Count; i++)
@@ -750,7 +726,7 @@ static class Program
 
             string projExtension = GetProjectExtension(filePath);
 
-            DirectoryInfo projectDir = GetDirectory(new DirectoryInfo(fi.DirectoryName), $"*{projExtension}");
+            DirectoryInfo? projectDir = GetDirectory(new DirectoryInfo(fi.DirectoryName!), $"*{projExtension}");
             if (projectDir != null)
                 snippetFiles[i] = (filePath, projectDir.FullName);
         }
@@ -769,15 +745,15 @@ static class Program
     /// <summary>
     /// Builds a list of solution files and all the (unique) project directories they reference (using full paths).
     /// </summary>
-    private static List<(string, List<string>)> GetSolutionFiles(string startDirectory)
+    private static List<(string, List<string?>)> GetSolutionFiles(string startDirectory)
     {
-        List<(string, List<string>)> solutionFiles = new List<(string, List<string>)>();
+        List<(string, List<string?>)> solutionFiles = [];
 
-        DirectoryInfo dir = new DirectoryInfo(startDirectory);
-        foreach (var slnFile in dir.EnumerateFiles("*.sln", SearchOption.AllDirectories))
+        DirectoryInfo dir = new(startDirectory);
+        foreach (FileInfo slnFile in dir.EnumerateFiles("*.sln", SearchOption.AllDirectories))
         {
             SolutionFile solutionFile = SolutionFile.Parse(slnFile.FullName);
-            List<string> projectFiles = solutionFile.ProjectsInOrder.Select(p => Path.GetDirectoryName(p.AbsolutePath)).Distinct().ToList();
+            List<string?> projectFiles = solutionFile.ProjectsInOrder.Select(p => Path.GetDirectoryName(p.AbsolutePath)).Distinct().ToList();
 
             solutionFiles.Add((slnFile.FullName, projectFiles));
         }
@@ -785,42 +761,49 @@ static class Program
         return solutionFiles;
     }
 
+    private static void ListOrphanedSnippets(
+        string inputDirectory,
+        List<(string, string?)> snippetFiles,
+        List<(string, List<string?>)> solutionFiles,
+        bool deleteOrphanedSnippets
+        ) => ListOrphanedSnippets(inputDirectory, snippetFiles, solutionFiles, deleteOrphanedSnippets, false);
+
     private static void ListOrphanedSnippets(string inputDirectory,
-        List<(string, string)> snippetFiles,
-        List<(string, List<string>)> solutionFiles,
+        List<(string, string?)> snippetFiles,
+        List<(string, List<string?>)> solutionFiles,
         bool deleteOrphanedSnippets,
-        bool searchEcmaXmlFiles = false)
+        bool searchEcmaXmlFiles)
     {
-        // Get all files that could possibly link to the snippet files
-        List<FileInfo> files;
-        DirectoryInfo rootDirectory;
+        // Get all files that could possibly link to the snippet files.
+        List<FileInfo>? files;
+        DirectoryInfo? rootDirectory;
         if (searchEcmaXmlFiles)
             files = GetAllEcmaXmlFiles(inputDirectory, out rootDirectory);
         else
             files = GetAllMarkdownFiles(inputDirectory, out rootDirectory);
 
-        if (files is null)
+        if (files is null || rootDirectory is null)
             return;
 
         Console.WriteLine($"Checking {snippetFiles.Count} snippet files.");
 
         int countOfOrphans = 0;
         // Prints out the snippet files that have zero references.
-        StringBuilder output = new StringBuilder();
+        StringBuilder output = new();
 
         // Keep track of which directories are referenced/unreferenced.
         var projectDirectories = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
 
-        foreach (var snippetFile in snippetFiles)
+        foreach ((string, string?) snippetFile in snippetFiles)
         {
-            FileInfo fi = new FileInfo(snippetFile.Item1);
+            FileInfo fi = new(snippetFile.Item1);
             string regexSnippetFileName = fi.Name.Replace(".", "\\.").Replace("[", "\\[").Replace("]", "\\]");
 
             bool foundSnippetReference = false;
 
             // Check if there's a .csproj or .vbproj file in its ancestry.
             bool isPartOfProject = false;
-            string projectPath = snippetFile.Item2;
+            string? projectPath = snippetFile.Item2;
             if (projectPath is not null)
             {
                 // It's part of a project.
@@ -828,13 +811,12 @@ static class Program
 
                 // Add the project directory to the list of project directories.
                 // Initialize it with 0 references.
-                if (!projectDirectories.ContainsKey(projectPath))
-                    projectDirectories.Add(projectPath, 0);
+                projectDirectories.TryAdd(projectPath, 0);
             }
 
             // If we've already determined this project directory isn't orphaned,
             // move on to the next snippet file.
-            if (projectPath is not null && projectDirectories.ContainsKey(projectPath) && (projectDirectories[projectPath] > 0))
+            if (projectPath is not null && projectDirectories.TryGetValue(projectPath, out int value) && (value > 0))
                 continue;
 
             // First try to find a reference to the actual snippet file.
@@ -853,7 +835,7 @@ static class Program
                 string fileText = File.ReadAllText(mdOrXmlFile.FullName);
                 foreach (Match match in Regex.Matches(fileText, regex, RegexOptions.IgnoreCase))
                 {
-                    if (!(match is null) && match.Length > 0)
+                    if (match is not null && match.Length > 0)
                     {
                         string relativePath = match.Groups[2].Value.Trim();
 
@@ -869,13 +851,13 @@ static class Program
                             else
                             {
                                 // Construct the full path to the referenced snippet file
-                                fullPath = Path.Combine(mdOrXmlFile.DirectoryName, relativePath);
+                                fullPath = Path.Combine(mdOrXmlFile.DirectoryName!, relativePath);
                             }
 
                             // Clean up the path.
                             fullPath = Path.GetFullPath(fullPath);
 
-                            if (String.Equals(snippetFile.Item1, fullPath, StringComparison.InvariantCultureIgnoreCase))
+                            if (string.Equals(snippetFile.Item1, fullPath, StringComparison.InvariantCultureIgnoreCase))
                             {
                                 // This snippet file is not orphaned.
                                 foundSnippetReference = true;
@@ -883,10 +865,10 @@ static class Program
                                 // Mark its directory as not orphaned.
                                 if (projectPath is not null)
                                 {
-                                    if (!projectDirectories.ContainsKey(projectPath))
+                                    if (!projectDirectories.TryGetValue(projectPath, out int value2))
                                         projectDirectories.Add(projectPath, 1);
                                     else
-                                        projectDirectories[projectPath]++;
+                                        projectDirectories[projectPath] = ++value2;
                                 }
 
                                 break;
@@ -917,28 +899,28 @@ static class Program
 
         // For any directories that still have 0 references, check if *any* files in 
         // the directory are referenced. If not, delete the project directory.
-        foreach (var projectPath in projectDirectories.Where(kvp => kvp.Value == 0).Select(kvp => kvp.Key))
+        foreach (string? projectPath in projectDirectories.Where(kvp => kvp.Value == 0).Select(kvp => kvp.Key))
         {
             bool foundDirectoryReference = false;
 
             var projectDirInfo = new DirectoryInfo(projectPath);
 
-            string[] projectDirRegexes = {
+            string[] projectDirRegexes = [
                         @"\((([^\)\n]+?\/)?" + projectDirInfo.Name + @")\/[^\)\n]+?\)", // [!code-csharp[Vn#1](../code-quality/ca1010.cs)]
                         @"""(([^""\n]+?\/)?" + projectDirInfo.Name + @")\/[^""\n]+?"""  // :::code language="csharp" source="snippets/CounterSource.cs":::
-                    };
+                    ];
 
             foreach (FileInfo markdownFile in files)
             {
                 string fileText = File.ReadAllText(markdownFile.FullName);
 
-                foreach (var regex in projectDirRegexes)
+                foreach (string regex in projectDirRegexes)
                 {
                     // Loop through all the matches in the file; ignores case.
                     MatchCollection matches = Regex.Matches(fileText, regex, RegexOptions.IgnoreCase);
                     foreach (Match match in matches)
                     {
-                        if (!(match is null) && match.Length > 0)
+                        if (match is not null && match.Length > 0)
                         {
                             string relativePath = match.Groups[1].Value.Trim();
 
@@ -954,14 +936,14 @@ static class Program
                                 else
                                 {
                                     // Construct the full path to the referenced directory.
-                                    fullPath = Path.Combine(markdownFile.DirectoryName, relativePath);
+                                    fullPath = Path.Combine(markdownFile.DirectoryName!, relativePath);
                                 }
 
                                 // Clean up the path.
                                 fullPath = Path.GetFullPath(fullPath);
 
                                 // Check if the full path for the link matches the project directory we're looking for.
-                                if (String.Equals(projectPath, fullPath, StringComparison.InvariantCultureIgnoreCase))
+                                if (string.Equals(projectPath, fullPath, StringComparison.InvariantCultureIgnoreCase))
                                 {
                                     // This directory is not orphaned.
                                     foundDirectoryReference = true;
@@ -985,18 +967,18 @@ static class Program
             }
         }
 
-        StringBuilder dirSlnOutput = new StringBuilder("\nThe following project directories are orphaned:\n\n");
+        StringBuilder dirSlnOutput = new("\nThe following project directories are orphaned:\n\n");
 
         // Delete orphaned directories.
         IEnumerable<string> directoriesToDelete = projectDirectories.Where(kvp => kvp.Value == 0).Select(kvp => kvp.Key);
 
-        foreach (var directory in directoriesToDelete)
+        foreach (string directory in directoriesToDelete)
         {
             bool isPartOfSolution = false;
 
             // Check if the directory is referenced in a solution file.
             // If so, we'll (possibly) delete it in the next step.
-            foreach (var slnFile in solutionFiles)
+            foreach ((string, List<string?>) slnFile in solutionFiles)
             {
                 if (slnFile.Item2.Contains(directory, StringComparer.InvariantCultureIgnoreCase))
                 {
@@ -1025,13 +1007,16 @@ static class Program
         dirSlnOutput.AppendLine("\nThe following solution directories are orphaned:\n");
 
         // Delete orphaned solutions.
-        foreach (var solutionFile in solutionFiles)
+        foreach ((string, List<string?>) solutionFile in solutionFiles)
         {
             // Check if any of its projects (snippets) are referenced anywhere.
             bool isReferenced = false;
 
-            foreach (var projectDir in solutionFile.Item2)
+            foreach (string? projectDir in solutionFile.Item2)
             {
+                if (projectDir is null)
+                    continue;
+
                 if (projectDirectories.TryGetValue(projectDir, out int refCount))
                 {
                     if (refCount > 0)
@@ -1044,18 +1029,21 @@ static class Program
 
             if (!isReferenced)
             {
-                string path = Path.GetDirectoryName(solutionFile.Item1);
-                dirSlnOutput.AppendLine(path);
-                if (deleteOrphanedSnippets)
+                string? path = Path.GetDirectoryName(solutionFile.Item1);
+                if (path is not null)
                 {
-                    // Delete the solution and its directory.
-                    try
+                    dirSlnOutput.AppendLine(path);
+                    if (deleteOrphanedSnippets)
                     {
-                        Directory.Delete(path, true);
-                    }
-                    catch (DirectoryNotFoundException)
-                    {
-                        Console.WriteLine($"**Couldn't find directory '{path}'. This is unusual.**");
+                        // Delete the solution and its directory.
+                        try
+                        {
+                            Directory.Delete(path, true);
+                        }
+                        catch (DirectoryNotFoundException)
+                        {
+                            Console.WriteLine($"**Couldn't find directory '{path}'. This is unusual.**");
+                        }
                     }
                 }
             }
@@ -1066,19 +1054,6 @@ static class Program
     }
     #endregion
 
-    private static string TryGetFullPath(string path)
-    {
-        try
-        {
-            return Path.GetFullPath(path);
-        }
-        catch (PathTooLongException)
-        {
-            Console.WriteLine($"Unable to get path because it's too long: {path}\n");
-            return null;
-        }
-    }
-
     #region Orphaned articles
     /// <summary>
     /// Lists the markdown files that aren't referenced from a TOC file.
@@ -1087,26 +1062,26 @@ static class Program
     {
         Console.WriteLine($"Checking {markdownFiles.Count} Markdown files in {tocFiles.Count} TOC files.");
 
-        Dictionary<string, int> filesToKeep = new Dictionary<string, int>();
+        Dictionary<string, int> filesToKeep = [];
 
-        bool IsArticleFile(FileInfo file) =>
+        static bool IsArticleFile(FileInfo file) =>
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}misc{Path.DirectorySeparatorChar}") &&
-            String.Compare(file.Name, "TOC.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
-            String.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0;
+            string.Compare(file.Name, "TOC.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0;
 
-        List<FileInfo> orphanedFiles = new List<FileInfo>();
+        List<FileInfo> orphanedFiles = [];
 
-        StringBuilder sb = new StringBuilder("\n");
+        StringBuilder sb = new("\n");
 
         Parallel.ForEach(markdownFiles.Where(IsArticleFile), markdownFile =>
         //foreach (var markdownFile in markdownFiles)
         {
             // Ignore TOC files.
-            if (String.Compare(markdownFile.Name, "TOC.md", true) == 0)
+            if (string.Compare(markdownFile.Name, "TOC.md", true) == 0)
                 return; //continue;
 
-            var found = tocFiles.Any(tocFile => IsFileLinkedFromTocFile(markdownFile, tocFile));
+            bool found = tocFiles.Any(tocFile => IsFileLinkedFromTocFile(markdownFile, tocFile));
             if (!found)
             {
                 orphanedFiles.Add(markdownFile);
@@ -1126,7 +1101,7 @@ static class Program
             });
 
             // Delete files that aren't linked to.
-            foreach (var orphanedFile in orphanedFiles)
+            foreach (FileInfo orphanedFile in orphanedFiles)
             {
                 if (!filesToKeep.ContainsKey(orphanedFile.FullName))
                     File.Delete(orphanedFile.FullName);
@@ -1136,7 +1111,7 @@ static class Program
             {
                 Console.Write($"\nThe following {filesToKeep.Count} files *weren't deleted* " +
                     $"because they're referenced in one or more files:\n\n");
-                foreach (var fileName in filesToKeep)
+                foreach (KeyValuePair<string, int> fileName in filesToKeep)
                 {
                     Console.WriteLine(fileName);
                 }
@@ -1157,7 +1132,7 @@ static class Program
 
         string regexSafeFilename = linkedFile.Name.Replace(".", "\\.");
 
-        string linkRegEx = tocFile.Extension.ToLower() == ".yml" ?
+        string linkRegEx = tocFile.Extension.Equals(".yml", StringComparison.CurrentCultureIgnoreCase) ?
             @"href:\s*""?(" + regexSafeFilename + @"|[^""\s]+?\/" + regexSafeFilename + ")" :
             @"\]\(\s*<?\s*(\/?" + regexSafeFilename + @"|[^\)]+\/" + regexSafeFilename + ")";
 
@@ -1174,7 +1149,7 @@ static class Program
             // Remove any quotation marks
             relativePath = relativePath.Replace("\"", "");
 
-            if (relativePath.StartsWith("/") || relativePath.StartsWith("http:") || relativePath.StartsWith("https:"))
+            if (relativePath.StartsWith('/') || relativePath.StartsWith("http:") || relativePath.StartsWith("https:"))
             {
                 // The file is in a different repo, so ignore it.
                 continue;
@@ -1185,7 +1160,7 @@ static class Program
             if (relativePath != null)
             {
                 // Construct the full path to the referenced file
-                string fullPath = Path.Combine(tocFile.DirectoryName, relativePath);
+                string fullPath = Path.Combine(tocFile.DirectoryName!, relativePath);
 
                 // This cleans up the path by replacing forward slashes with back slashes, removing extra dots, etc.
                 fullPath = Path.GetFullPath(fullPath);
@@ -1193,7 +1168,7 @@ static class Program
                 if (fullPath != null)
                 {
                     // See if our constructed path matches the actual file we think it is (ignores case).
-                    if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
+                    if (string.Compare(fullPath, linkedFile.FullName, true) == 0)
                         return true;
                     else
                     {
@@ -1224,21 +1199,21 @@ static class Program
         // href: ide/managing-external-tools.md
         // [Managing External Tools](ide/managing-external-tools.md)
 
-        foreach (var linkedFile in linkedFiles)
+        foreach (FileInfo linkedFile in linkedFiles)
         {
-            List<string> mdRegexes = new List<string>()
-            {
+            List<string> mdRegexes =
+            [
                 @"\]\(<?(([^\)])*?" + linkedFile.Name + @")",
                 @"\]:\s" + linkedFile.Name
-            };
+            ];
 
             string ymlRegex = @"href:(.*?" + linkedFile.Name + ")";
 
-            if (linkingFile.Extension.ToLower() == ".yml")
+            if (linkingFile.Extension.Equals(".yml", StringComparison.CurrentCultureIgnoreCase))
                 FindMatches(linkingFile, filesToKeep, fileContents, linkedFile, ymlRegex);
             else // Markdown file.
             {
-                foreach (var mdRegex in mdRegexes)
+                foreach (string mdRegex in mdRegexes)
                 {
                     FindMatches(linkingFile, filesToKeep, fileContents, linkedFile, mdRegex);
                 }
@@ -1263,7 +1238,7 @@ static class Program
                 try
                 {
                     // Construct the full path to the referenced file
-                    fullPath = Path.Combine(linkingFile.DirectoryName, relativePath);
+                    fullPath = Path.Combine(linkingFile.DirectoryName!, relativePath);
                 }
                 catch (ArgumentException e)
                 {
@@ -1277,13 +1252,13 @@ static class Program
                 if (fullPath != null)
                 {
                     // See if our constructed path matches the actual file we think it is; ignores case.
-                    if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
+                    if (string.Compare(fullPath, linkedFile.FullName, true) == 0)
                     {
                         // File is linked from another file.
-                        if (filesToKeep.ContainsKey(linkedFile.FullName))
+                        if (filesToKeep.TryGetValue(linkedFile.FullName, out int value))
                         {
                             // Increment the count of links to this file.
-                            filesToKeep[linkedFile.FullName]++;
+                            filesToKeep[linkedFile.FullName] = ++value;
                         }
                         else
                         {
@@ -1307,18 +1282,18 @@ static class Program
     private static void ListPopularFiles(List<FileInfo> tocFiles, List<FileInfo> markdownFiles)
     {
         bool found = false;
-        StringBuilder output = new StringBuilder("The following files appear in more than one TOC file:\n\n");
+        StringBuilder output = new("The following files appear in more than one TOC file:\n\n");
 
         // Keep a hash table of each topic path with the number of times it's referenced
         Dictionary<string, int> topics = markdownFiles.ToDictionary<FileInfo, string, int>(mf => mf.FullName, mf => 0);
 
-        foreach (var markdownFile in markdownFiles)
+        foreach (FileInfo markdownFile in markdownFiles)
         {
             // If the file is in the Includes directory, ignore it
             if (markdownFile.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}"))
                 continue;
 
-            foreach (var tocFile in tocFiles)
+            foreach (FileInfo tocFile in tocFiles)
             {
                 if (IsFileLinkedFromFile(markdownFile, tocFile))
                     topics[markdownFile.FullName]++;
@@ -1326,7 +1301,7 @@ static class Program
         }
 
         // Now spit out the topics that appear more than once.
-        foreach (var topic in topics)
+        foreach (KeyValuePair<string, int> topic in topics)
         {
             if (topic.Value > 1)
             {
@@ -1347,13 +1322,14 @@ static class Program
     /// </summary>
     private static string GetActualCaseForFilePath(string pathAndFileName)
     {
-        string directory = Path.GetDirectoryName(pathAndFileName);
-        string directoryCaseSensitive = GetDirectoryCaseSensitive(directory);
+        string? directory = Path.GetDirectoryName(pathAndFileName) ??
+            throw new FileNotFoundException($"File not found: {pathAndFileName}.");
+        string? directoryCaseSensitive = GetDirectoryCaseSensitive(directory);
         string pattern = $"{Path.GetFileName(pathAndFileName)}.*";
         string resultFileName;
 
         if (directoryCaseSensitive is null)
-            throw new FileNotFoundException($"File not found: {pathAndFileName}.", pathAndFileName);
+            throw new FileNotFoundException($"File not found: {pathAndFileName}.");
 
         // Enumerate all files in the directory, using the file name as a pattern.
         // This lists all case variants of the filename, even on file systems that are case sensitive.
@@ -1365,7 +1341,7 @@ static class Program
         if (foundFiles.Any())
             resultFileName = foundFiles.First();
         else
-            throw new FileNotFoundException($"File not found: {pathAndFileName}.", pathAndFileName);
+            throw new FileNotFoundException($"File not found: {pathAndFileName}.");
 
         return resultFileName;
     }
@@ -1373,7 +1349,7 @@ static class Program
     /// <summary>
     /// Gets the actual (case-sensitive) directory path on the file system for a specified case-insensitive directory path.
     /// </summary>
-    private static string GetDirectoryCaseSensitive(string directory)
+    private static string? GetDirectoryCaseSensitive(string directory)
     {
         var directoryInfo = new DirectoryInfo(directory);
         if (directoryInfo.Exists)
@@ -1382,7 +1358,7 @@ static class Program
         if (directoryInfo.Parent == null)
             return null;
 
-        var parent = GetDirectoryCaseSensitive(directoryInfo.Parent.FullName);
+        string? parent = GetDirectoryCaseSensitive(directoryInfo.Parent.FullName);
         if (parent == null)
             return null;
 
@@ -1396,9 +1372,9 @@ static class Program
     /// Looks for the specified file in the specified directory, and if not found,
     /// in all parent directories up to the disk root directory.
     /// </summary>
-    public static FileInfo GetFileHereOrInParent(string inputDirectory, string fileName)
+    public static FileInfo? GetFileHereOrInParent(string inputDirectory, string fileName)
     {
-        DirectoryInfo dir = new DirectoryInfo(inputDirectory);
+        DirectoryInfo dir = new(inputDirectory);
 
         try
         {
@@ -1406,6 +1382,9 @@ static class Program
             {
                 // Loop exit condition.
                 if (dir.FullName == dir.Root.FullName)
+                    return null;
+
+                if (dir.Parent is null)
                     return null;
 
                 dir = dir.Parent;
@@ -1479,7 +1458,7 @@ static class Program
     //        }
     //    }
 
-    //    if (!String.IsNullOrEmpty(urlBasePath))
+    //    if (!string.isNullOrEmpty(urlBasePath))
     //    {
     //        Console.WriteLine($"Is '{urlBasePath}' the correct URL base path for your docs (y or n)?");
     //        char key = Console.ReadKey().KeyChar;
@@ -1505,13 +1484,13 @@ static class Program
         if (!File.Exists(linkingFile.FullName))
             return false;
 
-        foreach (var line in File.ReadAllLines(linkingFile.FullName))
+        foreach (string line in File.ReadAllLines(linkingFile.FullName))
         {
             // Example links .yml/.md:
             // href: ide/managing-external-tools.md
             // [Managing External Tools](ide/managing-external-tools.md)
 
-            string linkRegEx = linkingFile.Extension.ToLower() == ".yml" ?
+            string linkRegEx = linkingFile.Extension.Equals(".yml", StringComparison.CurrentCultureIgnoreCase) ?
                 @"href:(.*?" + linkedFile.Name + ")" :
                 @"\]\(<?(([^\)])*?" + linkedFile.Name + @")";
 
@@ -1530,7 +1509,7 @@ static class Program
                     try
                     {
                         // Construct the full path to the referenced file
-                        fullPath = Path.Combine(linkingFile.DirectoryName, relativePath);
+                        fullPath = Path.Combine(linkingFile.DirectoryName!, relativePath);
                     }
                     catch (ArgumentException e)
                     {
@@ -1544,7 +1523,7 @@ static class Program
                     if (fullPath != null)
                     {
                         // See if our constructed path matches the actual file we think it is
-                        if (String.Compare(fullPath, linkedFile.FullName, true) == 0)
+                        if (string.Compare(fullPath, linkedFile.FullName, true) == 0)
                         {
                             return true;
                         }
@@ -1566,7 +1545,7 @@ static class Program
     /// </summary>
     private static List<FileInfo> GetMarkdownFiles(string directoryPath, params string[] dirsToIgnore)
     {
-        DirectoryInfo dir = new DirectoryInfo(directoryPath);
+        DirectoryInfo dir = new(directoryPath);
         IEnumerable<FileInfo> files = dir.EnumerateFiles("*.md", SearchOption.AllDirectories).ToList();
 
         if (dirsToIgnore.Length > 0)
@@ -1574,7 +1553,7 @@ static class Program
             foreach (string ignoreDir in dirsToIgnore)
             {
                 string dirWithSeparators = $"{Path.DirectorySeparatorChar}{ignoreDir}{Path.DirectorySeparatorChar}";
-                files = files.Where(f => !f.DirectoryName.Contains(dirWithSeparators, StringComparison.InvariantCultureIgnoreCase));
+                files = files.Where(f => !f.DirectoryName!.Contains(dirWithSeparators, StringComparison.InvariantCultureIgnoreCase));
             }
         }
 
@@ -1586,7 +1565,7 @@ static class Program
     /// </summary>
     private static List<FileInfo> GetYAMLFiles(string directoryPath)
     {
-        DirectoryInfo dir = new DirectoryInfo(directoryPath);
+        DirectoryInfo dir = new(directoryPath);
         return dir.EnumerateFiles("*.yml", SearchOption.AllDirectories).ToList();
     }
 
@@ -1596,19 +1575,19 @@ static class Program
     /// </summary>
     private static Dictionary<string, List<string>> GetMediaFiles(string mediaDirectory, bool searchRecursively = true)
     {
-        DirectoryInfo dir = new DirectoryInfo(mediaDirectory);
+        DirectoryInfo dir = new(mediaDirectory);
 
         SearchOption searchOption = searchRecursively ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
 
-        Dictionary<string, List<string>> mediaFiles = new Dictionary<string, List<string>>(StringComparer.InvariantCultureIgnoreCase);
+        Dictionary<string, List<string>> mediaFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
-        string[] fileExtensions = new string[] { "*.png", "*.jpg", "*.gif", "*.svg" };
+        string[] fileExtensions = ["*.png", "*.jpg", "*.gif", "*.svg"];
 
-        foreach (var extension in fileExtensions)
+        foreach (string extension in fileExtensions)
         {
-            foreach (var file in dir.EnumerateFiles(extension, searchOption))
+            foreach (FileInfo file in dir.EnumerateFiles(extension, searchOption))
             {
-                mediaFiles.Add(file.FullName, new List<string>());
+                mediaFiles.Add(file.FullName, []);
             }
         }
 
@@ -1621,9 +1600,9 @@ static class Program
     /// <summary>
     /// Gets all *.yml files recursively, starting in the ancestor directory that contains docfx.json.
     /// </summary>
-    internal static List<FileInfo> GetAllYamlFiles(string directoryPath, out DirectoryInfo rootDirectory)
+    internal static List<FileInfo>? GetAllYamlFiles(string directoryPath, out DirectoryInfo? rootDirectory)
     {
-        // Look further up the path until we find docfx.json
+        // Look further up the path until we find docfx.json.
         rootDirectory = GetDirectory(new DirectoryInfo(directoryPath), "docfx.json");
 
         if (rootDirectory is null)
@@ -1635,7 +1614,7 @@ static class Program
     /// <summary>
     /// Gets all *.md files recursively, starting in the ancestor directory that contains docfx.json.
     /// </summary>
-    internal static List<FileInfo> GetAllMarkdownFiles(string directoryPath, out DirectoryInfo rootDirectory)
+    internal static List<FileInfo>? GetAllMarkdownFiles(string directoryPath, out DirectoryInfo? rootDirectory)
     {
         // Look further up the path until we find docfx.json
         rootDirectory = GetDirectory(new DirectoryInfo(directoryPath), "docfx.json");
@@ -1649,7 +1628,7 @@ static class Program
     /// <summary>
     /// Gets all *.xml files recursively, starting in the ancestor directory that contains docfx.json.
     /// </summary>
-    internal static List<FileInfo> GetAllEcmaXmlFiles(string directoryPath, out DirectoryInfo rootDirectory)
+    internal static List<FileInfo>? GetAllEcmaXmlFiles(string directoryPath, out DirectoryInfo? rootDirectory)
     {
         // Look further up the path until we find docfx.json
         rootDirectory = GetDirectory(new DirectoryInfo(directoryPath), "docfx.json");
@@ -1664,15 +1643,18 @@ static class Program
     /// Returns the specified directory if it contains a file with the specified name.
     /// Otherwise returns the nearest parent directory that contains a file with the specified name.
     /// </summary>
-    internal static DirectoryInfo GetDirectory(DirectoryInfo dir, string fileName)
+    internal static DirectoryInfo? GetDirectory(DirectoryInfo dir, string fileName)
     {
         try
         {
-            while (dir.GetFiles(fileName, SearchOption.TopDirectoryOnly).Length == 0)
+            while (dir?.GetFiles(fileName, SearchOption.TopDirectoryOnly).Length == 0)
             {
+                if (dir.Parent is null)
+                    return null;
+
                 dir = dir.Parent;
 
-                if (String.Equals(dir.FullName, dir?.Root.FullName))
+                if (string.Equals(dir.FullName, dir?.Root.FullName))
                     return null;
             }
         }
