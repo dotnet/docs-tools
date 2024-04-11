@@ -29,8 +29,12 @@ function getHeadingTextFrom(path) {
                 console.log(`Unable to read content for '${path}'.`);
                 return null;
             }
-            const result = (_a = tryGetRegExpMatch(h1RegExp, "h1", content)) !== null && _a !== void 0 ? _a : tryGetRegExpMatch(titleRegExp, "title", content);
+            let result = (_a = tryGetRegExpMatch(h1RegExp, "h1", content)) !== null && _a !== void 0 ? _a : tryGetRegExpMatch(titleRegExp, "title", content);
             console.log(`Found ${result} from '${path}' contents.`);
+            if (result && result.indexOf("<xref:") > -1) {
+                result = normalizeHeadingOrTitleText(result);
+                console.log(`  normalized as ${result}`);
+            }
             return result;
         }
         catch (error) {
@@ -45,6 +49,18 @@ function getHeadingTextFrom(path) {
     });
 }
 exports.getHeadingTextFrom = getHeadingTextFrom;
+const xrefRegExp = /<xref:([^>]+)>/gim;
+function normalizeHeadingOrTitleText(headingText) {
+    // If contains xref markdown, extract only the text from it.
+    // Example: "<xref:System.Globalization.CompareInfo> class"
+    //       or "<xref:System.Globalization.CompareInfo /> class"
+    // Result: "`System.Globalization.CompareInfo` class"
+    const xrefMatch = xrefRegExp.exec(headingText);
+    if (xrefMatch && xrefMatch[1]) {
+        headingText = headingText.replace(xrefRegExp, `\`${xrefMatch[1]}\``);
+    }
+    return headingText;
+}
 function tryGetRegExpMatch(expression, groupName, content) {
     var _a;
     let result = null;
@@ -124,6 +140,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
+const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
 const WorkflowInput_1 = __nccwpck_require__(6741);
 const file_heading_extractor_1 = __nccwpck_require__(3767);
@@ -134,41 +151,45 @@ function tryUpdatePullRequestBody(token) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const prNumber = github_1.context.payload.number;
-            console.log(`Update pull ${prNumber} request body.`);
+            (0, core_1.info)(`Update pull ${prNumber} request body.`);
             let allFiles = [];
             let details = yield getPullRequest(token, null);
             if (!details) {
-                console.log("Unable to get the pull request from GitHub GraphQL");
+                (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
             }
             const pullRequest = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
             if (!pullRequest) {
-                console.log("Unable to pull request details from object-graph.");
+                (0, core_1.info)("Unable to pull request details from object-graph.");
             }
             if (pullRequest.changedFiles === 0) {
-                console.log("No files changed at all...");
+                (0, core_1.info)("No files changed at all...");
                 return;
             }
             else {
                 try {
-                    console.log(JSON.stringify(pullRequest, undefined, 2));
+                    (0, core_1.startGroup)("Pull request JSON body");
+                    (0, core_1.info)(JSON.stringify(pullRequest, undefined, 2));
+                    (0, core_1.endGroup)();
                 }
-                catch (_f) { }
+                catch (_f) {
+                    (0, core_1.endGroup)();
+                }
             }
             allFiles = [...pullRequest.files.edges];
             while (details.repository.pullRequest.files.pageInfo.hasNextPage) {
                 const cursor = details.repository.pullRequest.files.pageInfo.endCursor;
                 details = yield getPullRequest(token, cursor);
                 if (!details) {
-                    console.log("Unable to get the pull request from GitHub GraphQL");
+                    (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
                 }
                 const moreFiles = (_d = (_c = (_b = details.repository) === null || _b === void 0 ? void 0 : _b.pullRequest) === null || _c === void 0 ? void 0 : _c.files) === null || _d === void 0 ? void 0 : _d.edges;
                 if (!moreFiles) {
-                    console.log("Unable to pull request details from object-graph.");
+                    (0, core_1.info)("Unable to pull request details from object-graph.");
                 }
                 allFiles = [...allFiles, ...moreFiles];
             }
             if (isPullRequestModifyingMarkdownFiles(allFiles) === false) {
-                console.log("No updated markdown files...");
+                (0, core_1.info)("No updated markdown files...");
                 return;
             }
             const { files, exceedsMax } = getModifiedMarkdownFiles(allFiles);
@@ -184,8 +205,9 @@ function tryUpdatePullRequestBody(token) {
                 // Append preview table to bottom.
                 updatedBody = appendTable(pullRequest.body, markdownTable);
             }
-            console.log("Proposed PR body:");
-            console.log(updatedBody);
+            (0, core_1.startGroup)("Proposed PR body");
+            (0, core_1.info)(updatedBody);
+            (0, core_1.endGroup)();
             const octokit = (0, github_1.getOctokit)(token);
             const response = yield octokit.rest.pulls.update({
                 owner: github_1.context.repo.owner,
@@ -194,17 +216,17 @@ function tryUpdatePullRequestBody(token) {
                 body: updatedBody,
             });
             if (response && response.status === 200) {
-                console.log("Pull request updated...");
+                (0, core_1.info)("Pull request updated...");
             }
             else {
-                console.log("Unable to update pull request...");
+                (0, core_1.info)("Unable to update pull request...");
             }
         }
         catch (error) {
-            console.log(`Unable to process markdown preview: ${error}`);
+            (0, core_1.warning)(`Unable to process markdown preview: ${error}`);
         }
         finally {
-            console.log("Finished attempting to generate preview.");
+            (0, core_1.info)("Finished attempting to generate preview.");
         }
     });
 }
@@ -217,6 +239,21 @@ exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
  */
 function getPullRequest(token, cursor = null) {
     return __awaiter(this, void 0, void 0, function* () {
+        /*
+        You can verify the query below, by running the following in the GraphQL Explorer:
+            https://docs.github.com/en/graphql/overview/explorer
+        
+        1. Sign in to GitHub.
+        2. Paste the query string value into the query window.
+        3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
+          {
+            "name": "docs",
+            "owner": "dotnet",
+            "number": 36636,
+            "cursor": null
+          }
+        4. Click the "Play" button.
+        */
         const octokit = (0, github_1.getOctokit)(token);
         return yield octokit.graphql({
             query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
@@ -453,7 +490,7 @@ function isSuccessStatus(token) {
             // Loop and wait if there's no OPS build status yet.
             // (This is unusual.)
             const loops = 30;
-            for (let i = 0; i < loops && buildStatus === null; i++) {
+            for (let i = 0; i < loops && !buildStatus; i++) {
                 // Sleep for 10 seconds.
                 yield (0, wait_1.wait)(10000);
                 const { data: statuses } = yield octokit.rest.repos.listCommitStatusesForRef({
@@ -471,7 +508,7 @@ function isSuccessStatus(token) {
                 }
             }
             // Didn't find OPS status. This is bad.
-            if (buildStatus === null) {
+            if (!buildStatus) {
                 (0, core_1.setFailed)(`Did not find OPS status check after waiting for ${(loops * 10) / 60} minutes. If it shows 'Expected — Waiting for status to be reported', close and reopen the pull request to trigger a build.`);
             }
             // Check state of OPS status check.
@@ -494,7 +531,7 @@ function isSuccessStatus(token) {
                 }
                 // This should never happen since if nothing else,
                 // we'll find the OPS status we found initially.
-                if (buildStatus === null) {
+                if (!buildStatus) {
                     throw new Error("Did not find OPS status check.");
                 }
             }

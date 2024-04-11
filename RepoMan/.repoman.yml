@@ -9,6 +9,8 @@ config:
 
     ParserRegex: "^\\* (.*): (.*)$"
 
+    ContentUrlRegex:
+     - "### Page URL\\n\\n(.*)"
 
 issues:
 
@@ -49,6 +51,22 @@ issues:
       pass:
         - labels-add: ["breaking-change", "doc-idea"]
         - projects-add: [135]
+
+    - check:
+        - type: metadata-exists
+  
+      pass:
+        - variable-set:
+          name: issue_creator
+          value: "jmes:trim(Issue.user.login)"
+        
+        - check:
+            - type: variable
+              name: issue_creator
+              value: "adegeo"
+        
+          pass:
+            - comment-add: "Andy, why are you opening so many issues? Nice id $issue_creator$!"
 
   reopened:
 

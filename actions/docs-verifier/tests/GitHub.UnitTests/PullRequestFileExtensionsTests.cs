@@ -13,7 +13,7 @@ public class PullRequestFileExtensionsTests
     public async Task TestExtensions()
     {
         var client = new GitHubClient(new ProductHeaderValue("my-cool-app"));
-        List<PullRequestFile> files = (await client.PullRequest.Files("dotnet", "docs", 23395).ConfigureAwait(false)).ToList();
+        List<PullRequestFile> files = (await client.PullRequest.Files("dotnet", "docs", 23395)).ToList();
 
         PullRequestFile addedFile = files.Single(f => f.FileName == ".github/workflows/markdown-links-verifier.yml");
         Assert.True(addedFile.IsAdded());
@@ -41,7 +41,7 @@ public class PullRequestFileExtensionsTests
     public async Task TestRemovedFile()
     {
         var client = new GitHubClient(new ProductHeaderValue("my-cool-app"));
-        List<PullRequestFile> files = (await client.PullRequest.Files("dotnet", "docs", 24546).ConfigureAwait(false)).ToList();
+        List<PullRequestFile> files = (await client.PullRequest.Files("dotnet", "docs", 24546)).ToList();
 
         PullRequestFile removedfile = files.Single(f => f.FileName == ".github/workflows/markdown-links-verifier.yml");
         Assert.False(removedfile.IsAdded());

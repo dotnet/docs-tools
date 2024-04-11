@@ -6,10 +6,12 @@ namespace DotNetDocs.Tools.Tests.Utility;
 public class DateRangeTests
 {
     [Theory]
+#pragma warning disable xUnit1012 // Null should only be used for nullable parameters
     [InlineData(null, "2020-05-31")]
+    [InlineData("2020-05-01", null)]
+#pragma warning restore xUnit1012 // Null should only be used for nullable parameters
     [InlineData("", "2020-05-31")]
     [InlineData(" ", "2020-05-31")]
-    [InlineData("2020-05-01", null)]
     [InlineData("2020-05-01", "")]
     [InlineData("2020-05-01", " ")]
     public void Empty_Or_Null_Date_Throws_ArgumentException(string startDate, string endDate) =>

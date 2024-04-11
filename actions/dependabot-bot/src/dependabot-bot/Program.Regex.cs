@@ -10,8 +10,8 @@
     private static partial Regex PackageReferenceIncludeRegex();
 
     static bool TryGetTargetFramework(
-    string content,
-    [NotNullWhen(true)] out string? targetFramework) =>
+        string content,
+        [NotNullWhen(true)] out string? targetFramework) =>
         TryGetRegexGroupValue(
             TargetFrameworkRegex(),
             content, "tfm", out targetFramework);

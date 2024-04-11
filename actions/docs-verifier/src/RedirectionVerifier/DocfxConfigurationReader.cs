@@ -11,7 +11,10 @@ public class DocfxConfigurationReader
 {
     private static readonly Matcher s_matchAllMatcher = new Matcher().AddInclude("**");
 
-    public override string ConfigurationFileName => "docfx.json";
+    public DocfxConfigurationReader()
+    {
+        ConfigurationFileName = "docfx.json";
+    }
 
     public override async ValueTask<IEnumerable<Matcher>> MapConfigurationAsync()
     {

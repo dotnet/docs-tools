@@ -22,14 +22,15 @@ class DocFxRepo
     internal Dictionary<string, List<string>> ImageRefs = null;
     internal readonly List<string> ImageLinkRegExes = new List<string>
     {
-        @"\]\((.*?(\.(png|jpg|gif|svg))+)", // ![hello](media/how-to/xamarin.png)
-        "<img[^>]*?src[ ]*=[ ]*\"([^>]*?(\\.(png|gif|jpg|svg))+)[ ]*\"", // <img data-hoverimage="./images/start.svg" src="./images/start.png" alt="Start icon" />
-        @"\[.*\]:(.*?(\.(png|gif|jpg|svg))+)", // [0]: ../../media/how-to/xamarin.png
-        @"imageSrc:([^:]*?(\.(png|gif|jpg|svg))+)", // imageSrc: ./media/vs-mac.svg
-        @"thumbnailUrl: (.*?(\.(png|gif|jpg|svg))+)", // thumbnailUrl: /thumbs/two-forest.png
-        "lightbox=\"(.*?(\\.(png|gif|jpg|svg))+)\"", // lightbox="media/azure.png"
-        ":::image [^:]*?source=\"(.*?(\\.(png|gif|jpg|svg))+)\"", // :::image type="content" source="media/publish.png" alt-text="Publish dialog.":::
-        "<a href=\"([^\"]*?(\\.(png|gif|jpg|svg))+)\"" // <a href="./media/job-large.png" target="_blank"><img src="./media/job-small.png"></a>
+        @"!\[.*?\]\((?<path>.*?(\.(png|jpg|gif|svg))+)", // ![hello](media/how-to/xamarin.png)
+        "<img[^>]*?src[ ]*=[ ]*[\"'](?<path>[^>]*?(\\.(png|gif|jpg|svg))+)[ ]*[\"']", // <img data-hoverimage="./images/start.svg" src="./images/start.png" alt="Start icon" />
+        @"\[.*\]:(?<path>.*?(\.(png|gif|jpg|svg))+)", // [0]: ../../media/how-to/xamarin.png
+        @"imageSrc:(?<path>[^:]*?(\.(png|gif|jpg|svg))+)", // imageSrc: ./media/vs-mac.svg
+        @"thumbnailUrl: (?<path>.*?(\.(png|gif|jpg|svg))+)", // thumbnailUrl: /thumbs/two-forest.png
+        "lightbox\\s*=\\s*\"(?<path>.*?(\\.(png|gif|jpg|svg))+)\"", // lightbox="media/azure.png"
+        ":::image [^:]*?source\\s*=\\s*\"(?<path>.*?(\\.(png|gif|jpg|svg))+)(\\?[\\w\\s=\\.]+)?\\s*\"", // :::image type="content" source="media/publish.png?text=Publish dialog." alt-text="Publish dialog.":::
+        "<a href=\"(?<path>[^\"]*?(\\.(png|gif|jpg|svg))+)\"", // <a href="./media/job-large.png" target="_blank"><img src="./media/job-small.png"></a>
+        "\\((?<path>[^\\)]*?(\\.(png|jpg|gif|svg)))+(#lightbox)\\s*\\)" // (./media/functions-scenarios/process-file-uploads-expanded.png#lightbox)
     };
     private List<FileInfo> _allMdAndYmlFiles;
     private List<FileInfo> AllMdAndYmlFiles
@@ -241,7 +242,7 @@ class DocFxRepo
                     // There could be more than one image reference on the line, hence the foreach loop.
                     foreach (Match match in Regex.Matches(line, regEx, RegexOptions.IgnoreCase))
                     {
-                        string path = match.Groups[1].Value.Trim();
+                        string path = match.Groups["path"].Value.Trim();
                         string absolutePath = GetAbsolutePath(path, sourceFile);
 
                         if (absolutePath != null)

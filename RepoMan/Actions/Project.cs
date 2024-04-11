@@ -1,18 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using Octokit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Projects: IRunnerItem
+public sealed class Projects: IRunnerItem
 {
-    private RunnerItemSubTypes _type;
-    private int[] _projects;
+    private readonly RunnerItemSubTypes _type;
+    private readonly int[] _projects;
 
     public Projects(YamlNode node, RunnerItemSubTypes subType, State state)
     {
@@ -30,7 +25,7 @@ public class Projects: IRunnerItem
             projects.Add(node.ToInt());
         else
         {
-            foreach (var item in node.AsSequenceNode())
+            foreach (YamlNode item in node.AsSequenceNode())
                 projects.Add(item.ToInt());
         }
 
@@ -39,18 +34,18 @@ public class Projects: IRunnerItem
 
     public async Task Run(State state)
     {
-        var existingProjects = await GithubCommand.GetProjects(state);
+        IReadOnlyList<Project> existingProjects = await GithubCommand.GetProjects(state);
         List<(int Column, NewProjectCard Card, int ProjectId)> projectCards = new List<(int, NewProjectCard, int)>();
 
-        foreach (var id in _projects)
+        foreach (int id in _projects)
         {
             bool foundProject = false;
 
-            foreach (var projectObject in state.Projects)
+            foreach (Project projectObject in state.Projects)
             {
                 if (projectObject.Number == id)
                 {
-                    var columns = await GithubCommand.GetProjectColumns(state, id);
+                    ProjectColumn[]? columns = await GithubCommand.GetProjectColumns(state, id);
 
                     if (columns != null)
                     {
@@ -88,7 +83,7 @@ public class Projects: IRunnerItem
         // Add issue/pr to projects
         if (_type == RunnerItemSubTypes.Add)
         {
-            foreach (var item in projectCards)
+            foreach ((int Column, NewProjectCard Card, int ProjectId) item in projectCards)
             {
                 state.Logger.LogInformation($"Adding project: {item.ProjectId}");
 

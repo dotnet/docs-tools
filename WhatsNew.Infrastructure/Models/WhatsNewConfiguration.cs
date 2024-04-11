@@ -1,6 +1,7 @@
 ﻿using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.Utility;
 using Microsoft.DotnetOrg.Ospo;
+using System.Text;
 
 namespace WhatsNew.Infrastructure.Models;
 
@@ -53,4 +54,17 @@ public class WhatsNewConfiguration
     /// This is the client that makes queries to the Microsoft OSPO office API.
     /// </summary>
     public OspoClient OspoClient { get; set; } = null!;
+
+    public string? LogConfigSettings()
+    {
+        StringBuilder output = new ();
+        output.AppendLine($"Repository: {Repository.Owner}/{Repository.Name}");
+        output.AppendLine($"Branch: {Repository.Branch}");
+        output.AppendLine($"DocSetProductName: {Repository.DocSetProductName}");
+        output.AppendLine($"RootDirectory: {Repository.RootDirectory}");
+        output.AppendLine($"DateRange: {DateRange.StartDate:D} - {DateRange.EndDate:D}");
+        output.AppendLine($"MarkdownFileName: {MarkdownFileName}");
+        output.AppendLine($"PathToRepoRoot: {PathToRepoRoot}");
+        return output.ToString();
+    }
 }

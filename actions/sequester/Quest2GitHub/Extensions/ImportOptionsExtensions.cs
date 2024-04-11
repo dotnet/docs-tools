@@ -11,7 +11,7 @@ public static class ImportOptionsExtensions
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                var envVariableValue = Environment.GetEnvironmentVariable(envVarKey);
+                string? envVariableValue = Environment.GetEnvironmentVariable(envVarKey);
                 if (string.IsNullOrWhiteSpace(envVariableValue))
                 {
                     throw new ArgumentNullException(paramName, message);
@@ -84,9 +84,9 @@ public static class ImportOptionsExtensions
             """);
 
         return options.ApiKeys is null
-            ? throw new ArgumentNullException(
-                nameof(options.ApiKeys),
-                $"The API keys configuration options are required.")
+            ? throw new ArgumentException(
+                $"The API keys configuration options are required.",
+                nameof(options))
             : options;
     }
 
@@ -101,6 +101,12 @@ public static class ImportOptionsExtensions
         Console.WriteLine($"  options.AzureDevOps.Org = \"{options?.AzureDevOps?.Org}\"");
         Console.WriteLine($"  options.AzureDevOps.Project = \"{options?.AzureDevOps?.Project}\"");
         Console.WriteLine($"  options.AzureDevOps.AreaPath = \"{options?.AzureDevOps?.AreaPath}\"");
+        Console.WriteLine($"  options.DefaultParentNode = \"{options?.DefaultParentNode}\"");
+        Console.WriteLine($"  options.ParentNodes:");
+        foreach (var node in options?.ParentNodes ?? Enumerable.Empty<ParentForLabel>())
+        {
+            Console.WriteLine($"    {node.Label, -20}  ==> {node.ParentNodeId}");
+        }
     }
 
     static ImportOptions EnsureApiKeys(ImportOptions options)

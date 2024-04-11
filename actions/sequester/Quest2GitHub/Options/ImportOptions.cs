@@ -1,5 +1,7 @@
 ﻿namespace Quest2GitHub.Options;
 
+public record struct ParentForLabel(string Label, int ParentNodeId);
+
 public sealed record class ImportOptions
 {
     /// <summary>
@@ -42,4 +44,24 @@ public sealed record class ImportOptions
     /// <a href="https://github.com/ikatyang/emoji-cheat-sheet"></a>
     /// </remarks>
     public required string ImportedLabel { get; init; } = ":pushpin: seQUESTered";
+
+    /// <summary>
+    /// The set of labels where specific parent nodes should be used.
+    /// </summary>
+    /// <remarks>
+    /// When a work item gets created, or updated, it should have
+    /// the correct parent. Some labels in a repo will use specific parents.
+    /// This is a list of pairs rather than a dictionary because we want them
+    /// ordered. The first label found on an issue will be used for the parent.
+    /// </remarks>
+    public List<ParentForLabel> ParentNodes { get; init; } = [];
+
+    /// <summary>
+    /// The default parent node for any quest item.
+    /// </summary>
+    /// <remarks>
+    /// If an issue doesn't match any of the configured labels
+    /// the default parent node is set for the work item.
+    /// </remarks>
+    public int DefaultParentNode { get; init; }
 }

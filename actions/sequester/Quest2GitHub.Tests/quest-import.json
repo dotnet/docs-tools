@@ -1,18 +1,29 @@
 {
-  "ImportOptions": {
-    "GitHubOrg": "org",
-    "GitHubRepo": "repo",
-    "AzureDevOps": {
-      "Org": "org",
-      "Project": "proj",
-      "AreaPath": "path"
-    },
-    "ApiKeys": {
-      "GitHubToken": "ght",
-      "OSPOKey": "okey",
-      "QuestKey":  "qkey"
-    },
-    "ImportTriggerLabel": "trigger-import",
-    "ImportedLabel": "imported"
-  }
+    "ImportOptions": {
+        "GitHubOrg": "org",
+        "GitHubRepo": "repo",
+        "AzureDevOps": {
+            "Org": "org",
+            "Project": "proj",
+            "AreaPath": "path"
+        },
+        "ApiKeys": {
+            "GitHubToken": "ght",
+            "OSPOKey": "okey",
+            "QuestKey": "qkey"
+        },
+        "ImportTriggerLabel": "trigger-import",
+        "ImportedLabel": "imported",
+        "ParentNodes": [
+            {
+                "Label": "okr-health",
+                "ParentNodeId": 199082
+            },
+            {
+                "Label": "dotnet-csharp/svc",
+                "ParentNodeId": 227484
+            }
+        ],
+        "DefaultParentNode": 228485
+    }
 }

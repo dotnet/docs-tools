@@ -9,7 +9,7 @@ describe("file-heading-extractor", () => {
   it("when calling getHeadingTextFrom correctly returns H1 value.", async () => {
     const path = "__tests__/sample.md";
     const actual = await getHeadingTextFrom(path);
-    expect(actual).toBe("The heading");
+    expect(actual).toBe("The heading `System.Console` class");
   });
 
   it("when calling getHeadingTextFrom correctly returns title value.", async () => {

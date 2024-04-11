@@ -1,26 +1,22 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class File : IRunnerItem
+// TODO: This is an action, but it seems to operate like a check??
+public sealed class File : IRunnerItem
 {
     private const string ModeAdd = "add";
     private const string ModeChanged = "changed";
     private const string ModeDelete = "remove";
 
-    private string _mode;
-    private bool _isValid;
-    private IEnumerable<FileCheck> _items;
+    private readonly string _mode;
+    private readonly bool _isValid;
+    private readonly IEnumerable<FileCheck> _items;
 
     public File(YamlSequenceNode node, string mode, State state)
     {
-        state.Logger.LogDebug($"BUILD: Check-files with mode {mode}");
+        state.Logger.LogDebugger($"BUILD: Check-files with mode {mode}");
 
         _mode = mode;
 
@@ -29,9 +25,9 @@ public class File : IRunnerItem
 
         List<FileCheck> items = new List<FileCheck>(node.Children.Count);
 
-        foreach (var item in node.Children)
+        foreach (YamlNode item in node.Children)
         {
-            state.Logger.LogDebug($"BUILD: Adding check {item["path"]}");
+            state.Logger.LogDebugger($"BUILD: Adding check {item["path"]}");
             items.Add(new FileCheck(item["path"].ToString(), Runner.Build(item["run"].AsSequenceNode(), state)));
         }
 
@@ -52,10 +48,10 @@ public class File : IRunnerItem
 
         // TODO: New feature, detect add/updated/delete file changes.
         // Currently we don't care what happened.
-        foreach (var item in _items)
+        foreach (FileCheck item in _items)
         {
-            var match = false;
-            foreach (var file in state.PullRequestFiles)
+            bool match = false;
+            foreach (Octokit.PullRequestFile file in state.PullRequestFiles)
             {
                 if (Utilities.MatchRegex(item.RegexCheck, file.FileName ?? "", state) || Utilities.MatchRegex(item.RegexCheck, file.PreviousFileName ?? "", state))
                 {
@@ -71,10 +67,10 @@ public class File : IRunnerItem
         return;
     }
 
-    private class FileCheck
+    private sealed class FileCheck
     {
-        public string RegexCheck;
-        public Runner Actions;
+        public readonly string RegexCheck;
+        public readonly Runner Actions;
 
         public FileCheck(string regex, Runner actions) =>
             (RegexCheck, Actions) = (regex, actions);

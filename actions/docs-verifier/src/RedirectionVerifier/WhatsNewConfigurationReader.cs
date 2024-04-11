@@ -6,7 +6,10 @@ namespace RedirectionVerifier;
 public class WhatsNewConfigurationReader
     : BaseMappedConfigurationReader<WhatsNewConfiguration, string?>
 {
-    public override string ConfigurationFileName => ".whatsnew.json";
+    public WhatsNewConfigurationReader()
+    {
+        ConfigurationFileName = ".whatsnew.json";
+    }
 
     public override async ValueTask<string?> MapConfigurationAsync()
     {

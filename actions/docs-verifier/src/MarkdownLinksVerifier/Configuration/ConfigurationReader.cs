@@ -4,5 +4,8 @@ namespace MarkdownLinksVerifier.Configuration;
 
 public class ConfigurationReader : BaseConfigurationReader<MarkdownLinksVerifierConfiguration>
 {
-    public override string ConfigurationFileName => "markdown-links-verifier-config.json";
+    public ConfigurationReader()
+    {
+        ConfigurationFileName = "markdown-links-verifier-config.json";
+    }
 }

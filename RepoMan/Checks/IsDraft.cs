@@ -1,20 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-public class IsDraft : ICheck
+public sealed class IsDraft : ICheck
 {
     public bool Condition { get; }
 
     public IsDraft(YamlMappingNode node, State state)
     {
-        state.Logger.LogDebug($"BUILD: IsDraft");
+        state.Logger.LogDebugger($"BUILD: IsDraft");
         Condition = Convert.ToBoolean(node["value"].ToString());
         state.Logger.LogTrace($"BUILD: - {Condition}");
     }
@@ -29,7 +24,7 @@ public class IsDraft : ICheck
             return await Task.FromResult(false);
         }
 
-        var result = state.PullRequest?.Draft == Condition;
+        bool result = state.PullRequest?.Draft == Condition;
 
         if (result)
             state.Logger.LogInformation($"PASS");

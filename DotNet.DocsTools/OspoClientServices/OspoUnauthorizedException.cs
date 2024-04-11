@@ -22,11 +22,6 @@ public class OspoUnauthorizedException : OspoException
     {
     }
 
-    protected OspoUnauthorizedException(SerializationInfo info, StreamingContext context)
-        : base(info, context)
-    {
-    }
-
     public OspoUnauthorizedException(string? message, HttpStatusCode code)
         : base(message, code)
     {

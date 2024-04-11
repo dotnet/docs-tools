@@ -31,7 +31,7 @@ string topMatter = """
 buffer.WriteLineToBufferAndOutput(topMatter, false);
 
 // Entry to update GitHub Actions
-string githubActions = """
+string gitHubActions = """
     - package-ecosystem: "github-actions" # Core GitHub Actions
       directory: "/"
       schedule:
@@ -40,7 +40,7 @@ string githubActions = """
       open-pull-requests-limit: 10
   """;
 
-buffer.WriteLineToBufferAndOutput(githubActions, UpdateNodeLimit == updateNodeCount++);
+buffer.WriteLineToBufferAndOutput(gitHubActions, updateNodeCount++ >= UpdateNodeLimit);
 
 /* Generate the following pattern for each project file:
 
@@ -52,91 +52,120 @@ buffer.WriteLineToBufferAndOutput(githubActions, UpdateNodeLimit == updateNodeCo
       interval: ""weekly""
       day: ""wednesday""
   open-pull-requests-limit: 5
+  groups:
+    # Group .NET updates together
+    dotnet:
+      patterns:
+        - "*" # Prefer a single PR
 */
 
 Dictionary<string, string[]> packageIgnore = await GetPackagesInfoAsync();
 
 string dotnetDir = $"**/{Path.AltDirectorySeparatorChar}.dotnet";
 
-Matcher projectMatcher = new();
-projectMatcher.AddIncludePatterns(
-    new[] { "**/*.csproj", "**/*.fsproj", "**/*.vbproj" });
-projectMatcher.AddExclude(dotnetDir);
+var discoveryService = AddAndGetDiscoveryService();
 
-var patternMatchingResult = projectMatcher.Execute(
-    new DirectoryInfoWrapper(
-        new DirectoryInfo(path)));
+var result = await discoveryService.DiscoverAllAsync(path);
 
-if (patternMatchingResult.HasMatches)
+foreach (var solution in result.Solutions.OrderBy(static sln => sln.FullPath))
 {
-    foreach (var fileMatch in patternMatchingResult.Files.OrderBy(f => f.Path))
-    {
-        string file = Path.Combine(path, fileMatch.Path);
-        string filename = Path.GetFileName(file);
-        string? parentDir = Path.GetDirectoryName(file);
-        string relativeDir = parentDir?[path.Length..].Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) ?? Path.AltDirectorySeparatorChar.ToString();
-        string? targetFramework = null;
-        bool match = false;
-        List<PackageIgnoreMapping> mappings = new();
-        foreach (string content in File.ReadLines(file))
-        {
-            if (targetFramework is null && TryGetTargetFramework(content, out targetFramework))
-            {
-            }
+    string file = solution.FullPath;
+    string filename = Path.GetFileName(file);
+    string? parentDir = Path.GetDirectoryName(file);
+    string relativeDir = parentDir?[path.Length..].Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) ?? Path.AltDirectorySeparatorChar.ToString();
 
-            if (PackageReferenceVersionRegex().IsMatch(content))
-            {
-                match = true;
-
-                if (TryGetPackageName(content, out string? packageName) &&
-                    packageIgnore.TryGetValue($"{packageName}_{targetFramework}", out string[]? ignore))
-                {
-                    mappings.Add(new(packageName, ignore));
-                }
-
-                break;
-            }
-        }
-
-        if (!match)
-        {
-            continue;
-        }
-
-        buffer.WriteLineToBufferAndOutput($"""
+    // Use groups:
+    // https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#groups
+    buffer.WriteLineToBufferAndOutput($"""
               - package-ecosystem: "nuget"
                 directory: "{relativeDir}" #{filename}
                 schedule:
                   interval: "weekly"
                   day: "wednesday"
                 open-pull-requests-limit: 5
+                groups:
+                  # Group .NET updates together for solutions.
+                  dotnet:
+                    patterns:
+                      - "*" # Prefer a single PR per solution update.
             """,
-            UpdateNodeLimit == updateNodeCount++);
+        UpdateNodeLimit == updateNodeCount++);
+}
 
-        if (mappings.Count is 0)
+foreach (var fileInfo in result.StandaloneProjects.Select(static p => new FileInfo(p.FullPath)).OrderBy(f => f.FullName))
+{
+    string file = fileInfo.FullName;
+    string filename = fileInfo.Name;
+    string? parentDir = Path.GetDirectoryName(file);
+    string relativeDir = parentDir?[path.Length..].Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) ?? Path.AltDirectorySeparatorChar.ToString();
+    string? targetFramework = null;
+    bool match = false;
+    List<PackageIgnoreMapping> mappings = [];
+    foreach (string content in File.ReadLines(file))
+    {
+        if (targetFramework is null && TryGetTargetFramework(content, out targetFramework))
         {
-            continue;
         }
 
-        /* Format:
-        ignore:
-         - dependency-name: "Microsoft.AspNetCore.Mvc.NewtonsoftJson"
-           versions: ["5.*"]        
-        */
-
-        buffer.WriteLineToBufferAndOutput("    ignore:", false);
-
-        foreach (PackageIgnoreMapping mapping in mappings)
+        if (PackageReferenceVersionRegex().IsMatch(content))
         {
-            buffer.WriteLineToBufferAndOutput($"""
+            match = true;
+
+            if (TryGetPackageName(content, out string? packageName) &&
+                packageIgnore.TryGetValue($"{packageName}_{targetFramework}", out string[]? ignore))
+            {
+                mappings.Add(new(packageName, ignore));
+            }
+
+            break;
+        }
+    }
+
+    if (match is false)
+    {
+        continue;
+    }
+
+    // Use groups:
+    // https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#groups
+    buffer.WriteLineToBufferAndOutput($"""
+              - package-ecosystem: "nuget"
+                directory: "{relativeDir}" #{filename}
+                schedule:
+                  interval: "weekly"
+                  day: "wednesday"
+                open-pull-requests-limit: 5
+                groups:
+                  # Group .NET updates together for projects.
+                  dotnet:
+                    patterns:
+                      - "*" # Prefer a single PR per project update.
+            """,
+        updateNodeCount++ >= UpdateNodeLimit);
+
+    if (mappings.Count is 0)
+    {
+        continue;
+    }
+
+    /* Format:
+    ignore:
+     - dependency-name: "Microsoft.AspNetCore.Mvc.NewtonsoftJson"
+       versions: ["5.*"]        
+    */
+
+    buffer.WriteLineToBufferAndOutput("    ignore:", false);
+
+    foreach (PackageIgnoreMapping mapping in mappings)
+    {
+        buffer.WriteLineToBufferAndOutput($"""
                       - dependency-name: ""{mapping.PackageName}""
                        versions: {PrintArrayAsYaml(mapping.Ignore)}
                 """, false);
-        }
     }
 }
 
-if (buffer is { Length: > 118 /* top matter length */ })
+if (buffer.Length > topMatter.Length)
 {
     var contents = buffer.ToString();
     await File.WriteAllTextAsync(destinationFilePath, contents);

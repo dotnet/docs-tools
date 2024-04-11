@@ -1,3 +1,4 @@
+import { info, warning, startGroup, endGroup } from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { FileChange } from "./types/FileChange";
 import { PullRequestDetails } from "./types/PullRequestDetails";
@@ -12,26 +13,30 @@ const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 export async function tryUpdatePullRequestBody(token: string) {
   try {
     const prNumber: number = context.payload.number;
-    console.log(`Update pull ${prNumber} request body.`);
+    info(`Update pull ${prNumber} request body.`);
 
     let allFiles: NodeOf<FileChange>[] = [];
     let details = await getPullRequest(token, null);
     if (!details) {
-      console.log("Unable to get the pull request from GitHub GraphQL");
+      info("Unable to get the pull request from GitHub GraphQL");
     }
 
     const pullRequest = details.repository?.pullRequest;
     if (!pullRequest) {
-      console.log("Unable to pull request details from object-graph.");
+      info("Unable to pull request details from object-graph.");
     }
 
     if (pullRequest.changedFiles === 0) {
-      console.log("No files changed at all...");
+      info("No files changed at all...");
       return;
     } else {
       try {
-        console.log(JSON.stringify(pullRequest, undefined, 2));
-      } catch {}
+        startGroup("Pull request JSON body");
+        info(JSON.stringify(pullRequest, undefined, 2));
+        endGroup();
+      } catch {
+        endGroup();
+      }
     }
 
     allFiles = [...pullRequest.files.edges];
@@ -41,19 +46,19 @@ export async function tryUpdatePullRequestBody(token: string) {
       details = await getPullRequest(token, cursor);
 
       if (!details) {
-        console.log("Unable to get the pull request from GitHub GraphQL");
+        info("Unable to get the pull request from GitHub GraphQL");
       }
 
       const moreFiles = details.repository?.pullRequest?.files?.edges;
       if (!moreFiles) {
-        console.log("Unable to pull request details from object-graph.");
+        info("Unable to pull request details from object-graph.");
       }
 
       allFiles = [...allFiles, ...moreFiles];
     }
 
     if (isPullRequestModifyingMarkdownFiles(allFiles) === false) {
-      console.log("No updated markdown files...");
+      info("No updated markdown files...");
       return;
     }
 
@@ -79,8 +84,9 @@ export async function tryUpdatePullRequestBody(token: string) {
       updatedBody = appendTable(pullRequest.body, markdownTable);
     }
 
-    console.log("Proposed PR body:");
-    console.log(updatedBody);
+    startGroup("Proposed PR body");
+    info(updatedBody);
+    endGroup();
 
     const octokit = getOctokit(token);
     const response = await octokit.rest.pulls.update({
@@ -91,14 +97,14 @@ export async function tryUpdatePullRequestBody(token: string) {
     });
 
     if (response && response.status === 200) {
-      console.log("Pull request updated...");
+      info("Pull request updated...");
     } else {
-      console.log("Unable to update pull request...");
+      info("Unable to update pull request...");
     }
   } catch (error) {
-    console.log(`Unable to process markdown preview: ${error}`);
+    warning(`Unable to process markdown preview: ${error}`);
   } finally {
-    console.log("Finished attempting to generate preview.");
+    info("Finished attempting to generate preview.");
   }
 }
 
@@ -112,6 +118,22 @@ async function getPullRequest(
   token: string,
   cursor: string | null = null
 ): Promise<PullRequestDetails> {
+  /*
+  You can verify the query below, by running the following in the GraphQL Explorer:
+      https://docs.github.com/en/graphql/overview/explorer
+  
+  1. Sign in to GitHub.
+  2. Paste the query string value into the query window.
+  3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
+    {
+      "name": "docs",
+      "owner": "dotnet",
+      "number": 36636,
+      "cursor": null
+    }
+  4. Click the "Play" button.
+  */
+
   const octokit = getOctokit(token);
   return await octokit.graphql<PullRequestDetails>({
     query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {

@@ -19,12 +19,18 @@ To install the GitHub actions:
    - In the root folder of your repo, create a config file that contains the keys shown [later in this document](#configure-consuming-github-action-workflow). In most cases, you'll modify the Azure DevOps area path, and trigger labels.
 1. ***Add the `quest.yml` and `quest-bulk.yml` action workflow files***
    - For an example, see the [`dotnet/docs` installation](https://github.com/dotnet/docs/blob/main/.github/workflows/quest.yml). You'll likely need to change the checks on the labels.
-1. ***Add secrets for Azure Dev Ops and Microsoft Open Source Programs Office***
-   - You'll need to add two secret tokens to access the OSPO REST APIs and Quest Azure DevOps APIs.
-   - *OSPO_KEY*: Generate a PAT [here](https://ossmsft.visualstudio.com/_usersSettings/tokens). UserProfile: Read is the only access needed.
-   - *QUEST_KEY*: Generate a PAT [here](https://dev.azure.com/msft-skilling/_usersSettings/tokens). WorkItems: Read/Write and Project & Team: Read/Write access are needed.
-     Identity: Read is also needed.
-1. Start applying labels.
+1. ***Add secrets for Azure Dev Ops and Microsoft Open Source Programs Office*** You'll need to add three secret tokens to access the OSPO REST APIs and Quest Azure DevOps APIs.
+
+   - **SEQUESTER_APPID**: This is the app ID for the Sequester Action. Get this from one of the App admins (Bill or Immo).
+   - **SEQUESTER_PRIVATEKEY**: This is the private key to authorize sequester. Get this from one of the App admins (Bill or Immo).
+   - **OSPO_KEY**: Generate a PAT at [OSSMSFT](https://ossmsft.visualstudio.com/_usersSettings/tokens) with the following permissions:
+     - *UserProfile*: Read
+   - **QUEST_KEY**: Generate a PAT at [MSFT-SKILLING](https://dev.azure.com/msft-skilling/_usersSettings/tokens) with the following permissions:
+     - *Identity*: Read
+     - *Project & Team*: Read/Write
+     - *WorkItems*: Read/Write
+
+1. ***Start applying labels***
    - Add the trigger label to any issue, and it will be imported into Quest.
 
 > **Note**: You may need to configure GitHub Actions in your repository settings. For more information, see [Managing GitHub Actions settings for a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository).
@@ -32,7 +38,7 @@ To install the GitHub actions:
 ## Suggestions for future releases
 
 - [ ] Populate the "GitHub Repo" field in Azure DevOps to make reporting by repository easier.
-- [ ] Add Epics (configurable) as a parent of user stories on import.
+- [X] Add Epics (configurable) as a parent of user stories on import.
 - [X] Update the label block in Quest when an issue is closed. That way, any "OKR" labels get added when the work item is completed. This would be a simplified version of updating all labels when labels are added or removed.
 - [ ] Integrate with Repoman. That tool already performs a number of actions on different events in the repo. The code underlying these events could be ported there.
 - [ ] Encapsulate services into their own projects/packages, and share them as needed.
@@ -57,6 +63,17 @@ The consuming repository would ideally define the config file. As an example, it
   },
   "ImportTriggerLabel": ":world_map: reQUEST",
   "ImportedLabel": ":pushpin: seQUESTered"
+  "ParentNodes": [
+  {
+    "Label": "okr-health",
+    "ParentNodeId": 199082
+  },
+  {
+    "Label": "dotnet-csharp/svc",
+    "ParentNodeId": 227484
+  }
+  ],
+  "DefaultParentNode": 228485
 }
 ```
 

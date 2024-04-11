@@ -8,7 +8,10 @@ namespace RedirectionVerifier;
 public class OpenPublishingConfigReader
     : BaseMappedConfigurationReader<OpenPublishingConfig, ImmutableArray<string>?>
 {
-    public override string ConfigurationFileName => ".openpublishing.publish.config.json";
+    public OpenPublishingConfigReader()
+    {
+        ConfigurationFileName = ".openpublishing.publish.config.json";
+    }
 
     public override async ValueTask<ImmutableArray<string>?> MapConfigurationAsync()
     {

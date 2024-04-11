@@ -1,18 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 
-public class DocMetadataExists : ICheck
+public sealed class DocMetadataExists : ICheck
 {
     public DocMetadataExists(State state)
     {
-        state.Logger.LogDebug($"BUILD: Check-metadata-exists");
+        state.Logger.LogDebugger($"BUILD: Check-metadata-exists");
     }
 
     public async Task<bool> Run(State state)

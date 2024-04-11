@@ -1,11 +1,14 @@
-﻿namespace Quest2GitHub.Models;
+﻿using DotNet.DocsTools.GitHubObjects;
+using DotNet.DocsTools.Utility;
+
+namespace Quest2GitHub.Models;
 
 public class QuestWorkItem
 {
-    // Keep track of failures to upate the closing PR.
+    // Keep track of failures to update the closing PR.
     // For any given run, if the REST call to add a closing PR
     // fails, stop sending invalid requests.
-    private static bool? linkedGitHubRepo;
+    private static bool? s_linkedGitHubRepo;
 
     /// <summary>
     /// The Work item ID
@@ -63,7 +66,28 @@ public class QuestWorkItem
     /// This is retrieved from /Microsoft.VSTS.Scheduling.StoryPoints
     /// </remarks>
     public required int? StoryPoints { get; init; }
-    
+
+    /// <summary>
+    /// The ID of the parent work item.
+    /// </summary>
+    /// <remarks>
+    /// Starting with the next semester, our work items
+    /// must have a parent Epic or Feature.
+    /// Note that existing work items may not have
+    /// a current parent, which would make a 0 parent ID.
+    /// </remarks>
+    public required int ParentWorkItemId { get; init; }
+
+    /// <summary>
+    /// The index of the parent relation in the relations array.
+    /// </summary>
+    /// <remarks>
+    /// The relations array items can't be updated. Therefore,
+    /// to edit the parent, we need to know the index of the
+    /// existing relationship so we can remove it first.
+    /// </remarks>
+    public required int? ParentRelationIndex { get; init; }
+
     /// <summary>
     /// Create a work item object from the ID
     /// </summary>
@@ -72,18 +96,20 @@ public class QuestWorkItem
     /// <returns>The workitem retrieved from Quest.</returns>
     public static async Task<QuestWorkItem> QueryWorkItem(QuestClient client, int workItemID)
     {
-        var root = await client.GetWorkItem(workItemID);
+        JsonElement root = await client.GetWorkItem(workItemID);
         return WorkItemFromJson(root);
     }
 
     /// <summary>
     /// Create a work item from a GitHub issue.
     /// </summary>
-    /// <param name="issue">The Github issue.</param>
+    /// <param name="issue">The GitHub issue.</param>
+    /// <param name="parentId">The ID of the parent ID</param>
     /// <param name="questClient">The quest client.</param>
     /// <param name="ospoClient">the MS open source programs office client.</param>
     /// <param name="path">The path component for the area path.</param>
     /// <param name="currentIteration">The current AzDo iteration</param>
+    /// <param name="allIterations">The set of all iterations to search</param>
     /// <returns>The newly created linked Quest work item.</returns>
     /// <remarks>
     /// Fill in the Json patch document from the GitHub issue.
@@ -91,44 +117,61 @@ public class QuestWorkItem
     /// Finally, create the work item object from the returned
     /// Json element.
     /// </remarks>
-    public static async Task<QuestWorkItem> CreateWorkItemAsync(GithubIssue issue, 
-        QuestClient questClient, 
+    public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssueOrPullRequest issue,
+        int parentId,
+        QuestClient questClient,
         OspoClient ospoClient,
         string path,
         string? requestLabelNodeId,
         QuestIteration currentIteration,
         IEnumerable<QuestIteration> allIterations)
     {
-        var areaPath = $"""{questClient.QuestProject}\{path}""";
+        string areaPath = $"""{questClient.QuestProject}\{path}""";
 
-        var patchDocument = new List<JsonPatchDocument>()
-        {
-            new JsonPatchDocument
-            {
+        List<JsonPatchDocument> patchDocument =
+        [
+            new() {
                 Operation = Op.Add,
                 Path = "/fields/System.Title",
                 From = default,
                 Value = issue.Title
             },
-            new JsonPatchDocument
-            {
+            new() {
                 Operation = Op.Add,
                 Path = "/fields/System.Description",
                 From = default,
                 Value = BuildDescriptionFromIssue(issue, requestLabelNodeId)
             },
-            new JsonPatchDocument
-            {
+            new() {
                 Operation = Op.Add,
                 Path = "/fields/System.AreaPath",
                 From = default,
                 Value = areaPath,
-            },
+            }
+        ];
+        if (parentId != 0)
+        {
+            var parentRelation = new Relation
+            {
+                RelationName = "System.LinkTypes.Hierarchy-Reverse",
+                Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{parentId}",
+                Attributes =
+                {
+                    ["name"] = "Parent",
+                    ["isLocked"] = false
+                }
+            };
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/relations/-",
+                From = default,
+                Value = parentRelation
+            });
+        }
 
-        };
-
-        // Query if the Github ID maps to an FTE id, add that one:
-        var assigneeEmail = await issue.AssignedMicrosoftEmailAddress(ospoClient);
+        // Query if the GitHub ID maps to an FTE id, add that one:
+        string? assigneeEmail = await issue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
         AzDoIdentity? assigneeID = default;
         if (assigneeEmail?.EndsWith("@microsoft.com") == true)
         {
@@ -142,31 +185,28 @@ public class QuestWorkItem
             Value = assigneeID
         };
         patchDocument.Add(assignPatch);
-        var iterationSize = issue.LatestStoryPointSize();
-        var iteration = iterationSize?.ProjectIteration(allIterations);
-        if (iteration is not null)
+        StoryPointSize? iterationSize = issue.LatestStoryPointSize();
+        if (iterationSize != null)
         {
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.IterationPath",
-                Value = iteration.Path,
-            });
+            Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
         }
         else
-        { // default to the current iteration:
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.IterationPath",
-                Value = currentIteration.Path,
-            });
+        {
+            Console.WriteLine("No GitHub sprint project found - using current iteration");
         }
+        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
+        patchDocument.Add(new JsonPatchDocument
+        {
+            Operation = Op.Add,
+            Path = "/fields/System.IterationPath",
+            Value = iteration?.Path ?? currentIteration.Path,
+        });
         if (iterationSize?.QuestStoryPoint() is not null)
         {
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
+                From = default,
                 Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
                 Value = iterationSize.QuestStoryPoint(),
             });
@@ -195,12 +235,13 @@ public class QuestWorkItem
             });
         }
         JsonElement result = default;
-        QuestWorkItem? newItem = default;
+        QuestWorkItem? newItem;
         try
         {
             result = await questClient.CreateWorkItem(patchDocument);
             newItem = WorkItemFromJson(result);
-        } catch (InvalidOperationException)
+        }
+        catch (InvalidOperationException)
         {
             Console.WriteLine(result.ToString());
             // This will happen when the assignee IS a Microsoft FTE,
@@ -221,29 +262,31 @@ public class QuestWorkItem
         return newItem;
     }
 
-    public static string BuildDescriptionFromIssue(GithubIssue issue, string? requestLabelNodeId)
+    public static string BuildDescriptionFromIssue(QuestIssueOrPullRequest issue, string? requestLabelNodeId)
     {
         var body = new StringBuilder($"<p>Imported from: {issue.LinkText}</p>");
-        body.AppendLine($"<p>Author: {issue.Author}</p>");
-        body.AppendLine(issue.BodyHtml);
-        if (issue.Labels.Any())
+        body.AppendLine($"<p>Author: {issue.FormattedAuthorLoginName}</p>");
+        var assigneeStrings = issue.Assignees.Select(a => $"{a.Login}-({a.Name})").ToArray();
+        body.AppendLine($"<p>Assignees: {string.Join(", ", assigneeStrings)}</p>");  
+        body.AppendLine(issue.BodyHtml?.ScrubContent());
+        if (issue.Labels.Length != 0)
         {
             body.AppendLine($"<p><b>Labels:</b></p>");
             body.AppendLine("<ul>");
-            foreach (var item in issue.Labels.Where(l => l.nodeID != requestLabelNodeId))
+            foreach (GitHubLabel? item in issue.Labels.Where(l => l.Id != requestLabelNodeId))
             {
-                body.AppendLine($"<li>#{item.name.Replace(' ', '-')}</li>");
+                body.AppendLine($"<li>#{item.Name.Replace(' ', '-')}</li>");
             }
             body.AppendLine("</ul>");
         }
-        if (issue.Comments.Any())
+        if (issue.Comments.Length != 0)
         {
             body.AppendLine($"<p><b>Comments:</b></p>");
             body.AppendLine("<dl>");
-            foreach (var item in issue.Comments)
+            foreach ((string author, string bodyHTML) in issue.Comments)
             {
-                body.AppendLine($"<dt>{item.author}</dt>");
-                body.AppendLine($"<dd>{item.bodyHTML}</dd>");
+                body.AppendLine($"<dt>{author}</dt>");
+                body.AppendLine($"<dd>{bodyHTML.ScrubContent()}</dd>");
             }
             body.AppendLine("</dl>");
         }
@@ -252,10 +295,10 @@ public class QuestWorkItem
 
     internal async Task<QuestWorkItem?> AddClosingPR(QuestClient azdoClient, string closingPRUrl)
     {
-        if (linkedGitHubRepo is false) return default;
+        if (s_linkedGitHubRepo is false) return default;
 
-        List<JsonPatchDocument> patchDocument = new()
-        {
+        List<JsonPatchDocument> patchDocument =
+        [
             new JsonPatchDocument
             {
                 Operation = Op.Add,
@@ -266,43 +309,62 @@ public class QuestWorkItem
                     Attributes = { ["name"] = "GitHub Pull Request" }
                 }
             }
-        };
+        ];
         try
         {
-            var jsonDocument = await azdoClient.PatchWorkItem(Id, patchDocument);
+            JsonElement jsonDocument = await azdoClient.PatchWorkItem(Id, patchDocument);
             var newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
-            linkedGitHubRepo = true;
+            s_linkedGitHubRepo = true;
             return newItem;
-        } catch (InvalidOperationException ex)
+        }
+        catch (InvalidOperationException ex)
         {
-            Console.WriteLine("Can't add closing PR. The GitHub repo is likely not configured as linked in Quest.");
-            linkedGitHubRepo = false;
+            Console.WriteLine($"""
+                Can't add closing PR. The GitHub repo is likely not configured as linked in Quest.
+                Exception: {ex}
+                """);
+
+            s_linkedGitHubRepo = false;
             return null;
         }
     }
 
-/// <summary>
-/// Construct a work item from the JSON document.
-/// </summary>
-/// <param name="root">The root element.</param>
-/// <returns>The Quest work item.</returns>
-public static QuestWorkItem WorkItemFromJson(JsonElement root)
+    /// <summary>
+    /// Construct a work item from the JSON document.
+    /// </summary>
+    /// <param name="root">The root element.</param>
+    /// <returns>The Quest work item.</returns>
+    public static QuestWorkItem WorkItemFromJson(JsonElement root)
     {
-        var id = root.GetProperty("id").GetInt32();
-        var fields = root.GetProperty("fields");
-        var title = fields.GetProperty("System.Title").GetString()!;
-        var state = fields.GetProperty("System.State").GetString()!;
-        var description = fields.GetProperty("System.Description").GetString()!;
-        var areaPath = fields.GetProperty("System.AreaPath").GetString()!;
-        var iterationPath = fields.GetProperty("System.IterationPath").GetString();
-        var assignedNode = fields.Descendent("System.AssignedTo", "id");
-        int? storyPoints = fields.TryGetProperty("Microsoft.VSTS.Scheduling.StoryPoints", out var storyPointNode) ?
+        int id = root.GetProperty("id").GetInt32();
+        JsonElement fields = root.GetProperty("fields");
+        int parentID = fields.TryGetProperty("System.Parent", out JsonElement parentNode) ?
+            parentNode.GetInt32() : 0;
+        int? parentRelationIndex = null;
+        if (parentID != 0)
+        {
+            string relType = "System.LinkTypes.Hierarchy-Reverse";
+            (JsonElement r, int Index) parentRelation = root.GetProperty("relations")
+                .EnumerateArray().Select((r,Index) => (r,Index))
+                .FirstOrDefault(t => t.r.GetProperty("rel").GetString() == relType);
+            parentRelationIndex = parentRelation.Index;
+        }
+
+        string title = fields.GetProperty("System.Title").GetString()!;
+        string state = fields.GetProperty("System.State").GetString()!;
+        string description = fields.GetProperty("System.Description").GetString()!;
+        string areaPath = fields.GetProperty("System.AreaPath").GetString()!;
+        string? iterationPath = fields.GetProperty("System.IterationPath").GetString();
+        JsonElement assignedNode = fields.Descendent("System.AssignedTo", "id");
+        int? storyPoints = fields.TryGetProperty("Microsoft.VSTS.Scheduling.StoryPoints", out JsonElement storyPointNode) ?
             (int)double.Truncate(storyPointNode.GetDouble()) : null;
-        var assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
+        string? assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
             assignedNode.GetString() : null;
         return new QuestWorkItem
         {
             Id = id,
+            ParentWorkItemId = parentID,
+            ParentRelationIndex = parentRelationIndex,
             Title = title,
             State = state,
             Description = description,

@@ -9,7 +9,7 @@ namespace MarkdownLinksVerifier.UnitTests.ConfigurationTests;
 
 public class ConfigurationReaderTests
 {
-    private static readonly string ConfigurationFileName =
+    private static readonly string? ConfigurationFileName =
         new ConfigurationReader().ConfigurationFileName;
 
     [Theory]
@@ -26,7 +26,7 @@ public class ConfigurationReaderTests
 
         try
         {
-            await File.WriteAllTextAsync(ConfigurationFileName,
+            await File.WriteAllTextAsync(ConfigurationFileName!,
 @$"{{
   ""excludeStartingWith"": [
     ""xref:"",
@@ -42,7 +42,10 @@ public class ConfigurationReaderTests
         }
         finally
         {
-            File.Delete(ConfigurationFileName);
+            if (ConfigurationFileName != null)
+            {
+                File.Delete(ConfigurationFileName);
+            }
         }
     }
 

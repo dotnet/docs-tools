@@ -1,19 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 
-public class Milestone: IRunnerItem
+public sealed class Milestone: IRunnerItem
 {
     private const int InvalidMilestone = -1;
 
-    private RunnerItemSubTypes _type = RunnerItemSubTypes.Add;
-    private string _milestone;
+    private readonly RunnerItemSubTypes _type = RunnerItemSubTypes.Add;
+    private readonly string _milestone;
 
     public Milestone(YamlNode node, RunnerItemSubTypes subType, State state)
     {
@@ -25,7 +20,7 @@ public class Milestone: IRunnerItem
 
 
         _milestone = node.ToString();
-        state.Logger.LogInformation($"BUILD: {mode} milestone '{_milestone}'");
+        state.Logger.LogDebugger($"BUILD: {mode} milestone '{_milestone}'");
     }
 
     public async Task Run(State state)
@@ -36,7 +31,7 @@ public class Milestone: IRunnerItem
             return;
         }
 
-        var milestones = await GithubCommand.GetMilestones(state);
+        IReadOnlyList<Octokit.Milestone> milestones = await GithubCommand.GetMilestones(state);
         int milestoneId = InvalidMilestone;
 
         // Special milestone
@@ -46,12 +41,12 @@ public class Milestone: IRunnerItem
 
             state.Logger.LogInformation($"Setting [Month] milestone: {monthYear}");
 
-            foreach (var item in milestones)
+            foreach (Octokit.Milestone item in milestones)
             {
                 if (item.Title.Equals(monthYear, StringComparison.OrdinalIgnoreCase))
                 {
                     milestoneId = item.Number;
-                    state.Logger.LogDebug($"Found milestone: {item.Title}:{item.Number}");
+                    state.Logger.LogDebugger($"Found milestone: {item.Title}:{item.Number}");
                     break;
                 }
             }
@@ -60,15 +55,15 @@ public class Milestone: IRunnerItem
         {
             try
             {
-                var sprint = DotNetDocs.Tools.Utility.SprintDateRange.GetSprintFor(DateTime.Now).SprintName;
+                string sprint = DotNetDocs.Tools.Utility.SprintDateRange.GetSprintFor(DateTime.Now).SprintName;
                 state.Logger.LogInformation($"Setting [sprint] milestone: {sprint}");
 
-                foreach (var item in milestones)
+                foreach (Octokit.Milestone item in milestones)
                 {
                     if (item.Title.Equals(sprint, StringComparison.OrdinalIgnoreCase))
                     {
                         milestoneId = item.Number;
-                        state.Logger.LogDebug($"Found milestone: {item.Title}:{item.Number}");
+                        state.Logger.LogDebugger($"Found milestone: {item.Title}:{item.Number}");
                     break;
                     }
                 }
@@ -84,7 +79,7 @@ public class Milestone: IRunnerItem
             {
                 state.Logger.LogInformation($"Searching for milestone {_milestone}");
 
-                foreach (var item in milestones)
+                foreach (Octokit.Milestone item in milestones)
                 {
                     if (id == item.Id)
                     {
@@ -101,7 +96,7 @@ public class Milestone: IRunnerItem
         if (milestoneId == InvalidMilestone)
         {
             state.Logger.LogError("Milestone is invalid, can't run this action");
-            state.Logger.LogDebug($"Milestones available { string.Concat(milestones.Select(m => $"\n{m.Title}")) }");
+            state.Logger.LogDebugger($"Milestones available { string.Concat(milestones.Select(m => $"\n{m.Title}")) }");
             return;
         }
 
