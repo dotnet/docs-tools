@@ -31,7 +31,7 @@ static class Program
         //   }
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_cfx\\cfx_wf_gettingstarted" };
+        args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\testrepo3\\snippets", "--xml-source=true" };
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
@@ -279,7 +279,8 @@ static class Program
             // Catalog all the solution files and the project (directories) they reference.
             List<(string, List<string>)> solutionFiles = GetSolutionFiles(options.SnippetsDirectory);
 
-            ListOrphanedSnippets(options.SnippetsDirectory, snippetFiles, solutionFiles, options.Delete.Value);
+            ListOrphanedSnippets(options.SnippetsDirectory, snippetFiles, solutionFiles,
+                options.Delete.Value, options.XmlSource.Value);
         }
 
         // Replace links to articles that are redirected in the master redirection files.
@@ -787,10 +788,16 @@ static class Program
     private static void ListOrphanedSnippets(string inputDirectory,
         List<(string, string)> snippetFiles,
         List<(string, List<string>)> solutionFiles,
-        bool deleteOrphanedSnippets)
+        bool deleteOrphanedSnippets,
+        bool searchEcmaXmlFiles = false)
     {
         // Get all files that could possibly link to the snippet files
-        var files = GetAllMarkdownFiles(inputDirectory, out DirectoryInfo rootDirectory);
+        List<FileInfo> files;
+        DirectoryInfo rootDirectory;
+        if (searchEcmaXmlFiles)
+            files = GetAllEcmaXmlFiles(inputDirectory, out rootDirectory);
+        else
+            files = GetAllMarkdownFiles(inputDirectory, out rootDirectory);
 
         if (files is null)
             return;
@@ -802,12 +809,12 @@ static class Program
         StringBuilder output = new StringBuilder();
 
         // Keep track of which directories are referenced/unreferenced.
-        Dictionary<string, int> projectDirectories = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
+        var projectDirectories = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
 
         foreach (var snippetFile in snippetFiles)
         {
             FileInfo fi = new FileInfo(snippetFile.Item1);
-            string regexSnippetFileName = fi.Name.Replace(".", "\\.");
+            string regexSnippetFileName = fi.Name.Replace(".", "\\.").Replace("[", "\\[").Replace("]", "\\]");
 
             bool foundSnippetReference = false;
 
@@ -825,14 +832,13 @@ static class Program
                     projectDirectories.Add(projectPath, 0);
             }
 
-
             // If we've already determined this project directory isn't orphaned,
             // move on to the next snippet file.
             if (projectPath is not null && projectDirectories.ContainsKey(projectPath) && (projectDirectories[projectPath] > 0))
                 continue;
 
             // First try to find a reference to the actual snippet file.
-            foreach (FileInfo markdownFile in files)
+            foreach (FileInfo mdOrXmlFile in files)
             {
                 // Matches the following types of snippet syntax:
                 // :::code language="csharp" source="snippets/EventCounters/MinimalEventCounterSource.cs":::
@@ -844,7 +850,7 @@ static class Program
                 string regex = @"(\(|"")([^\)""\n]*\/" + regexSnippetFileName + @")(#\w*)?(\?\w*=(\d|,|-)*)?(\)|"")";
 
                 // Ignores case.
-                string fileText = File.ReadAllText(markdownFile.FullName);
+                string fileText = File.ReadAllText(mdOrXmlFile.FullName);
                 foreach (Match match in Regex.Matches(fileText, regex, RegexOptions.IgnoreCase))
                 {
                     if (!(match is null) && match.Length > 0)
@@ -863,7 +869,7 @@ static class Program
                             else
                             {
                                 // Construct the full path to the referenced snippet file
-                                fullPath = Path.Combine(markdownFile.DirectoryName, relativePath);
+                                fullPath = Path.Combine(mdOrXmlFile.DirectoryName, relativePath);
                             }
 
                             // Clean up the path.
@@ -979,7 +985,7 @@ static class Program
             }
         }
 
-        StringBuilder dirSlnOutput = new StringBuilder("The following project directories are orphaned:\n\n");
+        StringBuilder dirSlnOutput = new StringBuilder("\nThe following project directories are orphaned:\n\n");
 
         // Delete orphaned directories.
         IEnumerable<string> directoriesToDelete = projectDirectories.Where(kvp => kvp.Value == 0).Select(kvp => kvp.Key);
@@ -1003,7 +1009,16 @@ static class Program
             {
                 dirSlnOutput.AppendLine(directory);
                 if (deleteOrphanedSnippets)
-                    Directory.Delete(directory, true);
+                {
+                    try
+                    {
+                        Directory.Delete(directory, true);
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        Console.WriteLine($"**Couldn't find directory '{directory}'. This is unusual.**");
+                    }
+                }
             }
         }
 
@@ -1034,7 +1049,14 @@ static class Program
                 if (deleteOrphanedSnippets)
                 {
                     // Delete the solution and its directory.
-                    Directory.Delete(path, true);
+                    try
+                    {
+                        Directory.Delete(path, true);
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        Console.WriteLine($"**Couldn't find directory '{path}'. This is unusual.**");
+                    }
                 }
             }
         }
@@ -1622,6 +1644,20 @@ static class Program
             return null;
 
         return rootDirectory.EnumerateFiles("*.md", SearchOption.AllDirectories).ToList();
+    }
+
+    /// <summary>
+    /// Gets all *.xml files recursively, starting in the ancestor directory that contains docfx.json.
+    /// </summary>
+    internal static List<FileInfo> GetAllEcmaXmlFiles(string directoryPath, out DirectoryInfo rootDirectory)
+    {
+        // Look further up the path until we find docfx.json
+        rootDirectory = GetDirectory(new DirectoryInfo(directoryPath), "docfx.json");
+
+        if (rootDirectory is null)
+            return null;
+
+        return rootDirectory.EnumerateFiles("*.xml", SearchOption.AllDirectories).ToList();
     }
 
     /// <summary>

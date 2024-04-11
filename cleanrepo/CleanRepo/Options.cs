@@ -26,6 +26,9 @@ class Options
     [Option("delete", Required = false, HelpText = "True to delete orphaned files.")]
     public bool? Delete { get; set; }
 
+    [Option("xml-source", Default = false, HelpText = "True to search XML files instead of Markdown files.")]
+    public bool? XmlSource { get; set; }
+
     [Option("orphaned-articles", HelpText = "Use this option to find orphaned articles.")]
     public bool FindOrphanedArticles { get; set; }
 
