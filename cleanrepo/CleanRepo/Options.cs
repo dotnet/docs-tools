@@ -6,25 +6,28 @@ namespace CleanRepo;
 class Options
 {
     [Option("docfx-directory", HelpText = "Directory that contains the docfx.json file of interest.")]
-    public string DocFxDirectory { get; set; }
+    public string? DocFxDirectory { get; set; }
 
     [Option("snippets-directory", HelpText = "Top-level directory in which to perform snippet cleanup.")]
-    public string SnippetsDirectory { get; set; }
+    public string? SnippetsDirectory { get; set; }
 
     [Option("media-directory", HelpText = "Top-level directory in which to perform image/media cleanup.")]
-    public string MediaDirectory { get; set; }
+    public string? MediaDirectory { get; set; }
 
     [Option("includes-directory", HelpText = "Top-level directory in which to perform include-file cleanup.")]
-    public string IncludesDirectory { get; set; }
+    public string? IncludesDirectory { get; set; }
 
     [Option("articles-directory", HelpText = "Top-level directory in which to perform article cleanup (i.e. find orphans or fix links).")]
-    public string ArticlesDirectory { get; set; }
+    public string? ArticlesDirectory { get; set; }
 
     [Option("url-base-path", Required = false, HelpText = "The URL base path for the docset, e.g. '/windows/uwp' or '/dotnet'.")]
-    public string UrlBasePath { get; set; }
+    public string? UrlBasePath { get; set; }
 
     [Option("delete", Required = false, HelpText = "True to delete orphaned files.")]
     public bool? Delete { get; set; }
+
+    [Option("xml-source", Default = false, HelpText = "True to search XML files instead of Markdown files.")]
+    public bool XmlSource { get; set; }
 
     [Option("orphaned-articles", HelpText = "Use this option to find orphaned articles.")]
     public bool FindOrphanedArticles { get; set; }
