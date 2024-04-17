@@ -72,6 +72,12 @@ internal class Program
                     org, repo, duration ?? -1, false);
             }
         }
+        catch (InvalidOperationException e) when (e.Message.StartsWith("HTTP error:"))
+        {
+            Console.Error.WriteLine($"!!!ERROR!!! Could not communicate with Quest Azure DevOps server. Did your PAT expire?");
+            Console.Error.WriteLine($"::  -- {e.Message} -- ");
+            Console.Error.WriteLine(e.ToString());
+        }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"::  -- {ex.Message} -- ");

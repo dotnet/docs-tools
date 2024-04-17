@@ -76,10 +76,18 @@ public class QuestGitHubService(
         DateTime historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
         int totalImport = 0;
         int totalSkipped = 0;
+        Console.WriteLine("-----   Starting processing issues.          --------");
         var issueQueryEnumerable = QueryIssuesOrPullRequests<QuestIssue>();
         await ProcessItems(issueQueryEnumerable);
+        Console.WriteLine("-----   Finished processing issues.          --------");
+        // UGH: If this immediately starts the next query, the query
+        // often fails. Let those GitHub servers rest a bit.
+        await Task.Delay(1000);
+
+        Console.WriteLine("-----   Starting processing pull requests.   --------");
         var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
         await ProcessItems(prQueryEnumerable);
+        Console.WriteLine("-----   Finished processing pull requests.   --------");
 
         async Task ProcessItems(IAsyncEnumerable<QuestIssueOrPullRequest> items)
         {
