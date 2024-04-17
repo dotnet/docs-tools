@@ -76,10 +76,15 @@ public class QuestGitHubService(
         DateTime historyThreshold = (duration == -1) ? DateTime.MinValue : DateTime.Now.AddDays(-duration);
         int totalImport = 0;
         int totalSkipped = 0;
-        var issueQueryEnumerable = QueryIssuesOrPullRequests<QuestIssue>();
-        await ProcessItems(issueQueryEnumerable);
+
+        Console.WriteLine("-----   Starting processing pull requests.   --------");
         var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
         await ProcessItems(prQueryEnumerable);
+        Console.WriteLine("-----   Finished processing pull requests.   --------");
+        Console.WriteLine("-----   Starting processing issues.          --------");
+        var issueQueryEnumerable = QueryIssuesOrPullRequests<QuestIssue>();
+        await ProcessItems(issueQueryEnumerable);
+        Console.WriteLine("-----   Finished processing issues.          --------");
 
         async Task ProcessItems(IAsyncEnumerable<QuestIssueOrPullRequest> items)
         {
