@@ -3,21 +3,9 @@ using NuGet.Packaging;
 
 namespace PackageIndexer;
 
-public sealed class PackageIndexer
+public sealed class PackageIndexer(NuGetStore store)
 {
-    private readonly NuGetStore _store;
-    //private readonly IReadOnlyList<FrameworkLocator> _frameworkLocators;
-
-    public PackageIndexer(NuGetStore store)
-    {
-        _store = store;
-    }
-
-    //public PackageIndexer(NuGetStore store, IEnumerable<FrameworkLocator> frameworkLocators)
-    //{
-    //    _store = store;
-    //    _frameworkLocators = frameworkLocators.ToArray();
-    //}
+    private readonly NuGetStore _store = store;
 
     public async Task<PackageEntry> Index(string id, string version)
     {
@@ -25,37 +13,20 @@ public sealed class PackageIndexer
         var frameworkEntries = new List<FrameworkEntry>();
         try
         {
-            using (var root = await _store.GetPackageAsync(id, version))
+            using (PackageArchiveReader root = await _store.GetPackageAsync(id, version))
             {
                 var targetNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                foreach (var item in root.GetCatalogReferenceGroups())
+                foreach (FrameworkSpecificGroup item in root.GetCatalogReferenceGroups())
                     targetNames.Add(item.TargetFramework.GetShortFolderName());
 
-                var targets = targetNames.Select(NuGetFramework.Parse).ToArray();
+                NuGetFramework[] targets = targetNames.Select(NuGetFramework.Parse).ToArray();
 
-                if (!targets.Any())
+                if (targets.Length == 0)
                     return null;
 
-                foreach (var target in targets)
+                foreach (NuGetFramework target in targets)
                 {
-                    //var referenceGroup = root.GetCatalogReferenceGroup(target);
-
-                    //Debug.Assert(referenceGroup is not null);
-
-                    //await GetDependenciesAsync(dependencies, root, target);
-
-                    // Add framework
-
-                    //var platformPaths = GetPlatformSet(target);
-
-                    //if (platformPaths is null)
-                    //{
-                    //    if (!IsKnownUnsupportedPlatform(target))
-                    //        Console.WriteLine($"error: can't resolve platform references for {target}");
-                    //    continue;
-                    //}
-
                     frameworkEntries.Add(FrameworkEntry.Create(target.GetShortFolderName()));
                 }
             }
@@ -64,54 +35,8 @@ public sealed class PackageIndexer
         }
         finally
         {
-            foreach (var package in dependencies.Values)
+            foreach (PackageArchiveReader package in dependencies.Values)
                 package.Dispose();
         }
     }
-
-    private async Task GetDependenciesAsync(Dictionary<string, PackageArchiveReader> packages, PackageArchiveReader root, NuGetFramework target)
-    {
-        var dependencies = root.GetPackageDependencies();
-        var dependencyGroup = NuGetFrameworkUtility.GetNearest(dependencies, target);
-        if (dependencyGroup is not null)
-        {
-            foreach (var d in dependencyGroup.Packages)
-            {
-                if (packages.TryGetValue(d.Id, out var existingPackage))
-                {
-                    if (d.VersionRange.MinVersion > existingPackage.NuspecReader.GetVersion())
-                    {
-                        existingPackage.Dispose();
-                        packages.Remove(d.Id);
-                        existingPackage = null;
-                    }
-                }
-
-                if (existingPackage is not null)
-                    continue;
-
-                var dependency = await _store.ResolvePackageAsync(d.Id, d.VersionRange);
-                if (dependency is null)
-                {
-                    Console.WriteLine($"error: can't resolve dependency {d.Id} {d.VersionRange}");
-                    continue;
-                }
-
-                packages.Add(d.Id, dependency);
-                await GetDependenciesAsync(packages, dependency, target);
-            }
-        }
-    }
-
-    //private string[] GetPlatformSet(NuGetFramework framework)
-    //{
-    //    foreach (var l in _frameworkLocators)
-    //    {
-    //        var paths = l.Locate(framework);
-    //        if (paths is not null)
-    //            return paths;
-    //    }
-
-    //    return null;
-    //}
 }

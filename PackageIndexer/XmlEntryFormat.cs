@@ -1,5 +1,4 @@
-using System.Runtime.Versioning;
-using System.Xml.Linq;
+﻿using System.Xml.Linq;
 
 namespace PackageIndexer;
 
@@ -18,13 +17,12 @@ internal static class XmlEntryFormat
     {
         var document = new XDocument();
         var root = new XElement("package",
-            //new XAttribute("fingerprint", packageEntry.Fingerprint),
             new XAttribute("id", packageEntry.Name),
             new XAttribute("version", packageEntry.Version)
         );
         document.Add(root);
 
-        foreach (var fx in packageEntry.FrameworkEntries)
+        foreach (FrameworkEntry fx in packageEntry.FrameworkEntries)
         {
             root.Add(new XElement("framework", fx.FrameworkName));
         }
@@ -44,7 +42,7 @@ internal static class XmlEntryFormat
         IEnumerable<XElement> frameworkElements = packageElement.Elements("framework");
 
         IList<FrameworkEntry> frameworks = [];
-        foreach (var frameworkElement in frameworkElements) 
+        foreach (XElement frameworkElement in frameworkElements) 
         {
             frameworks.Add(FrameworkEntry.Create(frameworkElement.Value));
         }

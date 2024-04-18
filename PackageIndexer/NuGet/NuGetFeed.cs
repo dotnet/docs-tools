@@ -16,55 +16,52 @@ using NuGet.Versioning;
 
 namespace PackageIndexer;
 
-public sealed class NuGetFeed
+public sealed class NuGetFeed(string feedUrl)
 {
-    public NuGetFeed(string feedUrl)
-    {
-        FeedUrl = feedUrl;
-    }
-
-    public string FeedUrl { get; }
+    public string FeedUrl { get; } = feedUrl;
 
     public async Task<IReadOnlyList<PackageIdentity>> GetAllPackagesAsync(DateTimeOffset? since = null)
     {
-        if (TryGetAzureDevOpsFeed(FeedUrl, out var organization, out var project, out var feed))
+        if (TryGetAzureDevOpsFeed(FeedUrl, out string organization, out string project, out string feed))
             return await GetAllPackagesFromAzureDevOpsFeedAsync(organization, project, feed);
 
-        var sourceRepository = Repository.Factory.GetCoreV3(FeedUrl);
-        var serviceIndex = await sourceRepository.GetResourceAsync<ServiceIndexResourceV3>();
-        var catalogIndexUrl = serviceIndex.GetServiceEntryUri("Catalog/3.0.0")?.ToString();
+        SourceRepository sourceRepository = Repository.Factory.GetCoreV3(FeedUrl);
+        ServiceIndexResourceV3 serviceIndex = await sourceRepository.GetResourceAsync<ServiceIndexResourceV3>();
+        string catalogIndexUrl = serviceIndex.GetServiceEntryUri("Catalog/3.0.0")?.ToString();
 
         if (catalogIndexUrl == null)
             throw new InvalidOperationException("This feed doesn't support enumeration");
 
-        var handler = new HttpClientHandler();
-        handler.SslProtocols = SslProtocols.Tls12;
+        var handler = new HttpClientHandler
+        {
+            SslProtocols = SslProtocols.Tls12
+        };
 
         using var httpClient = new HttpClient(handler);
 
-        var indexString = await httpClient.GetStringAsync(catalogIndexUrl);
-        var index = JsonConvert.DeserializeObject<CatalogIndex>(indexString);
+        string indexString = await httpClient.GetStringAsync(catalogIndexUrl);
+        CatalogIndex index = JsonConvert.DeserializeObject<CatalogIndex>(indexString);
 
         // Find all pages in the catalog index.
         var pageItems = new ConcurrentBag<CatalogPage>(index.Items);
         var catalogLeaves = new ConcurrentBag<CatalogLeaf>();
 
-        var fetchLeavesTasks = RunInParallel(async () =>
+        List<Task> fetchLeavesTasks = RunInParallel(async () =>
         {
-            while (pageItems.TryTake(out var pageItem))
+            while (pageItems.TryTake(out CatalogPage pageItem))
             {
                 if (since != null && pageItem.CommitTimeStamp < since.Value)
                     continue;
 
-                var retryCount = 3;
+                int retryCount = 3;
             Retry:
                 try
                 {
                     // Download the catalog page and deserialize it.
-                    var pageString = await httpClient.GetStringAsync(pageItem.Url);
-                    var page = JsonConvert.DeserializeObject<CatalogPage>(pageString);
+                    string pageString = await httpClient.GetStringAsync(pageItem.Url);
+                    CatalogPage page = JsonConvert.DeserializeObject<CatalogPage>(pageString);
 
-                    foreach (var pageLeafItem in page.Items)
+                    foreach (CatalogLeaf pageLeafItem in page.Items)
                     {
                         if (pageLeafItem.Type == "nuget:PackageDetails")
                             catalogLeaves.Add(pageLeafItem);
@@ -90,38 +87,42 @@ public sealed class NuGetFeed
 
         static List<Task> RunInParallel(Func<Task> work)
         {
-            var maxDegreeOfParallelism = Environment.ProcessorCount * 2;
+            int maxDegreeOfParallelism = Environment.ProcessorCount * 2;
             return Enumerable.Range(0, maxDegreeOfParallelism)
                 .Select(i => work())
                 .ToList();
         }
     }
 
-    private static async Task<IReadOnlyList<PackageIdentity>> GetAllPackagesFromAzureDevOpsFeedAsync(string organization, string project, string feed)
+    private static async Task<IReadOnlyList<PackageIdentity>> GetAllPackagesFromAzureDevOpsFeedAsync(
+        string organization,
+        string project,
+        string feed
+        )
     {
         var result = new List<PackageIdentity>();
 
         var client = new HttpClient();
 
-        var skip = 0;
+        int skip = 0;
 
         while (true)
         {
             var url = new Uri($"https://feeds.dev.azure.com/{organization}/{project}/_apis/packaging/Feeds/{feed}/packages?api-version=7.1&$skip={skip}", UriKind.Absolute);
-            var data = await client.GetStreamAsync(url);
+            Stream data = await client.GetStreamAsync(url);
             var document = JsonNode.Parse(data);
 
-            var count = document["count"].GetValue<int>();
+            int count = document["count"].GetValue<int>();
             if (count == 0)
                 break;
 
-            foreach (var element in document["value"].AsArray())
+            foreach (JsonNode element in document["value"].AsArray())
             {
-                var name = element["name"].GetValue<string>();
+                string name = element["name"].GetValue<string>();
 
-                foreach (var versionElement in element["versions"].AsArray())
+                foreach (JsonNode versionElement in element["versions"].AsArray())
                 {
-                    var versionText = versionElement["version"].GetValue<string>();
+                    string versionText = versionElement["version"].GetValue<string>();
                     var version = NuGetVersion.Parse(versionText);
                     var identity = new PackageIdentity(name, version);
                     result.Add(identity);
@@ -136,27 +137,27 @@ public sealed class NuGetFeed
 
     public async Task<IReadOnlyList<NuGetVersion>> GetAllVersionsAsync(string packageId, bool includeUnlisted = false)
     {
-        var cache = NullSourceCacheContext.Instance;
-        var logger = NullLogger.Instance;
-        var cancellationToken = CancellationToken.None;
+        SourceCacheContext cache = NullSourceCacheContext.Instance;
+        ILogger logger = NullLogger.Instance;
+        CancellationToken cancellationToken = CancellationToken.None;
 
-        var repository = Repository.Factory.GetCoreV3(FeedUrl);
-        var resource = await repository.GetResourceAsync<MetadataResource>(cancellationToken);
-        var versions = await resource.GetVersions(packageId, includePrerelease: true, includeUnlisted: includeUnlisted, cache, logger, cancellationToken);
+        SourceRepository repository = Repository.Factory.GetCoreV3(FeedUrl);
+        MetadataResource resource = await repository.GetResourceAsync<MetadataResource>(cancellationToken);
+        IEnumerable<NuGetVersion> versions = await resource.GetVersions(packageId, includePrerelease: true, includeUnlisted: includeUnlisted, cache, logger, cancellationToken);
 
         return versions.ToArray();
     }
 
     public async Task<PackageIdentity> ResolvePackageAsync(string packageId, VersionRange range)
     {
-        var cache = NullSourceCacheContext.Instance;
-        var logger = NullLogger.Instance;
-        var cancellationToken = CancellationToken.None;
+        SourceCacheContext cache = NullSourceCacheContext.Instance;
+        ILogger logger = NullLogger.Instance;
+        CancellationToken cancellationToken = CancellationToken.None;
 
-        var repository = Repository.Factory.GetCoreV3(FeedUrl);
-        var resource = await repository.GetResourceAsync<MetadataResource>(cancellationToken);
-        var versions = await resource.GetVersions(packageId, includePrerelease: true, includeUnlisted: true, cache, logger, cancellationToken);
-        var bestMatch = versions.FindBestMatch(range, x => x);
+        SourceRepository repository = Repository.Factory.GetCoreV3(FeedUrl);
+        MetadataResource resource = await repository.GetResourceAsync<MetadataResource>(cancellationToken);
+        IEnumerable<NuGetVersion> versions = await resource.GetVersions(packageId, includePrerelease: true, includeUnlisted: true, cache, logger, cancellationToken);
+        NuGetVersion bestMatch = versions.FindBestMatch(range, x => x);
 
         if (bestMatch is null)
             return null;
@@ -166,23 +167,23 @@ public sealed class NuGetFeed
 
     public async Task<PackageArchiveReader> GetPackageAsync(PackageIdentity identity)
     {
-        var url = await GetPackageUrlAsync(identity);
+        string url = await GetPackageUrlAsync(identity);
 
         using var httpClient = new HttpClient();
-        var nupkgStream = await httpClient.GetStreamAsync(url);
+        Stream nupkgStream = await httpClient.GetStreamAsync(url);
         return new PackageArchiveReader(nupkgStream);
     }
 
     public async Task<bool> TryCopyPackageStreamAsync(PackageIdentity identity, Stream destination)
     {
-        var url = await GetPackageUrlAsync(identity);
+        string url = await GetPackageUrlAsync(identity);
 
-        var retryCount = 3;
+        int retryCount = 3;
     Retry:
         try
         {
             using var httpClient = new HttpClient();
-            var nupkgStream = await httpClient.GetStreamAsync(url);
+            Stream nupkgStream = await httpClient.GetStreamAsync(url);
             await nupkgStream.CopyToAsync(destination);
             return true;
         }
@@ -205,12 +206,12 @@ public sealed class NuGetFeed
 
     private async Task<string> GetPackageUrlAsync(PackageIdentity identity)
     {
-        var sourceRepository = Repository.Factory.GetCoreV3(FeedUrl);
-        var serviceIndex = await sourceRepository.GetResourceAsync<ServiceIndexResourceV3>();
-        var packageBaseAddress = serviceIndex.GetServiceEntryUri("PackageBaseAddress/3.0.0")?.ToString();
+        SourceRepository sourceRepository = Repository.Factory.GetCoreV3(FeedUrl);
+        ServiceIndexResourceV3 serviceIndex = await sourceRepository.GetResourceAsync<ServiceIndexResourceV3>();
+        string packageBaseAddress = serviceIndex.GetServiceEntryUri("PackageBaseAddress/3.0.0")?.ToString();
 
-        var id = identity.Id.ToLowerInvariant();
-        var version = identity.Version.ToNormalizedString().ToLowerInvariant();
+        string id = identity.Id.ToLowerInvariant();
+        string version = identity.Version.ToNormalizedString().ToLowerInvariant();
         return $"{packageBaseAddress}{id}/{version}/{id}.{version}.nupkg";
     }
 
@@ -220,13 +221,13 @@ public sealed class NuGetFeed
             throw new NotSupportedException("We can only retrieve owner information for nuget.org");
 
         var httpClient = new HttpClient();
-        var url = "https://nugetprodusncazuresearch.blob.core.windows.net/v3-azuresearch-017/owners/owners.v2.json";
+        string url = "https://nugetprodusncazuresearch.blob.core.windows.net/v3-azuresearch-017/owners/owners.v2.json";
         return httpClient.GetFromJsonAsync<Dictionary<string, string[]>>(url);
     }
 
     private static bool TryGetAzureDevOpsFeed(string url, out string organization, out string project, out string feed)
     {
-        var match = Regex.Match(url, """
+        Match match = Regex.Match(url, """
             https\://pkgs\.dev\.azure\.com/(?<Organization>[^/]+)/(?<Project>[^/]+)/_packaging/(?<Feed>[^/]+)/nuget/v3/index\.json
             """);
 

@@ -18,17 +18,17 @@ public sealed class PackageFilterExpression
 
     public static PackageFilterExpression Parse(string text)
     {
-        var firstAsterisk = text.IndexOf('*');
-        var lastAsterisk = text.LastIndexOf('*');
+        int firstAsterisk = text.IndexOf('*');
+        int lastAsterisk = text.LastIndexOf('*');
         if (firstAsterisk != lastAsterisk)
             throw new FormatException();
 
-        var asterisk = firstAsterisk;
+        int asterisk = firstAsterisk;
         if (asterisk > 0 && asterisk < text.Length - 1)
             throw new FormatException();
 
-        var isPrefix = asterisk == text.Length - 1;
-        var isSuffix = asterisk == 0;
+        bool isPrefix = asterisk == text.Length - 1;
+        bool isSuffix = asterisk == 0;
 
         if (isPrefix)
         {
@@ -62,16 +62,10 @@ public sealed class PackageFilterExpression
     }
 }
 
-public sealed class PackageFilter
+public sealed class PackageFilter(IEnumerable<PackageFilterExpression> includes, IEnumerable<PackageFilterExpression> excludes)
 {
-    public PackageFilter(IEnumerable<PackageFilterExpression> includes, IEnumerable<PackageFilterExpression> excludes)
-    {
-        Includes = includes.ToImmutableArray();
-        Excludes = excludes.ToImmutableArray();
-    }
-
-    public ImmutableArray<PackageFilterExpression> Includes { get; }
-    public ImmutableArray<PackageFilterExpression> Excludes { get; }
+    public ImmutableArray<PackageFilterExpression> Includes { get; } = includes.ToImmutableArray();
+    public ImmutableArray<PackageFilterExpression> Excludes { get; } = excludes.ToImmutableArray();
 
     public bool IsMatch(string packageId)
     {
@@ -80,15 +74,15 @@ public sealed class PackageFilter
     }
 
     public static PackageFilter Default { get; } = new(
-        includes: new[]
-        {
+        includes:
+        [
             PackageFilterExpression.Parse("Microsoft.Bcl.*"),
             PackageFilterExpression.Parse("Microsoft.Extensions.*"),
             PackageFilterExpression.Parse("Microsoft.Win32.*"),
             PackageFilterExpression.Parse("System.*"),
-        },
-        excludes: new[]
-        {
+        ],
+        excludes:
+        [
             PackageFilterExpression.Parse("*.cs"),
             PackageFilterExpression.Parse("*.de"),
             PackageFilterExpression.Parse("*.es"),
@@ -102,6 +96,6 @@ public sealed class PackageFilter
             PackageFilterExpression.Parse("*.tr"),
             PackageFilterExpression.Parse("*.zh-Hans"),
             PackageFilterExpression.Parse("*.zh-Hant"),
-        }
+        ]
     );
 }

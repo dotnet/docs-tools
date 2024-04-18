@@ -22,7 +22,7 @@ public static class DotnetPackageIndex
         var root = new XElement("packages");
         packageDocument.Add(root);
 
-        foreach (var item in packages)
+        foreach (PackageIdentity item in packages)
         {
             var e = new XElement("package",
                 new XAttribute("id", item.Id),
@@ -36,20 +36,23 @@ public static class DotnetPackageIndex
         packageDocument.Save(packageListPath);
     }
 
-    private static async Task<IReadOnlyList<PackageIdentity>> GetPackagesAsync(bool usePreviewVersions, params string[] feedUrls)
+    private static async Task<IReadOnlyList<PackageIdentity>> GetPackagesAsync(
+        bool usePreviewVersions,
+        params string[] feedUrls
+        )
     {
         var packages = new List<PackageIdentity>();
 
-        foreach (var feedUrl in feedUrls)
+        foreach (string feedUrl in feedUrls)
         {
             var feed = new NuGetFeed(feedUrl);
-            var feedPackages = await GetPackagesAsync(feed);
+            IReadOnlyList<PackageIdentity> feedPackages = await GetPackagesAsync(feed);
             packages.AddRange(feedPackages);
         }
 
         Console.WriteLine($"Found {packages.Count:N0} package versions across {feedUrls.Length} feeds.");
 
-        var latestVersions = GetLatestVersions(packages, usePreviewVersions);
+        IReadOnlyList<PackageIdentity> latestVersions = GetLatestVersions(packages, usePreviewVersions);
 
         Console.WriteLine($"Found {latestVersions.Count:N0} latest package versions.");
 
@@ -90,9 +93,9 @@ public static class DotnetPackageIndex
 
         await Parallel.ForEachAsync(packageIds, async (packageId, _) =>
         {
-            var versions = await feed.GetAllVersionsAsync(packageId);
+            IReadOnlyList<NuGetVersion> versions = await feed.GetAllVersionsAsync(packageId);
 
-            foreach (var version in versions)
+            foreach (NuGetVersion version in versions)
             {
                 var identity = new PackageIdentity(packageId, version);
                 identities.Add(identity);
@@ -108,7 +111,7 @@ public static class DotnetPackageIndex
     {
         Console.WriteLine("Enumerating feed...");
 
-        var identities = await feed.GetAllPackagesAsync();
+        IReadOnlyList<PackageIdentity> identities = await feed.GetAllPackagesAsync();
 
         identities = identities.Where(i => PackageFilter.Default.IsMatch(i.Id)).ToArray();
 
@@ -123,17 +126,17 @@ public static class DotnetPackageIndex
 
         IEnumerable<IGrouping<string, PackageIdentity>> groups = identities.GroupBy(i => i.Id);
 
-        foreach (var group in groups.OrderBy(g => g.Key))
+        foreach (IGrouping<string, PackageIdentity> group in groups.OrderBy(g => g.Key))
         {
-            var packageId = group.Key;
-            var versions = group.OrderByDescending(p => p.Version, VersionComparer.VersionReleaseMetadata);
+            string packageId = group.Key;
+            IOrderedEnumerable<PackageIdentity> versions = group.OrderByDescending(p => p.Version, VersionComparer.VersionReleaseMetadata);
 
-            var latestStable = versions.FirstOrDefault(i => !i.Version.IsPrerelease);
-            var latestPrerelease = versions.FirstOrDefault(i => i.Version.IsPrerelease);
+            PackageIdentity latestStable = versions.FirstOrDefault(i => !i.Version.IsPrerelease);
+            PackageIdentity latestPrerelease = versions.FirstOrDefault(i => i.Version.IsPrerelease);
 
             if (latestStable != default && latestPrerelease != default)
             {
-                var stableIsNewer = VersionComparer.VersionReleaseMetadata.Compare(latestPrerelease.Version, latestStable.Version) <= 0;
+                bool stableIsNewer = VersionComparer.VersionReleaseMetadata.Compare(latestPrerelease.Version, latestStable.Version) <= 0;
                 if (stableIsNewer)
                     latestPrerelease = default;
             }
@@ -153,11 +156,11 @@ public static class DotnetPackageIndex
 
     private static bool IsOwnedByDotNet(Dictionary<string, string[]> ownerInformation, string id)
     {
-        if (ownerInformation.TryGetValue(id, out var owners))
+        if (ownerInformation.TryGetValue(id, out string[] owners))
         {
-            foreach (var owner in owners)
+            foreach (string owner in owners)
             {
-                foreach (var platformOwner in DotnetPlatformOwners)
+                foreach (string platformOwner in DotnetPlatformOwners)
                 {
                     if (string.Equals(owner, platformOwner, StringComparison.OrdinalIgnoreCase))
                         return true;

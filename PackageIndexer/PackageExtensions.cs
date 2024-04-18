@@ -1,4 +1,4 @@
-using NuGet.Frameworks;
+﻿using NuGet.Frameworks;
 using NuGet.Packaging;
 
 namespace PackageIndexer;
@@ -13,7 +13,7 @@ internal static class PackageExtensions
 
         var tfms = new HashSet<string>();
 
-        foreach (var group in root.GetItems("ref").Concat(root.GetItems("lib")))
+        foreach (FrameworkSpecificGroup group in root.GetItems("ref").Concat(root.GetItems("lib")))
         {
             if (tfms.Add(group.TargetFramework.GetShortFolderName()))
                 yield return group;
@@ -22,8 +22,8 @@ internal static class PackageExtensions
 
     public static FrameworkSpecificGroup GetCatalogReferenceGroup(this PackageArchiveReader root, NuGetFramework current)
     {
-        var referenceItems = root.GetCatalogReferenceGroups();
-        var referenceGroup = NuGetFrameworkUtility.GetNearest(referenceItems, current);
+        IEnumerable<FrameworkSpecificGroup> referenceItems = root.GetCatalogReferenceGroups();
+        FrameworkSpecificGroup referenceGroup = NuGetFrameworkUtility.GetNearest(referenceItems, current);
         return referenceGroup;
     }
 }

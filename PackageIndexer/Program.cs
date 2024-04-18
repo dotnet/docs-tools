@@ -16,7 +16,7 @@ internal static class Program
 
         if ((args.Length == 0) || (args.Length > 2))
         {
-            var exeName = Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location);
+            string exeName = Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location);
             Console.Error.Write("error: incorrect number of arguments");
             Console.Error.Write($"usage: {exeName} <download-directory> [preview]");
             return -1;
@@ -33,7 +33,7 @@ internal static class Program
                 usePreviewVersions = true;
         }
 
-        var success = true;
+        bool success = true;
 
         try
         {
@@ -45,40 +45,20 @@ internal static class Program
             success = false;
         }
 
-        //try
-        //{
-        //    await UploadSummaryAsync(success);
-        //}
-        //catch (Exception ex)
-        //{
-        //    Console.WriteLine(ex);
-        //    success = false;
-        //}
-
-        //if (success)
-        //    await PostToGenCatalogWebHook();
-
         return success ? 0 : -1;
     }
 
     private static async Task RunAsync(string rootPath, bool usePreviewVersions)
     {
-        //string packsPath = Path.Combine(rootPath, "packs");
         string packagesPath = Path.Combine(rootPath, "packages");
         string packageListPath = Path.Combine(packagesPath, "packages.xml");
         string indexPath = Path.Combine(rootPath, "index");
-        //string indexFrameworksPath = Path.Combine(indexPath, "frameworks");
         string indexPackagesPath = Path.Combine(indexPath, "packages");
-        //string frameworksPath = Path.Combine(rootPath, "frameworks");
         string csvPath = Path.Combine(rootPath, "csvFiles");
 
         Stopwatch stopwatch = Stopwatch.StartNew();
 
-        //await DownloadArchivedPlatformsAsync(frameworksPath);
-        // TODO - what does this accomplish? Do I need it?
-        //await DownloadPackagedPlatformsAsync(frameworksPath, packsPath);
         await DownloadDotnetPackageListAsync(packageListPath, usePreviewVersions);
-        //await GeneratePlatformIndexAsync(frameworksPath, indexFrameworksPath);
         await GeneratePackageIndexAsync(packageListPath, packagesPath, indexPackagesPath); //, frameworksPath);
 
         GenerateCSVFiles(indexPackagesPath, csvPath);
@@ -139,7 +119,7 @@ internal static class Program
             Console.WriteLine($"Creating CSV entries for package {packageEntry.Name}.");
 
             // Add to each applicable CSV file.
-            foreach (var tfm in packageEntry.FrameworkEntries)
+            foreach (FrameworkEntry tfm in packageEntry.FrameworkEntries)
             {
                 switch (tfm.FrameworkName)
                 {
@@ -249,7 +229,7 @@ internal static class Program
         // Create the directory.
         Directory.CreateDirectory(csvPath);
 
-        foreach (var tfm in csvDictionary)
+        foreach (KeyValuePair<string, IList<CsvEntry>> tfm in csvDictionary)
         {
             string filePath = Path.Combine(csvPath, string.Concat(tfm.Key, ".csv"));
 
@@ -271,51 +251,11 @@ internal static class Program
         }
     }
 
-    //private static async Task DownloadPackagedPlatformsAsync(string frameworksPath, string packsPath)
-    //{
-    //    await FrameworkDownloader.DownloadAsync(frameworksPath, packsPath);
-    //}
-
     private static async Task DownloadDotnetPackageListAsync(string packageListPath, bool usePreviewVersions)
     {
         if (!File.Exists(packageListPath))
             await DotnetPackageIndex.CreateAsync(packageListPath, usePreviewVersions);
     }
-
-    //private static Task GeneratePlatformIndexAsync(string frameworksPath, string indexFrameworksPath)
-    //{
-    //    var frameworkResolvers = new FrameworkProvider[]
-    //    {
-    //        new ArchivedFrameworkProvider(frameworksPath),
-    //        new PackBasedFrameworkProvider(frameworksPath)
-    //    };
-
-    //    var frameworks = frameworkResolvers.SelectMany(r => r.Resolve())
-    //        .OrderBy(t => t.FrameworkName);
-    //    var reindex = false;
-
-    //    Directory.CreateDirectory(indexFrameworksPath);
-
-    //    foreach (var (frameworkName, paths) in frameworks)
-    //    {
-    //        string path = Path.Join(indexFrameworksPath, $"{frameworkName}.xml");
-    //        bool alreadyIndexed = !reindex && File.Exists(path);
-
-    //        if (alreadyIndexed)
-    //        {
-    //            Console.WriteLine($"{frameworkName} already indexed.");
-    //        }
-    //        else
-    //        {
-    //            Console.WriteLine($"Indexing {frameworkName}...");
-    //            FrameworkEntry frameworkEntry = FrameworkIndexer.Index(frameworkName, paths);
-    //            using var stream = File.Create(path);
-    //            frameworkEntry.Write(stream);
-    //        }
-    //    }
-
-    //    return Task.CompletedTask;
-    //}
 
     private static async Task GeneratePackageIndexAsync(
         string packageListPath, 
@@ -323,20 +263,13 @@ internal static class Program
         string indexPackagesPath
         )
     {
-        //var frameworkLocators = new FrameworkLocator[]
-        //{
-        //    new ArchivedFrameworkLocator(frameworksPath),
-        //    new PackBasedFrameworkLocator(frameworksPath),
-        //    new PclFrameworkLocator(frameworksPath)
-        //};
-
         Directory.CreateDirectory(packagesPath);
         Directory.CreateDirectory(indexPackagesPath);
 
         var document = XDocument.Load(packageListPath);
         Directory.CreateDirectory(packagesPath);
 
-        var packages = document.Root!.Elements("package")
+        (string Id, string Version)[] packages = document.Root!.Elements("package")
             .Select(e => (
                 Id: e.Attribute("id")!.Value,
                 Version: e.Attribute("version")!.Value))
@@ -351,7 +284,7 @@ internal static class Program
         bool retryDisabled = false;
         bool retryFailed = false;
 
-        foreach (var (id, version) in packages)
+        foreach ((string id, string version) in packages)
         {
             string path = Path.Join(indexPackagesPath, $"{id}-{version}.xml");
             string disabledPath = Path.Join(indexPackagesPath, $"{id}-all.disabled");
@@ -374,7 +307,7 @@ internal static class Program
                 Console.WriteLine($"Indexing {id} {version}...");
                 try
                 {
-                    var packageEntry = await packageIndexer.Index(id, version);
+                    PackageEntry packageEntry = await packageIndexer.Index(id, version);
                     if (packageEntry is null)
                     {
                         Console.WriteLine($"Not a library package.");
@@ -383,7 +316,7 @@ internal static class Program
                     }
                     else
                     {
-                        using (var stream = File.Create(path))
+                        using (FileStream stream = File.Create(path))
                             packageEntry.Write(stream);
 
                         File.Delete(disabledPath);
