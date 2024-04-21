@@ -1,17 +1,33 @@
-﻿using CsvHelper;
-using CsvHelper.Configuration;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
 using System.Xml.Linq;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace PackageIndexer;
 
 internal static class Program
 {
+    static readonly Dictionary<string, string> s_tfmToOpsMoniker = new()
+        {
+            { "net462", "netframework-4.6.2" },
+            { "net47", "netframework-4.7" },
+            { "net471", "netframework-4.7.1" },
+            { "net472", "netframework-4.7.2" },
+            { "net48", "netframework-4.8" },
+            { "net481", "netframework-4.8.1" },
+            { "net6.0", "net-6.0" },
+            { "net7.0", "net-7.0" },
+            { "net8.0", "net-8.0" },
+            { "net9.0", "net-9.0" },
+            { "netstandard2.0", "netstandard-2.0" },
+            { "netstandard2.1", "netstandard-2.1" }
+        };
+
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index3"];
+        args = [@"c:\users\gewarren\desktop\Package Index2"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -81,33 +97,13 @@ internal static class Program
         //       Example: pac01,[tfm=net9.0;includeXml=false]Microsoft.Extensions.Caching.Abstractions,9.0.0-preview.2.24128.5
         // Generate a CSV file from each dictionary
 
-        IList<string> tfms =
-            [ "net462", "net47", "net471", "net472", "net48", "net481",
-              "net6.0", "net7.0", "net8.0", "net9.0",
-              "netstandard2.0", "netstandard2.1"
-            ];
-
-        // Initialize each entry in the dictionary.
-        Dictionary<string, IList<CsvEntry>> csvDictionary = [];
-        foreach (string tfm in tfms)
+        Dictionary<string, IList<CsvEntry>> csvDictionary = [];        
+        Dictionary<string, int> packageCounter = []; // Used for "pac" number in CSV file.
+        foreach (string moniker in s_tfmToOpsMoniker.Values)
         {
-            csvDictionary.Add(tfm, []);
+            csvDictionary.Add(moniker, []);
+            packageCounter.Add(moniker, 1);
         }
-
-        int index462 = 1;
-        int index47 = 1;
-        int index471 = 1;
-        int index472 = 1;
-        int index48 = 1;
-        int index481 = 1;
-        int index6 = 1;
-        int index7 = 1;
-        int index8 = 1;
-        int index9 = 1;
-        int indexStandard20 = 1;
-        int indexStandard21 = 1;
-
-        string frameworkName;
 
         // Get all XML files (ignores disabled indexes).
         IEnumerable<string> packageIndexFiles = Directory.EnumerateFiles(indexPackagesPath, "*.xml");
@@ -119,108 +115,49 @@ internal static class Program
             Console.WriteLine($"Creating CSV entries for package {packageEntry.Name}.");
 
             // Add to each applicable CSV file.
-            foreach (FrameworkEntry tfm in packageEntry.FrameworkEntries)
+            foreach (FrameworkEntry frameworkEntry in packageEntry.FrameworkEntries)
             {
-                switch (tfm.FrameworkName)
+                string framework = frameworkEntry.FrameworkName;
+                string opsMoniker;
+                switch (framework)
                 {
                     case "net462":
-                        frameworkName = "net462";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index462++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+                        framework = "net47";
                         goto case "net47";
                     case "net47":
-                        frameworkName = "net47";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index47++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+                        framework = "net471";
                         goto case "net471";
                     case "net471":
-                        frameworkName = "net471";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index471++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+                        framework = "net472";
                         goto case "net472";
                     case "net472":
-                        frameworkName = "net472";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index472++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+                        framework = "net48";
                         goto case "net48";
                     case "net48":
-                        frameworkName = "net48";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index48++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+                        framework = "net481";
                         goto case "net481";
                     case "net481":
-                        frameworkName = "net481";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index481++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
-                        break;
                     case "net6.0":
-                        frameworkName = "net6.0";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index6++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
-                        break;
                     case "net7.0":
-                        frameworkName = "net7.0";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index7++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
-                        break;
                     case "net8.0":
-                        frameworkName = "net8.0";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index8++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
-                        break;
                     case "net9.0":
-                        frameworkName = "net9.0";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", index9++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
-                        break;
                     case "netstandard2.0":
-                        frameworkName = "netstandard2.0";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", indexStandard20++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
-                        break;
                     case "netstandard2.1":
-                        frameworkName = "netstandard2.1";
-                        csvDictionary[frameworkName].Add(CsvEntry.Create(
-                            string.Concat("pac", indexStandard21++),
-                            string.Concat($"[tfm={frameworkName};includeXml=false]", packageEntry.Name),
-                            packageEntry.Version
-                            ));
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
                         break;
                     default:
-                        Console.WriteLine($"Ignoring target framework {tfm.FrameworkName}.");
+                        Console.WriteLine($"Ignoring target framework {framework}.");
                         break;
                 }
             }
@@ -231,6 +168,8 @@ internal static class Program
 
         foreach (KeyValuePair<string, IList<CsvEntry>> tfm in csvDictionary)
         {
+            // CSV file names must match the folder name in the "binaries" repo:
+            // e.g. netframework-4.6.2, netstandard-2.0, net-8.0.
             string filePath = Path.Combine(csvPath, string.Concat(tfm.Key, ".csv"));
 
             // Delete the file if it already exists.
@@ -249,6 +188,26 @@ internal static class Program
             using var csv = new CsvWriter(writer, config);
             csv.WriteRecords(tfm.Value);
         }
+
+        static void AddCsvEntryToDict(
+            string opsMoniker,
+            Dictionary<string, IList<CsvEntry>> csvDictionary,
+            Dictionary<string, int> packageCounter,
+            PackageEntry packageEntry,
+            FrameworkEntry tfm
+            )
+        {
+            string squareBrackets = $"[tfm={tfm.FrameworkName};includeXml=false]";
+            if (string.Equals(packageEntry.Name, "System.ServiceModel.Primitives", StringComparison.InvariantCultureIgnoreCase))
+                squareBrackets = $"[tfm={tfm.FrameworkName};includeXml=false;libpath=ref]";
+
+            CsvEntry entry = CsvEntry.Create(
+                string.Concat("pac", packageCounter[opsMoniker]++),
+                string.Concat(squareBrackets, packageEntry.Name),
+                packageEntry.Version
+                );
+            csvDictionary[opsMoniker].Add(entry);
+        }
     }
 
     private static async Task DownloadDotnetPackageListAsync(string packageListPath, bool usePreviewVersions)
@@ -258,8 +217,8 @@ internal static class Program
     }
 
     private static async Task GeneratePackageIndexAsync(
-        string packageListPath, 
-        string packagesPath, 
+        string packageListPath,
+        string packagesPath,
         string indexPackagesPath
         )
     {

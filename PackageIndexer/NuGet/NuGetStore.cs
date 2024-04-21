@@ -75,7 +75,7 @@ public class NuGetStore
 
     public async Task<IReadOnlyList<NuGetVersion>> GetVersionsAsync(string id)
     {
-        if (!_packageVersionCache.TryGetValue(id, out var versions))
+        if (!_packageVersionCache.TryGetValue(id, out IReadOnlyList<NuGetVersion> versions))
         {
             var allVersions = new SortedSet<NuGetVersion>();
 

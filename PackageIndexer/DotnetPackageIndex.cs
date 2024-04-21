@@ -7,7 +7,7 @@ namespace PackageIndexer;
 
 public static class DotnetPackageIndex
 {
-    private static readonly string[] DotnetPlatformOwners = [
+    private static readonly string[] s_dotnetPlatformOwners = [
         "aspnet",
         "dotnetframework"
     ];
@@ -75,15 +75,14 @@ public static class DotnetPackageIndex
         Dictionary<string, string[]> ownerInformation = await feed.GetOwnerMappingAsync();
 
         string[] packageIds = ownerInformation.Keys
-                                         .ToHashSet(StringComparer.OrdinalIgnoreCase)
-                                         .Where(id => IsOwnedByDotNet(ownerInformation, id) &&
-                                                      PackageFilter.Default.IsMatch(id))
-                                         .ToArray();
+            .ToHashSet(StringComparer.OrdinalIgnoreCase)
+            .Where(id => IsOwnedByDotNet(ownerInformation, id) &&
+                         PackageFilter.Default.IsMatch(id))
+            .ToArray();
 
         Console.WriteLine($"Found {packageIds.Length:N0} package IDs owned by .NET.");
 
-        // Filter them further.
-        // TODO: Are these packages already filtered somehow?
+        // TODO: Are these packages already filtered somehow? Yes - see PackageFilter.cs.
         // https://www.nuget.org/packages/Microsoft.NETCore.App.Ref
         // https://www.nuget.org/packages/Microsoft.WindowsDesktop.App.Ref
 
@@ -160,7 +159,7 @@ public static class DotnetPackageIndex
         {
             foreach (string owner in owners)
             {
-                foreach (string platformOwner in DotnetPlatformOwners)
+                foreach (string platformOwner in s_dotnetPlatformOwners)
                 {
                     if (string.Equals(owner, platformOwner, StringComparison.OrdinalIgnoreCase))
                         return true;
