@@ -82,7 +82,7 @@ public static class DotnetPackageIndex
 
         Console.WriteLine($"Found {packageIds.Length:N0} package IDs owned by .NET.");
 
-        // TODO: Are these packages already filtered somehow? Yes - see PackageFilter.cs.
+        // Are these packages already filtered somehow? Yes - see PackageFilter.cs.
         // https://www.nuget.org/packages/Microsoft.NETCore.App.Ref
         // https://www.nuget.org/packages/Microsoft.WindowsDesktop.App.Ref
 
@@ -140,6 +140,7 @@ public static class DotnetPackageIndex
                     latestPrerelease = default;
             }
 
+            // Comment this out for preview-only versions.
             if (latestStable != default)
                 result.Add(latestStable);
 
