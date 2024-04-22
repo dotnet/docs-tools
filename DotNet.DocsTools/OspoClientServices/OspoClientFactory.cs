@@ -20,7 +20,12 @@ public static class OspoClientFactory
     {
         // az login
         var result = await Cli.Wrap("az")
-            .WithArguments("login")
+            .WithArguments(
+            [
+                "login",
+                "--scope",
+                "links"
+            ])
             .WithValidation(CommandResultValidation.None)
             .ExecuteAsync();
 
@@ -32,8 +37,8 @@ public static class OspoClientFactory
 
     private static async ValueTask<string> GetTokenAsync()
     {
-        var resource = CommandLineUtility.GetEnvVariable(
-            "OSMP_API_AUDIENCE", "Unable to get the scoped/resource.", null);
+        //var resource = CommandLineUtility.GetEnvVariable(
+        //    "OSMP_API_AUDIENCE", "Unable to get the scoped/resource.", null);
 
         // az account get-access-token
         //   --query 'accessToken'
@@ -48,7 +53,7 @@ public static class OspoClientFactory
                 "--query", "accessToken",
                 "-o", "tsv",
                 "--scope", "links",
-                "--resource", resource
+                //"--resource", resource
             ])
             .ExecuteBufferedAsync();
 
