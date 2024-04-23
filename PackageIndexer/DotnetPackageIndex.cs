@@ -141,12 +141,13 @@ public static class DotnetPackageIndex
             }
 
             // Comment this out for preview-only versions.
-            if (latestStable != default)
-                result.Add(latestStable);
+            //if (latestStable != default)
+            //    result.Add(latestStable);
 
             if (usePreviewVersions)
             {
-                if (latestPrerelease != default)
+                // Make sure it's a .NET 9 preview version.
+                if ((latestPrerelease != default) && latestPrerelease.Version.Major == 9)
                     result.Add(latestPrerelease);
             }
         }

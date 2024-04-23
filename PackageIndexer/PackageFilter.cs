@@ -85,14 +85,17 @@ public sealed class PackageFilter(IEnumerable<PackageFilterExpression> includes,
         [
             PackageFilterExpression.Parse("System.Runtime.WindowsRuntime"),
             PackageFilterExpression.Parse("System.Runtime.WindowsRuntime.UI.Xaml"),
-            // These packages are documented under separate monikers.
-            // E.g. ASP.NET Core, Azure SDK for .NET, ML.NET.
+            // Documented under Azure SDK for .NET moniker.
             PackageFilterExpression.Parse("System.ClientModel"),
+            // Documented under ASP.NET Core moniker.
             PackageFilterExpression.Parse("System.Threading.RateLimiting"),
             PackageFilterExpression.Parse("Microsoft.Extensions.Features"),
             PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Core"),
             PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Stores"),
+            // Documented under ML.NET moniker.
             PackageFilterExpression.Parse("Microsoft.Extensions.ML"),
+            // Documented under .NET Aspire moniker.
+            PackageFilterExpression.Parse("Microsoft.Extensions.ServiceDiscovery*"),
             // Suffixes.
             PackageFilterExpression.Parse("*.cs"),
             PackageFilterExpression.Parse("*.de"),
