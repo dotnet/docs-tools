@@ -141,8 +141,8 @@ public static class DotnetPackageIndex
             }
 
             // Comment this out for preview-only versions.
-            //if (latestStable != default)
-            //    result.Add(latestStable);
+            if (latestStable != default)
+                result.Add(latestStable);
 
             if (usePreviewVersions)
             {
