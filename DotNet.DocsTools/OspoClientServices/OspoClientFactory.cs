@@ -1,19 +1,18 @@
 ﻿using CliWrap;
 using CliWrap.Buffered;
-using DotNetDocs.Tools.Utility;
 using Microsoft.DotnetOrg.Ospo;
 
 namespace DotNet.DocsTools.OspoClientServices;
 
 public static class OspoClientFactory
 {
-    public static async Task<OspoClient> CreateAsync()
+    public static async Task<OspoClient> CreateAsync(bool useCache)
     {
         await LoginAsync();
 
         var token = await GetTokenAsync();
 
-        return new OspoClient(token, true);
+        return new OspoClient(token, useCache);
     }
 
     private static async ValueTask LoginAsync()
@@ -53,7 +52,7 @@ public static class OspoClientFactory
                 "--query", "accessToken",
                 "-o", "tsv",
                 "--scope", "links",
-                //"--resource", resource
+                //"--resource", "resource"
             ])
             .ExecuteBufferedAsync();
 

@@ -1,6 +1,6 @@
 ﻿using DotNet.DocsTools.OspoClientServices;
 
-var client = await OspoClientFactory.CreateAsync();
+var client = await OspoClientFactory.CreateAsync(true);
 
 var link = await client.GetAsync("IEvangelist");
 

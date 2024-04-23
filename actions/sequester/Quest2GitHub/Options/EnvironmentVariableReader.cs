@@ -5,7 +5,6 @@ internal sealed class EnvironmentVariableReader
     internal static ApiKeys GetApiKeys()
     {
         var githubToken = CoalesceEnvVar(("ImportOptions__ApiKeys__GitHubToken", "GitHubKey"));
-        var ospoKey = CoalesceEnvVar(("ImportOptions__ApiKeys__OSPOKey", "OSPOKey"));
         var questKey = CoalesceEnvVar(("ImportOptions__ApiKeys__QuestKey", "QuestKey"));
         // These keys are used when the app is run as an org enabled action. They are optional. 
         // If missing, the action runs using repo-only rights.
@@ -16,7 +15,6 @@ internal sealed class EnvironmentVariableReader
         return new ApiKeys()
         {
             GitHubToken = githubToken,
-            OSPOKey = ospoKey,
             QuestKey = questKey,
             SequesterPrivateKey = oauthPrivateKey,
             SequesterAppID = appID

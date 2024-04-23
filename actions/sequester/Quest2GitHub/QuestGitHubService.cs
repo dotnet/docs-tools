@@ -1,5 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
+using DotNet.DocsTools.OspoClientServices;
 using Quest2GitHub.AzureDevOpsCommunications;
 
 namespace Quest2GitHub;
@@ -31,7 +32,6 @@ namespace Quest2GitHub;
 /// </remarks>
 public class QuestGitHubService(
     IGitHubClient ghClient,
-    string ospoKey,
     string azdoKey,
     string questOrg,
     string questProject,
@@ -44,7 +44,7 @@ public class QuestGitHubService(
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
     private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
-    private readonly OspoClient _ospoClient = new(ospoKey, bulkImport);
+    private OspoClient? _ospoClient;
     private readonly string _questLinkString = $"https://dev.azure.com/{questOrg}/{questProject}/_workitems/edit/";
 
     private GitHubLabel? _importTriggerLabel;
@@ -61,6 +61,7 @@ public class QuestGitHubService(
     /// <returns></returns>
     public async Task ProcessIssues(string organization, string repository, int duration, bool dryRun)
     {
+        _ospoClient = await OspoClientFactory.CreateAsync(true);
         // Trigger the OSPO bulk import before making any edits to any issue:
         await _ospoClient.GetAllAsync();
 

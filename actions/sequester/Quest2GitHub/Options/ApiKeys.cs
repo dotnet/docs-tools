@@ -25,18 +25,6 @@ public sealed record class ApiKeys
     public required string GitHubToken { get; init; }
 
     /// <summary>
-    /// The Microsoft Open Source Programs Office API key.
-    /// </summary>
-    /// <remarks>
-    /// Assign this from an environment variable with the following key, <c>ImportOptions__ApiKeys__OSPOKey</c>:
-    /// <code>
-    /// env:
-    ///   ImportOptions__ApiKeys__OSPOKey: ${{ secrets.OSPO_API_KEY }}
-    /// </code>
-    /// </remarks>
-    public required string OSPOKey { get; init; }
-
-    /// <summary>
     /// The Azure DevOps API key.
     /// </summary>
     /// <remarks>

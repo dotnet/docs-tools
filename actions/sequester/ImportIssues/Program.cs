@@ -97,7 +97,6 @@ internal class Program
 
         return new QuestGitHubService(
                 gitHubClient,
-                options.ApiKeys.OSPOKey,
                 options.ApiKeys.QuestKey,
                 options.AzureDevOps.Org,
                 options.AzureDevOps.Project,
