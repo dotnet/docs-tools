@@ -1,30 +1,36 @@
 ﻿using CliWrap;
 using CliWrap.Buffered;
-using DotNetDocs.Tools.Utility;
 using Microsoft.DotnetOrg.Ospo;
 
 namespace DotNet.DocsTools.OspoClientServices;
 
 public static class OspoClientFactory
 {
-    public static async Task<OspoClient> CreateAsync()
+    public static async Task<OspoClient?> CreateAsync(string? clientID, string? tenantID, string? resourceAudience, bool useCache)
     {
-        await LoginAsync();
+        if (string.IsNullOrEmpty(clientID) ||
+            string.IsNullOrEmpty(tenantID) ||
+            string.IsNullOrEmpty(resourceAudience))
+        {
+            return null;
+        }
+        await LoginAsync(clientID, tenantID);
 
-        var token = await GetTokenAsync();
+        var token = await GetTokenAsync(resourceAudience);
 
-        return new OspoClient(token, true);
+        return new OspoClient(token, useCache);
     }
 
-    private static async ValueTask LoginAsync()
+    private static async ValueTask LoginAsync(string clientID, string tenantID)
     {
         // az login
         var result = await Cli.Wrap("az")
             .WithArguments(
             [
                 "login",
-                "--scope",
-                "links"
+                "--clientID", clientID,
+                "--tenantID", tenantID,
+                "--scope", "links"
             ])
             .WithValidation(CommandResultValidation.None)
             .ExecuteAsync();
@@ -35,10 +41,8 @@ public static class OspoClientFactory
         }
     }
 
-    private static async ValueTask<string> GetTokenAsync()
+    private static async ValueTask<string> GetTokenAsync(string resourceAudience)
     {
-        //var resource = CommandLineUtility.GetEnvVariable(
-        //    "OSMP_API_AUDIENCE", "Unable to get the scoped/resource.", null);
 
         // az account get-access-token
         //   --query 'accessToken'
@@ -53,7 +57,7 @@ public static class OspoClientFactory
                 "--query", "accessToken",
                 "-o", "tsv",
                 "--scope", "links",
-                //"--resource", resource
+                "--resource", resourceAudience
             ])
             .ExecuteBufferedAsync();
 
