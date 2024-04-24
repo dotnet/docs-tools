@@ -10,11 +10,22 @@ internal sealed class EnvironmentVariableReader
         // If missing, the action runs using repo-only rights.
         var oauthPrivateKey = CoalesceEnvVar(("ImportOptions__ApiKeys__SequesterPrivateKey", "SequesterPrivateKey"), false);
         var appIDString = CoalesceEnvVar(("ImportOptions__ApiKeys__SequesterAppID", "SequesterAppID"), false);
+
+        var clientId = CoalesceEnvVar(("ImportOptions__ApiKeys__CLIENT_ID", "CLIENT_ID"), false);
+        var tenentId = CoalesceEnvVar(("ImportOptions__ApiKeys__TENANT_ID", "TENANT_ID"), false);
+        var resourceAudience = CoalesceEnvVar(("ImportOptions__ApiKeys__OSMP_API_AUDIENCE", "OSMP_API_AUDIENCE"), false);
+        var deprecatedOspoKey = CoalesceEnvVar(("ImportOptions__ApiKeys__OSPOKey", "OSPOKey"), false);
+
+
         if (!int.TryParse(appIDString, out int appID)) appID = 0;
 
         return new ApiKeys()
         {
             GitHubToken = githubToken,
+            OSPOClientID = clientId,
+            OSPOTenantID = tenentId,
+            OSPOResourceAudience = resourceAudience,
+            OSPOKey = deprecatedOspoKey,
             QuestKey = questKey,
             SequesterPrivateKey = oauthPrivateKey,
             SequesterAppID = appID

@@ -1,4 +1,6 @@
-﻿using DotNetDocs.Tools.GitHubCommunications;
+﻿using DotNet.DocsTools.OspoClientServices;
+using DotNetDocs.Tools.GitHubCommunications;
+using Microsoft.DotnetOrg.Ospo;
 
 internal class Program
 {
@@ -95,8 +97,26 @@ internal class Program
             ? await IGitHubClient.CreateGitHubAppClient(options.ApiKeys.SequesterAppID, options.ApiKeys.SequesterPrivateKey)
             : IGitHubClient.CreateGitHubClient(options.ApiKeys.GitHubToken);
 
+        var ospoClient = await OspoClientFactory.CreateAsync(options.ApiKeys.OSPOClientID, options.ApiKeys.OSPOTenantID, options.ApiKeys.OSPOResourceAudience, true);
+        // Trigger the OSPO bulk import before making any edits to any issue:
+        if (bulkImport && ospoClient is not null)
+        {
+            await ospoClient.GetAllAsync();
+        }
+
+        if (options.ApiKeys.OSPOKey is not null)
+        {
+            Console.WriteLine("Warning: PAT based authorization is deprecated. Please use OIDC authorization.");
+            Console.WriteLine("Contact tool owners to get OIDC setup.");
+        }
+        if (ospoClient is null)
+        {
+            Console.WriteLine("Warning: Imported work items won't be asigned based on GitHub assignee.");
+        }
+
         return new QuestGitHubService(
                 gitHubClient,
+                ospoClient,
                 options.ApiKeys.QuestKey,
                 options.AzureDevOps.Org,
                 options.AzureDevOps.Project,
@@ -104,7 +124,6 @@ internal class Program
                 options.ImportTriggerLabel,
                 options.ImportedLabel,
                 options.DefaultParentNode,
-                options.ParentNodes,
-                bulkImport);
+                options.ParentNodes);
     }
 }

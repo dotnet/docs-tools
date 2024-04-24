@@ -75,7 +75,7 @@ public sealed class OspoClient : IDisposable
 
         if (result is { Outcome: OutcomeType.Failure })
         {
-            Console.WriteLine("WARNING: OSPO REST API failure. Check access token rights");
+            Console.WriteLine("WARNING: OSPO REST API failure. Check authorization.");
             Console.WriteLine("WARNING: App running in degraded mode.");
             return default;
         }
@@ -106,7 +106,7 @@ public sealed class OspoClient : IDisposable
 
         if (result is { Outcome: OutcomeType.Failure })
         {
-            Console.WriteLine("WARNING: OSPO REST API failure. Check access token rights");
+            Console.WriteLine("WARNING: OSPO REST API failure. Check authorization.");
             Console.WriteLine("WARNING: App running in degraded mode.");
             _allLinks = new();
         }
