@@ -120,7 +120,7 @@ public class QuestWorkItem
     public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssueOrPullRequest issue,
         int parentId,
         QuestClient questClient,
-        OspoClient ospoClient,
+        OspoClient? ospoClient,
         string path,
         string? requestLabelNodeId,
         QuestIteration currentIteration,

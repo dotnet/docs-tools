@@ -82,7 +82,6 @@ public class ImportOptionsTests
 
         // API keys object
         Assert.Equal("ght", actual.ApiKeys?.GitHubToken);
-        Assert.Equal("okey", actual.ApiKeys?.OSPOKey);
         Assert.Equal("qkey", actual.ApiKeys?.QuestKey);
     }
 
@@ -112,7 +111,7 @@ public class ImportOptionsTests
         {
             ApiKeys = new()
             {
-                GitHubToken = "", OSPOKey = " ", QuestKey = " ", SequesterPrivateKey = " ", SequesterAppID = 0
+                GitHubToken = "", QuestKey = " ", SequesterPrivateKey = " ", SequesterAppID = 0
             }
         };
 
@@ -138,7 +137,6 @@ public class ImportOptionsTests
             .ValidateOptions();
 
         Assert.Equal("fake-ght", actual.ApiKeys!.GitHubToken);
-        Assert.Equal("fake-ospo-key", actual.ApiKeys.OSPOKey);
         Assert.Equal("fake-quest-key", actual.ApiKeys.QuestKey);
     }
 
@@ -179,7 +177,6 @@ public class ImportOptionsTests
 
         // API keys object
         Assert.Equal("fake-ght", actual.ApiKeys?.GitHubToken);
-        Assert.Equal("fake-ospo-key", actual.ApiKeys?.OSPOKey);
         Assert.Equal("fake-quest-key", actual.ApiKeys?.QuestKey);
     }
 }

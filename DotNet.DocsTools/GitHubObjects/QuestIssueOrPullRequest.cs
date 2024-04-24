@@ -331,9 +331,9 @@ public abstract record QuestIssueOrPullRequest : Issue
     /// <param name="ospoClient">The Open Source program office client service.</param>
     /// <returns>The email address of the assignee. Null if unassigned, or the assignee is not a 
     /// Microsoft FTE.</returns>
-    public async Task<string?> QueryAssignedMicrosoftEmailAddressAsync(OspoClient ospoClient)
+    public async Task<string?> QueryAssignedMicrosoftEmailAddressAsync(OspoClient? ospoClient)
     {
-        if (Assignees.Length != 0)
+        if ((Assignees.Length != 0) && (ospoClient is not null))
         {
             OspoLink? identity = await ospoClient.GetAsync(Assignees.First().Login);
             // This feels like a hack, but it is necessary.

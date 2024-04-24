@@ -1,6 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
-using Quest2GitHub.AzureDevOpsCommunications;
+using DotNet.DocsTools.OspoClientServices;
 
 namespace Quest2GitHub;
 
@@ -15,7 +15,7 @@ namespace Quest2GitHub;
 /// Initialize the service.
 /// </remarks>
 /// <param name="ghClient">GitHub client</param>
-/// <param name="ospoKey">MS Open Source Programs Office personal access token</param>
+/// <param name="ospoClient">MS Open Source Programs Office client</param>
 /// <param name="azdoKey">Azure Dev Ops personal access token</param>
 /// <param name="questOrg">The Azure Dev ops organization</param>
 /// <param name="questProject">The Azure Dev ops project</param>
@@ -24,14 +24,13 @@ namespace Quest2GitHub;
 /// <param name="importedLabelText">The text of the label that indicates an issue has been imported</param>
 /// <param name="defaultParentNode">The ID of the default parent work item ID.</param>
 /// <param name="parentNodes">A dictionary of label / parent ID pairs.</param>
-/// <param name="bulkImport">True if this run is doing a bulk import.</param>
 /// <remarks>
 /// The OAuth token takes precedence over the GitHub token, if both are 
 /// present.
 /// </remarks>
 public class QuestGitHubService(
     IGitHubClient ghClient,
-    string ospoKey,
+    OspoClient? ospoClient,
     string azdoKey,
     string questOrg,
     string questProject,
@@ -39,12 +38,11 @@ public class QuestGitHubService(
     string importTriggerLabelText,
     string importedLabelText,
     int defaultParentNode,
-    List<ParentForLabel> parentNodes,
-    bool bulkImport) : IDisposable
+    List<ParentForLabel> parentNodes) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
     private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
-    private readonly OspoClient _ospoClient = new(ospoKey, bulkImport);
+    private readonly OspoClient? _ospoClient = ospoClient;
     private readonly string _questLinkString = $"https://dev.azure.com/{questOrg}/{questProject}/_workitems/edit/";
 
     private GitHubLabel? _importTriggerLabel;
@@ -61,9 +59,6 @@ public class QuestGitHubService(
     /// <returns></returns>
     public async Task ProcessIssues(string organization, string repository, int duration, bool dryRun)
     {
-        // Trigger the OSPO bulk import before making any edits to any issue:
-        await _ospoClient.GetAllAsync();
-
         if (_importTriggerLabel is null || _importedLabel is null)
         {
             await RetrieveLabelIdsAsync(organization, repository);
@@ -142,9 +137,6 @@ public class QuestGitHubService(
     /// <returns>A task representing the current operation</returns>
     public async Task ProcessIssue(string gitHubOrganization, string gitHubRepository, int issueNumber)
     {
-        // Trigger the OSPO bulk import before making any edits to any issue:
-        await _ospoClient.GetAllAsync();
-
         if (_importTriggerLabel is null || _importedLabel is null)
         {
             await RetrieveLabelIdsAsync(gitHubOrganization, gitHubRepository);
