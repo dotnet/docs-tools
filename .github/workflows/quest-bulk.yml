@@ -28,7 +28,9 @@ jobs:
         uses: dotnet/docs-tools/actions/sequester@main
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          ImportOptions__ApiKeys__OSPOKey: ${{ secrets.OSPO_KEY }}
+          ImportOptions__ApiKeys__OSPOClientID: ${{ secrets.CLIENT_ID }}
+          ImportOptions__ApiKeys__OSPOTenantID: ${{ secrets.TENANT_ID }}
+          ImportOptions__ApiKeys__OSPOResourceAudience: ${{ secrets.OSMP_API_AUDIENCE }}
           ImportOptions__ApiKeys__QuestKey: ${{ secrets.QUEST_KEY }}
           ImportOptions__ApiKeys__SequesterPrivateKey: ${{ secrets.SEQUESTER_PRIVATEKEY }}
           ImportOptions__ApiKeys__SequesterAppID: ${{ secrets.SEQUESTER_APPID }}
