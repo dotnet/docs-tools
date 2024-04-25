@@ -33,9 +33,19 @@ public interface IGitHubClient : IDisposable
     /// <remarks>
     /// Send the GET request to the API endpoint, then
     /// process the response for a success code and return the parsed
-    /// JSONdocument.
+    /// JSON document.
     /// </remarks>
     Task<JsonDocument> GetReposRESTRequestAsync(params string[] restPath);
+
+    /// <summary>
+    /// When the implementation uses a bearer token, regenerate it.
+    /// </summary>
+    /// <remarks>
+    /// When a process runs for a long enough time, the bearer token will
+    /// expire.
+    /// </remarks>
+    /// <returns>The task running that will regenerate the token.</returns>
+    Task RegenerateBearerToken() => Task.CompletedTask;
 
     /// <summary>
     /// Create a default GitHub client.
