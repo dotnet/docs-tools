@@ -76,8 +76,8 @@ public class QuestGitHubService(
         var issueQueryEnumerable = QueryIssuesOrPullRequests<QuestIssue>();
         await ProcessItems(issueQueryEnumerable);
         Console.WriteLine("-----   Finished processing issues.          --------");
-        // UGH: The GH servers need a break after processing the issues.
-        await Task.Delay(2500);
+        Console.WriteLine("     ----- Regenerating bearer token   ------");
+        await ghClient.RegenerateBearerToken();
         Console.WriteLine("-----   Starting processing pull requests.   --------");
         var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
         await ProcessItems(prQueryEnumerable);
