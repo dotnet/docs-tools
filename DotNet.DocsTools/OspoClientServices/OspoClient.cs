@@ -7,6 +7,7 @@ using Polly.Retry;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 
 namespace Microsoft.DotnetOrg.Ospo;
 
@@ -29,9 +30,7 @@ public sealed class OspoClient : IDisposable
             BaseAddress = new Uri("https://repos.opensource.microsoft.com/api/")
         };
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _httpClient.DefaultRequestHeaders.Add("api-version", "2019-10-01");
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Bearer", token);
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var delay = Backoff.DecorrelatedJitterBackoffV2(
             medianFirstRetryDelay: TimeSpan.FromMinutes(3), retryCount: 2);
@@ -68,7 +67,7 @@ public sealed class OspoClient : IDisposable
         var result = await _retryPolicy.ExecuteAndCaptureAsync(async () =>
         {
             var link = await _httpClient.GetFromJsonAsync<OspoLink>(
-                $"people/links/github/{gitHubLogin}", JsonSerializerOptionsDefaults.Shared);
+                $"people/links/github/{gitHubLogin}?api-version=2019-10-01", JsonSerializerOptionsDefaults.Shared);
 
             return link;
         });
@@ -92,7 +91,7 @@ public sealed class OspoClient : IDisposable
         var result = await _retryPolicy.ExecuteAndCaptureAsync(async () =>
         {
             var links = await _httpClient.GetFromJsonAsync<IReadOnlyList<OspoLink>>(
-                $"people/links", JsonSerializerOptionsDefaults.Shared);
+                $"people/links?api-version=2019-10-01", JsonSerializerOptionsDefaults.Shared);
 
             var linkSet = new OspoLinkSet
             {

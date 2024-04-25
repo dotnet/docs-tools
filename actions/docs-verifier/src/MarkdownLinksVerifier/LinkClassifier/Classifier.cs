@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace MarkdownLinksVerifier.LinkClassifier;
+﻿namespace MarkdownLinksVerifier.LinkClassifier;
 
 internal static class Classifier
 {

@@ -1,8 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
 using Spectre.Console;
-using Spectre.Console.Rendering;
-using System.Diagnostics;
-using System.Globalization;
 
 namespace RepoMan;
 

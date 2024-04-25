@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace CleanRepo;
+﻿namespace CleanRepo;
 
 internal class RedirectionFile
 {

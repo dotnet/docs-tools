@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Threading.Tasks;
 using BuildVerifier.IO.Abstractions;
 
 namespace RedirectionVerifier;

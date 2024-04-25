@@ -1,6 +1,5 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
-using DotNet.DocsTools.OspoClientServices;
 
 namespace Quest2GitHub;
 

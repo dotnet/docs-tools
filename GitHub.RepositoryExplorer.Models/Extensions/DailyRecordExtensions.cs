@@ -1,5 +1,3 @@
-using Newtonsoft.Json.Linq;
-
 namespace GitHub.RepositoryExplorer.Models;
 
 public static class DailyRecordExtensions

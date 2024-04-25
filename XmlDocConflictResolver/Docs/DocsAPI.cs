@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Xml.Linq;
 
 namespace XmlDocConflictResolver;

@@ -1,11 +1,8 @@
-﻿using DotNet.DocsTools.OspoClientServices;
+﻿using Microsoft.DotnetOrg.Ospo;
 
-// The actual values should be secrets. DO NOT CHECK THEM IN!!!!
-var clientID = args.Length == 3 ? args[0] : null;
-var tenantID = args.Length == 3 ? args[1] : null;
-var resourceAudience = args.Length == 3 ? args[2] : null;
+var azureAccessToken = Environment.GetEnvironmentVariable("AZURE_ACCESS_TOKEN");
 
-var client = await OspoClientFactory.CreateAsync(clientID!, tenantID!, resourceAudience!, true);
+var client = new OspoClient(azureAccessToken!, true);
 
 var link = client != null ? await client.GetAsync("IEvangelist") : null;
 

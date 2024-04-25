@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using YamlDotNet.RepresentationModel;
+﻿using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Checks;
 

@@ -1,9 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNetDocs.Tools.GitHubCommunications;
-using DotNetDocs.Tools.GraphQLQueries;
 using DotNetDocs.Tools.Utility;
-using System.Buffers;
-using System.Reflection.Emit;
 using System.Text.Json;
 
 namespace DotNetDocs.Tools.GitHubObjects;

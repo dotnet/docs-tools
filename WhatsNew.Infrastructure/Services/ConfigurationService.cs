@@ -6,7 +6,6 @@ using Newtonsoft.Json.Linq;
 using WhatsNew.Infrastructure.Models;
 using DotNetDocs.Tools.GraphQLQueries;
 using DotNet.DocsTools.GitHubObjects;
-using DotNet.DocsTools.OspoClientServices;
 using Microsoft.DotnetOrg.Ospo;
 
 namespace WhatsNew.Infrastructure.Services;
@@ -41,23 +40,11 @@ public class ConfigurationService
 
         var client = IGitHubClient.CreateGitHubClient(key);
 
-        var clientId = config["CLIENT_ID"];
-        var tenentId = config["TENANT_ID"];
-        var resourceAudience = config["OSMP_API_AUDIENCE"];
-        var deprecatedOspoKey = config["OSPOKey"];
-        OspoClient? ospoClient = (clientId, tenentId, resourceAudience) switch
-        {
-            (null, _, _) => null,
-            (_, null, _) => null,
-            (_, _, null) => null,
-            (_, _, _) => await OspoClientFactory.CreateAsync(clientId, tenentId, resourceAudience, true),
-        };
+        var token = config["AZURE_ACCESS_TOKEN"];
 
-        if (deprecatedOspoKey is not null)
-        {
-            Console.WriteLine("Warning: PAT based authorization is deprecated. Please use OIDC authorization.");
-            Console.WriteLine("Contact tool owners to get OIDC setup.");
-        }
+        OspoClient? ospoClient = token is not null
+            ? new OspoClient(token, true) : null;
+
         if (ospoClient is null)
         {
             Console.WriteLine("Warning: Microsoft FTEs won't be filtered from the contributor list.");

@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using BuildVerifier.IO.Abstractions;
+﻿using BuildVerifier.IO.Abstractions;
 
 namespace RedirectionVerifier;
 

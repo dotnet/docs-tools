@@ -1,7 +1,4 @@
-﻿using Spectre.Console;
-using StarodubOleg.GPPG.Runtime;
-
-namespace RepoMan;
+﻿namespace RepoMan;
 
 internal static class CommandCheck
 {
