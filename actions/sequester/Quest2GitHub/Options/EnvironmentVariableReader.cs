@@ -16,7 +16,6 @@ internal sealed class EnvironmentVariableReader
         var resourceAudience = CoalesceEnvVar(("ImportOptions__ApiKeys__OSMP_API_AUDIENCE", "OSMP_API_AUDIENCE"), false);
         var deprecatedOspoKey = CoalesceEnvVar(("ImportOptions__ApiKeys__OSPOKey", "OSPOKey"), false);
 
-
         if (!int.TryParse(appIDString, out int appID)) appID = 0;
 
         return new ApiKeys()
@@ -42,6 +41,10 @@ internal sealed class EnvironmentVariableReader
         {
             // If the preferred key is not set, try the fallback key.
             value = Environment.GetEnvironmentVariable(fallbackKey);
+            Console.WriteLine($"{(string.IsNullOrWhiteSpace(value) ? $"Neither {preferredKey} or {fallbackKey} found" : $"Found {fallbackKey}")}");
+        } else
+        {
+            Console.WriteLine($"Found value for {preferredKey}");
         }
 
         // If neither key is set, throw an exception if required.
