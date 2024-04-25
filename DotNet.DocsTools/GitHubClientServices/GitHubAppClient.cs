@@ -15,8 +15,16 @@ internal class GitHubAppClient : GitHubClientBase, IGitHubClient, IDisposable
     internal GitHubAppClient(int appID, string oauthPrivateKey) =>
         (_appID, _oauthPrivateKey) = (appID, oauthPrivateKey);
 
+    Task IGitHubClient.RegenerateBearerToken() => GenerateTokenAsync();
+
     internal async Task GenerateTokenAsync()
     {
+        if (_tokenSource is not null)
+        {
+            _tokenSource.Cancel();
+            _tokenSource.Dispose();
+            _tokenSource = null;
+        }
         var privateKeySource = new PlainStringPrivateKeySource(_oauthPrivateKey);
         var generator = new GitHubJwtFactory(
             privateKeySource,
@@ -34,7 +42,10 @@ internal class GitHubAppClient : GitHubClientBase, IGitHubClient, IDisposable
         var (oauthToken, timeout) = await RetrieveAuthTokenAsync(installationId);
 
         SetAuthorizationHeader(new AuthenticationHeaderValue("Token", oauthToken));
-
+        if (timeout > TimeSpan.FromMinutes(8))
+        {
+            timeout = TimeSpan.FromMinutes(8);
+        }
         timeout = timeout - TimeSpan.FromMinutes(5);
         // Don't await. Fire and store:
         _tokenSource = new CancellationTokenSource();
