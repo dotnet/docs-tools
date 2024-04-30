@@ -4,7 +4,6 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using static Snippets5000.SnippetsConfigFile;
 using Log = DotNet.DocsTools.Utility.EchoLogging;
-using static System.CommandLine.Rendering.Ansi.Cursor;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PullRequestSimulations")]
 

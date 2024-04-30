@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using MarkdownLinksVerifier.LinkClassifier;
+﻿using MarkdownLinksVerifier.LinkClassifier;
 
 namespace MarkdownLinksVerifier.LinkValidator;
 

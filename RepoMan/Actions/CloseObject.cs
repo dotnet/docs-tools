@@ -1,7 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using YamlDotNet.RepresentationModel;
-
-namespace RepoMan.Actions;
+﻿namespace RepoMan.Actions;
 
 public sealed class CloseObject: IRunnerItem
 {

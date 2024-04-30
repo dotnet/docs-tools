@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Octokit;
-using StarodubOleg.GPPG.Runtime;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using YamlDotNet.RepresentationModel;

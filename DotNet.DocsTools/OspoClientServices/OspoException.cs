@@ -1,7 +1,6 @@
 ﻿// Taken from https://github.com/dotnet/org-policy/tree/main/src/Microsoft.DotnetOrg.Ospo
 
 using System.Net;
-using System.Runtime.Serialization;
 
 namespace Microsoft.DotnetOrg.Ospo;
 

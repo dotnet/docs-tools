@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Threading.Tasks;
+﻿using System.Collections.Immutable;
 using BuildVerifier.IO.Abstractions;
 
 namespace RedirectionVerifier;

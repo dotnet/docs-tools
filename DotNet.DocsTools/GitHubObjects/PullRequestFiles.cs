@@ -1,5 +1,4 @@
 ﻿using DotNetDocs.Tools.GitHubCommunications;
-using System.Text;
 using System.Text.Json;
 
 namespace DotNet.DocsTools.GitHubObjects;

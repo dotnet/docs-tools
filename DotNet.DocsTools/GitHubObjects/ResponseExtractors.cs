@@ -1,6 +1,5 @@
 ﻿using DotNetDocs.Tools.GraphQLQueries;
 using System.Text.Json;
-using System.Xml.Linq;
 
 namespace DotNet.DocsTools.GitHubObjects;
 

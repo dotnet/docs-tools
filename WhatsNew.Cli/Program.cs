@@ -51,7 +51,7 @@ public class Program
         // The GH API returns JSON on auth failures, so those queries fail
         // with very cryptic error messages. This try/catch block catches
         // those errors and provides a more helpful message.
-        WhatsNewConfiguration? whatsNewConfig = default;
+        WhatsNewConfiguration? whatsNewConfig;
         try
         {
             var configService = new ConfigurationService();

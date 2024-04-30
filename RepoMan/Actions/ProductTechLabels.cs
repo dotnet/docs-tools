@@ -1,6 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Text.RegularExpressions;
-using YamlDotNet.RepresentationModel;
 
 namespace RepoMan.Actions;
 

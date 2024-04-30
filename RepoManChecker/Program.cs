@@ -3,7 +3,6 @@ using Spectre.Console;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.Serialization;
 
 namespace RepoMan;
 

@@ -53,7 +53,7 @@ public class WhatsNewConfiguration
     /// <summary>
     /// This is the client that makes queries to the Microsoft OSPO office API.
     /// </summary>
-    public OspoClient OspoClient { get; set; } = null!;
+    public OspoClient? OspoClient { get; set; }
 
     public string? LogConfigSettings()
     {

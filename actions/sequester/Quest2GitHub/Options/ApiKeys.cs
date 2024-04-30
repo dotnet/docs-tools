@@ -25,16 +25,16 @@ public sealed record class ApiKeys
     public required string GitHubToken { get; init; }
 
     /// <summary>
-    /// The Microsoft Open Source Programs Office API key.
+    /// The client ID for identifying this app with OSPO.
     /// </summary>
     /// <remarks>
-    /// Assign this from an environment variable with the following key, <c>ImportOptions__ApiKeys__OSPOKey</c>:
+    /// Assign this from an environment variable with the following key, <c>ImportOptions__ApiKeys__AzureAccessToken</c>:
     /// <code>
     /// env:
-    ///   ImportOptions__ApiKeys__OSPOKey: ${{ secrets.OSPO_API_KEY }}
+    ///   ImportOptions__ApiKeys__AzureAccessToken: ${{ secrets.AZURE_ACCESS_TOKEN }}
     /// </code>
     /// </remarks>
-    public required string OSPOKey { get; init; }
+    public string? AzureAccessToken { get; init; }
 
     /// <summary>
     /// The Azure DevOps API key.

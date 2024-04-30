@@ -4,8 +4,6 @@ using DotNetDocs.Tools.GitHubObjects;
 using DotNetDocs.Tools.GraphQLQueries;
 using DotNetDocs.Tools.RESTQueries;
 using DotNetDocs.Tools.Utility;
-using System.Net.Http.Metrics;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using WhatsNew.Infrastructure.Models;

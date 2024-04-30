@@ -1,6 +1,4 @@
-﻿using System.Net.Http.Json;
-
-namespace GitHub.RepositoryExplorer.Client.Services;
+﻿namespace GitHub.RepositoryExplorer.Client.Services;
 
 public class RepositoryLabelsClient
 {

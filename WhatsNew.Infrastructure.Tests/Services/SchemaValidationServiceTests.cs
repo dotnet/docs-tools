@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.IO;
-using System.Threading.Tasks;
 using WhatsNew.Infrastructure.Services;
 using Xunit;
 using STJ = System.Text.Json;

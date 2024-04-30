@@ -44,26 +44,6 @@ public static class ImportOptionsExtensions
             """);
 
         AttemptFallbackOrThrowIfNullOrWhiteSpace(
-            options.ApiKeys?.OSPOKey,
-            "OSPOKey",
-            fallbackValue =>
-            {
-                options = EnsureApiKeys(options);
-                options = options with
-                {
-                    ApiKeys = options.ApiKeys! with
-                    {
-                        OSPOKey = fallbackValue
-                    }
-                };
-            },
-            nameof(options.ApiKeys.OSPOKey),
-            """
-            An OSPO API key is required. In a consuming GitHub Action workflow assign it as follows:
-              ImportOptions__ApiKeys__OSPOKey: ${{ secrets.OSPO_API_KEY }}
-            """);
-
-        AttemptFallbackOrThrowIfNullOrWhiteSpace(
             options.ApiKeys?.QuestKey,
             "QuestKey",
             fallbackValue =>
@@ -119,7 +99,6 @@ public static class ImportOptionsExtensions
                 {
                     SequesterPrivateKey = "",
                     GitHubToken = "",
-                    OSPOKey = "",
                     QuestKey = "",
                     SequesterAppID = 0
                 }

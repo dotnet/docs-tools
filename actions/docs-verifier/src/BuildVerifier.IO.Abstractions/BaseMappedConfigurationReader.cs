@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace BuildVerifier.IO.Abstractions;
+﻿namespace BuildVerifier.IO.Abstractions;
 
 public abstract class BaseMappedConfigurationReader<TConfigurationFile, TMappedResult>
     : BaseConfigurationReader<TConfigurationFile>

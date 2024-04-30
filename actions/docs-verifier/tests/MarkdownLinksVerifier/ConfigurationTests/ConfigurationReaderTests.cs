@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Threading.Tasks;
-using MarkdownLinksVerifier.Configuration;
+﻿using MarkdownLinksVerifier.Configuration;
 using MarkdownLinksVerifier.UnitTests.LinkValidatorTests;
 using Xunit;
 

@@ -1,12 +1,12 @@
 ﻿using DotNetDocs.Tools.GitHubCommunications;
 using DotNetDocs.Tools.Utility;
-using Microsoft.DotnetOrg.Ospo;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WhatsNew.Infrastructure.Models;
 using DotNetDocs.Tools.GraphQLQueries;
 using DotNet.DocsTools.GitHubObjects;
+using Microsoft.DotnetOrg.Ospo;
 
 namespace WhatsNew.Infrastructure.Services;
 
@@ -25,9 +25,6 @@ public class ConfigurationService
         var key = config["GitHubKey"];
         if (string.IsNullOrWhiteSpace(key))
             throw new InvalidOperationException("Store your GitHub personal access token in the 'GitHubKey' environment variable.");
-        var ospoKey = config["OspoKey"];
-        if (string.IsNullOrWhiteSpace(ospoKey))
-            throw new InvalidOperationException("Store your 1ES personal access token in the 'OspoKey' environment variable.");
 
         var dateRange = new DateRange(input.DateStart, input.DateEnd);
         string configFileName, configFileContents, markdownFileName;
@@ -43,7 +40,15 @@ public class ConfigurationService
 
         var client = IGitHubClient.CreateGitHubClient(key);
 
-        var ospoClient = new OspoClient(ospoKey, true);
+        var token = config["AZURE_ACCESS_TOKEN"];
+
+        OspoClient? ospoClient = token is not null
+            ? new OspoClient(token, true) : null;
+
+        if (ospoClient is null)
+        {
+            Console.WriteLine("Warning: Microsoft FTEs won't be filtered from the contributor list.");
+        }
 
         if (string.IsNullOrWhiteSpace(input.Branch))
         {

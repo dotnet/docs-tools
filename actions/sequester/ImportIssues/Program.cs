@@ -1,4 +1,5 @@
 ﻿using DotNetDocs.Tools.GitHubCommunications;
+using Microsoft.DotnetOrg.Ospo;
 
 internal class Program
 {
@@ -95,9 +96,18 @@ internal class Program
             ? await IGitHubClient.CreateGitHubAppClient(options.ApiKeys.SequesterAppID, options.ApiKeys.SequesterPrivateKey)
             : IGitHubClient.CreateGitHubClient(options.ApiKeys.GitHubToken);
 
+        var ospoClient = (options.ApiKeys.AzureAccessToken is not null)
+            ? new OspoClient(options.ApiKeys.AzureAccessToken, bulkImport)
+            : null;
+
+        if (ospoClient is null)
+        {
+            Console.WriteLine("Warning: Imported work items won't be assigned based on GitHub assignee.");
+        }
+
         return new QuestGitHubService(
                 gitHubClient,
-                options.ApiKeys.OSPOKey,
+                ospoClient,
                 options.ApiKeys.QuestKey,
                 options.AzureDevOps.Org,
                 options.AzureDevOps.Project,
@@ -105,7 +115,6 @@ internal class Program
                 options.ImportTriggerLabel,
                 options.ImportedLabel,
                 options.DefaultParentNode,
-                options.ParentNodes,
-                bulkImport);
+                options.ParentNodes);
     }
 }

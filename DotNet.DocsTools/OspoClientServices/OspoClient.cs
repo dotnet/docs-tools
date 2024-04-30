@@ -22,6 +22,7 @@ public sealed class OspoClient : IDisposable
     public OspoClient(string token, bool useAllCache)
     {
         ArgumentNullException.ThrowIfNull(token);
+
         _useAllCache = useAllCache;
 
         _httpClient = new HttpClient
@@ -29,8 +30,7 @@ public sealed class OspoClient : IDisposable
             BaseAddress = new Uri("https://repos.opensource.microsoft.com/api/")
         };
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _httpClient.DefaultRequestHeaders.Add("api-version", "2019-10-01");
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var delay = Backoff.DecorrelatedJitterBackoffV2(
             medianFirstRetryDelay: TimeSpan.FromMinutes(3), retryCount: 2);
@@ -48,31 +48,33 @@ public sealed class OspoClient : IDisposable
             .WaitAndRetryAsync(delay);
     }
 
-    public void Dispose()
-    {
-        _httpClient.Dispose();
-    }
+    public void Dispose() => _httpClient.Dispose();
 
     public async Task<OspoLink?> GetAsync(string gitHubLogin)
     {
         if ((_useAllCache) || (_allLinks is not null))
         {
             _allLinks ??= await GetAllAsync();
+
             return _allLinks.LinkByLogin.GetValueOrDefault(gitHubLogin); 
         }
 
         if (_allEmployeeQueries.TryGetValue(gitHubLogin, out var query))
+        {
             return query;
+        }
 
         var result = await _retryPolicy.ExecuteAndCaptureAsync(async () =>
         {
             var link = await _httpClient.GetFromJsonAsync<OspoLink>(
-            $"people/links/github/{gitHubLogin}", JsonSerializerOptionsDefaults.Shared);
+                $"people/links/github/{gitHubLogin}?api-version=2019-10-01", JsonSerializerOptionsDefaults.Shared);
+
             return link;
         });
-        if (result.Outcome == OutcomeType.Failure)
+
+        if (result is { Outcome: OutcomeType.Failure })
         {
-            Console.WriteLine("WARNING: OSPO REST API failure. Check access token rights");
+            Console.WriteLine("WARNING: OSPO REST API failure. Check authorization.");
             Console.WriteLine("WARNING: App running in degraded mode.");
             return default;
         }
@@ -82,24 +84,28 @@ public sealed class OspoClient : IDisposable
     public async Task<OspoLinkSet> GetAllAsync()
     {
         if (_allLinks is not null)
+        {
             return _allLinks;
+        }
+
         var result = await _retryPolicy.ExecuteAndCaptureAsync(async () =>
         {
             var links = await _httpClient.GetFromJsonAsync<IReadOnlyList<OspoLink>>(
-            $"people/links", JsonSerializerOptionsDefaults.Shared);
+                $"people/links?api-version=2019-10-01", JsonSerializerOptionsDefaults.Shared);
 
             var linkSet = new OspoLinkSet
             {
-                Links = links ?? Array.Empty<OspoLink>()
+                Links = links ?? []
             };
 
             linkSet.Initialize();
+
             return linkSet;
         });
 
-        if (result.Outcome == OutcomeType.Failure)
+        if (result is { Outcome: OutcomeType.Failure })
         {
-            Console.WriteLine("WARNING: OSPO REST API failure. Check access token rights");
+            Console.WriteLine("WARNING: OSPO REST API failure. Check authorization.");
             Console.WriteLine("WARNING: App running in degraded mode.");
             _allLinks = new();
         }
@@ -108,6 +114,7 @@ public sealed class OspoClient : IDisposable
         {
             _allLinks = result.Result;
         }
+
         return _allLinks;
     }
 }

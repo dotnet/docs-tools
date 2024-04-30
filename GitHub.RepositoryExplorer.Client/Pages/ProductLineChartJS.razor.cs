@@ -4,7 +4,6 @@ using ChartJs.Blazor.Common;
 using ChartJs.Blazor.Common.Axes;
 using ChartJs.Blazor.Common.Enums;
 using ChartJs.Blazor.LineChart;
-using ChartJs.Blazor.Util;
 
 namespace GitHub.RepositoryExplorer.Client.Pages;
 
