@@ -1,4 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../packages/Microsoft.CodeAnalysis.FxCopAnalyzers.3.3.2/build/Microsoft.CodeAnalysis.FxCopAnalyzers.props" Condition="Exists('../packages/Microsoft.CodeAnalysis.FxCopAnalyzers.3.3.2/build/Microsoft.CodeAnalysis.FxCopAnalyzers.props')" />
+  <Import Project="../packages/Microsoft.NetFramework.Analyzers.3.3.2/build/Microsoft.NetFramework.Analyzers.props" Condition="Exists('../packages/Microsoft.NetFramework.Analyzers.3.3.2/build/Microsoft.NetFramework.Analyzers.props')" />
+  <Import Project="../packages/Microsoft.NetCore.Analyzers.3.3.2/build/Microsoft.NetCore.Analyzers.props" Condition="Exists('../packages/Microsoft.NetCore.Analyzers.3.3.2/build/Microsoft.NetCore.Analyzers.props')" />
+  <Import Project="../packages/Microsoft.CodeQuality.Analyzers.3.3.2/build/Microsoft.CodeQuality.Analyzers.props" Condition="Exists('../packages/Microsoft.CodeQuality.Analyzers.3.3.2/build/Microsoft.CodeQuality.Analyzers.props')" />
+  <Import Project="../packages/Microsoft.CodeAnalysis.VersionCheckAnalyzer.3.3.2/build/Microsoft.CodeAnalysis.VersionCheckAnalyzer.props" Condition="Exists('../packages/Microsoft.CodeAnalysis.VersionCheckAnalyzer.3.3.2/build/Microsoft.CodeAnalysis.VersionCheckAnalyzer.props')" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8</TargetFramework>
@@ -18,4 +23,34 @@
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Microsoft.Build" Version="17.9.5" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="CommandLine, Version=2.9.1.0, Culture=neutral, PublicKeyToken=5a870481e358d379">
+      <HintPath>..\packages\CommandLineParser.2.9.1\lib\netstandard2.0\CommandLine.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net6.0\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('../packages/Microsoft.CodeAnalysis.VersionCheckAnalyzer.3.3.2/build/Microsoft.CodeAnalysis.VersionCheckAnalyzer.props')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.CodeAnalysis.VersionCheckAnalyzer.3.3.2/build/Microsoft.CodeAnalysis.VersionCheckAnalyzer.props'))" />
+    <Error Condition="!Exists('../packages/Microsoft.CodeAnalysis.VersionCheckAnalyzer.3.3.2/build/Microsoft.CodeAnalysis.VersionCheckAnalyzer.targets')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.CodeAnalysis.VersionCheckAnalyzer.3.3.2/build/Microsoft.CodeAnalysis.VersionCheckAnalyzer.targets'))" />
+    <Error Condition="!Exists('../packages/Microsoft.CodeQuality.Analyzers.3.3.2/build/Microsoft.CodeQuality.Analyzers.props')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.CodeQuality.Analyzers.3.3.2/build/Microsoft.CodeQuality.Analyzers.props'))" />
+    <Error Condition="!Exists('../packages/Microsoft.CodeQuality.Analyzers.3.3.2/build/Microsoft.CodeQuality.Analyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.CodeQuality.Analyzers.3.3.2/build/Microsoft.CodeQuality.Analyzers.targets'))" />
+    <Error Condition="!Exists('../packages/Microsoft.NetCore.Analyzers.3.3.2/build/Microsoft.NetCore.Analyzers.props')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.NetCore.Analyzers.3.3.2/build/Microsoft.NetCore.Analyzers.props'))" />
+    <Error Condition="!Exists('../packages/Microsoft.NetCore.Analyzers.3.3.2/build/Microsoft.NetCore.Analyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.NetCore.Analyzers.3.3.2/build/Microsoft.NetCore.Analyzers.targets'))" />
+    <Error Condition="!Exists('../packages/Microsoft.NetFramework.Analyzers.3.3.2/build/Microsoft.NetFramework.Analyzers.props')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.NetFramework.Analyzers.3.3.2/build/Microsoft.NetFramework.Analyzers.props'))" />
+    <Error Condition="!Exists('../packages/Microsoft.NetFramework.Analyzers.3.3.2/build/Microsoft.NetFramework.Analyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.NetFramework.Analyzers.3.3.2/build/Microsoft.NetFramework.Analyzers.targets'))" />
+    <Error Condition="!Exists('../packages/Microsoft.CodeAnalysis.FxCopAnalyzers.3.3.2/build/Microsoft.CodeAnalysis.FxCopAnalyzers.props')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.CodeAnalysis.FxCopAnalyzers.3.3.2/build/Microsoft.CodeAnalysis.FxCopAnalyzers.props'))" />
+    <Error Condition="!Exists('../packages/Microsoft.CodeAnalysis.FxCopAnalyzers.3.3.2/build/Microsoft.CodeAnalysis.FxCopAnalyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '../packages/Microsoft.CodeAnalysis.FxCopAnalyzers.3.3.2/build/Microsoft.CodeAnalysis.FxCopAnalyzers.targets'))" />
+  </Target>
+  <Import Project="../packages/Microsoft.CodeAnalysis.VersionCheckAnalyzer.3.3.2/build/Microsoft.CodeAnalysis.VersionCheckAnalyzer.targets" Condition="Exists('../packages/Microsoft.CodeAnalysis.VersionCheckAnalyzer.3.3.2/build/Microsoft.CodeAnalysis.VersionCheckAnalyzer.targets')" />
+  <Import Project="../packages/Microsoft.CodeQuality.Analyzers.3.3.2/build/Microsoft.CodeQuality.Analyzers.targets" Condition="Exists('../packages/Microsoft.CodeQuality.Analyzers.3.3.2/build/Microsoft.CodeQuality.Analyzers.targets')" />
+  <Import Project="../packages/Microsoft.NetCore.Analyzers.3.3.2/build/Microsoft.NetCore.Analyzers.targets" Condition="Exists('../packages/Microsoft.NetCore.Analyzers.3.3.2/build/Microsoft.NetCore.Analyzers.targets')" />
+  <Import Project="../packages/Microsoft.NetFramework.Analyzers.3.3.2/build/Microsoft.NetFramework.Analyzers.targets" Condition="Exists('../packages/Microsoft.NetFramework.Analyzers.3.3.2/build/Microsoft.NetFramework.Analyzers.targets')" />
+  <Import Project="../packages/Microsoft.CodeAnalysis.FxCopAnalyzers.3.3.2/build/Microsoft.CodeAnalysis.FxCopAnalyzers.targets" Condition="Exists('../packages/Microsoft.CodeAnalysis.FxCopAnalyzers.3.3.2/build/Microsoft.CodeAnalysis.FxCopAnalyzers.targets')" />
 </Project>
