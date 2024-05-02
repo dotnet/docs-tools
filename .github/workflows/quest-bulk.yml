@@ -8,6 +8,10 @@ on:
         description: "The reason for running the bulk import workflow"
         required: true
         default: "Initial import into Quest (Azure DevOps)"
+      duration:
+        description: "The number of days to import issues for. Defaults to 5 days."
+        required: false
+        default: "5"
 
 jobs:
   bulk-import:
@@ -26,7 +30,7 @@ jobs:
 
       - name: Azure OpenID Connect
         id: azure-oidc-auth
-        uses: dotnet/docs-tools/.github/actions/azure-oidc-auth@main
+        uses: dotnet/docs-tools/.github/actions/oidc-auth-flow@main
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
@@ -45,3 +49,4 @@ jobs:
           org: ${{ github.repository_owner }}
           repo: ${{ github.repository }}
           issue: '-1'
+          duration: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.duration || 5 }}
