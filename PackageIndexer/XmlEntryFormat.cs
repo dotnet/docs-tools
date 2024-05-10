@@ -37,7 +37,7 @@ internal static class XmlEntryFormat
 
         XElement packageElement = doc.Element("package");
 
-        string id = packageElement.Attribute("id").Value; 
+        string id = packageElement.Attribute("id").Value;
         string version = packageElement.Attribute("version").Value;
         string repo = packageElement.Attribute("repository").Value;
 

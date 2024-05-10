@@ -225,13 +225,6 @@ public sealed class NuGetFeed(string feedUrl)
         return httpClient.GetFromJsonAsync<Dictionary<string, string[]>>(url);
     }
 
-    public Task<Dictionary<string, string[]>> GetSourceRepoMappingAsync()
-    {
-        var httpClient = new HttpClient();
-        string url = "https://nugetprodusncazuresearch.blob.core.windows.net/v3-azuresearch-017/owners/owners.v2.json";
-        return httpClient.GetFromJsonAsync<Dictionary<string, string[]>>(url);
-    }
-
     private static bool TryGetAzureDevOpsFeed(string url, out string organization, out string project, out string feed)
     {
         Match match = Regex.Match(url, """
