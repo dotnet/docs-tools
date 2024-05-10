@@ -1,10 +1,17 @@
 ﻿using NuGet.Frameworks;
 using NuGet.Packaging;
+using NuGet.Packaging.Core;
 
 namespace PackageIndexer;
 
 internal static class PackageExtensions
 {
+    public static string GetRepository(this PackageArchiveReader root)
+    {
+        RepositoryMetadata repo = root.NuspecReader.GetRepositoryMetadata();
+        return repo.Url;
+    }
+
     public static IEnumerable<FrameworkSpecificGroup> GetCatalogReferenceGroups(this PackageArchiveReader root)
     {
         // NOTE: We're not using root.GetReferenceItems() because it apparently doesn't always
