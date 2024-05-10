@@ -198,7 +198,8 @@ internal static class Program
             // Special case for packages from dotnet/extensions repo - include XML files.
             bool includeXml = string.Equals(
                 packageEntry.Repository,
-                "https://github.com/dotnet/extensions"
+                "https://github.com/dotnet/extensions",
+                StringComparison.InvariantCultureIgnoreCase
                 );
 
             string squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml}]";

@@ -39,7 +39,7 @@ internal static class XmlEntryFormat
 
         string id = packageElement.Attribute("id").Value;
         string version = packageElement.Attribute("version").Value;
-        string repo = packageElement.Attribute("repository").Value;
+        string repo = packageElement.Attribute("repository")?.Value;
 
         IEnumerable<XElement> frameworkElements = packageElement.Elements("framework");
 
