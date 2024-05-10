@@ -18,7 +18,8 @@ internal static class XmlEntryFormat
         var document = new XDocument();
         var root = new XElement("package",
             new XAttribute("id", packageEntry.Name),
-            new XAttribute("version", packageEntry.Version)
+            new XAttribute("version", packageEntry.Version),
+            new XAttribute("repository", packageEntry.Repository)
         );
         document.Add(root);
 
@@ -36,8 +37,9 @@ internal static class XmlEntryFormat
 
         XElement packageElement = doc.Element("package");
 
-        string id = packageElement.Attribute("id").Value;
+        string id = packageElement.Attribute("id").Value; 
         string version = packageElement.Attribute("version").Value;
+        string repo = packageElement.Attribute("repository").Value;
 
         IEnumerable<XElement> frameworkElements = packageElement.Elements("framework");
 
@@ -47,6 +49,6 @@ internal static class XmlEntryFormat
             frameworks.Add(FrameworkEntry.Create(frameworkElement.Value));
         }
 
-        return PackageEntry.Create(id, version, frameworks);
+        return PackageEntry.Create(id, version, repo, frameworks);
     }
 }
