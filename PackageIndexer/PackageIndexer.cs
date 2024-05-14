@@ -9,12 +9,15 @@ public sealed class PackageIndexer(NuGetStore store)
 
     public async Task<PackageEntry> Index(string id, string version)
     {
+        string repo;
         var dependencies = new Dictionary<string, PackageArchiveReader>();
         var frameworkEntries = new List<FrameworkEntry>();
         try
         {
             using (PackageArchiveReader root = await _store.GetPackageAsync(id, version))
             {
+                repo = root.GetRepository();
+
                 var targetNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 foreach (FrameworkSpecificGroup item in root.GetCatalogReferenceGroups())
@@ -31,7 +34,7 @@ public sealed class PackageIndexer(NuGetStore store)
                 }
             }
 
-            return PackageEntry.Create(id, version, frameworkEntries);
+            return PackageEntry.Create(id, version, repo, frameworkEntries);
         }
         finally
         {

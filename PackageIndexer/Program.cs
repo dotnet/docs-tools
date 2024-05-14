@@ -27,7 +27,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index (Preview only)", "preview"];
+        args = [@"c:\users\gewarren\desktop\Package Index 0509"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -195,9 +195,18 @@ internal static class Program
             FrameworkEntry tfm
             )
         {
-            string squareBrackets = $"[tfm={tfm.FrameworkName};includeXml=false]";
+            // Special case for packages from dotnet/extensions repo - include XML files.
+            bool includeXml = string.Equals(
+                packageEntry.Repository,
+                "https://github.com/dotnet/extensions",
+                StringComparison.InvariantCultureIgnoreCase
+                );
+
+            string squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml}]";
+
+            // Special case for System.ServiceModel.Primitives - use reference assembly.
             if (string.Equals(packageEntry.Name, "System.ServiceModel.Primitives", StringComparison.InvariantCultureIgnoreCase))
-                squareBrackets = $"[tfm={tfm.FrameworkName};includeXml=false;libpath=ref]";
+                squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml};libpath=ref]";
 
             CsvEntry entry = CsvEntry.Create(
                 string.Concat("pac", packageCounter[opsMoniker]++),
