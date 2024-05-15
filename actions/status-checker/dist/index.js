@@ -240,20 +240,20 @@ exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
 function getPullRequest(token, cursor = null) {
     return __awaiter(this, void 0, void 0, function* () {
         /*
-        You can verify the query below, by running the following in the GraphQL Explorer:
-            https://docs.github.com/en/graphql/overview/explorer
-        
-        1. Sign in to GitHub.
-        2. Paste the query string value into the query window.
-        3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
-          {
-            "name": "docs",
-            "owner": "dotnet",
-            "number": 36636,
-            "cursor": null
-          }
-        4. Click the "Play" button.
-        */
+      You can verify the query below, by running the following in the GraphQL Explorer:
+          https://docs.github.com/en/graphql/overview/explorer
+      
+      1. Sign in to GitHub.
+      2. Paste the query string value into the query window.
+      3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
+        {
+          "name": "docs",
+          "owner": "dotnet",
+          "number": 36636,
+          "cursor": null
+        }
+      4. Click the "Play" button.
+      */
         const octokit = (0, github_1.getOctokit)(token);
         return yield octokit.graphql({
             query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
@@ -392,7 +392,7 @@ function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceed
             markdownTable += "\n</details>\n";
         }
         if (exceedsMax /* include footnote when we're truncating... */) {
-            markdownTable += `\n> **Note**\n> This table shows preview links for the ${WorkflowInput_1.workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
+            markdownTable += `\n> [!NOTE]\n> This table shows preview links for the ${WorkflowInput_1.workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
         }
         return markdownTable;
     });
