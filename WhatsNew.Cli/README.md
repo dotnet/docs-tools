@@ -55,7 +55,7 @@ To use the tool as an action:
 
 1. Configure the registered `CLIENT_ID`, `TENANT_ID` and `OSMP_API_AUDIENCE` keys in your repository. Ask the "what's new" admins for the values.
 1. Request app registration for your repo / branch pair.
-1. A the `whats-new.yml` file in the `.github/Workflows` folder of your repo. The file should generally follow the form in the [dotnet/docs](https://github.com/dotnet/docs/blob/main/.github/workflows/whats-new.yml) version.
+1. Create a the `whats-new.yml` file in the `.github/Workflows` folder of your repo. The file should generally follow the form in the [dotnet/docs](https://github.com/dotnet/docs/blob/main/.github/workflows/whats-new.yml) version.
 
 ### Examples
 
