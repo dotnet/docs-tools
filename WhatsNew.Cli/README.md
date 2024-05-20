@@ -21,6 +21,10 @@ Metrics for the "what's new" pages are made available at [aka.ms/whatsnewindocs]
 
 ## Usage
 
+You can use the tool from the command line, or as a GitHub action. If you run on the command line, the tool generates the changes for a new article on your machine. If you run as a GitHub action, the action opens a PR for you. The only functional difference in the output is that the GitHub action filters Microsoft FTEs from the contributor list. The command line version doesn't due to access rights.
+
+To use the tool as a command line executable:
+
 1. Clone the `dotnet/docs-tools` repository.
 1. Generate a PAT per the instructions at [Creating a token](https://help.github.com/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line#creating-a-token). When selecting scopes for the PAT, check the following boxes:
     - For private repos:
@@ -31,17 +35,8 @@ Metrics for the "what's new" pages are made available at [aka.ms/whatsnewindocs]
       - **admin:org** > **read:org**
 1. For private repos in the *MicrosoftDocs* GitHub organization, after generating the PAT, select **Enable SSO** and choose **Authorize** for the **MicrosoftDocs**.
 1. Store the PAT in an environment variable named `GitHubKey`.
-1. Set up an OSPO personal access token
-   > This step is required for versions 2.0 and above.
-
-   The OSPO personal access token is required to access the OSPO API. This API determines community contributors and Microsoft employee and vendor contributors.
-1. Request a token at [Visual Studio Online](https://ossmsft.visualstudio.com/_usersSettings/tokens). You can disable all scopes *except* read:user profile.
-1. Store the token in an environment variable named "OspoKey". **If you are using the GitHub Action to generate the PR automatically**, add the key as a secret in your repository:
-   - Go to **Settings** on your repo.
-   - Select **Secrets**
-   - Add "OSPO_KEY" as a **Repository Secret**.
-1. Install the [.NET SDK 7.0](https://dotnet.microsoft.com/download/dotnet) or later.
-1. build and publish the tool. The `WhatsNew.Cli` folder is at the root of the repository you closed in step 1. By default, this builds the *Debug* configuration. 
+1. Install the [.NET SDK 8.0](https://dotnet.microsoft.com/download/dotnet) or later.
+1. build and publish the tool. The `WhatsNew.Cli` folder is at the root of the repository you closed in step 1. By default, this builds the *Debug* configuration.
 
     ```bash
     cd ./WhatsNew.Cli
@@ -55,6 +50,12 @@ Metrics for the "what's new" pages are made available at [aka.ms/whatsnewindocs]
    cd work/visualstudio-docs-pr
    dotnet ../docs-tools/WhatsNew.Cli/bin/Debug/net7.0/publish/WhatsNew.dll --owner MicrosoftDocs --repo visualstudio-docs-pr --savefile ./docs/ide/whats-new-visual-studio-docs.md 
    ```
+
+To use the tool as an action:
+
+1. Configure the registered `CLIENT_ID`, `TENANT_ID` and `OSMP_API_AUDIENCE` keys in your repository. Ask the "what's new" admins for the values.
+1. Request app registration for your repo / branch pair.
+1. Create a the `whats-new.yml` file in the `.github/Workflows` folder of your repo. The file should generally follow the form in the [dotnet/docs](https://github.com/dotnet/docs/blob/main/.github/workflows/whats-new.yml) version.
 
 ### Examples
 
