@@ -21,7 +21,7 @@ Metrics for the "what's new" pages are made available at [aka.ms/whatsnewindocs]
 
 ## Usage
 
-You can use the tool from the command line, or as a GitHub action. If you run on the command line, the tool generates the changes for a new article on your machine. If you run as a GitHub action, the action opens a PR for you. THe only functional difference in the output is that the GitHub action filters Microsoft FTEs from the contributor list. The command line version doesn't due to access rights.
+You can use the tool from the command line, or as a GitHub action. If you run on the command line, the tool generates the changes for a new article on your machine. If you run as a GitHub action, the action opens a PR for you. The only functional difference in the output is that the GitHub action filters Microsoft FTEs from the contributor list. The command line version doesn't due to access rights.
 
 To use the tool as a command line executable:
 
