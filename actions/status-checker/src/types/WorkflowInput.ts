@@ -48,7 +48,7 @@ export class WorkflowInput {
     return new Map();
   }
 
-  constructor() {}
+  constructor() { }
 }
 
 export const workflowInput: WorkflowInput = new WorkflowInput();
