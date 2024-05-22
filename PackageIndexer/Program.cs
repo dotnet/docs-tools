@@ -27,7 +27,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 0509"];
+        args = [@"c:\users\gewarren\desktop\Package Index 0521", "preview"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -95,7 +95,7 @@ internal static class Program
         //       Example: pac01,[tfm=net9.0;includeXml=false]Microsoft.Extensions.Caching.Abstractions,9.0.0-preview.2.24128.5
         // Generate a CSV file from each dictionary
 
-        Dictionary<string, IList<CsvEntry>> csvDictionary = [];        
+        Dictionary<string, IList<CsvEntry>> csvDictionary = [];
         Dictionary<string, int> packageCounter = []; // Used for "pac" number in CSV file.
         foreach (string moniker in s_tfmToOpsMoniker.Values)
         {
@@ -201,6 +201,10 @@ internal static class Program
                 "https://github.com/dotnet/extensions",
                 StringComparison.InvariantCultureIgnoreCase
                 );
+
+            // Special case for System.Formats.Cbor - include XML file.
+            if (string.Equals(packageEntry.Name, "System.Formats.Cbor", StringComparison.InvariantCultureIgnoreCase))
+                includeXml = true;
 
             string squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml}]";
 
