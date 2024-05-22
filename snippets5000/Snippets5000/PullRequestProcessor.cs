@@ -87,7 +87,7 @@ internal class PullRequestProcessor
         List<string> projectsFound = new List<string>();
 
         // Special exit for solution deleted. Any artifacts left over should be caught by the other checks
-        if (Path.GetExtension(itemFileName).Equals(".sln", StringComparison.OrdinalIgnoreCase) && itemWasDeleted)
+        if (itemWasDeleted && Path.GetExtension(itemFileName).Equals(".sln", StringComparison.OrdinalIgnoreCase))
             return null;
 
         // Check for the project/solution to test with was found
