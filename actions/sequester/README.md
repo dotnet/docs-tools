@@ -23,12 +23,15 @@ To install the GitHub actions:
 
    - **SEQUESTER_APPID**: This is the app ID for the Sequester Action. Get this from one of the App admins (Bill or Immo).
    - **SEQUESTER_PRIVATEKEY**: This is the private key to authorize sequester. Get this from one of the App admins (Bill or Immo).
-   - **OSPO_KEY**: Generate a PAT at [OSSMSFT](https://ossmsft.visualstudio.com/_usersSettings/tokens) with the following permissions:
-     - *UserProfile*: Read
    - **QUEST_KEY**: Generate a PAT at [MSFT-SKILLING](https://dev.azure.com/msft-skilling/_usersSettings/tokens) with the following permissions:
      - *Identity*: Read
      - *Project & Team*: Read/Write
      - *WorkItems*: Read/Write
+   - **CLIENT_ID**:  The client ID used for secretless authentication
+   - **TENANT_ID**: The Tenant ID used for secretless authentication
+   - **OSMP_API_AUDIENCE**: The audience resource ID used for secretless authentication
+
+  > **Note:** To configure GitHub Action secrets, see [GitHub Docs: Encrypted secrets](https://docs.github.com/actions/security-guides/encrypted-secrets).
 
 1. ***Start applying labels***
    - Add the trigger label to any issue, and it will be imported into Quest.
@@ -38,11 +41,7 @@ To install the GitHub actions:
 ## Suggestions for future releases
 
 - [ ] Populate the "GitHub Repo" field in Azure DevOps to make reporting by repository easier.
-- [X] Add Epics (configurable) as a parent of user stories on import.
-- [X] Update the label block in Quest when an issue is closed. That way, any "OKR" labels get added when the work item is completed. This would be a simplified version of updating all labels when labels are added or removed.
 - [ ] Integrate with Repoman. That tool already performs a number of actions on different events in the repo. The code underlying these events could be ported there.
-- [ ] Encapsulate services into their own projects/packages, and share them as needed.
-- [X] Use DI where applicable, enabling `IHttpClientFactory`, Polly (for transient fault handling), `IOptions<T>` pattern, and easier testing.
 
 ## Triggers
 
@@ -77,22 +76,9 @@ The consuming repository would ideally define the config file. As an example, it
 }
 ```
 
-This config file would override the defaults, enabling consuming repositories to do as they please. In addition to this JSON config, there would need to be three environment variables set:
+## Workflow files
 
-- `ImportOptions__ApiKeys__GitHubToken`
-- `ImportOptions__ApiKeys__OSPOKey`
-- `ImportOptions__ApiKeys__QuestKey`
-
-These env vars would be assigned to from the consuming repository secrets, as follows (likely in a workflow file named _quest-import.yml_):
-
-```yaml
-env:
-  ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
-  ImportOptions__ApiKeys__OSPOKey: ${{ secrets.OSPO_API_KEY }}
-  ImportOptions__ApiKeys__QuestKey: ${{ secrets.QUEST_API_KEY }}
-```
-
-> **Note:** To configure GitHub Action secrets, see [GitHub Docs: Encrypted secrets](https://docs.github.com/actions/security-guides/encrypted-secrets).
+Create a PR that adds two workflows into your repository:  One to sequester a single issue on demand; the other to bulk import all issues modified in the last N days. In almost all cases, you can copy the versions of [quest.yml](https://github.com/dotnet/docs-tools/blob/main/.github/workflows/quest.yml) and [quest-bulk.yml](https://github.com/dotnet/docs-tools/blob/main/.github/workflows/quest-bulk.yml) files. These files are stored in your repositories `.github/workflows` folder.
 
 ## Field mapping
 

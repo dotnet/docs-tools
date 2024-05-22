@@ -42,7 +42,8 @@ export async function tryUpdatePullRequestBody(token: string) {
     allFiles = [...pullRequest.files.edges];
 
     while (details.repository.pullRequest.files.pageInfo.hasNextPage) {
-      const cursor = details.repository.pullRequest.files.pageInfo.endCursor;
+      const cursor =
+        details.repository.pullRequest.files.pageInfo.endCursor;
       details = await getPullRequest(token, cursor);
 
       if (!details) {
@@ -119,20 +120,20 @@ async function getPullRequest(
   cursor: string | null = null
 ): Promise<PullRequestDetails> {
   /*
-  You can verify the query below, by running the following in the GraphQL Explorer:
-      https://docs.github.com/en/graphql/overview/explorer
-  
-  1. Sign in to GitHub.
-  2. Paste the query string value into the query window.
-  3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
-    {
-      "name": "docs",
-      "owner": "dotnet",
-      "number": 36636,
-      "cursor": null
-    }
-  4. Click the "Play" button.
-  */
+You can verify the query below, by running the following in the GraphQL Explorer:
+    https://docs.github.com/en/graphql/overview/explorer
+ 
+1. Sign in to GitHub.
+2. Paste the query string value into the query window.
+3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
+  {
+    "name": "docs",
+    "owner": "dotnet",
+    "number": 36636,
+    "cursor": null
+  }
+4. Click the "Play" button.
+*/
 
   const octokit = getOctokit(token);
   return await octokit.graphql<PullRequestDetails>({
@@ -229,9 +230,9 @@ function sortByChangeType(
   return files.sort((a, b) => {
     return descending
       ? changeTypeOrder.indexOf(b.changeType) -
-          changeTypeOrder.indexOf(a.changeType)
+      changeTypeOrder.indexOf(a.changeType)
       : changeTypeOrder.indexOf(a.changeType) -
-          changeTypeOrder.indexOf(b.changeType);
+      changeTypeOrder.indexOf(b.changeType);
   });
 }
 
@@ -322,7 +323,7 @@ async function buildMarkdownPreviewTable(
   }
 
   if (exceedsMax /* include footnote when we're truncating... */) {
-    markdownTable += `\n> **Note**\n> This table shows preview links for the ${workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
+    markdownTable += `\n> [!NOTE]\n> This table shows preview links for the ${workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
   }
 
   return markdownTable;

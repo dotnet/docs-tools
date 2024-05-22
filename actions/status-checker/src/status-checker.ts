@@ -63,8 +63,7 @@ export async function isSuccessStatus(token: string) {
     // Didn't find OPS status. This is bad.
     if (!buildStatus) {
       setFailed(
-        `Did not find OPS status check after waiting for ${
-          (loops * 10) / 60
+        `Did not find OPS status check after waiting for ${(loops * 10) / 60
         } minutes. If it shows 'Expected — Waiting for status to be reported', close and reopen the pull request to trigger a build.`
       );
     }
@@ -117,10 +116,14 @@ export async function isSuccessStatus(token: string) {
       }
     } else {
       // Build status is error/failure.
-      setFailed("OpenPublishing.Build status is either failure or error.");
+      setFailed(
+        "OpenPublishing.Build status is either failure or error."
+      );
     }
   } else {
-    setFailed("Event is not a pull request or payload action is undefined.");
+    setFailed(
+      "Event is not a pull request or payload action is undefined."
+    );
   }
 
   return false;
