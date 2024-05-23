@@ -41,12 +41,12 @@ public static class DotnetPackageIndex
         params string[] feedUrls
         )
     {
-        var packages = new List<PackageIdentity>();
+        var packages = new List<(PackageIdentity, bool)>();
 
         foreach (string feedUrl in feedUrls)
         {
             var feed = new NuGetFeed(feedUrl);
-            IReadOnlyList<PackageIdentity> feedPackages = await GetPackagesAsync(feed);
+            IReadOnlyList<(PackageIdentity, bool)> feedPackages = await GetPackagesAsync(feed);
             packages.AddRange(feedPackages);
         }
 
@@ -59,17 +59,18 @@ public static class DotnetPackageIndex
         return latestVersions;
     }
 
-    private static async Task<IReadOnlyList<PackageIdentity>> GetPackagesAsync(NuGetFeed feed)
+    private static async Task<IReadOnlyList<(PackageIdentity, bool)>> GetPackagesAsync(NuGetFeed feed)
     {
         Console.WriteLine($"Getting packages from {feed.FeedUrl}...");
 
         if (feed.FeedUrl == NuGetFeeds.NuGetOrg)
             return await GetPackagesFromNuGetOrgAsync(feed);
         else
-            return await GetPackagesFromOtherGalleryAsync(feed);
+            //return await GetPackagesFromOtherGalleryAsync(feed);
+            throw new ApplicationException("NuGetOrg should be the only feed.");
     }
 
-    private static async Task<IReadOnlyList<PackageIdentity>> GetPackagesFromNuGetOrgAsync(NuGetFeed feed)
+    private static async Task<IReadOnlyList<(PackageIdentity, bool)>> GetPackagesFromNuGetOrgAsync(NuGetFeed feed)
     {
         Console.WriteLine("Fetching owner information...");
         Dictionary<string, string[]> ownerInformation = await feed.GetOwnerMappingAsync();
@@ -88,16 +89,16 @@ public static class DotnetPackageIndex
 
         Console.WriteLine("Getting versions...");
 
-        ConcurrentBag<PackageIdentity> identities = [];
+        ConcurrentBag<(PackageIdentity, bool)> identities = [];
 
         await Parallel.ForEachAsync(packageIds, async (packageId, _) =>
         {
-            IReadOnlyList<NuGetVersion> versions = await feed.GetAllVersionsAsync(packageId);
+            IReadOnlyList<(NuGetVersion, bool)> versions = await feed.GetAllVersionsAsync(packageId);
 
-            foreach (NuGetVersion version in versions)
+            foreach ((NuGetVersion, bool) version in versions)
             {
-                var identity = new PackageIdentity(packageId, version);
-                identities.Add(identity);
+                var identity = new PackageIdentity(packageId, version.Item1);
+                identities.Add((identity, version.Item2));
             }
         });
 
@@ -119,36 +120,48 @@ public static class DotnetPackageIndex
         return identities.ToArray();
     }
 
-    private static IReadOnlyList<PackageIdentity> GetLatestVersions(IReadOnlyList<PackageIdentity> identities, bool usePreviewVersions)
+    private static IReadOnlyList<PackageIdentity> GetLatestVersions(
+        IReadOnlyList<(PackageIdentity, bool)> identities,
+        bool usePreviewVersions
+        )
     {
         var result = new List<PackageIdentity>();
 
-        IEnumerable<IGrouping<string, PackageIdentity>> groups = identities.GroupBy(i => i.Id);
+        IEnumerable<IGrouping<string, (PackageIdentity, bool)>> groups = identities.GroupBy(i => i.Item1.Id).OrderBy(g => g.Key);
 
-        foreach (IGrouping<string, PackageIdentity> group in groups.OrderBy(g => g.Key))
+        foreach (IGrouping<string, (PackageIdentity, bool)> group in groups)
         {
             string packageId = group.Key;
-            IOrderedEnumerable<PackageIdentity> versions = group.OrderByDescending(p => p.Version, VersionComparer.VersionReleaseMetadata);
+            IOrderedEnumerable<(PackageIdentity, bool)> versions =
+                group.OrderByDescending(p => p.Item1.Version, VersionComparer.VersionReleaseMetadata);
 
-            PackageIdentity latestStable = versions.FirstOrDefault(i => !i.Version.IsPrerelease);
-            PackageIdentity latestPrerelease = versions.FirstOrDefault(i => i.Version.IsPrerelease);
+            (PackageIdentity, bool) latestStable = versions.FirstOrDefault(i => !i.Item1.Version.IsPrerelease);
+            (PackageIdentity, bool) latestPrerelease = versions.FirstOrDefault(i => i.Item1.Version.IsPrerelease);
+
+            // If the latest version is deprecated, don't include any version.
+            if (latestStable.Item2)
+                latestStable = default;
+            if (latestPrerelease.Item2)
+                latestPrerelease = default;
 
             if (latestStable != default && latestPrerelease != default)
             {
-                bool stableIsNewer = VersionComparer.VersionReleaseMetadata.Compare(latestPrerelease.Version, latestStable.Version) <= 0;
+                bool stableIsNewer = VersionComparer.VersionReleaseMetadata.Compare(latestPrerelease.Item1.Version, latestStable.Item1.Version) <= 0;
                 if (stableIsNewer)
                     latestPrerelease = default;
             }
 
             // Comment this out for preview-only versions.
             if (latestStable != default)
-                result.Add(latestStable);
+            {
+                result.Add(latestStable.Item1);
+            }
 
             if (usePreviewVersions)
             {
                 // Make sure it's a .NET 9 preview version.
-                if ((latestPrerelease != default) && latestPrerelease.Version.Major == 9)
-                    result.Add(latestPrerelease);
+                if ((latestPrerelease != default) && latestPrerelease.Item1.Version.Major == 9)
+                    result.Add(latestPrerelease.Item1);
             }
         }
 
