@@ -135,17 +135,37 @@ public sealed class NuGetFeed(string feedUrl)
         return result;
     }
 
-    public async Task<IReadOnlyList<NuGetVersion>> GetAllVersionsAsync(string packageId, bool includeUnlisted = false)
+    public async Task<IReadOnlyList<(NuGetVersion, bool)>> GetAllVersionsAsync(string packageId, bool includeUnlisted = false)
     {
         SourceCacheContext cache = NullSourceCacheContext.Instance;
         ILogger logger = NullLogger.Instance;
         CancellationToken cancellationToken = CancellationToken.None;
 
         SourceRepository repository = Repository.Factory.GetCoreV3(FeedUrl);
-        MetadataResource resource = await repository.GetResourceAsync<MetadataResource>(cancellationToken);
-        IEnumerable<NuGetVersion> versions = await resource.GetVersions(packageId, includePrerelease: true, includeUnlisted: includeUnlisted, cache, logger, cancellationToken);
 
-        return versions.ToArray();
+        PackageMetadataResource resource = await repository.GetResourceAsync<PackageMetadataResource>();
+
+        IEnumerable<IPackageSearchMetadata> packages = await resource.GetMetadataAsync(
+            packageId,
+            includePrerelease: true,
+            includeUnlisted: includeUnlisted,
+            cache,
+            logger,
+            cancellationToken);
+
+        List<(NuGetVersion, bool)> versions = new();
+
+        foreach (IPackageSearchMetadata package in packages)
+        {
+            bool isDeprecated = false;
+            PackageDeprecationMetadata deprecationMetadata = await package.GetDeprecationMetadataAsync();
+            if (deprecationMetadata != null)
+                isDeprecated = true;
+
+            versions.Add((package.Identity.Version, isDeprecated));
+        }
+
+        return versions;
     }
 
     public async Task<PackageIdentity> ResolvePackageAsync(string packageId, VersionRange range)
