@@ -216,6 +216,17 @@
       }
     ]
   },
+    {
+        "Name": "Delete - SLN - Projects remain",
+        "CountOfEmptyResults": 1,
+        "ExpectedResults": null,
+        "Items": [
+            {
+                "ItemType": "Delete",
+                "Path": "snippets/good/normal/somefile.sln"
+            }
+        ]
+    },
   {
     "Name": "Create - New project, is in old solution",
     "ExpectedResults": [
