@@ -41,7 +41,7 @@ public static class DotnetPackageIndex
         params string[] feedUrls
         )
     {
-        var packages = new List<(PackageIdentity packageId, bool isDeprecated)>();
+        var packages = new List<(PackageIdentity, bool)>();
 
         foreach (string feedUrl in feedUrls)
         {
@@ -59,7 +59,7 @@ public static class DotnetPackageIndex
         return latestVersions;
     }
 
-    private static async Task<IReadOnlyList<(PackageIdentity packageId, bool isDeprecated)>> GetPackagesAsync(NuGetFeed feed)
+    private static async Task<IReadOnlyList<(PackageIdentity, bool)>> GetPackagesAsync(NuGetFeed feed)
     {
         Console.WriteLine($"Getting packages from {feed.FeedUrl}...");
 
@@ -70,7 +70,7 @@ public static class DotnetPackageIndex
             throw new ApplicationException("NuGetOrg should be the only feed.");
     }
 
-    private static async Task<IReadOnlyList<(PackageIdentity packageId, bool isDeprecated)>> GetPackagesFromNuGetOrgAsync(NuGetFeed feed)
+    private static async Task<IReadOnlyList<(PackageIdentity, bool)>> GetPackagesFromNuGetOrgAsync(NuGetFeed feed)
     {
         Console.WriteLine("Fetching owner information...");
         Dictionary<string, string[]> ownerInformation = await feed.GetOwnerMappingAsync();
@@ -89,11 +89,11 @@ public static class DotnetPackageIndex
 
         Console.WriteLine("Getting versions...");
 
-        ConcurrentBag<(PackageIdentity packageId, bool isDeprecated)> identities = [];
+        ConcurrentBag<(PackageIdentity, bool)> identities = [];
 
         await Parallel.ForEachAsync(packageIds, async (packageId, _) =>
         {
-            IReadOnlyList<(NuGetVersion version, bool isDeprecated)> versions = await feed.GetAllVersionsAsync(packageId);
+            IReadOnlyList<(NuGetVersion, bool)> versions = await feed.GetAllVersionsAsync(packageId);
 
             foreach ((NuGetVersion version, bool isDeprecated) version in versions)
             {
@@ -114,7 +114,8 @@ public static class DotnetPackageIndex
     {
         var result = new List<PackageIdentity>();
 
-        IEnumerable<IGrouping<string, (PackageIdentity packageId, bool isDeprecated)>> groups = identities.GroupBy(i => i.Item1.Id).OrderBy(g => g.Key);
+        IEnumerable<IGrouping<string, (PackageIdentity, bool)>> groups =
+            identities.GroupBy(i => i.packageId.Id).OrderBy(g => g.Key);
 
         foreach (IGrouping<string, (PackageIdentity packageId, bool isDeprecated)> group in groups)
         {
