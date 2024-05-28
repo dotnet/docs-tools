@@ -70,7 +70,7 @@ public static class DotnetPackageIndex
             throw new ApplicationException("NuGetOrg should be the only feed.");
     }
 
-    private static async Task<IReadOnlyList<(PackageIdentity version, bool isDeprecated)>> GetPackagesFromNuGetOrgAsync(NuGetFeed feed)
+    private static async Task<IReadOnlyList<(PackageIdentity packageId, bool isDeprecated)>> GetPackagesFromNuGetOrgAsync(NuGetFeed feed)
     {
         Console.WriteLine("Fetching owner information...");
         Dictionary<string, string[]> ownerInformation = await feed.GetOwnerMappingAsync();
