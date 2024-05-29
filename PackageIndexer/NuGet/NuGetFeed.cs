@@ -153,7 +153,7 @@ public sealed class NuGetFeed(string feedUrl)
             logger,
             cancellationToken);
 
-        List<(NuGetVersion, bool)> versions = new();
+        List<(NuGetVersion, bool)> versions = [];
 
         foreach (IPackageSearchMetadata package in packages)
         {
