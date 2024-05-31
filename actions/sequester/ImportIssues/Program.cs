@@ -115,6 +115,7 @@ internal class Program
                 options.ImportTriggerLabel,
                 options.ImportedLabel,
                 options.DefaultParentNode,
-                options.ParentNodes);
+                options.ParentNodes,
+                options.WorkItemTags);
     }
 }
