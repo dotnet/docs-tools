@@ -245,7 +245,6 @@ public class QuestGitHubService(
         return [.. iterations];
     }
 
-
     private async Task<QuestWorkItem?> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, QuestIteration currentIteration, IEnumerable<QuestIteration> allIterations)
     {
         int? workItem = LinkedQuestId(issueOrPullRequest);
