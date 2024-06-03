@@ -37,7 +37,8 @@ public class QuestGitHubService(
     string importTriggerLabelText,
     string importedLabelText,
     int defaultParentNode,
-    List<ParentForLabel> parentNodes) : IDisposable
+    List<ParentForLabel> parentNodes,
+    IEnumerable<LabelToTagMap> tagMap) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
     private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
@@ -95,7 +96,7 @@ public class QuestGitHubService(
                     {
                         if (questItem != null)
                         {
-                            await UpdateWorkItemAsync(questItem, item, _allIterations);
+                            await UpdateWorkItemAsync(questItem, item, _allIterations, tagMap);
                         }
                         else
                         {
@@ -183,7 +184,7 @@ public class QuestGitHubService(
             {
                 // This allows a human to force a manual update: just add the trigger label.
                 // Note that it updates even if the item is closed.
-                await UpdateWorkItemAsync(questItem, ghIssue, _allIterations);
+                await UpdateWorkItemAsync(questItem, ghIssue, _allIterations, tagMap);
 
             }
             // Next, if the item is already linked, consider any updates.
@@ -194,7 +195,7 @@ public class QuestGitHubService(
         }
         else if (sequestered && questItem is not null)
         {
-            await UpdateWorkItemAsync(questItem, ghIssue, _allIterations);
+            await UpdateWorkItemAsync(questItem, ghIssue, _allIterations, tagMap);
         }
     }
 
@@ -244,7 +245,6 @@ public class QuestGitHubService(
         return [.. iterations];
     }
 
-
     private async Task<QuestWorkItem?> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, QuestIteration currentIteration, IEnumerable<QuestIteration> allIterations)
     {
         int? workItem = LinkedQuestId(issueOrPullRequest);
@@ -252,7 +252,8 @@ public class QuestGitHubService(
         if (workItem is null)
         {
             // Create work item:
-            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, parentId, _azdoClient, _ospoClient, areaPath, _importTriggerLabel?.Id, currentIteration, allIterations);
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, parentId, _azdoClient, _ospoClient, areaPath,
+                _importTriggerLabel?.Id, currentIteration, allIterations, tagMap);
 
             string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
             string updatedBody = $"""
@@ -291,7 +292,10 @@ public class QuestGitHubService(
         }
     }
 
-    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem, QuestIssueOrPullRequest ghIssue, IEnumerable<QuestIteration> allIterations)
+    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem,
+        QuestIssueOrPullRequest ghIssue,
+        IEnumerable<QuestIteration> allIterations,
+        IEnumerable<LabelToTagMap> tagMap)
     {
         int parentId = parentIdFromIssue(ghIssue);
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(_ospoClient);
@@ -392,6 +396,20 @@ public class QuestGitHubService(
                 Value = iterationSize.QuestStoryPoint(),
             });
         }
+        var tags = from t in ghIssue.WorkItemTagsForIssue(tagMap)
+                   where !questItem.Tags.Contains(t)
+                   select t;
+        if (tags.Any())
+        {
+            string azDoTags = string.Join(";", tags);
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.Tags",
+                Value = azDoTags
+            });
+        }
+
         QuestWorkItem? newItem = default;
         if (patchDocument.Count != 0)
         {

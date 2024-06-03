@@ -2,6 +2,8 @@
 
 public record struct ParentForLabel(string Label, int ParentNodeId);
 
+public record struct LabelToTagMap(string Label, string Tag);
+
 public sealed record class ImportOptions
 {
     /// <summary>
@@ -64,4 +66,13 @@ public sealed record class ImportOptions
     /// the default parent node is set for the work item.
     /// </remarks>
     public int DefaultParentNode { get; init; }
+
+    /// <summary>
+    /// A map of GitHub labels to Azure DevOps tags.
+    /// </summary>
+    /// <remarks>
+    /// If an issue has the matching label, add the corresponding tag to
+    /// the mapped AzureDevOps item.
+    /// </remarks>
+    public List<LabelToTagMap> WorkItemTags { get; init; } = [];
 }

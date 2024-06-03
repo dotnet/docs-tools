@@ -88,6 +88,8 @@ public class QuestWorkItem
     /// </remarks>
     public required int? ParentRelationIndex { get; init; }
 
+    public required IEnumerable<string> Tags { get; init; }
+
     /// <summary>
     /// Create a work item object from the ID
     /// </summary>
@@ -110,6 +112,8 @@ public class QuestWorkItem
     /// <param name="path">The path component for the area path.</param>
     /// <param name="currentIteration">The current AzDo iteration</param>
     /// <param name="allIterations">The set of all iterations to search</param>
+    /// <param name="requestLabelNodeId">The ID of the request label</param>
+    /// <param name="tagMap">The map of GH label to tags</param>
     /// <returns>The newly created linked Quest work item.</returns>
     /// <remarks>
     /// Fill in the Json patch document from the GitHub issue.
@@ -124,7 +128,8 @@ public class QuestWorkItem
         string path,
         string? requestLabelNodeId,
         QuestIteration currentIteration,
-        IEnumerable<QuestIteration> allIterations)
+        IEnumerable<QuestIteration> allIterations,
+        IEnumerable<LabelToTagMap> tagMap)
     {
         string areaPath = $"""{questClient.QuestProject}\{path}""";
 
@@ -212,6 +217,17 @@ public class QuestWorkItem
             });
         }
 
+        var tags = issue.WorkItemTagsForIssue(tagMap);
+        if (tags.Any())
+        {
+            string azDoTags = string.Join(";", tags);
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.Tags",
+                Value = azDoTags
+            });
+        }
         /* This is ignored by Azure DevOps. It uses the PAT of the 
          * account running the code.
         var creator = await issue.AuthorMicrosoftPreferredName(ospoClient);
@@ -360,6 +376,9 @@ public class QuestWorkItem
             (int)double.Truncate(storyPointNode.GetDouble()) : null;
         string? assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
             assignedNode.GetString() : null;
+        string tagElement = fields.TryGetProperty("System.Tags", out JsonElement tagsNode) ?
+            tagsNode.GetString()! : string.Empty;
+        IEnumerable<string> tags = [..tagElement.Split(';').Select(s => s.Trim())];
         return new QuestWorkItem
         {
             Id = id,
@@ -371,7 +390,8 @@ public class QuestWorkItem
             AreaPath = areaPath,
             IterationPath = iterationPath,
             AssignedToId = (assignedID is not null) ? new Guid(assignedID) : null,
-            StoryPoints = storyPoints
+            StoryPoints = storyPoints,
+            Tags = tags
         };
     }
 

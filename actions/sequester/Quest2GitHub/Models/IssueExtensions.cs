@@ -91,4 +91,22 @@ public static class IssueExtensions
         }
         return default;
     }
+
+    /// <summary>
+    /// Return tags for a given issue
+    /// </summary>
+    /// <param name="issue">The GitHub issue or pull request</param>
+    /// <param name="tags">The mapping from issue to tag</param>
+    /// <returns>An enumerable of tags</returns>
+    public static IEnumerable<string> WorkItemTagsForIssue(this QuestIssueOrPullRequest issue, IEnumerable<LabelToTagMap> tags)
+    {
+        foreach (var label in issue.Labels)
+        {
+            var tag = tags.FirstOrDefault(t => t.Label == label.Name);
+            if (tag.Tag is not null)
+            {
+                yield return tag.Tag;
+            }
+        }
+    }
 }
