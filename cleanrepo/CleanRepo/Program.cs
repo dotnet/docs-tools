@@ -4,7 +4,10 @@ using Microsoft.Build.Construction;
 using System.Data;
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using Tesseract;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace CleanRepo;
 
@@ -26,12 +29,46 @@ static class Program
         //   }
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\testrepo3\\snippets", "--xml-source=true" };
+        args = new[] {
+        "--filter-images-for-text",
+        "--filter-text-json-file=c:\\Users\\diberry\\repos\\filter-text.json",
+        "--url-base-path=/azure/developer/javascript",
+        "--ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast",
+        "--articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles",
+        "--media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media"};
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
         //"--docfx-directory=c:\\users\\gewarren\\docs", "--url-base-path=/dotnet", "--delete=false"};
 #endif
+
+        /*
+         Catalog images with text
+
+        args = new[] {
+        "--catalog-images-with-text", 
+        "--url-base-path=/azure/developer/javascript",
+        "--ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast",
+        "--articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles",
+        "--media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media"};
+
+         */
+
+        /*
+         Filter images for text
+
+        args = new[] {
+        "--filter-images-for-text",
+        "--filter-text-json-file=c:\\Users\\diberry\\repos\\filter-text.json",
+        "--url-base-path=/azure/developer/javascript",
+        "--ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast",
+        "--articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles",
+        "--media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media"};
+
+ */
+
+
+
 
         Parser.Default.ParseArguments<Options>(args).WithParsed(RunOptions);
     }
@@ -46,6 +83,8 @@ static class Program
             options.FindOrphanedSnippets is false &&
             options.ReplaceRedirectTargets is false &&
             options.ReplaceWithRelativeLinks is false &&
+            options.CatalogImagesWithText is false &&
+            options.FilterImagesForText is false &&
             options.RemoveRedirectHops is false)
         {
             Console.WriteLine("\nYou didn't specify which function to perform. To see options, use 'CleanRepo.exe -?'.");
@@ -175,8 +214,12 @@ static class Program
         }
 
         // Catalog images
-        if (options.CatalogImages)
+        if (options.CatalogImages || options.CatalogImagesWithText || options.FilterImagesForText)
         {
+
+            Boolean ocrImages = (options.CatalogImagesWithText || options.FilterImagesForText ) ? true : false;
+            Boolean filteredOcrImage = options.FilterImagesForText ? true : false;
+
             if (string.IsNullOrEmpty(options.MediaDirectory))
             {
                 Console.WriteLine("\nEnter the path to the directory where you want to catalog media files:\n");
@@ -194,6 +237,11 @@ static class Program
                 Console.WriteLine($"'{options.MediaDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
+            if (options.CatalogImagesWithText && string.IsNullOrEmpty(options.OcrModelDirectory))
+            {
+                Console.WriteLine($"'--ocr-model-directory' directory was not provided.");
+                return;
+            }
 
             // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
             // This is done here (dynamically) because it relies on knowing the base path URL.
@@ -203,10 +251,70 @@ static class Program
             if (docFxRepo._imageRefs is null)
                 docFxRepo._imageRefs = GetMediaFiles(options.MediaDirectory);
 
-            Console.WriteLine($"\nCataloging the images in the '{options.MediaDirectory}' directory...\n");
+            Console.WriteLine($"\nCataloging '{docFxRepo._imageRefs.Count}' images (recursively) in the '{options.MediaDirectory}' directory...\n");
 
-            docFxRepo.OutputImageReferences();
+            if (options.CatalogImagesWithText)
+            {
+                // Extract hash keys from the dictionary
+                List<string> mediaFilesList = docFxRepo._imageRefs.Keys.ToList();
+
+                // Pass hash keys to ScanMediaFiles
+                docFxRepo._ocrRefs = ScanMediaFiles(mediaFilesList, options.OcrModelDirectory);
+
+
+
+                docFxRepo.OutputImageReferences(ocrImages, filteredOcrImage);
+            }
+            else if (options.FilterImagesForText)
+            {
+
+                if (String.IsNullOrEmpty(options.FilterTextJsonFile))
+                {
+                    Console.WriteLine($"\nThe filterTextJsonFile can't be empty when requesting FilterImagesForText.");
+                    return;
+                }
+                if (!File.Exists(options.FilterTextJsonFile))
+                {
+                    Console.WriteLine($"\nThe filterTextJsonFile '{options.FilterTextJsonFile}' doesn't exist.");
+                    return;
+                }
+
+                List<string> searchTerms;
+                try
+                {
+                    string jsonContent = File.ReadAllText(options.FilterTextJsonFile);
+                    searchTerms = JsonSerializer.Deserialize<List<string>>(jsonContent);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"\nError reading or deserializing '{options.FilterTextJsonFile}': {ex.Message}");
+                    return;
+                }
+                if (searchTerms.Count == 0)
+                {
+                    Console.WriteLine($"\nNo search terms found in '{options.FilterTextJsonFile}'.");
+                    return;
+                }
+
+                // Extract hash keys from the dictionary
+                List<string> mediaFilesList = docFxRepo._imageRefs.Keys.ToList();
+
+                // Pass hash keys to ScanMediaFiles
+                Dictionary<string, string> unfilteredResults = ScanMediaFiles(mediaFilesList, options.OcrModelDirectory);
+
+                // Filter results
+                docFxRepo._ocrFilteredRefs = FilterMediaFiles(unfilteredResults, searchTerms);
+
+                docFxRepo.OutputImageReferences(ocrImages, filteredOcrImage);
+            }
+            else
+            {
+                docFxRepo.OutputImageReferences(ocrImages, filteredOcrImage);
+            }
+
+
         }
+
 
         // Find orphaned include-type files
         if (options.FindOrphanedIncludes)
@@ -1570,13 +1678,13 @@ static class Program
     /// </summary>
     private static Dictionary<string, List<string>> GetMediaFiles(string mediaDirectory, bool searchRecursively = true)
     {
-        DirectoryInfo dir = new(mediaDirectory);
+        DirectoryInfo dir = new DirectoryInfo(mediaDirectory);
 
         SearchOption searchOption = searchRecursively ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
 
         Dictionary<string, List<string>> mediaFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
-        string[] fileExtensions = ["*.png", "*.jpg", "*.gif", "*.svg"];
+        string[] fileExtensions = { "*.png", "*.jpg", "*.gif", "*.svg" }; // Correctly initialize the array
 
         foreach (string extension in fileExtensions)
         {
@@ -1590,6 +1698,67 @@ static class Program
             Console.WriteLine("\nNo .png/.jpg/.gif/.svg files were found!");
 
         return mediaFiles;
+    }
+    /// <summary>
+    /// Returns a dictionary of all .png/.jpg/.gif/.svg files in the directory.
+    /// The search includes the text found in the files.
+    /// </summary>
+    private static Dictionary<string, string> ScanMediaFiles(List<string>? imageFilePaths, string ocrModelDirectory)
+    {
+        Dictionary<string, string> ocrDataForFiles = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+
+        if (imageFilePaths.Count == 0)
+            Console.WriteLine("\nNo .png/.jpg/.gif/.svg files to scan!");
+
+        using (var engine = new TesseractEngine(ocrModelDirectory, "eng", EngineMode.Default))
+        {
+
+            foreach (string imageFilePath in imageFilePaths)
+            {
+                using (var img = Pix.LoadFromFile(imageFilePath))
+                {
+                    using (Page page = engine.Process(img))
+                    {
+                        string text = page.GetText();
+                        ocrDataForFiles.Add(imageFilePath, text);
+                    }
+                }
+
+            }
+
+        }
+        return ocrDataForFiles;
+
+    }
+
+    // Filter ocrDictionary by filterTerms
+    private static Dictionary<string, List<KeyValuePair<string, string>>> FilterMediaFiles(Dictionary<string, string> ocrDictionary, List<string> filterTerms)
+    {
+        // Sort the filterTerms to ensure the result is sorted by filterTerm
+        filterTerms.Sort();
+
+        Dictionary<string, List<KeyValuePair<string, string>>> filterTermFilesDictionary = new Dictionary<string, List<KeyValuePair<string, string>>>();
+
+        foreach (string filterTerm in filterTerms)
+        {
+            List<KeyValuePair<string, string>> matchedFiles = new List<KeyValuePair<string, string>>();
+
+            foreach (var imageFile in ocrDictionary)
+            {
+                if (imageFile.Value.Contains(filterTerm, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Add both the file path and the text for that file
+                    matchedFiles.Add(new KeyValuePair<string, string>(imageFile.Key, imageFile.Value));
+                }
+            }
+
+            if (matchedFiles.Count > 0)
+            {
+                filterTermFilesDictionary.Add(filterTerm, matchedFiles);
+            }
+        }
+
+        return filterTermFilesDictionary;
     }
 
     /// <summary>
