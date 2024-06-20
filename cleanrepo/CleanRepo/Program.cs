@@ -5,6 +5,8 @@ using System.Data;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using Tesseract;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace CleanRepo;
 
@@ -26,12 +28,22 @@ static class Program
         //   }
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] { "--orphaned-snippets", "--snippets-directory=c:\\users\\gewarren\\testrepo3\\snippets", "--xml-source=true" };
+        args = new[] {
+        "--catalog-images-with-text", //search-images-for-text
+        "--url-base-path=/azure/developer/javascript",
+        "--ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast",
+        "--articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles",
+        "--media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media"};
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
         //"--docfx-directory=c:\\users\\gewarren\\docs", "--url-base-path=/dotnet", "--delete=false"};
 #endif
+
+
+         
+
+
 
         Parser.Default.ParseArguments<Options>(args).WithParsed(RunOptions);
     }
@@ -46,6 +58,8 @@ static class Program
             options.FindOrphanedSnippets is false &&
             options.ReplaceRedirectTargets is false &&
             options.ReplaceWithRelativeLinks is false &&
+            options.CatalogImagesWithText is false &&
+            options.SearchImagesForText is false &&
             options.RemoveRedirectHops is false)
         {
             Console.WriteLine("\nYou didn't specify which function to perform. To see options, use 'CleanRepo.exe -?'.");
@@ -175,7 +189,7 @@ static class Program
         }
 
         // Catalog images
-        if (options.CatalogImages)
+        if (options.CatalogImages || options.CatalogImagesWithText)
         {
             if (string.IsNullOrEmpty(options.MediaDirectory))
             {
@@ -194,6 +208,11 @@ static class Program
                 Console.WriteLine($"'{options.MediaDirectory}' is not a child of the docfx.json file's directory '{docFxRepo.DocFxDirectory}'.");
                 return;
             }
+            if(options.CatalogImagesWithText && string.IsNullOrEmpty(options.OcrModelDirectory))
+            {
+                Console.WriteLine($"'--ocr-model-directory' directory was not provided.");
+                return;
+            }
 
             // Add regex to find image refs similar to 'social_image_url: "/dotnet/media/logo.png"'
             // This is done here (dynamically) because it relies on knowing the base path URL.
@@ -203,9 +222,30 @@ static class Program
             if (docFxRepo._imageRefs is null)
                 docFxRepo._imageRefs = GetMediaFiles(options.MediaDirectory);
 
-            Console.WriteLine($"\nCataloging the images in the '{options.MediaDirectory}' directory...\n");
+            Console.WriteLine($"\nCataloging '{docFxRepo._imageRefs.Count}' images (recursively) in the '{options.MediaDirectory}' directory...\n");
 
-            docFxRepo.OutputImageReferences();
+            if (options.CatalogImagesWithText)
+            {
+                // Extract hash keys from the dictionary
+                List<string> mediaFilesList = docFxRepo._imageRefs.Keys.ToList();
+
+                // Pass hash keys to ScanMediaFiles
+                docFxRepo._ocrRefs = ScanMediaFiles(mediaFilesList, options.OcrModelDirectory);
+
+                docFxRepo.OutputImageReferences(true);
+            } else
+            {
+                docFxRepo.OutputImageReferences(false);
+            }
+
+            
+        }
+
+        // Search images for text 
+        if (options.SearchImagesForText)
+        {
+            // TBD: dina
+
         }
 
         // Find orphaned include-type files
@@ -1570,13 +1610,13 @@ static class Program
     /// </summary>
     private static Dictionary<string, List<string>> GetMediaFiles(string mediaDirectory, bool searchRecursively = true)
     {
-        DirectoryInfo dir = new(mediaDirectory);
+        DirectoryInfo dir = new DirectoryInfo(mediaDirectory);
 
         SearchOption searchOption = searchRecursively ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
 
         Dictionary<string, List<string>> mediaFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
-        string[] fileExtensions = ["*.png", "*.jpg", "*.gif", "*.svg"];
+        string[] fileExtensions = { "*.png", "*.jpg", "*.gif", "*.svg" }; // Correctly initialize the array
 
         foreach (string extension in fileExtensions)
         {
@@ -1590,6 +1630,38 @@ static class Program
             Console.WriteLine("\nNo .png/.jpg/.gif/.svg files were found!");
 
         return mediaFiles;
+    }
+    /// <summary>
+    /// Returns a dictionary of all .png/.jpg/.gif/.svg files in the directory.
+    /// The search includes the text found in the files.
+    /// </summary>
+    private static Dictionary<string, string> ScanMediaFiles(List<string>? imageFilePaths, string ocrModelDirectory)
+    {
+        Dictionary<string, string> ocrDataForFiles = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+
+        if (imageFilePaths.Count == 0)
+            Console.WriteLine("\nNo .png/.jpg/.gif/.svg files to scan!");
+
+
+        using (var engine = new TesseractEngine(ocrModelDirectory, "eng", EngineMode.Default))
+        {
+
+            foreach (string imageFilePath in imageFilePaths)
+            {
+                    using (var img = Pix.LoadFromFile(imageFilePath))
+                    {
+                        using (Page page = engine.Process(img))
+                        {
+                            string text = page.GetText();
+                            ocrDataForFiles.Add(imageFilePath, text);
+                        }
+                    }
+
+            }
+
+        }
+        return ocrDataForFiles;
+
     }
 
     /// <summary>

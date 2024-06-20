@@ -11,6 +11,12 @@ class Options
     [Option("snippets-directory", HelpText = "Top-level directory in which to perform snippet cleanup.")]
     public string? SnippetsDirectory { get; set; }
 
+    [Option("ocr-model-directory", HelpText = "Directory that contains the OCR models for image scanning.")]
+    public string? OcrModelDirectory { get; set; }
+
+    [Option("search-text-file", HelpText = "JSON file of array of strings to search images for.")]
+    public string? SearchTextJsonFile { get; set; }
+
     [Option("media-directory", HelpText = "Top-level directory in which to perform image/media cleanup.")]
     public string? MediaDirectory { get; set; }
 
@@ -37,6 +43,12 @@ class Options
 
     [Option("catalog-images", Default = false, HelpText = "Map images to the markdown/YAML files that reference them.")]
     public bool CatalogImages { get; set; }
+
+    [Option("catalog-images-with-text", Default = false, HelpText = "Map images to the markdown/YAML files that reference them, and include all text included in image.")]
+    public bool CatalogImagesWithText { get; set; }
+
+    [Option("search-images-for-text", Default = false, HelpText = "Search images for text.")]
+    public bool SearchImagesForText { get; set; }
 
     [Option("orphaned-snippets", HelpText = "Find orphaned .cs, .vb, .fs, .cpp, and .xaml files.")]
     public bool FindOrphanedSnippets { get; set; }
