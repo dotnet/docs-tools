@@ -16,6 +16,7 @@ class DocFxRepo(string startDirectory, string urlBasePath)
 
     internal Dictionary<string, List<string>>? _imageRefs = null;
     internal Dictionary<string, string>? _ocrRefs = null;
+    internal Dictionary<string, List<KeyValuePair<string, string>>>? _ocrFilteredRefs = null;
     internal readonly List<string> _imageLinkRegExes =
     [
         @"!\[.*?\]\((?<path>.*?(\.(png|jpg|gif|svg))+)", // ![hello](media/how-to/xamarin.png)
@@ -196,15 +197,24 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         return false;
     }
 
-    internal void OutputImageReferences(Boolean ocrImages)
+    internal void OutputImageReferences(Boolean ocrImages, Boolean filteredOcrImage)
     {
         // Find all image references.
         CatalogImages();
 
         WriteImageRefsToFile();
 
-        if(ocrImages)
-            WriteOcrImageRefsToFile();
+        if (ocrImages)
+        {
+            if (filteredOcrImage)
+            {
+                WriteFilteredOcrImageRefsToFile();
+            } else
+            {
+                WriteOcrImageRefsToFile();
+            }
+        }
+            
     }
 
     /// <summary>
@@ -284,6 +294,25 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         File.WriteAllText(outputPath, json);
 
         Console.WriteLine($"OCR Image file catalog successfully written to {outputPath}.");
+
+    }
+    private void WriteFilteredOcrImageRefsToFile()
+    {
+        // Serialize the image references to a JSON file.
+        JsonSerializerOptions options = new()
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            WriteIndented = true
+        };
+
+        string json = JsonSerializer.Serialize(_ocrFilteredRefs, options);
+
+        // Create a new file path.
+        string fileName = $"FilteredOcrImageFiles-{UrlBasePath.TrimStart('/').Replace('/', '-')}-{DateTime.Now.Ticks}.json";
+        string outputPath = Path.Combine(Path.GetTempPath(), fileName);
+        File.WriteAllText(outputPath, json);
+
+        Console.WriteLine($"Filtered Image file catalog successfully written to {outputPath}.");
 
     }
     internal List<Redirect> GetAllRedirects()
