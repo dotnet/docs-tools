@@ -277,15 +277,27 @@ static class Program
                     return;
                 }
 
-                List<string> searchTerms;
+                List<string> searchTerms = new List<string>();
                 try
                 {
                     string jsonContent = File.ReadAllText(options.FilterTextJsonFile);
                     searchTerms = JsonSerializer.Deserialize<List<string>>(jsonContent);
                 }
-                catch (Exception ex)
+                catch (IOException ioEx)
                 {
-                    Console.WriteLine($"\nError reading or deserializing '{options.FilterTextJsonFile}': {ex.Message}");
+                    Console.WriteLine($"\nIO error reading '{options.FilterTextJsonFile}': {ioEx.Message}");
+                }
+                catch (UnauthorizedAccessException uaEx)
+                {
+                    Console.WriteLine($"\nAccess error reading '{options.FilterTextJsonFile}': {uaEx.Message}");
+                }
+                catch (JsonException jsonEx)
+                {
+                    Console.WriteLine($"\nError deserializing '{options.FilterTextJsonFile}': {jsonEx.Message}");
+                }
+                catch (Exception ex) // Fallback for any other unexpected exceptions
+                {
+                    Console.WriteLine($"\nUnexpected error: {ex.Message}");
                     return;
                 }
                 if (searchTerms.Count == 0)
@@ -1703,14 +1715,17 @@ static class Program
     /// </summary>
     private static Dictionary<string, string> ScanMediaFiles(List<string>? imageFilePaths, string ocrModelDirectory)
     {
+
         Dictionary<string, string> ocrDataForFiles = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
 
-        if (imageFilePaths.Count == 0)
+        if (imageFilePaths == null || imageFilePaths.Count == 0)
+        {
             Console.WriteLine("\nNo .png/.jpg/.gif/.svg files to scan!");
+            return ocrDataForFiles;
+        }
 
         using (var engine = new TesseractEngine(ocrModelDirectory, "eng", EngineMode.Default))
         {
-
             foreach (string imageFilePath in imageFilePaths)
             {
                 using (var img = Pix.LoadFromFile(imageFilePath))
@@ -1721,9 +1736,7 @@ static class Program
                         ocrDataForFiles.Add(imageFilePath, text);
                     }
                 }
-
             }
-
         }
         return ocrDataForFiles;
 
