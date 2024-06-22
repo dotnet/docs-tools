@@ -263,7 +263,7 @@ static class Program
 
 
 
-                docFxRepo.OutputImageReferences(ocrImages, filteredOcrImage);
+                docFxRepo.OutputImageReferences(true);
             }
             else if (options.FilterImagesForText)
             {
