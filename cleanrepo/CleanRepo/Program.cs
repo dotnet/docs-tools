@@ -307,7 +307,7 @@ static class Program
             }
             else
             {
-                docFxRepo.OutputImageReferences(ocrImages, filteredOcrImage);
+                docFxRepo.OutputImageReferences();
             }
 
 
