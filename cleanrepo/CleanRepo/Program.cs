@@ -217,7 +217,6 @@ static class Program
         if (options.CatalogImages || options.CatalogImagesWithText || options.FilterImagesForText)
         {
 
-            Boolean ocrImages = (options.CatalogImagesWithText || options.FilterImagesForText ) ? true : false;
             Boolean filteredOcrImage = options.FilterImagesForText ? true : false;
 
             if (string.IsNullOrEmpty(options.MediaDirectory))
