@@ -197,7 +197,7 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         return false;
     }
 
-    internal void OutputImageReferences(Boolean ocrImages, Boolean filteredOcrImage)
+    internal void OutputImageReferences(bool ocrImages = false, bool filteredOcrImage = false)
     {
         // Find all image references.
         CatalogImages();
