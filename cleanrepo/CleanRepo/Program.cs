@@ -303,7 +303,7 @@ static class Program
                 // Filter results
                 docFxRepo._ocrFilteredRefs = FilterMediaFiles(unfilteredResults, searchTerms);
 
-                docFxRepo.OutputImageReferences(ocrImages, filteredOcrImage);
+                docFxRepo.OutputImageReferences(true, true);
             }
             else
             {
