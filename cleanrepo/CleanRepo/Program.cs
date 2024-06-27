@@ -1715,7 +1715,7 @@ static class Program
     private static Dictionary<string, string> ScanMediaFiles(List<string>? imageFilePaths, string ocrModelDirectory)
     {
 
-        Dictionary<string, string> ocrDataForFiles = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+        Dictionary<string, string> ocrDataForFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
         if (imageFilePaths == null || imageFilePaths.Count == 0)
         {
