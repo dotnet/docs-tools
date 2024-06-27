@@ -14,9 +14,6 @@ class Options
     [Option("ocr-model-directory", HelpText = "Directory that contains the OCR models for image scanning.")]
     public string? OcrModelDirectory { get; set; }
 
-    //[Option("search-text-file", HelpText = "JSON file of array of strings to search images for.")]
-    //public string? SearchTextJsonFile { get; set; }
-
     [Option("filter-text-json-file", HelpText = "JSON file of array of strings to filter OCR results with.")]
     public string? FilterTextJsonFile { get; set; }
 
@@ -49,9 +46,6 @@ class Options
 
     [Option("catalog-images-with-text", Default = false, HelpText = "Map images to the markdown/YAML files that reference them, and include all text included in image.")]
     public bool CatalogImagesWithText { get; set; }
-
-    //[Option("search-images-for-text", Default = false, HelpText = "Search images for text.")]
-    //public bool SearchImagesForText { get; set; }
 
     [Option("filter-images-for-text", Default = false, HelpText = "Filter images for text.")]
     public bool FilterImagesForText { get; set; }

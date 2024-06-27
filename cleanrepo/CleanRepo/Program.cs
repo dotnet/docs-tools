@@ -251,7 +251,7 @@ static class Program
 
             Console.WriteLine($"\nCataloging '{docFxRepo._imageRefs.Count}' images (recursively) in the '{options.MediaDirectory}' directory...\n");
 
-            if (options.CatalogImagesWithText)
+            if (options.CatalogImagesWithText && !string.IsNullOrEmpty(options.OcrModelDirectory))
             {
                 // Extract hash keys from the dictionary
                 List<string> mediaFilesList = docFxRepo._imageRefs.Keys.ToList();
@@ -263,7 +263,7 @@ static class Program
 
                 docFxRepo.OutputImageReferences(true);
             }
-            else if (options.FilterImagesForText)
+            else if (options.FilterImagesForText && !string.IsNullOrEmpty(options.OcrModelDirectory))
             {
                 if (string.IsNullOrEmpty(options.FilterTextJsonFile))
                 {
@@ -280,7 +280,8 @@ static class Program
                 try
                 {
                     string jsonContent = File.ReadAllText(options.FilterTextJsonFile);
-                    searchTerms = JsonSerializer.Deserialize<List<string>>(jsonContent);
+
+                    searchTerms = JsonSerializer.Deserialize<List<string>>(jsonContent) ?? new List<string>();
                 }
                 catch (IOException ioEx)
                 {
@@ -308,6 +309,10 @@ static class Program
                 // Extract hash keys from the dictionary
                 List<string> mediaFilesList = docFxRepo._imageRefs.Keys.ToList();
 
+                if(mediaFilesList.Count==0)
+                {
+                    Console.WriteLine($"\nNo media files found.");
+                }
                 // Pass hash keys to ScanMediaFiles
                 Dictionary<string, string> unfilteredResults = ScanMediaFiles(mediaFilesList, options.OcrModelDirectory);
 
@@ -1687,13 +1692,13 @@ static class Program
     /// </summary>
     private static Dictionary<string, List<string>> GetMediaFiles(string mediaDirectory, bool searchRecursively = true)
     {
-        DirectoryInfo dir = new DirectoryInfo(mediaDirectory);
+        DirectoryInfo dir = new(mediaDirectory);
 
         SearchOption searchOption = searchRecursively ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
 
         Dictionary<string, List<string>> mediaFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
-        string[] fileExtensions = { "*.png", "*.jpg", "*.gif", "*.svg" }; // Correctly initialize the array
+        string[] fileExtensions = [ "*.png", "*.jpg", "*.gif", "*.svg" ]; // Correctly initialize the array
 
         foreach (string extension in fileExtensions)
         {
