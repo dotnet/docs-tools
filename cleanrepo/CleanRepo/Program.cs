@@ -1738,7 +1738,6 @@ static class Program
             }
         }
         return ocrDataForFiles;
-
     }
 
     // Filter ocrDictionary by filterTerms
