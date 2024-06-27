@@ -276,7 +276,7 @@ static class Program
                     return;
                 }
 
-                List<string> searchTerms = new List<string>();
+                List<string> searchTerms = [];
                 try
                 {
                     string jsonContent = File.ReadAllText(options.FilterTextJsonFile);
