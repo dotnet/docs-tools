@@ -1746,7 +1746,7 @@ static class Program
         // Sort the filterTerms to ensure the result is sorted by filterTerm
         filterTerms.Sort();
 
-        Dictionary<string, List<KeyValuePair<string, string>>> filterTermFilesDictionary = new Dictionary<string, List<KeyValuePair<string, string>>>();
+        Dictionary<string, List<KeyValuePair<string, string>>> filterTermFilesDictionary = [];
 
         foreach (string filterTerm in filterTerms)
         {
