@@ -1717,7 +1717,7 @@ static class Program
 
         Dictionary<string, string> ocrDataForFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
-        if (imageFilePaths == null || imageFilePaths.Count == 0)
+        if (imageFilePaths is null or { Count : 0 })
         {
             Console.WriteLine("\nNo .png/.jpg/.gif/.svg files to scan!");
             return ocrDataForFiles;
