@@ -265,8 +265,7 @@ static class Program
             }
             else if (options.FilterImagesForText)
             {
-
-                if (String.IsNullOrEmpty(options.FilterTextJsonFile))
+                if (string.IsNullOrEmpty(options.FilterTextJsonFile))
                 {
                     Console.WriteLine($"\nThe filterTextJsonFile can't be empty when requesting FilterImagesForText.");
                     return;
