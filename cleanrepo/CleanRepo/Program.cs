@@ -1750,7 +1750,7 @@ static class Program
 
         foreach (string filterTerm in filterTerms)
         {
-            List<KeyValuePair<string, string>> matchedFiles = new List<KeyValuePair<string, string>>();
+            List<KeyValuePair<string, string>> matchedFiles = [];
 
             foreach (var imageFile in ocrDictionary)
             {
