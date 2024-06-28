@@ -11,12 +11,6 @@ class Options
     [Option("snippets-directory", HelpText = "Top-level directory in which to perform snippet cleanup.")]
     public string? SnippetsDirectory { get; set; }
 
-    [Option("ocr-model-directory", HelpText = "Directory that contains the OCR models for image scanning.")]
-    public string? OcrModelDirectory { get; set; }
-
-    [Option("filter-text-json-file", HelpText = "JSON file of array of strings to filter OCR results with.")]
-    public string? FilterTextJsonFile { get; set; }
-
     [Option("media-directory", HelpText = "Top-level directory in which to perform image/media cleanup.")]
     public string? MediaDirectory { get; set; }
 
@@ -44,12 +38,6 @@ class Options
     [Option("catalog-images", Default = false, HelpText = "Map images to the markdown/YAML files that reference them.")]
     public bool CatalogImages { get; set; }
 
-    [Option("catalog-images-with-text", Default = false, HelpText = "Map images to the markdown/YAML files that reference them, and include all text included in image.")]
-    public bool CatalogImagesWithText { get; set; }
-
-    [Option("filter-images-for-text", Default = false, HelpText = "Filter images for text.")]
-    public bool FilterImagesForText { get; set; }
-
     [Option("orphaned-snippets", HelpText = "Find orphaned .cs, .vb, .fs, .cpp, and .xaml files.")]
     public bool FindOrphanedSnippets { get; set; }
 
@@ -64,6 +52,19 @@ class Options
 
     [Option("remove-hops", HelpText = "Clean redirection JSON file by replacing targets that are themselves redirected (daisy chains).")]
     public bool RemoveRedirectHops { get; set; }
+
+    [Option("catalog-images-with-text", Default = false, HelpText = "Map images to the markdown/YAML files that reference them, with all text found in images. Must set --ocr-model-directory path.")]
+    public bool CatalogImagesWithText { get; set; }
+
+    [Option("filter-images-for-text", Default = false, HelpText = "Filter images for text. Must set --ocr-model-directory and --filter-text-json-file paths.")]
+    public bool FilterImagesForText { get; set; }
+
+    [Option("ocr-model-directory", HelpText = "Directory that contains the OCR (Tesseract) models for image scanning.")]
+    public string? OcrModelDirectory { get; set; }
+
+    [Option("filter-text-json-file", HelpText = "JSON file of array of strings to filter OCR results with.")]
+    public string? FilterTextJsonFile { get; set; }
+
 
     //[Option("format-redirects", Required = false, HelpText = "Format the redirection JSON file by deserializing and then serializing with pretty printing.")]
     //public bool FormatRedirectsFile { get; set; }

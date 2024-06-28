@@ -30,12 +30,8 @@ static class Program
         //
         // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
         args = new[] {
-        "--filter-images-for-text",
-        "--filter-text-json-file=c:\\Users\\diberry\\repos\\filter-text.json",
-        "--url-base-path=/azure/developer/javascript",
-        "--ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast",
-        "--articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles",
-        "--media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media"};
+                    "--help"
+        };
         //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
         //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
         //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
@@ -43,7 +39,17 @@ static class Program
 #endif
 
         /*
-         Catalog images with text
+
+        Display help screen
+
+        args = new[] {
+        "--help"
+         */
+
+
+        /*
+
+        Catalog images with text
 
         args = new[] {
         "--catalog-images-with-text", 
@@ -51,11 +57,11 @@ static class Program
         "--ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast",
         "--articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles",
         "--media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media"};
-
          */
 
         /*
-         Filter images for text
+
+        Filter images for text
 
         args = new[] {
         "--filter-images-for-text",
@@ -64,8 +70,7 @@ static class Program
         "--ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast",
         "--articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles",
         "--media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media"};
-
- */
+         */
 
 
 
