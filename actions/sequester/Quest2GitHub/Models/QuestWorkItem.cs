@@ -26,7 +26,7 @@ public class QuestWorkItem
     public required string Title
     {
         get => _title;
-        init => _title = TruncateTitleIfRequired(value);
+        init => _title = TruncateTitleWhenLongerThanMax(value);
     }
 
     // /fields/System.Description
@@ -145,7 +145,7 @@ public class QuestWorkItem
                 Operation = Op.Add,
                 Path = "/fields/System.Title",
                 From = default,
-                Value = TruncateTitleIfRequired(issue.Title)
+                Value = TruncateTitleWhenLongerThanMax(issue.Title)
             },
             new() {
                 Operation = Op.Add,
@@ -284,7 +284,7 @@ public class QuestWorkItem
         return newItem;
     }
 
-    private static string TruncateTitleIfRequired(string title)
+    private static string TruncateTitleWhenLongerThanMax(string title)
     {
         // https://learn.microsoft.com/azure/devops/boards/work-items/about-work-items?view=azure-devops&tabs=agile-process#common-work-tracking-fields
         const int MaxTitleLength = 255;
