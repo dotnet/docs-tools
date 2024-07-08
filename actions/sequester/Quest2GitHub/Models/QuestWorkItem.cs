@@ -10,6 +10,8 @@ public class QuestWorkItem
     // fails, stop sending invalid requests.
     private static bool? s_linkedGitHubRepo;
 
+    private string _title = "";
+
     /// <summary>
     /// The Work item ID
     /// </summary>
@@ -21,7 +23,11 @@ public class QuestWorkItem
     /// <remarks>
     /// This is retrieved as /fields/System.Title
     /// </remarks>
-    public required string Title { get; init; }
+    public required string Title
+    {
+        get => _title;
+        init => _title = TruncateTitleIfRequired(value);
+    }
 
     // /fields/System.Description
     public required string Description { get; init; }
@@ -139,7 +145,7 @@ public class QuestWorkItem
                 Operation = Op.Add,
                 Path = "/fields/System.Title",
                 From = default,
-                Value = issue.Title
+                Value = TruncateTitleIfRequired(issue.Title)
             },
             new() {
                 Operation = Op.Add,
@@ -276,6 +282,19 @@ public class QuestWorkItem
             newItem = await newItem.AddClosingPR(questClient, issue.ClosingPRUrl) ?? newItem;
         }
         return newItem;
+    }
+
+    private static string TruncateTitleIfRequired(string title)
+    {
+        // https://learn.microsoft.com/azure/devops/boards/work-items/about-work-items?view=azure-devops&tabs=agile-process#common-work-tracking-fields
+        const int MaxTitleLength = 255;
+
+        if (title is { Length: > MaxTitleLength })
+        {
+            return title[0..MaxTitleLength];
+        }
+
+        return title;
     }
 
     public static string BuildDescriptionFromIssue(QuestIssueOrPullRequest issue, string? requestLabelNodeId)
