@@ -57,7 +57,6 @@ public class GetIterationTests
         var actual = IssueExtensions.ProjectIteration("Feb", 2024, _allIterations);
         Assert.Equal("""Content\Germanium\FY24Q3\02 Feb""", actual?.Path);
     }
-
 }
 
 
