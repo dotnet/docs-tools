@@ -202,17 +202,15 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         // Find all image references.
         CatalogImages();
 
-        WriteImageRefsToFile();
-
         if (ocrImages)
         {
-            if (filteredOcrImage)
-            {
-                WriteFilteredOcrImageRefsToFile();
-            } else
-            {
-                WriteOcrImageRefsToFile();
-            }
+            WriteOcrImageRefsToFile();
+        } else if (ocrImages && filteredOcrImage)
+        {
+            WriteFilteredOcrImageRefsToFile();
+        } else
+        {
+            WriteImageRefsToFile();
         }
             
     }
