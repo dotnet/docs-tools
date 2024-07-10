@@ -8,7 +8,10 @@ public class QuestWorkItem
     // Keep track of failures to update the closing PR.
     // For any given run, if the REST call to add a closing PR
     // fails, stop sending invalid requests.
-    private static bool? s_linkedGitHubRepo;
+    // 7/9/2024: Set this to false. GitHub integration links
+    // are currently disabled. Linking to the closing PR always fails.
+    // So, don't try for now.
+    private static bool? s_linkedGitHubRepo = false;
 
     private string _title = "";
 

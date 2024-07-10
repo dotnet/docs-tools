@@ -76,12 +76,12 @@ public class QuestGitHubService(
         var issueQueryEnumerable = QueryIssuesOrPullRequests<QuestIssue>();
         await ProcessItems(issueQueryEnumerable);
         Console.WriteLine("-----   Finished processing issues.          --------");
-        Console.WriteLine("     ----- Regenerating bearer token   ------");
+        //Console.WriteLine("     ----- Regenerating bearer token   ------");
         await ghClient.RegenerateBearerToken();
-        Console.WriteLine("-----   Starting processing pull requests.   --------");
-        var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
-        await ProcessItems(prQueryEnumerable);
-        Console.WriteLine("-----   Finished processing pull requests.   --------");
+        //Console.WriteLine("-----   Starting processing pull requests.   --------");
+        //var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
+        //await ProcessItems(prQueryEnumerable);
+        //Console.WriteLine("-----   Finished processing pull requests.   --------");
 
         async Task ProcessItems(IAsyncEnumerable<QuestIssueOrPullRequest> items)
         {
