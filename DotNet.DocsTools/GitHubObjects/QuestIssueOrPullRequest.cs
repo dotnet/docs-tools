@@ -163,17 +163,6 @@ public abstract record QuestIssueOrPullRequest : Issue
                     name
                   }
                 }
-                timelineItems(last: 5) {
-                  nodes {
-                    ... on ClosedEvent {
-                      closer {
-                        ... on PullRequest {
-                          url
-                        }
-                      }
-                    }
-                  }
-                }
                 projectItems(first: 25) {
                   ... on ProjectV2ItemConnection {
                     nodes {
