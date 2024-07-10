@@ -48,5 +48,5 @@ public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryRes
     public static QuestPullRequest FromJsonElement(JsonElement issueNode, QuestIssueOrPullRequestVariables variables) =>
         new(issueNode, variables.Organization, variables.Repository);
 
-    private QuestPullRequest(JsonElement issueNode, string organization, string repository) : base(issueNode, organization, repository) { }
+    private QuestPullRequest(JsonElement issueNode, string organization, string repository) : base(issueNode, organization, repository, false) { }
 }
