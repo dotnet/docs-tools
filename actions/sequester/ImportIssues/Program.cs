@@ -64,7 +64,6 @@ try
     {
         Console.WriteLine("Using PAT token for Azure DevOps.");
     }
-
     using QuestGitHubService serviceWorker = await CreateService(importOptions, !singleIssue, useBearerToken);
 
     if (singleIssue)
