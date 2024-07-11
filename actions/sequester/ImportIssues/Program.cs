@@ -110,6 +110,9 @@ static async Task<QuestGitHubService> CreateService(ImportOptions options, bool 
         Console.WriteLine("Warning: Imported work items won't be assigned based on GitHub assignee.");
     }
 
+    string? token = options.ApiKeys.QuestAccessToken
+        ?? options.ApiKeys.QuestKey;
+
     return new QuestGitHubService(
             gitHubClient,
             ospoClient,
