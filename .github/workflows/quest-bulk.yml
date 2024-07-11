@@ -48,7 +48,7 @@ jobs:
 
       - name: bulk-sequester
         id: bulk-sequester
-        uses: dotnet/docs-tools/actions/sequester@main
+        uses: dotnet/docs-tools/actions/sequester@going-secretless
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
           ImportOptions__ApiKeys__QuestKey: ${{ secrets.QUEST_KEY }}
