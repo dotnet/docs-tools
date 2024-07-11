@@ -118,11 +118,11 @@ internal class Program
 
         if (useBearerToken)
         {
-            Console.WriteLine("Using Bearer token for Azure DevOps.");
+            Console.WriteLine("Using secretless for Azure DevOps.");
         }
         else
         {
-            Console.WriteLine("Using PAT token for Azure DevOps.");
+            Console.WriteLine("Using PAT for Azure DevOps.");
         }
         return new QuestGitHubService(
                 gitHubClient,
