@@ -19,7 +19,7 @@
   <ItemGroup>
     <PackageReference Include="IEvangelist.Azure.CosmosRepository" Version="8.1.7" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Text.Json" Version="8.0.3" />
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
 
 </Project>
