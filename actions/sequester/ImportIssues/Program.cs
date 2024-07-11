@@ -51,6 +51,19 @@ try
     {
         throw new InvalidOperationException("Azure DevOps token is missing.");
     }
+    if (string.IsNullOrWhiteSpace(token))
+    {
+        throw new InvalidOperationException("Azure DevOps token is missing.");
+    }
+
+    if (useBearerToken)
+    {
+        Console.WriteLine("Using Bearer token for Azure DevOps.");
+    }
+    else
+    {
+        Console.WriteLine("Using PAT token for Azure DevOps.");
+    }
 
     using QuestGitHubService serviceWorker = await CreateService(importOptions, !singleIssue, useBearerToken);
 
