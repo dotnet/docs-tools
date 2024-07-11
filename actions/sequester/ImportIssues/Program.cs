@@ -109,6 +109,7 @@ internal class Program
         }
         string? token = options.ApiKeys.QuestAccessToken
             ?? options.ApiKeys.QuestKey;
+        bool useBearerToken = options.ApiKeys.QuestAccessToken is not null;
 
         if (string.IsNullOrWhiteSpace(token))
         {
