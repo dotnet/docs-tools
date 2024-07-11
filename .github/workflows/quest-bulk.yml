@@ -59,6 +59,5 @@ jobs:
         with:
           org: ${{ github.repository_owner }}
           repo: ${{ github.repository }}
-          branch: 'going-secretless'
           issue: '-1'
           duration: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.duration || github.event.schedule == '0 9 6 * *' && -1 || 5 }}
