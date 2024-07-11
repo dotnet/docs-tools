@@ -130,13 +130,36 @@ public abstract record QuestIssueOrPullRequest : Issue
         query FindUpdatedIssues($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
           repository(owner: $organization, name: $repository) {
             issues(
-    """ + EnumerationQueryBody;
+    """ + EnumerationQueryBody +
+    """
+            timelineItems(last: 5) {
+                nodes {
+                ... on ClosedEvent {
+                    closer {
+                    ... on PullRequest {
+                        url
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+    }
+    """;
 
     protected const string EnumerateQuestPullRequestQueryText = """
         query FindUpdatedPullRequests($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
           repository(owner: $organization, name: $repository) {
             pullRequests(
-    """ + EnumerationQueryBody;
+    """ + EnumerationQueryBody +
+    """
+            }
+          }
+        }
+    }
+    """;
 
     private const string EnumerationQueryBody = """
               first: 25
@@ -161,17 +184,6 @@ public abstract record QuestIssueOrPullRequest : Issue
                   login
                   ... on User {
                     name
-                  }
-                }
-                timelineItems(last: 5) {
-                  nodes {
-                    ... on ClosedEvent {
-                      closer {
-                        ... on PullRequest {
-                          url
-                        }
-                      }
-                    }
                   }
                 }
                 projectItems(first: 25) {
@@ -226,13 +238,9 @@ public abstract record QuestIssueOrPullRequest : Issue
                     bodyHTML
                   }
                 }
-              }
-            }
-          }
-        }
         """;
 
-    private protected QuestIssueOrPullRequest(JsonElement issueNode, string organization, string repository) : base(issueNode)
+    private protected QuestIssueOrPullRequest(JsonElement issueNode, string organization, string repository, bool includeTimeLine=true) : base(issueNode)
     {
         var author = Actor.FromJsonElement(ResponseExtractors.GetAuthorChildElement(issueNode));
         FormattedAuthorLoginName = (author is not null) ?
@@ -260,10 +268,13 @@ public abstract record QuestIssueOrPullRequest : Issue
         ProjectStoryPoints = [ ..points.Where(p => p is not null).ToArray()];
 
         // check state. If re-opened, don't reference the (not correct) closing PR
-        ClosingPRUrl = ResponseExtractors.GetChildArrayElements(issueNode, "timelineItems", item =>
-            (item.TryGetProperty("closer", out JsonElement closer) && closer.ValueKind == JsonValueKind.Object) ?
-            ResponseExtractors.OptionalStringProperty(closer, "url")
-            : default).LastOrDefault(url => url is not null);
+        if (includeTimeLine)
+        {
+            ClosingPRUrl = ResponseExtractors.GetChildArrayElements(issueNode, "timelineItems", item =>
+                (item.TryGetProperty("closer", out JsonElement closer) && closer.ValueKind == JsonValueKind.Object) ?
+                ResponseExtractors.OptionalStringProperty(closer, "url")
+                : default).LastOrDefault(url => url is not null);
+        }
 
         LinkText = $"""
         <a href = "https://github.com/{organization}/{repository}/issues/{Number}">
