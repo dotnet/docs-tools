@@ -107,11 +107,21 @@ internal class Program
         {
             Console.WriteLine("Warning: Imported work items won't be assigned based on GitHub assignee.");
         }
+        bool useBearerToken = (options.ApiKeys.QuestAccessToken is not null);
+        string? token = useBearerToken ?
+            options.ApiKeys.QuestAccessToken :
+            options.ApiKeys.QuestKey;
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new InvalidOperationException("Azure DevOps token is missing.");
+        }
 
         return new QuestGitHubService(
                 gitHubClient,
                 ospoClient,
-                options.ApiKeys.QuestKey,
+                token,
+                useBearerToken,
                 options.AzureDevOps.Org,
                 options.AzureDevOps.Project,
                 options.AzureDevOps.AreaPath,
