@@ -156,6 +156,10 @@ public sealed class QuestClient : IDisposable
     {
         if (response.IsSuccessStatusCode)
         {
+            // Temporary debugging code:
+
+            string packet = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Response: {packet}");
             JsonDocument jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
             return jsonDocument.RootElement;
         }
