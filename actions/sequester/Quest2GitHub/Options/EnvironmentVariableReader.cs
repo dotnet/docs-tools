@@ -6,6 +6,7 @@ internal sealed class EnvironmentVariableReader
     {
         var githubToken = CoalesceEnvVar(("ImportOptions__ApiKeys__GitHubToken", "GitHubKey"));
         // This is optional so that developers can run the app locally without setting up the devOps token.
+        // In GitHub Actions, this is preferred.
         var questToken = CoalesceEnvVar(("ImportOptions__ApiKeys__QuestAccessToken", "QuestAccessToken"), false);
 
         // These keys are used when the app is run as an org enabled action. They are optional. 
