@@ -45,7 +45,7 @@ public sealed class QuestClient : IDisposable
         _client.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue(MediaTypeNames.Application.Json));
         _client.DefaultRequestHeaders.Authorization = useBearerToken ?
-            new AuthenticationHeaderValue("Bearer", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}"))) :
+            new AuthenticationHeaderValue("Bearer", token) :
             new AuthenticationHeaderValue("Basic",
                 Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
 
