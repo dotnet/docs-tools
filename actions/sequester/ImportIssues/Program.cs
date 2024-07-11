@@ -117,6 +117,14 @@ internal class Program
             throw new InvalidOperationException("Azure DevOps token is missing.");
         }
 
+        if (useBearerToken)
+        {
+            Console.WriteLine("Using Bearer token for Azure DevOps.");
+        }
+        else
+        {
+            Console.WriteLine("Using PAT token for Azure DevOps.");
+        }
         return new QuestGitHubService(
                 gitHubClient,
                 ospoClient,
