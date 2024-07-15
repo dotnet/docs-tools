@@ -64,7 +64,7 @@ public sealed class QuestClient : IDisposable
     public async Task<JsonElement> RetrieveAllIterations()
     {
         string getIterationsUrl =
-            $"https://dev.azure.com/{QuestOrg}/{QuestProject}/_apis/work/teamsettings/iterations?api-version=7.1-preview.1";
+            $"https://dev.azure.com/{QuestOrg}/{QuestProject}/_apis/wit/classificationnodes?$depth=3&api-version=7.1";
 
         using HttpResponseMessage response = await InitiateRequestAsync(
             client => client.GetAsync(getIterationsUrl));

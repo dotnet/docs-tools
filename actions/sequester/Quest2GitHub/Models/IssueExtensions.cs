@@ -4,25 +4,10 @@ namespace Quest2GitHub.Models;
 
 public static class IssueExtensions
 {
-    private static readonly Dictionary<string, int> s_months = new ()
-    {
-        ["Jan"] =  1, // 3
-        ["Feb"] =  2, // 3
-        ["Mar"] =  3, // 3
-        ["Apr"] =  4, // 4
-        ["May"] =  5, // 4
-        ["Jun"] =  6, // 4
-        ["Jul"] =  7, // 1
-        ["Aug"] =  8, // 1
-        ["Sep"] =  9, // 1
-        ["Oct"] = 10, // 2
-        ["Nov"] = 11, // 2
-        ["Dec"] = 12  // 2
-    };
     public static StoryPointSize? LatestStoryPointSize(this QuestIssueOrPullRequest issue)
     {
         IEnumerable<StoryPointSize> sizes = from size in issue.ProjectStoryPoints
-                    let month = s_months[size.Month]
+                    let month = StoryPointSize.MonthOrdinal(size.Month)
                     orderby size.CalendarYear descending,
                     month descending
                     select size;
@@ -74,7 +59,7 @@ public static class IssueExtensions
     /// <returns>The current iteration</returns>
     public static QuestIteration? ProjectIteration(string month, int calendarYear, IEnumerable<QuestIteration> iterations)
     {
-        if (!s_months.TryGetValue(month, out int monthNumber))
+        if (!StoryPointSize.TryGetMonthOrdinal(month, out int monthNumber))
         {
             return default;
         }

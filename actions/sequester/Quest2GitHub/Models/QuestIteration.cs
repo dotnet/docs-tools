@@ -2,7 +2,8 @@
 
 public class QuestIteration
 {
-    public required Guid Id { get; init; }
+    public required int Id { get; init; }
+    public required Guid Identifier { get; init; }
     public required string Name { get; init; }
     public required string Path { get; init; }
 
@@ -13,6 +14,9 @@ public class QuestIteration
         return IssueExtensions.ProjectIteration(currentMonth, currentYear, iterations);
     }
 
-    override public string ToString() => $"{Id} {Name} ({Path})";
+    public static QuestIteration? FutureIteration(IEnumerable<QuestIteration> iterations)
+        => iterations.SingleOrDefault(sprint => sprint.Name is "Future");
+
+    override public string ToString() => $"{Identifier} {Id} {Name} ({Path})";
 
 }
