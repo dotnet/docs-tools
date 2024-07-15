@@ -200,15 +200,20 @@ public class QuestWorkItem
         };
         patchDocument.Add(assignPatch);
         StoryPointSize? iterationSize = issue.LatestStoryPointSize();
+        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
         if (iterationSize != null)
         {
             Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
+            if (iterationSize?.IsPastIteration == true)
+            {
+                Console.WriteLine($"Moving to the backlog / future iteration.");
+                iteration = QuestIteration.FutureIteration(allIterations);
+            }
         }
         else
         {
             Console.WriteLine("No GitHub sprint project found - using current iteration");
         }
-        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
         patchDocument.Add(new JsonPatchDocument
         {
             Operation = Op.Add,
