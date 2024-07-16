@@ -48,10 +48,13 @@ public static class IssueExtensions
         foreach(var label in issue.Labels)
         {
             //Start at 1, because DevOps uses 1 - 4.
-            if (label.Name.StartsWith("P") && label.Name.Contains("0")) return 1;
-            if (label.Name.StartsWith("P") && label.Name.Contains("1")) return 2;
-            if (label.Name.StartsWith("P") && label.Name.Contains("2")) return 3;
-            if (label.Name.StartsWith("P") && label.Name.Contains("3")) return 4;
+            if (label.Name.StartsWith("P", true, null))
+            {
+                if (label.Name.Contains("0")) return 1;
+                if (label.Name.Contains("1")) return 2;
+                if (label.Name.Contains("2")) return 3;
+                if (label.Name.Contains("3")) return 4;
+            }
         }
         return default;
     }
