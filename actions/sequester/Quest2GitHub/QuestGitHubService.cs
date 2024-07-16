@@ -78,10 +78,18 @@ public class QuestGitHubService(
         Console.WriteLine("-----   Finished processing issues.          --------");
         Console.WriteLine("     ----- Regenerating bearer token   ------");
         await ghClient.RegenerateBearerToken();
-        Console.WriteLine("-----   Starting processing pull requests.   --------");
-        var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
-        await ProcessItems(prQueryEnumerable);
-        Console.WriteLine("-----   Finished processing pull requests.   --------");
+        try
+        {
+            Console.WriteLine("-----   Starting processing pull requests.   --------");
+            var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
+            await ProcessItems(prQueryEnumerable);
+            Console.WriteLine("-----   Finished processing pull requests.   --------");
+        } catch (InvalidOperationException e)
+        {
+            Console.WriteLine("Warning: GitHub query for Pull Requests failed.");
+            Console.WriteLine(e);
+        }
+        Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
 
         async Task ProcessItems(IAsyncEnumerable<QuestIssueOrPullRequest> items)
         {
@@ -112,7 +120,6 @@ public class QuestGitHubService(
                 }
             }
         }
-        Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
 
         async IAsyncEnumerable<QuestIssueOrPullRequest> QueryIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
         {
@@ -429,6 +436,16 @@ public class QuestGitHubService(
                 From = default,
                 Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
                 Value = iterationSize.QuestStoryPoint(),
+            });
+        }
+        int? priority = ghIssue.GetPriority(iterationSize);
+        if (priority.HasValue && priority != questItem.Priority)
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/Microsoft.VSTS.Common.Priority",
+                Value = priority.Value
             });
         }
         var tags = from t in ghIssue.WorkItemTagsForIssue(tagMap)

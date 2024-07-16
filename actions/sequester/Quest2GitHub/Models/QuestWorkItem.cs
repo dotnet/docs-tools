@@ -77,6 +77,14 @@ public class QuestWorkItem
     public required int? StoryPoints { get; init; }
 
     /// <summary>
+    /// The priority
+    /// </summary>
+    /// <remarks>
+    /// This is retrieved from Microsoft.VSTS.Common.Priority
+    /// </remarks>
+    public required int Priority { get; init; }
+
+    /// <summary>
     /// The ID of the parent work item.
     /// </summary>
     /// <remarks>
@@ -230,6 +238,13 @@ public class QuestWorkItem
                 Value = iterationSize.QuestStoryPoint(),
             });
         }
+        patchDocument.Add(new JsonPatchDocument
+        {
+            Operation = Op.Add,
+            From = default,
+            Path = "/fields/Microsoft.VSTS.Common.Priority",
+            Value = issue.GetPriority(iterationSize)
+        });
 
         var tags = issue.WorkItemTagsForIssue(tagMap);
         if (tags.Any())
@@ -401,7 +416,9 @@ public class QuestWorkItem
         JsonElement assignedNode = fields.Descendent("System.AssignedTo", "id");
         int? storyPoints = fields.TryGetProperty("Microsoft.VSTS.Scheduling.StoryPoints", out JsonElement storyPointNode) ?
             (int)double.Truncate(storyPointNode.GetDouble()) : null;
-        string? assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
+        int priority = fields.TryGetProperty("Microsoft.VSTS.Common.Priority", out JsonElement priorityNode) ?
+            (int)priorityNode.GetInt32() : 2;
+        string ? assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
             assignedNode.GetString() : null;
         string tagElement = fields.TryGetProperty("System.Tags", out JsonElement tagsNode) ?
             tagsNode.GetString()! : string.Empty;
@@ -418,6 +435,7 @@ public class QuestWorkItem
             IterationPath = iterationPath,
             AssignedToId = (assignedID is not null) ? new Guid(assignedID) : null,
             StoryPoints = storyPoints,
+            Priority = priority,
             Tags = tags
         };
     }
