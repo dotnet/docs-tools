@@ -21,6 +21,7 @@ public class QuestWorkItemTests
             IterationPath = "Test/Path",
             AssignedToId = Guid.NewGuid(),
             StoryPoints = 1,
+            Priority = 1,
             Tags = []
         };
 

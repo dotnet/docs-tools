@@ -24,6 +24,16 @@ public record StoryPointSize
         ["Dec"] = 12  // 2
     };
 
+    private static int? PriorityValue(string? projectPriority)
+    {
+        // Start by 1, because our DevOps instance uses 1 - 4
+        if (projectPriority?.Contains("0") == true) return 1;
+        if (projectPriority?.Contains("1") == true) return 2;
+        if (projectPriority?.Contains("2") == true) return 3;
+        if (projectPriority?.Contains("3") == true) return 4;
+        return default;
+    }
+
     public static int MonthOrdinal(string month) => s_months[month];
 
     public static bool TryGetMonthOrdinal(string month, out int ordinal)
@@ -42,6 +52,7 @@ public record StoryPointSize
             // size may or may not have been set yet:
             string size = "🐂 Medium";
             string? sprintMonth = default;
+            int? priority = default;
             foreach (JsonElement field in projectItem.Descendent("fieldValues", "nodes").EnumerateArray())
             {
                 if (field.TryGetProperty("name", out JsonElement fieldValue))
@@ -49,6 +60,7 @@ public record StoryPointSize
                     string? fieldName = field.Descendent("field", "name").GetString();
                     if (fieldName == "Sprint") sprintMonth = fieldValue.GetString();
                     if (fieldName == "Size") size = fieldValue.GetString() ?? "🐂 Medium";
+                    if (fieldName == "Priority") priority = PriorityValue(fieldValue.GetString()) ?? 2;
                 }
             }
             if ((projectTitle is not null) &&
@@ -60,7 +72,7 @@ public record StoryPointSize
                 string month = sprintMonth ?? components[1];
                 if (int.TryParse(components[yearIndex], out int year))
                 {
-                    sz = new StoryPointSize(year, month.Substring(0, 3), size);
+                    sz = new StoryPointSize(year, month.Substring(0, 3), size, priority);
                 }
             }
         } else
@@ -70,16 +82,18 @@ public record StoryPointSize
         return sz;
     }
 
-    private StoryPointSize(int CalendarYear, string Month, string Size)
+    private StoryPointSize(int CalendarYear, string Month, string Size, int? Priority)
     {
         this.CalendarYear = CalendarYear;
         this.Month = Month;
         this.Size = Size;
+        this.Priority = Priority;
     }
 
     public int CalendarYear { get; }
     public string Month { get; }
     public string Size { get; }
+    public int? Priority { get; }
 
     public bool IsPastIteration
     {
