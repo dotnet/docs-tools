@@ -238,13 +238,17 @@ public class QuestWorkItem
                 Value = iterationSize.QuestStoryPoint(),
             });
         }
-        patchDocument.Add(new JsonPatchDocument
+        int? priority = issue.GetPriority(iterationSize);
+        if (priority.HasValue)
         {
-            Operation = Op.Add,
-            From = default,
-            Path = "/fields/Microsoft.VSTS.Common.Priority",
-            Value = issue.GetPriority(iterationSize)
-        });
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                From = default,
+                Path = "/fields/Microsoft.VSTS.Common.Priority",
+                Value = priority
+            });
+        }
 
         var tags = issue.WorkItemTagsForIssue(tagMap);
         if (tags.Any())

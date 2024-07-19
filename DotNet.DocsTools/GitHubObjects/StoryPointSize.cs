@@ -67,12 +67,15 @@ public record StoryPointSize
                 projectTitle.Contains("sprint", StringComparison.CurrentCultureIgnoreCase))
             {
                 string[] components = projectTitle.Split(' ');
-                int yearIndex = (sprintMonth is null) ? 2 : 1;
-                // Should be in a project variable named "Sprint", take substring 0,3
-                string month = sprintMonth ?? components[1];
-                if (int.TryParse(components[yearIndex], out int year))
+                if (components.Length > 2)
                 {
-                    sz = new StoryPointSize(year, month.Substring(0, 3), size, priority);
+                    int yearIndex = (sprintMonth is null) ? 2 : 1;
+                    // Should be in a project variable named "Sprint", take substring 0,3
+                    string month = sprintMonth ?? components[1];
+                    if (int.TryParse(components[yearIndex], out int year))
+                    {
+                        sz = new StoryPointSize(year, month.Substring(0, 3), size, priority);
+                    }
                 }
             }
         } else
