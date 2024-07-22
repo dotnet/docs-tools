@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanRepo", "cleanrepo\CleanRepo\CleanRepo.csproj", "{2BBD8090-3B66-4B57-807E-3A5BC41CC5A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanRepo", "cleanrepo\CleanRepo.csproj", "{2BBD8090-3B66-4B57-807E-3A5BC41CC5A9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quest2GitHub.Tests", "actions\sequester\Quest2GitHub.Tests\Quest2GitHub.Tests.csproj", "{2F1F09D6-8027-4B79-912A-124C94070D9E}"
 EndProject
