@@ -112,6 +112,19 @@ static async Task<QuestGitHubService> CreateService(ImportOptions options, bool 
     string? token = options.ApiKeys.QuestAccessToken
         ?? options.ApiKeys.QuestKey;
 
+    if (string.IsNullOrWhiteSpace(token))
+    {
+        throw new InvalidOperationException("Azure DevOps token is missing.");
+    }
+
+    if (useBearerToken)
+    {
+        Console.WriteLine("Using secretless for Azure DevOps.");
+    }
+    else
+    {
+        Console.WriteLine("Using PAT for Azure DevOps.");
+    }
     return new QuestGitHubService(
             gitHubClient,
             ospoClient,
