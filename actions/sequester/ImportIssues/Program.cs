@@ -111,7 +111,7 @@ internal class Program
             ?? options.ApiKeys.QuestKey;
         bool useBearerToken = options.ApiKeys.QuestAccessToken is not null;
 
-        Console.WriteLine($"Using Azure DevOps token: {token}");
+        Console.WriteLine($"Using Azure DevOps token: {token.Length}, {token.Substring(0,6)}");
 
         if (string.IsNullOrWhiteSpace(token))
         {
