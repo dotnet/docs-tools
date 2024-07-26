@@ -1733,19 +1733,14 @@ static class Program
             return ocrDataForFiles;
         }
 
-        using (var engine = new TesseractEngine(ocrModelDirectory, "eng", EngineMode.Default))
+        using var engine = new TesseractEngine(ocrModelDirectory, "eng", EngineMode.Default);
+        foreach (string imageFilePath in imageFilePaths)
         {
-            foreach (string imageFilePath in imageFilePaths)
-            {
-                using (var img = Pix.LoadFromFile(imageFilePath))
-                {
-                    using (Page page = engine.Process(img))
-                    {
-                        string text = page.GetText();
-                        ocrDataForFiles.Add(imageFilePath, text);
-                    }
-                }
-            }
+            using var img = Pix.LoadFromFile(imageFilePath);
+            using Page page = engine.Process(img);
+
+            string text = page.GetText();
+            ocrDataForFiles.Add(imageFilePath, text);
         }
         return ocrDataForFiles;
     }
