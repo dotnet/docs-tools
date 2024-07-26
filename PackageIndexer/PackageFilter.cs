@@ -83,6 +83,7 @@ public sealed class PackageFilter(IEnumerable<PackageFilterExpression> includes,
         ],
         excludes:
         [
+            PackageFilterExpression.Parse("System.Private.ServiceModel"),
             PackageFilterExpression.Parse("System.Runtime.WindowsRuntime"),
             PackageFilterExpression.Parse("System.Runtime.WindowsRuntime.UI.Xaml"),
             // Documented under Azure SDK for .NET moniker.
