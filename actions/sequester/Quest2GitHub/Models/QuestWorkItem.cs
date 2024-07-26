@@ -8,7 +8,12 @@ public class QuestWorkItem
     // Keep track of failures to update the closing PR.
     // For any given run, if the REST call to add a closing PR
     // fails, stop sending invalid requests.
-    private static bool? s_linkedGitHubRepo;
+    // 7/9/2024: Set this to false. GitHub integration links
+    // are currently disabled. Linking to the closing PR always fails.
+    // So, don't try for now.
+    private static bool? s_linkedGitHubRepo = false;
+
+    private string _title = "";
 
     /// <summary>
     /// The Work item ID
@@ -21,7 +26,11 @@ public class QuestWorkItem
     /// <remarks>
     /// This is retrieved as /fields/System.Title
     /// </remarks>
-    public required string Title { get; init; }
+    public required string Title
+    {
+        get => _title;
+        init => _title = TruncateTitleWhenLongerThanMax(value);
+    }
 
     // /fields/System.Description
     public required string Description { get; init; }
@@ -66,6 +75,14 @@ public class QuestWorkItem
     /// This is retrieved from /Microsoft.VSTS.Scheduling.StoryPoints
     /// </remarks>
     public required int? StoryPoints { get; init; }
+
+    /// <summary>
+    /// The priority
+    /// </summary>
+    /// <remarks>
+    /// This is retrieved from Microsoft.VSTS.Common.Priority
+    /// </remarks>
+    public required int Priority { get; init; }
 
     /// <summary>
     /// The ID of the parent work item.
@@ -139,7 +156,7 @@ public class QuestWorkItem
                 Operation = Op.Add,
                 Path = "/fields/System.Title",
                 From = default,
-                Value = issue.Title
+                Value = TruncateTitleWhenLongerThanMax(issue.Title)
             },
             new() {
                 Operation = Op.Add,
@@ -191,15 +208,20 @@ public class QuestWorkItem
         };
         patchDocument.Add(assignPatch);
         StoryPointSize? iterationSize = issue.LatestStoryPointSize();
+        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
         if (iterationSize != null)
         {
             Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
+            if (iterationSize?.IsPastIteration == true)
+            {
+                Console.WriteLine($"Moving to the backlog / future iteration.");
+                iteration = QuestIteration.FutureIteration(allIterations);
+            }
         }
         else
         {
             Console.WriteLine("No GitHub sprint project found - using current iteration");
         }
-        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
         patchDocument.Add(new JsonPatchDocument
         {
             Operation = Op.Add,
@@ -214,6 +236,17 @@ public class QuestWorkItem
                 From = default,
                 Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
                 Value = iterationSize.QuestStoryPoint(),
+            });
+        }
+        int? priority = issue.GetPriority(iterationSize);
+        if (priority.HasValue)
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                From = default,
+                Path = "/fields/Microsoft.VSTS.Common.Priority",
+                Value = priority
             });
         }
 
@@ -276,6 +309,19 @@ public class QuestWorkItem
             newItem = await newItem.AddClosingPR(questClient, issue.ClosingPRUrl) ?? newItem;
         }
         return newItem;
+    }
+
+    private static string TruncateTitleWhenLongerThanMax(string title)
+    {
+        // https://learn.microsoft.com/azure/devops/boards/work-items/about-work-items?view=azure-devops&tabs=agile-process#common-work-tracking-fields
+        const int MaxTitleLength = 255;
+
+        if (title is { Length: > MaxTitleLength })
+        {
+            return title[0..MaxTitleLength];
+        }
+
+        return title;
     }
 
     public static string BuildDescriptionFromIssue(QuestIssueOrPullRequest issue, string? requestLabelNodeId)
@@ -374,7 +420,9 @@ public class QuestWorkItem
         JsonElement assignedNode = fields.Descendent("System.AssignedTo", "id");
         int? storyPoints = fields.TryGetProperty("Microsoft.VSTS.Scheduling.StoryPoints", out JsonElement storyPointNode) ?
             (int)double.Truncate(storyPointNode.GetDouble()) : null;
-        string? assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
+        int priority = fields.TryGetProperty("Microsoft.VSTS.Common.Priority", out JsonElement priorityNode) ?
+            (int)priorityNode.GetInt32() : 2;
+        string ? assignedID = (assignedNode.ValueKind is JsonValueKind.String) ?
             assignedNode.GetString() : null;
         string tagElement = fields.TryGetProperty("System.Tags", out JsonElement tagsNode) ?
             tagsNode.GetString()! : string.Empty;
@@ -391,6 +439,7 @@ public class QuestWorkItem
             IterationPath = iterationPath,
             AssignedToId = (assignedID is not null) ? new Guid(assignedID) : null,
             StoryPoints = storyPoints,
+            Priority = priority,
             Tags = tags
         };
     }

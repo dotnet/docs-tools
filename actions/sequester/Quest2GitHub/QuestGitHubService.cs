@@ -78,10 +78,18 @@ public class QuestGitHubService(
         Console.WriteLine("-----   Finished processing issues.          --------");
         Console.WriteLine("     ----- Regenerating bearer token   ------");
         await ghClient.RegenerateBearerToken();
-        Console.WriteLine("-----   Starting processing pull requests.   --------");
-        var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
-        await ProcessItems(prQueryEnumerable);
-        Console.WriteLine("-----   Finished processing pull requests.   --------");
+        try
+        {
+            Console.WriteLine("-----   Starting processing pull requests.   --------");
+            var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
+            await ProcessItems(prQueryEnumerable);
+            Console.WriteLine("-----   Finished processing pull requests.   --------");
+        } catch (InvalidOperationException e)
+        {
+            Console.WriteLine("Warning: GitHub query for Pull Requests failed.");
+            Console.WriteLine(e);
+        }
+        Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
 
         async Task ProcessItems(IAsyncEnumerable<QuestIssueOrPullRequest> items)
         {
@@ -112,7 +120,6 @@ public class QuestGitHubService(
                 }
             }
         }
-        Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
 
         async IAsyncEnumerable<QuestIssueOrPullRequest> QueryIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
         {
@@ -226,23 +233,52 @@ public class QuestGitHubService(
     {
         JsonElement sprintPackets = await _azdoClient.RetrieveAllIterations();
 
-        var iterations = new List<QuestIteration>();
-        foreach (JsonElement sprintElement in sprintPackets.Descendent("value").EnumerateArray())
+        var parentIteration = sprintPackets.Descendent("value").EnumerateArray().Single(i => i.GetProperty("structureType").GetString() == "iteration");
+
+
+        return [.. ChildIterations(parentIteration)];
+
+        static IEnumerable<QuestIteration> ChildIterations(JsonElement parentIteration)
         {
-            Guid id = sprintElement.GetProperty("id").GetGuid();
-            string? name = sprintElement.GetProperty("name").GetString();
-            string? path = sprintElement.GetProperty("path").GetString();
-            if ((name is not null) && (path is not null))
+            foreach (JsonElement sprintElement in parentIteration.Descendent("children").EnumerateArray())
             {
-                iterations.Add(new QuestIteration()
+                if (sprintElement.TryGetProperty("children", out JsonElement children))
                 {
-                    Id = id,
-                    Name = name,
-                    Path = path,
-                });
+                    foreach (var child in ChildIterations(sprintElement))
+                    {
+                        yield return child;
+                    }
+                }
+                else if (sprintElement.GetProperty("hasChildren").GetBoolean() == false)
+                {
+                    var iteration = ConstructIteration(sprintElement);
+                    if (iteration is not null)
+                    {
+                        yield return iteration;
+                    }
+                }
             }
         }
-        return [.. iterations];
+
+        static QuestIteration? ConstructIteration(JsonElement sprintElement)
+        {
+            int id = sprintElement.GetProperty("id").GetInt32();
+            Guid identifier = sprintElement.GetProperty("identifier").GetGuid();
+            string? name = sprintElement.GetProperty("name").GetString();
+            string? path = sprintElement.GetProperty("path").GetString()
+                ?.Replace("\\Content\\Iteration", "Content");
+            if ((name is not null) && (path is not null))
+            {
+                return new QuestIteration()
+                {
+                    Id = id,
+                    Identifier = identifier,
+                    Name = name,
+                    Path = path,
+                };
+            }
+            return null;
+        }
     }
 
     private async Task<QuestWorkItem?> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, QuestIteration currentIteration, IEnumerable<QuestIteration> allIterations)
@@ -369,14 +405,20 @@ public class QuestGitHubService(
             });
         }
         StoryPointSize? iterationSize = ghIssue.LatestStoryPointSize();
+        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
         if (iterationSize != null)
         {
             Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
-        } else
+            if ((iterationSize?.IsPastIteration == true) && (ghIssue.IsOpen == true))
+            {
+                Console.WriteLine($"Moving to the backlog / future iteration.");
+                iteration = QuestIteration.FutureIteration(allIterations);
+            }
+        }
+        else
         {
             Console.WriteLine("No GitHub sprint project found - using current iteration.");
         }
-        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
         if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
         {
             patchDocument.Add(new JsonPatchDocument
@@ -394,6 +436,16 @@ public class QuestGitHubService(
                 From = default,
                 Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
                 Value = iterationSize.QuestStoryPoint(),
+            });
+        }
+        int? priority = ghIssue.GetPriority(iterationSize);
+        if (priority.HasValue && priority != questItem.Priority)
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/Microsoft.VSTS.Common.Priority",
+                Value = priority.Value
             });
         }
         var tags = from t in ghIssue.WorkItemTagsForIssue(tagMap)

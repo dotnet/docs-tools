@@ -224,7 +224,20 @@ class Program
                 {
                     Log.Write(2, $"Unable to load config file: {e1.StackTrace}");
                 }
-                
+            }
+
+            // Config not found, try and peek at the project to see if it's framework
+            else if (!projectPath.EndsWith("sln", StringComparison.OrdinalIgnoreCase))
+            {
+                string firstLine = File.ReadLines(projectPath).First();
+
+                if (firstLine.StartsWith("<project", StringComparison.OrdinalIgnoreCase)
+                    && firstLine.Contains("toolsversion", StringComparison.OrdinalIgnoreCase)
+                    && !firstLine.Contains("sdk=", StringComparison.OrdinalIgnoreCase))
+                {
+                    Log.Write(2, "Detected .NET Framework project file. Switching to Visual Studio as the host.");
+                    config.Host = "visualstudio";
+                }
             }
 
             Log.Write(2, $"Mode: {config.Host}");
