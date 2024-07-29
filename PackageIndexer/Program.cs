@@ -161,6 +161,13 @@ internal static class Program
             }
         }
 
+        // Special case for System.ServiceModel.Primitives - add version 4.10.3.
+        // (See https://github.com/dotnet/dotnet-api-docs/pull/10164#discussion_r1696016010.)
+        AddCsvEntryToDict("netstandard-2.0", csvDictionary, packageCounter,
+            PackageEntry.Create("System.ServiceModel.Primitives", "4.10.3", "https://github.com/dotnet/wcf", []),
+            FrameworkEntry.Create("netstandard2.0")
+            );
+
         // Create the directory.
         Directory.CreateDirectory(csvPath);
 
