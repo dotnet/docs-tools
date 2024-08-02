@@ -49,65 +49,35 @@ This command-line tool helps you clean up a DocFx-based content repo. It can:
   CleanRepo.exe --orphaned-images
   ```
 
-## Text to image examples
+## Image to text examples
 
-The text-to-image functionality supported in the `--catalog-images-with-text` and `--filter-images-for-text` options is provided by the [Tesseract](https://www.nuget.org/packages/tesseract/) NuGet package. 
+The text-to-image functionality supported in the `--catalog-images-with-text` and `--filter-images-for-text` options is provided by the [Tesseract](https://www.nuget.org/packages/tesseract/) NuGet package.
 
 ### Get the Tesseract models
 
-You must determine which Tesseract models you want to use and install them on your system. Tesseract models are generated per operating system. Tesseract models come in a variety of sizes. You will also need to download the language data files for tesseract 4.0.0 or above from [tesseract-tessdata](https://github.com/tesseract-ocr/tessdata/). Use the `--ocr-model-directory` value to set the path. 
+You must determine which Tesseract models you want to use and install them on your system. Tesseract models are generated per operating system. Tesseract models come in a variety of sizes. You also need to download the language data files for Tesseract 4.0.0 or later from [tesseract-tessdata](https://github.com/tesseract-ocr/tessdata/). Use the `--ocr-model-directory` value to set the path.
 
 ### Catalog images with text
 
-To catalog the images with text:
+To catalog all the images in a specified directory along with the text shown in each image:
 
-```console
-CleanRepo --catalog-images-with-text \
---url-base-path=/azure/developer/javascript \
---articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles \
---media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media
---ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast
+```shell
+CleanRepo.exe --catalog-images-with-text --url-base-path=/azure/developer/javascript 
+--articles-directory=c:\azure-docs-pr\articles --media-directory=c:\azure-docs-pr\articles\javascript\media --ocr-model-directory=c:\tesseract\tessdata_fast
 ```
 
-The output file is prefixed with `ImageFiles-` and looks like: 
-
-```json
-
-```
+The output file is prefixed with `OcrImageFiles-`
 
 ### Filter images with text
- 
 
-To file images based on an array of string, use the `--filter-text-json-file` path to the JSON file with the text to filter for:
+To filter images based on one or more strings, use the `--filter-text-json-file` path to the JSON file with the text to filter for:
 
 ```json
 ["Azure","Microsoft"]
 ```
 
-
-```console
-CleanRepo --filter-images-for-text \
---filter-text-json-file=c:\\Users\\diberry\\repos\\filter-text.json \
---url-base-path=/azure/developer/javascript \
---ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast \
---articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles \
---media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media
-``` 
-
-The output file is prefixed with `FilteredOcrImageFiles-` and looks like: 
-
-```json
-{
-  "Azure": [
-    {
-      "Key": "c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media\\visual-studio-code-azure-resources-extension-remove-resource-group.png",
-      "Value": "*J File Edit Selection View Go Run Terminal Help\n\nQa AZURE oo\n\n\u003E FUNCTIONS\n-v RESOURCE GROUPS\n\\ \u0026 Pay-As-You-Go-diberry Y\n|\nEdit Tags...\n\u00A3\nView Properties\nte Open in Portal\nRefresh\n90\n\n \n\n \n\n \n\n \n"
-    }],
-  "Microsoft": [
-    {
-      "Key": "c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media\\azure-function-resource-group-management\\azure-portal-function-application-insights-link.png",
-      "Value": "Function App\n\n\u00AE Overview\n\n \n\n| View Application Insights data G)\n\n \n\n \n\n \n\n \n\nActivity log Link to an Application Insights resource\n8. Access control (IAM)\n\u00A9 tes \u00A9 temepiseaieiin yt eb ise ea\n\n@ Diagnose and solve problems\n\n\u00A9 Microsoft Defender for Cloud @ totum Apptzation ihe of check that Applicaton nights OK ard the insramentaion key are removed rm your apliaton,\n\n\u0026 events (preview)\n\nFunctions O) \u00E9sarteg etiam caer toe Gorman Vier Tc home\nApplication Insights. You have the option to disable non-essential data collection, Learn more\n(A) Functions\n\u00A9 App keys\nChange your resource\nB App files\n\n \n\nDeployment\n\n= Deployment slots\n@ Deployment Center\nSettings\n\nHl Configuration\n\n\u0026\u0026 Authentication\n\n\u00AE Application insights\n\n \n"
-    },
-    ]
-}
+```shell
+CleanRepo.exe --filter-images-for-text --filter-text-json-file=c:\filter-text.json --url-base-path=/azure/developer/javascript --ocr-model-directory=c:\tesseract\tessdata_fast --articles-directory=c:\azure-docs-pr\articles --media-directory=c:\azure-docs-pr\articles\javascript\media
 ```
+
+The output file is prefixed with `FilteredOcrImageFiles-`.
