@@ -336,6 +336,7 @@ public class QuestGitHubService(
         int parentId = parentIdFromIssue(ghIssue);
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(_ospoClient);
         AzDoIdentity? questAssigneeID = default;
+        var proposedQuestState = questItem.State;
         if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
         {
             questAssigneeID = await _azdoClient.GetIDFromEmail(ghAssigneeEmailAddress);
@@ -385,13 +386,7 @@ public class QuestGitHubService(
         bool questItemOpen = questItem.State is not "Closed";
         if (ghIssue.IsOpen != questItemOpen)
         {
-            // build patch document for state.
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.State",
-                Value = ghIssue.IsOpen ? "Active" : "Closed",
-            });
+            proposedQuestState = ghIssue.IsOpen ? "Committed" : "Closed";
 
             // When the issue is opened or closed, 
             // update the description. That picks up any new
@@ -413,11 +408,21 @@ public class QuestGitHubService(
             {
                 Console.WriteLine($"Moving to the backlog / future iteration.");
                 iteration = QuestIteration.FutureIteration(allIterations);
+                proposedQuestState = "New";
             }
         }
         else
         {
             Console.WriteLine("No GitHub sprint project found - using current iteration.");
+        }
+        if (proposedQuestState != questItem.State)
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.State",
+                Value = proposedQuestState,
+            });
         }
         if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
         {
