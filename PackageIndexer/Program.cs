@@ -24,10 +24,65 @@ internal static class Program
             { "netstandard2.1", "netstandard-2.1" }
         };
 
+    static readonly List<string> s_packagesWithTruthDocs =
+    [
+        "Microsoft.Bcl.AsyncInterfaces",
+        "Microsoft.Bcl.Cryptography",
+        "Microsoft.Bcl.Memory",
+        "Microsoft.Bcl.Numerics",
+        "Microsoft.Bcl.TimeProvider",
+        "Microsoft.Extensions.Caching.Abstractions",
+        "Microsoft.Extensions.Caching.Memory",
+        "Microsoft.Extensions.Configuration",
+        "Microsoft.Extensions.Configuration.Abstractions",
+        "Microsoft.Extensions.Configuration.Binder",
+        "Microsoft.Extensions.Configuration.CommandLine",
+        "Microsoft.Extensions.Configuration.EnvironmentVariables",
+        "Microsoft.Extensions.Configuration.FileExtensions",
+        "Microsoft.Extensions.Configuration.Ini",
+        "Microsoft.Extensions.Configuration.Json",
+        "Microsoft.Extensions.Configuration.UserSecrets",
+        "Microsoft.Extensions.Configuration.Xml",
+        "Microsoft.Extensions.DependencyInjection",
+        "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "Microsoft.Extensions.DependencyInjection.Specification.Tests",
+        "Microsoft.Extensions.Diagnostics",
+        "Microsoft.Extensions.Diagnostics.Abstractions",
+        "Microsoft.Extensions.FileProviders.Abstractions",
+        "Microsoft.Extensions.FileProviders.Composite",
+        "Microsoft.Extensions.FileProviders.Physical",
+        "Microsoft.Extensions.HostFactoryResolver.Sources",
+        "Microsoft.Extensions.Hosting",
+        "Microsoft.Extensions.Hosting.Abstractions",
+        "Microsoft.Extensions.Hosting.Systemd",
+        "Microsoft.Extensions.Hosting.WindowsServices",
+        "Microsoft.Extensions.Http",
+        "Microsoft.Extensions.Logging",
+        "Microsoft.Extensions.Logging.Abstractions",
+        "Microsoft.Extensions.Logging.Configuration",
+        "Microsoft.Extensions.Logging.Console",
+        "Microsoft.Extensions.Logging.Debug",
+        "Microsoft.Extensions.Logging.EventLog",
+        "Microsoft.Extensions.Logging.EventSource",
+        "Microsoft.Extensions.Logging.TraceSource",
+        "Microsoft.Extensions.Options",
+        "Microsoft.Extensions.Options.ConfigurationExtensions",
+        "Microsoft.Extensions.Options.DataAnnotations",
+        "Microsoft.Extensions.Primitives",
+        "System.Composition",
+        "System.Diagnostics.EventLog.Messages",
+        "System.Formats.Cbor",
+        "System.Formats.Nrbf",
+        "System.Net.ServerSentEvents",
+        "System.Numerics.Tensors",
+        "System.Runtime.Serialization.Schema",
+        "System.Speech"
+    ];
+
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 0522.7", "preview"];
+        args = [@"c:\users\gewarren\desktop\Package Index 0814", "preview"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -161,12 +216,13 @@ internal static class Program
             }
         }
 
-        // Special case for System.ServiceModel.Primitives - add version 4.10.3.
-        // (See https://github.com/dotnet/dotnet-api-docs/pull/10164#discussion_r1696016010.)
-        AddCsvEntryToDict("netstandard-2.0", csvDictionary, packageCounter,
-            PackageEntry.Create("System.ServiceModel.Primitives", "4.10.3", "https://github.com/dotnet/wcf", []),
-            FrameworkEntry.Create("netstandard2.0")
-            );
+        // Update 08/14: Removed since it caused the pipeline to fail on dependencies.
+        //// Special case for System.ServiceModel.Primitives - add version 4.10.3.
+        //// (See https://github.com/dotnet/dotnet-api-docs/pull/10164#discussion_r1696016010.)
+        //AddCsvEntryToDict("netstandard-2.0", csvDictionary, packageCounter,
+        //    PackageEntry.Create("System.ServiceModel.Primitives", "4.10.3", "https://github.com/dotnet/wcf", []),
+        //    FrameworkEntry.Create("netstandard2.0")
+        //    );
 
         // Create the directory.
         Directory.CreateDirectory(csvPath);
@@ -209,13 +265,13 @@ internal static class Program
                 StringComparison.InvariantCultureIgnoreCase
                 );
 
-            // Special case for System.Formats.Cbor - include XML file.
-            if (string.Equals(packageEntry.Name, "System.Formats.Cbor", StringComparison.InvariantCultureIgnoreCase))
+            // Special case for newer assemblies - include XML documentation files.
+            if (s_packagesWithTruthDocs.Contains(packageEntry.Name))
                 includeXml = true;
 
             string squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml}]";
 
-            // Special case for System.ServiceModel.Primitives - use reference assembly.
+            // Special case for System.ServiceModel.Primitives - use reference assemblies.
             if (string.Equals(packageEntry.Name, "System.ServiceModel.Primitives", StringComparison.InvariantCultureIgnoreCase))
                 squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml};libpath=ref]";
 
