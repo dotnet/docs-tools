@@ -384,9 +384,9 @@ public class QuestGitHubService(
             patchDocument.Add(assignPatch);
         }
         bool questItemOpen = questItem.State is not "Closed";
+        proposedQuestState = ghIssue.IsOpen ? "Committed" : "Closed";
         if (ghIssue.IsOpen != questItemOpen)
         {
-            proposedQuestState = ghIssue.IsOpen ? "Committed" : "Closed";
 
             // When the issue is opened or closed, 
             // update the description. That picks up any new
