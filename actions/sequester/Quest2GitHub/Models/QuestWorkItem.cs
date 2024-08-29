@@ -282,6 +282,14 @@ public class QuestWorkItem
                 Path = "/fields/System.State",
                 Value = "Closed",
             });
+        } else 
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.State",
+                Value = (iterationSize?.IsPastIteration == true) ? "New" : "Committed",
+            });
         }
         JsonElement result = default;
         QuestWorkItem? newItem;
