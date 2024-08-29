@@ -73,7 +73,9 @@ public class QuestGitHubService(
         int totalSkipped = 0;
 
         Console.WriteLine("-----   Starting processing issues.          --------");
-        var issueQueryEnumerable = QueryIssuesOrPullRequests<QuestIssue>();
+        var issueQueryEnumerable = (duration == -1) ?
+            QueryAllOpenIssuesOrPullRequests<QuestIssue>() :
+            QueryIssuesOrPullRequests<QuestIssue>();
         await ProcessItems(issueQueryEnumerable);
         Console.WriteLine("-----   Finished processing issues.          --------");
         Console.WriteLine("     ----- Regenerating bearer token   ------");
@@ -81,7 +83,9 @@ public class QuestGitHubService(
         try
         {
             Console.WriteLine("-----   Starting processing pull requests.   --------");
-            var prQueryEnumerable = QueryIssuesOrPullRequests<QuestPullRequest>();
+            var prQueryEnumerable = (duration == -1) ?
+            QueryAllOpenIssuesOrPullRequests<QuestPullRequest>() :
+                QueryIssuesOrPullRequests<QuestPullRequest>();
             await ProcessItems(prQueryEnumerable);
             Console.WriteLine("-----   Finished processing pull requests.   --------");
         } catch (InvalidOperationException e)
@@ -124,12 +128,22 @@ public class QuestGitHubService(
         async IAsyncEnumerable<QuestIssueOrPullRequest> QueryIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
         {
             var query = new EnumerationQuery<T, QuestIssueOrPullRequestVariables>(ghClient);
-            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText));
+            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, [], importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText));
             await foreach (QuestIssueOrPullRequest item in queryEnumerable)
             {
                 if (item.UpdatedAt < historyThreshold)
                     break;
 
+                yield return item;
+            }
+        }
+
+        async IAsyncEnumerable<QuestIssueOrPullRequest> QueryAllOpenIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
+        {
+            var query = new EnumerationQuery<T, QuestIssueOrPullRequestVariables>(ghClient);
+            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, ["OPEN"], importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText));
+            await foreach (QuestIssueOrPullRequest item in queryEnumerable)
+            {
                 yield return item;
             }
         }
@@ -221,13 +235,13 @@ public class QuestGitHubService(
     private Task<QuestIssue?> RetrieveIssueAsync(string org, string repo, int issueNumber)
     {
         var query = new ScalarQuery<QuestIssue, QuestIssueOrPullRequestVariables>(ghClient);
-        return query.PerformQuery(new QuestIssueOrPullRequestVariables(org, repo, issueNumber));
+        return query.PerformQuery(new QuestIssueOrPullRequestVariables(org, repo, [], issueNumber));
     }
 
     private Task<QuestPullRequest?> RetrievePullRequestAsync(string org, string repo, int issueNumber)
     {
         var query = new ScalarQuery<QuestPullRequest, QuestIssueOrPullRequestVariables>(ghClient);
-        return query.PerformQuery(new QuestIssueOrPullRequestVariables(org, repo, issueNumber));
+        return query.PerformQuery(new QuestIssueOrPullRequestVariables(org, repo, [], issueNumber));
     }
     private async Task<QuestIteration[]> RetrieveIterationLabelsAsync()
     {

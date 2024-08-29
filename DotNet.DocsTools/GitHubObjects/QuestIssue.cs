@@ -28,6 +28,7 @@ public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssu
                 {
                     ["organization"] = variables.Organization,
                     ["repository"] = variables.Repository,
+                    ["states"] = variables.states.Any() ? variables.states : ["OPEN", "CLOSED"],
                     ["questlabels"] = new string[]
                     {
                         variables.importTriggerLabelText ?? throw new ArgumentException("The import trigger label can't be null"),
