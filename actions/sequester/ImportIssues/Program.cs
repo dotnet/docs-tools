@@ -78,6 +78,7 @@ internal class Program
             Console.Error.WriteLine($"!!!ERROR!!! Could not communicate with Quest Azure DevOps server. Did your PAT expire?");
             Console.Error.WriteLine($"::  -- {e.Message} -- ");
             Console.Error.WriteLine(e.ToString());
+            return 1;
         }
         catch (Exception ex)
         {

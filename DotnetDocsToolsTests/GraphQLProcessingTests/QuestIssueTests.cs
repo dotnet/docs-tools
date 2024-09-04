@@ -503,7 +503,7 @@ namespace DotnetDocsTools.Tests.GraphQLProcessingTests
             Assert.Equal(2023, points.CalendarYear);
             Assert.Equal("Dec", points.Month);
             Assert.Equal("🦔 Tiny (4h)", points.Size);
-            Assert.Equal("https://github.com/dotnet/docs/pull/38584", issue.ClosingPRUrl);
+            Assert.Null(issue.ClosingPRUrl);
         }
 
         [Fact]

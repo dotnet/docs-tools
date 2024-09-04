@@ -53,6 +53,19 @@ class Options
     [Option("remove-hops", HelpText = "Clean redirection JSON file by replacing targets that are themselves redirected (daisy chains).")]
     public bool RemoveRedirectHops { get; set; }
 
+    [Option("catalog-images-with-text", Default = false, HelpText = "Map images to the markdown/YAML files that reference them, with all text found in images. Must set --ocr-model-directory path.")]
+    public bool CatalogImagesWithText { get; set; }
+
+    [Option("filter-images-for-text", Default = false, HelpText = "Filter images for text. Must set --ocr-model-directory and --filter-text-json-file paths.")]
+    public bool FilterImagesForText { get; set; }
+
+    [Option("ocr-model-directory", HelpText = "Directory that contains the OCR (Tesseract) models for image scanning.")]
+    public string? OcrModelDirectory { get; set; }
+
+    [Option("filter-text-json-file", HelpText = "JSON file of array of strings to filter OCR results with.")]
+    public string? FilterTextJsonFile { get; set; }
+
+
     //[Option("format-redirects", Required = false, HelpText = "Format the redirection JSON file by deserializing and then serializing with pretty printing.")]
     //public bool FormatRedirectsFile { get; set; }
 
