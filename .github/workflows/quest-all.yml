@@ -1,4 +1,4 @@
-name: "bulk quest import"
+name: "Monthly bulk quest import"
 on:
   schedule:
     - cron: '0 10 6 * *' # UTC time, that's 5:00 am EST, 2:00 am PST. It runs on the morning of the 6th.
