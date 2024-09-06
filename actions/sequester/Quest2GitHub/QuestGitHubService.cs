@@ -1,4 +1,5 @@
-﻿using DotNet.DocsTools.GitHubObjects;
+﻿using System.Xml.XPath;
+using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
 
 namespace Quest2GitHub;
@@ -321,6 +322,20 @@ public class QuestGitHubService(
             {
                 var prMutation = new Mutation<SequesteredPullRequestMutation, SequesterVariables>(ghClient);
                 await prMutation.PerformMutation(new SequesterVariables(pr.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
+            }
+            // All work items are created in the "New" state, despite the REST packet
+            // indicating the "Committed" status. So, update the state to "Committed".
+            List<JsonPatchDocument> patchDocument = [];
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.State",
+                Value = "Committed",
+            });
+            if (patchDocument.Count != 0)
+            {
+                JsonElement jsonDocument = await _azdoClient.PatchWorkItem(questItem.Id, patchDocument);
+                questItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
             }
             return questItem;
         }
