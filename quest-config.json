@@ -6,5 +6,55 @@
     },
     "ImportTriggerLabel": ":world_map: reQUEST",
     "ImportedLabel": ":pushpin: seQUESTered",
-    "DefaultParentNode": 233488
+    "ParentNodes": [
+        {
+            "Semester": "Dilithium",
+            "Label": "user-feedback",
+            "ParentNodeId": 233465
+        },
+        {
+            "Semester": "Dilithium",
+            "Label": "sfi-ropc",
+            "ParentNodeId": 271716
+        },
+        {
+            "Semester": "Dilithium",
+            "ParentNodeId": 233488
+        },
+        {
+            "Semester": "Selenium",
+            "Label": "sfi-admin",
+            "ParentNodeId": 271716
+        },
+        {
+            "Semester": "Selenium",
+            "Label": "sfi-images",
+            "ParentNodeId": 286370
+        },
+        {
+            "Semester": "Selenium",
+            "Label": "user-feedback",
+            "ParentNodeId": 233465
+        },
+        {
+            "Semester": "Selenium",
+            "Label": "sfi-ropc",
+            "ParentNodeId": 271716
+        },
+        {
+            "Semester": "Selenium",
+            "Label": "sfi-admin",
+            "ParentNodeId": 271716
+        },
+        {
+            "Semester": "Selenium",
+            "Label": "sfi-images",
+            "ParentNodeId": 286370
+        },
+        {
+            "Semester": "Selenium",
+            "ParentNodeId": 233488
+        }
+    ]
 }
+ 
