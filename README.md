@@ -1,4 +1,4 @@
-# Clarkio's VS Code Extension Template
+# `xref` Helper
 
 An extension template used for jumpstarting development of VS Code extensions
 
