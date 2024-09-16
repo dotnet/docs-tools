@@ -1,10 +1,11 @@
-import { window, QuickPickItem, QuickInputButton, QuickPickItemKind, ThemeIcon, Uri } from "vscode";
+import { window, QuickPickItem } from "vscode";
 import { SearchResult, SearchResults } from "./search-results";
 import fetch from "node-fetch";
 
 export async function showSearch() {
     const input = await window.showInputBox({
-        placeHolder: "Type or member name.",
+        title: "Search .NET API",
+        placeHolder: "Search for a .NET type or member by name."
     });
 
     if (!input) {
@@ -25,47 +26,81 @@ export async function showSearch() {
         return;
     }
 
-    const results: SearchResults = await response.json() as SearchResults;
-    if (!results || results.count === 0) {
+    const searchResults: SearchResults = await response.json() as SearchResults;
+    if (!searchResults || searchResults.count === 0) {
         return;
     }
 
-    const quickPick = window.createQuickPick<SearchResultQuickPickItem>();
-    quickPick.items = results.results.map(result => new SearchResultQuickPickItem(result));
+    const quickPick = window.createQuickPick<SearchResultQuickPickItem | QuickPickItem>();
+    quickPick.items = searchResults.results.map(result => new SearchResultQuickPickItem(result));
+    quickPick.title = `Search results for '${input}'`;
+    quickPick.placeholder = 'Select a type or member to insert a link to.';
 
+    let selection: SearchResultQuickPickItem | undefined;
+    
     quickPick.onDidChangeSelection((items) => {
         const item = items[0];
-					if (item instanceof SearchResultQuickPickItem) {
-                        // Insert the URL into the active text editor
-                        if (window.activeTextEditor) {
-                            const editor = window.activeTextEditor;
+        if (item instanceof SearchResultQuickPickItem) {
+            selection = item;
 
-                            const url = `[${item.result.displayName}](${item.result.url})`;
+            quickPick.items = [ 
+                { label: 'Default', description: 'Only displays the API name.' }, 
+                { label: 'Full name', description: 'Displays the fully qualified name.' }, 
+                { label: 'Type with name', description: 'Displays the type with the name.' }
+            ];
+            quickPick.title = 'Select URL format.';
+            quickPick.placeholder = 'Select the format of the URL to insert.';
+            quickPick.show();
 
-                            editor.edit((editBuilder) => {
-                                editBuilder.insert(editor.selection.active, url);
-                            });
-                        }
-                        quickPick.hide();
-					}
-        quickPick.hide();
+        } else if (!!item) {
+            const displayName = toDisplayName(item, selection!.result);
+
+            // Insert the URL into the active text editor
+            insertLink(displayName, selection);
+
+            quickPick.hide();
+            quickPick.dispose();
+        }
     });
 
     quickPick.show();
 }
 
-class SearchResultQuickPickItem implements QuickPickItem {    
+const toDisplayName = (type: QuickPickItem, result: SearchResult) => {
+    // TODO: splat query string on xref
+    switch (type.label) {
+        case 'Default': 
+            return result.displayName.substring(result.displayName.lastIndexOf('.') + 1);
+        
+        case 'Full name': 
+            return result.displayName;
+        
+        default:
+        {
+            const segments = result.displayName.split('.');
+            return `${segments[segments.length - 2]}.${segments[segments.length - 1]}`;
+        };
+    }
+};
+
+class SearchResultQuickPickItem implements QuickPickItem {
     label: string;
-    kind?: QuickPickItemKind | undefined;
-    iconPath?: Uri | { light: Uri; dark: Uri; } | ThemeIcon | undefined;
     description?: string | undefined;
-    detail?: string | undefined;
-    picked?: boolean | undefined;
-    alwaysShow?: boolean | undefined;
-    buttons?: readonly QuickInputButton[] | undefined;
 
     constructor(public readonly result: SearchResult) {
-        this.label = result.displayName;
-        this.description = result.description
+        this.label = result.displayName;        
+        this.description = result.itemType
+    }
+}
+
+function insertLink(displayName: string, selection: SearchResultQuickPickItem | undefined) {
+    if (window.activeTextEditor) {
+        const editor = window.activeTextEditor;
+
+        const url = `[${displayName}](${selection!.result.url})`;
+
+        editor.edit((editBuilder) => {
+            editBuilder.insert(editor.selection.active, url);
+        });
     }
 }

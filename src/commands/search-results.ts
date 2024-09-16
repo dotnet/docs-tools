@@ -7,6 +7,6 @@ export type SearchResults = {
 export type SearchResult = {
     description: string;
     displayName: string;
-    itemName: string;
+    itemType: string;
     url: string
 };
