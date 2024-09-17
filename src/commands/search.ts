@@ -1,62 +1,59 @@
+import { SearchResultQuickPickItem } from "./types/SearchResultQuickPickItem";
+import EmptySearchResults from "./types/SearchResults";
+import { UrlFormat } from "./types/UrlFormat";
 import { window, QuickPickItem } from "vscode";
-import { SearchResult, SearchResults } from "./search-results";
-import fetch from "node-fetch";
+import { xrefLinkFormatter } from "./formatters/xrefLinkFormatter";
+import { ApiService } from "../services/api-service";
 
-export async function showSearch() {
-    const input = await window.showInputBox({
-        title: "Search .NET API",
-        placeHolder: "Search for a .NET type or member by name."
+export async function startApiSearch() {
+    const searchTerm = await window.showInputBox({
+        title: "Search APIs",
+        placeHolder: "Search for a type or member by name."
     });
 
-    if (!input) {
+    if (!searchTerm) {
         return;
     }
 
-    // Example URL:
-    //   https://learn.microsoft.com/api/apibrowser/dotnet/search?api-version=0.2&search=SmtpClient&locale=en-us&$filter=monikers/any(t:%20t%20eq%20%27net-8.0%27)
-    const response = await fetch(
-        `https://learn.microsoft.com/api/apibrowser/dotnet/search?api-version=0.2&search=${input}&locale=en-us`, {
-        headers: {
-            "Content-Type": "application/json",
-        }
-    });
-
-    if (!response.ok) {
-        window.showWarningMessage(`Failed to search for '${input}'.`);
-        return;
+    const searchResults = await ApiService.searchApi(searchTerm);
+    if (searchResults instanceof EmptySearchResults && searchResults.isEmpty === true) {
+        window.showWarningMessage(`Failed to find results for '${searchTerm}'.`);
     }
 
-    const searchResults: SearchResults = await response.json() as SearchResults;
-    if (!searchResults || searchResults.count === 0) {
-        return;
-    }
-
+    // Create a quick pick to display the search results, allowing the user to select a type or member.
     const quickPick = window.createQuickPick<SearchResultQuickPickItem | QuickPickItem>();
     quickPick.items = searchResults.results.map(result => new SearchResultQuickPickItem(result));
-    quickPick.title = `Search results for '${input}'`;
+    quickPick.title = `Search results for '${searchTerm}'`;
     quickPick.placeholder = 'Select a type or member to insert a link to.';
 
-    let selection: SearchResultQuickPickItem | undefined;
-    
-    quickPick.onDidChangeSelection((items) => {
-        const item = items[0];
-        if (item instanceof SearchResultQuickPickItem) {
-            selection = item;
+    let searchResultSelection: SearchResultQuickPickItem | undefined;
 
-            quickPick.items = [ 
-                { label: 'Default', description: 'Only displays the API name.' }, 
-                { label: 'Full name', description: 'Displays the fully qualified name.' }, 
-                { label: 'Type with name', description: 'Displays the type with the name.' }
+    quickPick.onDidChangeSelection(async (items) => {
+        // Represents the selected item
+        const selectedItem = items[0];
+
+        if (selectedItem instanceof SearchResultQuickPickItem) {
+            // Use has selected a search result.
+            searchResultSelection = selectedItem;
+
+            quickPick.items = [
+                { label: UrlFormat.default, description: 'Only displays the API name.' },
+                { label: UrlFormat.fullName, description: 'Displays the fully qualified name.' },
+                { label: UrlFormat.nameWithType, description: 'Displays the type and name in the format "Type.Name".' },
+                { label: UrlFormat.customName, description: 'Allows the user to enter a custom name' },
             ];
             quickPick.title = 'Select URL format.';
             quickPick.placeholder = 'Select the format of the URL to insert.';
             quickPick.show();
 
-        } else if (!!item) {
-            const displayName = toDisplayName(item, selection!.result);
+        } else if (!!selectedItem) {
+            const url = await xrefLinkFormatter(selectedItem.label as UrlFormat, searchResultSelection!.result);
 
             // Insert the URL into the active text editor
-            insertLink(displayName, selection);
+            if (!insertUrlIntoActiveTextEditor(url)) {
+                window.setStatusBarMessage(
+                    `Failed to insert URL into the active text editor.`, 3000);
+            }
 
             quickPick.hide();
             quickPick.dispose();
@@ -66,41 +63,29 @@ export async function showSearch() {
     quickPick.show();
 }
 
-const toDisplayName = (type: QuickPickItem, result: SearchResult) => {
-    // TODO: splat query string on xref
-    switch (type.label) {
-        case 'Default': 
-            return result.displayName.substring(result.displayName.lastIndexOf('.') + 1);
-        
-        case 'Full name': 
-            return result.displayName;
-        
-        default:
-        {
-            const segments = result.displayName.split('.');
-            return `${segments[segments.length - 2]}.${segments[segments.length - 1]}`;
-        };
+/**
+ * Inserts the URL into the @type `window.activeTextEditor`
+ * @param url The URL to insert into the active text editor.
+ * @returns `boolean`
+ */
+function insertUrlIntoActiveTextEditor(url?: string | undefined): boolean {
+    if (!url) {
+        return false;
     }
-};
 
-class SearchResultQuickPickItem implements QuickPickItem {
-    label: string;
-    description?: string | undefined;
-
-    constructor(public readonly result: SearchResult) {
-        this.label = result.displayName;        
-        this.description = result.itemType
-    }
-}
-
-function insertLink(displayName: string, selection: SearchResultQuickPickItem | undefined) {
-    if (window.activeTextEditor) {
-        const editor = window.activeTextEditor;
-
-        const url = `[${displayName}](${selection!.result.url})`;
+    if (window.activeTextEditor || window.activeTextEditor!.selection) {
+        const editor = window.activeTextEditor!;
 
         editor.edit((editBuilder) => {
             editBuilder.insert(editor.selection.active, url);
         });
+
+        return true;
+    } else {
+        window.showWarningMessage(
+            `No active text editor to insert "${url}" into.`
+        );
     }
-}
+
+    return false;
+};

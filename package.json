@@ -16,11 +16,44 @@
   "contributes": {
     "commands": [
       {
-        "command": "xref.search",
+        "command": "xrefHelper.search",
         "title": "Search for XREF",
         "shortTitle": "Search XREF"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "XREF Helper",
+      "properties": {
+        "xrefHelper.defaultUrlFormat": {
+          "type": "string",
+          "description": "The default URL format to use when inserting an XREF URL.",
+          "enum": [ "Default", "Full name", "Name with type", "Custom name"],
+          "default": "Default"
+        },
+        "xrefHelper.apiUrl": {
+          "type": "string",
+          "description": "The URL to use when searching for XREFs. (Defaults to the .NET API search URL.)",
+          "default": "https://learn.microsoft.com/api/apibrowser/dotnet/search"
+        },
+        "xrefHelper.queryStringParameters": {
+          "type": "array",
+          "description": "The query string parameters to include when searching for XREFs.",
+          "subItems": {
+            "type": "object"
+          },
+          "default": [
+            { 
+              "name": "api-version",
+              "value": "0.2"
+            },
+            {
+              "name": "locale",
+              "value": "en-us"
+            }
+          ]
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run esbuild-base -- --minify",
