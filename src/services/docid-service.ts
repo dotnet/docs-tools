@@ -9,12 +9,18 @@ export class DocIdService {
             return displayName;
         }
 
-        const response = await fetch(gitUrl);
+        const response = await fetch(gitUrl, {
+            headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                "Content-Type": "application/xml",
+            }
+        });
         if (!response.ok) {
             return null;
         }
 
-        const xml = await parseStringPromise(response.text);
+        const text = await response.text();
+        const xml = await parseStringPromise(text);
 
         if ([ItemType.class, ItemType.struct, ItemType.interface, ItemType.enum].includes(apiType)) {
             const typeSignature = xml.TypeSignature?.find((x: any) => x.$.Language === 'DocId');
