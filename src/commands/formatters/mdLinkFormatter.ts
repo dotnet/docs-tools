@@ -7,15 +7,15 @@ import { getUserSelectedText } from "../../utils";
  * When MD links are enabled, the URL should be in the format:
  *   `[name](url)`, where name is the name of the type or member and url is the URL.
  *   For example, `[String](/dotnet/api/system.string)`.
- * @param urlFormat 
- * @param searchResult 
+ * @param urlFormat
+ * @param searchResult
  * @returns A `string` that represents the XREF link as a Promise.
  */
 export const mdLinkFormatter = async (
     urlFormat: UrlFormat,
     searchResult: SearchResult): Promise<string | undefined> => {
 
-    const displayName = searchResult.displayName.replace('#', '%23');
+    const displayName = searchResult.displayName.replaceAll('#', '%23');
     const url = searchResult.url;
 
     // TODO:
@@ -26,7 +26,7 @@ export const mdLinkFormatter = async (
     // 4. Parse the XML file and return the DocId's that are closest to the search result.
 
     switch (urlFormat) {
-        // Displays the API name: 
+        // Displays the API name:
         //   [SmtpClient](/dotnet/api/system.net.mail.smtpclient)
         case UrlFormat.default:
             return `[${displayName.substring(displayName.lastIndexOf('.') + 1)}](${url})`;
@@ -45,7 +45,7 @@ export const mdLinkFormatter = async (
             }
 
         // Allows the user to enter a custom name:
-        //   [the .NET SmtpClient class](/dotnet/api/system.net.mail.smtpclient)                                
+        //   [the .NET SmtpClient class](/dotnet/api/system.net.mail.smtpclient)
         case UrlFormat.customName:
             {
                 // Try getting the selected text from the active text editor

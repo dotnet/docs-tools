@@ -23,17 +23,17 @@ export class DocIdService {
         const xml = await parseStringPromise(text);
 
         if ([ItemType.class, ItemType.struct, ItemType.interface, ItemType.enum].includes(apiType)) {
-            const typeSignature = xml.TypeSignature?.find((x: any) => x.$.Language === 'DocId');
+            const typeSignature = xml.Type.TypeSignature?.find((x: any) => x.$.Language === 'DocId');
             return typeSignature ? typeSignature.$.Value.substring(2) : null;
         }
 
         const memberType = apiType;
-        const memberName = displayName.split('(')[0].split('.').pop();
+        const typeName = xml.Type.$.FullName;
+        let memberName = displayName.substring(typeName.length + 1).split('(')[0];
 
         if (apiType === ItemType.constructor || apiType === ItemType.method) {
-            let memberNameToUse = memberName;
             if (apiType === ItemType.constructor) {
-                memberNameToUse = ".ctor";
+                memberName = ".ctor";
             }
 
             const paramList = displayName.split('(')[1].slice(0, -1);
@@ -42,25 +42,25 @@ export class DocIdService {
 
             // No parameters.
             if (numParams === 0) {
-                const methodOrCtor = xml.Member?.find((x: any) =>
-                    x.$.MemberName === memberNameToUse &&
+                const methodOrCtor = xml.Type.Members[0].Member?.find((x: any) =>
+                    x.$.MemberName === memberName &&
                     x.MemberType[0] === memberType &&
-                    !x.Parameter
+                    !x.Parameters.Parameter
                 );
 
                 return methodOrCtor ? methodOrCtor.MemberSignature.find((x: any) => x.$.Language === 'DocId').$.Value.substring(2) : null;
             }
 
             // With parameters.
-            const candidates = xml.Member?.filter((x: any) =>
-                x.$.MemberName === memberNameToUse &&
+            const candidates = xml.Type.Members[0].Member?.filter((x: any) =>
+                x.$.MemberName === memberName &&
                 x.MemberType[0] === memberType &&
-                x.Parameter?.length === numParams
+                x.Parameters[0].Parameter?.length === numParams
             );
 
             for (const candidate of candidates) {
                 let paramIndex = 0;
-                for (const parameter of candidate.Parameter) {
+                for (const parameter of candidate.Parameters[0].Parameter) {
                     if (paramTypes[paramIndex] !== parameter.$.Type.split('.').pop()) {
                         break;
                     }
@@ -78,7 +78,7 @@ export class DocIdService {
         }
 
         // Property, Event, Field
-        const member = xml.Member?.find((x: any) =>
+        const member = xml.Type.Members[0].Member?.find((x: any) =>
             x.$.MemberName === memberName &&
             x.MemberType[0] === memberType
         );
