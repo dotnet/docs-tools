@@ -7,15 +7,15 @@ import { getUserSelectedText } from "../../utils";
  * When XREF links are enabled, the URL should be in the format:
  *   `<xref:{uid}>`, where `{uid}` is the unique identifier of the type or member.
  *   For example, `<xref:System.String>`.
- * @param urlFormat 
- * @param searchResult 
+ * @param urlFormat
+ * @param uid
  * @returns A `string` that represents the XREF link as a Promise.
  */
 export const xrefLinkFormatter = async (
     urlFormat: UrlFormat,
-    searchResult: SearchResult): Promise<string | undefined> => {
+    uid: string): Promise<string | undefined> => {
 
-    const encodedDisplayName = searchResult.displayName.replace('#', '%23');
+    const encodedDisplayName = uid.replaceAll('#', '%23');
 
     // TODO:
     // 1. Construct the learn.microsoft.com URL from the search result.
@@ -25,7 +25,7 @@ export const xrefLinkFormatter = async (
     // 4. Parse the XML file and return the DocId's that are closest to the search result.
 
     switch (urlFormat) {
-        // Displays the API name: 
+        // Displays the API name:
         //   <xref:System.Net.Mail.SmtpClient>
         case UrlFormat.default:
             return `<xref:${encodedDisplayName}>`;
@@ -44,7 +44,7 @@ export const xrefLinkFormatter = async (
                 const selectedText: string | undefined = getUserSelectedText();
 
                 // Default to the display name of the search result
-                let fallbackDisplayName = searchResult.displayName;
+                let fallbackDisplayName = uid;
 
                 // If there isn't selected text, prompt the user to enter a custom name
                 if (!selectedText) {

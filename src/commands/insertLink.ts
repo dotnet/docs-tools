@@ -67,11 +67,12 @@ export async function insertLink(linkType: LinkType) {
                 return;
             }
 
-            // When the user selects a namespace, create a link using the full name.
+            // When the user selects a namespace, create a link using the default format.
+            // Namespaces are always displayed as fully qualified names.
             if (searchResultSelection.itemType === ItemType.namespace) {
                 await createAndInsertLink(
                     linkType,
-                    UrlFormat.fullName,
+                    UrlFormat.default,
                     searchResultSelection,
                     quickPick);
 
@@ -112,20 +113,17 @@ async function createAndInsertLink(
 
     const result = searchResultSelection.result;
 
-    try {
-        const rawUrl = await RawGitService.getRawGitUrl(result.url);
-        if (rawUrl) {
-            // TODO this is broken...
-            const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl);
-            if (docId) {
-
-            }
-        }
+    const rawUrl = await RawGitService.getRawGitUrl(result.url);
+    if (!rawUrl) {
+        return;
     }
-    catch { }
+    const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl)
+    if (!docId) {
+        return;
+    }
 
     const url = linkType === LinkType.Xref
-        ? await xrefLinkFormatter(format, searchResultSelection!.result)
+        ? await xrefLinkFormatter(format, docId)
         : await mdLinkFormatter(format, searchResultSelection!.result);
 
     // Insert the URL into the active text editor
