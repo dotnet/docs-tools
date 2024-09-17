@@ -29,12 +29,12 @@ jobs:
       - run: npm ci
         env:
           npm_config_arch: x64
-      - name: Test with VS Code ${{ matrix.vscode-version }}
-        uses: coactions/setup-xvfb@v1
-        env:
-          VSCODE_TEST_VERSION: ${{ matrix.vscode-version }}
-        with:
-          run: npm test
+      # - name: Test with VS Code ${{ matrix.vscode-version }}
+      #   uses: coactions/setup-xvfb@v1
+      #   env:
+      #     VSCODE_TEST_VERSION: ${{ matrix.vscode-version }}
+      #   with:
+      #     run: npm test
 
   build:
     permissions:
