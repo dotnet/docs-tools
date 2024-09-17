@@ -22,7 +22,8 @@ export class DocIdService {
         }
 
         const memberType = apiType;
-        const memberName = displayName.split('(')[0].split('.').pop();
+        const typeName = xml.Type.$.FullName;
+        const memberName = displayName.substring(typeName.length + 1).split('(')[0];
 
         if (apiType === ItemType.constructor || apiType === ItemType.method) {
             let memberNameToUse = memberName;
