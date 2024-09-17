@@ -1,6 +1,7 @@
 import { window } from "vscode";
 import { SearchResult } from "../types/SearchResult";
 import { UrlFormat } from "../types/UrlFormat";
+import { getUserSelectedText } from "../../utils";
 
 /**
  * When XREF links are enabled, the URL should be in the format:
@@ -40,8 +41,7 @@ export const xrefLinkFormatter = async (
         case UrlFormat.customName:
             {
                 // Try getting the selected text from the active text editor
-                const selectedText: string | undefined = window.activeTextEditor?.document.getText(
-                    window.activeTextEditor?.selection);
+                const selectedText: string | undefined = getUserSelectedText();
 
                 // Default to the display name of the search result
                 let fallbackDisplayName = searchResult.displayName;
@@ -56,7 +56,7 @@ export const xrefLinkFormatter = async (
                     return `[${inputDisplayName ?? fallbackDisplayName}](xref:${encodedDisplayName})`;
                 }
 
-                return `[${fallbackDisplayName}](xref:${encodedDisplayName})`;
+                return `[${selectedText ?? fallbackDisplayName}](xref:${encodedDisplayName})`;
             }
 
         default:

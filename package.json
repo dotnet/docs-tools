@@ -16,9 +16,14 @@
   "contributes": {
     "commands": [
       {
-        "command": "xrefHelper.search",
-        "title": "Search for XREF",
-        "shortTitle": "Search XREF"
+        "command": "xrefHelper.insertXrefLink",
+        "title": "Insert XREF Link",
+        "shortTitle": "Link to XREF"
+      },
+      {
+        "command": "xrefHelper.insertApiReferenceLink",
+        "title": "Insert API Reference Link",
+        "shortTitle": "Link to API"
       }
     ],
     "configuration": {

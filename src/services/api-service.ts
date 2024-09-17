@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import EmptySearchResults, { SearchResults } from "../commands/types/SearchResults";
+import { EmptySearchResults, SearchResults } from "../commands/types/SearchResults";
 import { ConfigReader } from "../configuration/config-reader";
 import { AppConfig } from "../configuration/types/AppConfig";
 

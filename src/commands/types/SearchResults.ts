@@ -7,7 +7,7 @@ export type SearchResults = {
     results: SearchResult[];
 };
 
-export default class EmptySearchResults implements SearchResults {
+export class EmptySearchResults implements SearchResults {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     "@nextLink"?: string | undefined = undefined;
     count: number = 0;

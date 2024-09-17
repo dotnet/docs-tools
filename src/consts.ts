@@ -5,7 +5,13 @@
 export const toolName: string = "xrefHelper";
 
 /**
- * The name of the search command.
- * @constant `"xrefHelper.search"`
+ * The name of the insert API reference link command.
+ * @constant `"xrefHelper.insertApiReferenceLink"`
  */
-export const searchCommandName: string = `${toolName}.search`;
+export const insertApiRefLinkCommandName: string = `${toolName}.insertApiReferenceLink`;
+
+/**
+ * The name of the insert API reference link command.
+ * @constant `"xrefHelper.insertXrefLink"`
+ */
+export const insertXrefLinkCommandName: string = `${toolName}.insertXrefLink`;
