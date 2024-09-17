@@ -9,6 +9,7 @@ import { window, QuickPickItem, QuickPick } from "vscode";
 import { xrefLinkFormatter } from "./formatters/xrefLinkFormatter";
 import { SearchResult } from "./types/SearchResult";
 import { getUserSelectedText, replaceUserSelectedText } from "../utils";
+import { tooManyResults } from "../consts";
 
 export async function insertLink(linkType: LinkType) {
     const searchTerm = await window.showInputBox({
@@ -31,7 +32,7 @@ export async function insertLink(linkType: LinkType) {
         (result: SearchResult) => new SearchResultQuickPickItem(result));
     quickPick.title = `Search results for '${searchTerm}'`;
     quickPick.placeholder = 'Select a type or member to insert a link to.';
-
+    
     let searchResultSelection: SearchResultQuickPickItem | undefined;
 
     quickPick.onDidChangeSelection(async (items) => {
@@ -42,6 +43,16 @@ export async function insertLink(linkType: LinkType) {
             // User has selected a search result.
             searchResultSelection = selectedItem;
 
+            // When the user selects the too many results item, hide and dispose the quick pick.
+            if (searchResultSelection.itemType === tooManyResults) {
+                quickPick.hide();
+                quickPick.dispose();
+
+                return;
+            }
+
+            // When the user has selected text in the active text editor,
+            // create a custom name link with the selected text.
             const selectedText = getUserSelectedText();
             if (selectedText) {
                 await createAndInsertLink(
@@ -54,6 +65,7 @@ export async function insertLink(linkType: LinkType) {
                 return;
             }
 
+            // When the user selects a namespace, create a link using the full name.
             if (searchResultSelection.itemType === ItemType.namespace) {
                 await createAndInsertLink(
                     linkType,
@@ -64,6 +76,7 @@ export async function insertLink(linkType: LinkType) {
                 return;
             }
 
+            // If we make it here, the user will now be prompted to select the URL format.
             quickPick.items = [
                 { label: UrlFormat.default, description: 'Only displays the API name.' },
                 { label: UrlFormat.fullName, description: 'Displays the fully qualified name.' },
@@ -71,6 +84,7 @@ export async function insertLink(linkType: LinkType) {
                 { label: UrlFormat.customName, description: 'Lets you enter custom link text.' },
             ];
             quickPick.title = 'Select URL format.';
+            quickPick.value = ''; // Remove user text filtering...
             quickPick.placeholder = 'Select the format of the URL to insert.';
             quickPick.show();
 

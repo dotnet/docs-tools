@@ -30,6 +30,10 @@ export const getUserSelectedText = (): string | undefined => {
     return undefined;
 };
 
+/**
+ * Replaces the user's selected text with the specified `replacement`.
+ * @param replacement Replaces the user's selected text with the specified `replacement`.
+ */
 export const replaceUserSelectedText = (replacement: string): void => {
     const editor = window.activeTextEditor;
     const selection = editor?.selection;

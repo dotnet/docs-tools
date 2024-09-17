@@ -15,7 +15,7 @@ export const xrefLinkFormatter = async (
     urlFormat: UrlFormat,
     searchResult: SearchResult): Promise<string | undefined> => {
 
-    const encodedDisplayName = encodeURIComponent(searchResult.displayName);
+    const encodedDisplayName = searchResult.displayName.replace('#', '%23');
 
     // TODO:
     // 1. Construct the learn.microsoft.com URL from the search result.

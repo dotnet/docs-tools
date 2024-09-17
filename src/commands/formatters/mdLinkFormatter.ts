@@ -15,7 +15,8 @@ export const mdLinkFormatter = async (
     urlFormat: UrlFormat,
     searchResult: SearchResult): Promise<string | undefined> => {
 
-    const { displayName, url } = searchResult;
+    const displayName = searchResult.displayName.replace('#', '%23');
+    const url = searchResult.url;
 
     // TODO:
     // 1. Construct the learn.microsoft.com URL from the search result.

@@ -1,4 +1,9 @@
 /**
+ * The text used to indicate when there are too many search results.
+ */
+export const tooManyResults: string = "Try a more specific search term...";
+
+/**
  * The name of the tool.
  * @constant `"xrefHelper"`
  */
