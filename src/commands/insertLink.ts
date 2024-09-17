@@ -10,6 +10,8 @@ import { xrefLinkFormatter } from "./formatters/xrefLinkFormatter";
 import { SearchResult } from "./types/SearchResult";
 import { getUserSelectedText, replaceUserSelectedText } from "../utils";
 import { tooManyResults } from "../consts";
+import { RawGitService } from "../services/raw-git-service";
+import { DocIdService } from "../services/docid-service";
 
 export async function insertLink(linkType: LinkType) {
     const searchTerm = await window.showInputBox({
@@ -32,7 +34,7 @@ export async function insertLink(linkType: LinkType) {
         (result: SearchResult) => new SearchResultQuickPickItem(result));
     quickPick.title = `Search results for '${searchTerm}'`;
     quickPick.placeholder = 'Select a type or member to insert a link to.';
-    
+
     let searchResultSelection: SearchResultQuickPickItem | undefined;
 
     quickPick.onDidChangeSelection(async (items) => {
@@ -107,6 +109,20 @@ async function createAndInsertLink(
     searchResultSelection: SearchResultQuickPickItem,
     quickPick: QuickPick<SearchResultQuickPickItem | QuickPickItem>,
     isTextReplacement: boolean = false) {
+
+    const result = searchResultSelection.result;
+
+    try {
+        const rawUrl = await RawGitService.getRawGitUrl(result.url);
+        if (rawUrl) {
+            // TODO this is broken...
+            const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl);
+            if (docId) {
+
+            }
+        }
+    }
+    catch { }
 
     const url = linkType === LinkType.Xref
         ? await xrefLinkFormatter(format, searchResultSelection!.result)
