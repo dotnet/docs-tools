@@ -2,18 +2,14 @@
  * The search result `itemType`.
  */
 export enum ItemType {
+    namespace = 'Namespace',
     class = 'Class',
+    struct = 'Struct',
     interface = 'Interface',
     enum = 'Enum',
-    struct = 'Struct',
-    delegate = 'Delegate',
     method = 'Method',
+    constructor = 'Constructor',
     property = 'Property',
     field = 'Field',
-    event = 'Event',
-    constructor = 'Constructor',
-    destructor = 'Destructor',
-    operator = 'Operator',
-    index = 'Index',
-    namespace = 'Namespace'
+    event = 'Event'
 }

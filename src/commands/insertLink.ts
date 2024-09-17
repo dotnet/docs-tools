@@ -45,20 +45,20 @@ export async function insertLink(linkType: LinkType) {
             const selectedText = getUserSelectedText();
             if (selectedText) {
                 await createAndInsertLink(
-                    linkType, 
-                    UrlFormat.customName, 
-                    searchResultSelection, 
+                    linkType,
+                    UrlFormat.customName,
+                    searchResultSelection,
                     quickPick,
                     true);
 
                 return;
             }
 
-            if (searchResultSelection.itemType === ItemType.namespace) {                
+            if (searchResultSelection.itemType === ItemType.namespace) {
                 await createAndInsertLink(
-                    linkType, 
-                    UrlFormat.fullName, 
-                    searchResultSelection, 
+                    linkType,
+                    UrlFormat.fullName,
+                    searchResultSelection,
                     quickPick);
 
                 return;
@@ -68,7 +68,7 @@ export async function insertLink(linkType: LinkType) {
                 { label: UrlFormat.default, description: 'Only displays the API name.' },
                 { label: UrlFormat.fullName, description: 'Displays the fully qualified name.' },
                 { label: UrlFormat.nameWithType, description: 'Displays the type and name in the format "Type.Name".' },
-                { label: UrlFormat.customName, description: 'Allows the user to enter a custom name' },
+                { label: UrlFormat.customName, description: 'Lets you enter custom link text.' },
             ];
             quickPick.title = 'Select URL format.';
             quickPick.placeholder = 'Select the format of the URL to insert.';
@@ -77,9 +77,9 @@ export async function insertLink(linkType: LinkType) {
         } else if (!!selectedItem) {
             // At this point, the selectedItem.label is a UrlFormat enum value.
             await createAndInsertLink(
-                linkType, 
-                selectedItem.label as UrlFormat, 
-                searchResultSelection!, 
+                linkType,
+                selectedItem.label as UrlFormat,
+                searchResultSelection!,
                 quickPick);
         }
     });
@@ -90,7 +90,7 @@ export async function insertLink(linkType: LinkType) {
 async function createAndInsertLink(
     linkType: LinkType,
     format: UrlFormat,
-    searchResultSelection: SearchResultQuickPickItem, 
+    searchResultSelection: SearchResultQuickPickItem,
     quickPick: QuickPick<SearchResultQuickPickItem | QuickPickItem>,
     isTextReplacement: boolean = false) {
 
