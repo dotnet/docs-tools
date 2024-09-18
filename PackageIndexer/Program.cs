@@ -82,7 +82,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 0814", "preview"];
+        args = [@"c:\users\gewarren\desktop\Package Index 0911b", "preview"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -265,6 +265,14 @@ internal static class Program
                 StringComparison.InvariantCultureIgnoreCase
                 );
 
+            // Except don't include XML file for Microsoft.Extensions.Diagnostics.ResourceMonitoring
+            // See https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787.
+            if (string.Equals(
+                packageEntry.Name,
+                "Microsoft.Extensions.Diagnostics.ResourceMonitoring",
+                StringComparison.InvariantCultureIgnoreCase))
+                includeXml = false;
+
             // Special case for newer assemblies - include XML documentation files.
             if (s_packagesWithTruthDocs.Contains(packageEntry.Name))
                 includeXml = true;
@@ -276,10 +284,10 @@ internal static class Program
                 squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml};libpath=ref]";
 
             CsvEntry entry = CsvEntry.Create(
-                string.Concat("pac", packageCounter[opsMoniker]++),
-                string.Concat(squareBrackets, packageEntry.Name),
-                packageEntry.Version
-                );
+            string.Concat("pac", packageCounter[opsMoniker]++),
+            string.Concat(squareBrackets, packageEntry.Name),
+            packageEntry.Version
+            );
             csvDictionary[opsMoniker].Add(entry);
         }
     }

@@ -241,8 +241,9 @@ public sealed class NuGetFeed(string feedUrl)
             throw new NotSupportedException("We can only retrieve owner information for nuget.org");
 
         var httpClient = new HttpClient();
+        // TODO - this URL is no longer accessible.
         string url = "https://nugetprodusncazuresearch.blob.core.windows.net/v3-azuresearch-017/owners/owners.v2.json";
-        return httpClient.GetFromJsonAsync<Dictionary<string, string[]>>(url);
+        return httpClient.GetFromJsonAsync<Dictionary<string, string[]>>(url)!;
     }
 
     private static bool TryGetAzureDevOpsFeed(string url, out string organization, out string project, out string feed)
