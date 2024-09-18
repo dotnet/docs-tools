@@ -9,7 +9,7 @@ import { window, QuickPickItem, QuickPick, ProgressLocation } from "vscode";
 import { xrefLinkFormatter } from "./formatters/xrefLinkFormatter";
 import { SearchResult } from "./types/SearchResult";
 import { getUserSelectedText, replaceUserSelectedText, searchTermInputValidation } from "../utils";
-import { tooManyResults, urlFormatQuickPickItems, urlFormatQuickPickOverloadItems } from "../consts";
+import { tooManyResults, urlFormatQuickPickItems } from "../consts";
 import { RawGitService } from "../services/raw-git-service";
 import { DocIdService } from "../services/docid-service";
 import { SearchOptions } from './types/SearchOptions';
