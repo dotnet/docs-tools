@@ -13,12 +13,14 @@ namespace DotNet.DocsTools.GitHubObjects;
 /// </remarks>
 /// <param name="Organization">the GH org</param>
 /// <param name="Repository">The GH repository</param>
+/// <param name="states">The array of requested states</param>
 /// <param name="issueNumber">The issue number. Only used for scalar queries</param>
 /// <param name="importTriggerLabelText">The trigger label text. Only used for enumerations</param>
 /// <param name="importedLabelText">The imported label text. Only used for enumerations.</param>
 public readonly record struct QuestIssueOrPullRequestVariables(
     string Organization, 
-    string Repository, 
+    string Repository,
+    string[] states,
     int? issueNumber = null, 
     string? importTriggerLabelText = null, 
     string? importedLabelText = null);
@@ -127,7 +129,7 @@ public abstract record QuestIssueOrPullRequest : Issue
     """;
 
     protected const string EnumerateQuestIssuesQueryText = """
-        query FindUpdatedIssues($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
+        query FindUpdatedIssues($organization: String!, $repository: String!, $states: [IssueState!], $questlabels: [String!], $cursor: String) {
           repository(owner: $organization, name: $repository) {
             issues(
     """ + EnumerationQueryBody +
@@ -150,7 +152,7 @@ public abstract record QuestIssueOrPullRequest : Issue
     """;
 
     protected const string EnumerateQuestPullRequestQueryText = """
-        query FindUpdatedPullRequests($organization: String!, $repository: String!, $questlabels: [String!], $cursor: String) {
+        query FindUpdatedPullRequests($organization: String!, $repository: String!, $states: [PullRequestState!], $questlabels: [String!], $cursor: String) {
           repository(owner: $organization, name: $repository) {
             pullRequests(
     """ + EnumerationQueryBody +
@@ -162,6 +164,7 @@ public abstract record QuestIssueOrPullRequest : Issue
     """;
 
     private const string EnumerationQueryBody = """
+              states: $states
               first: 25
               after: $cursor
               labels: $questlabels

@@ -21,7 +21,7 @@ internal class Program
         string org,
         string repo,
         int? issue = null,
-        int? duration = 5,
+        int? duration = null,
         string? questConfigPath = null,
         string? branch = null)
     {
@@ -40,6 +40,8 @@ internal class Program
 
             Console.WriteLine(singleIssue
                 ? $"Processing single issue {issue!.Value}: https://github.com/{org}/{repo}/issues/{issue.Value}"
+                : (duration is not null) && (duration != -1)
+                ? $"Processing all issues updated in the last {duration} days: {org}/{repo}"
                 : $"Processing all open issues: {org}/{repo}");
 
             ImportOptions? importOptions;
@@ -70,7 +72,7 @@ internal class Program
             else
             {
                 await serviceWorker.ProcessIssues(
-                    org, repo, duration ?? -1, false);
+                    org, repo, duration ?? -1, true);
             }
         }
         catch (InvalidOperationException e) when (e.Message.StartsWith("HTTP error:"))

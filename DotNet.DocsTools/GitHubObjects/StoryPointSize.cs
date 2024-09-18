@@ -102,15 +102,16 @@ public record StoryPointSize
     {
         get
         {
-            var currentYear = int.Parse(DateTime.Now.ToString("yyyy"));
-            var currentMonth = MonthOrdinal(DateTime.Now.ToString("MMM"));
+            var targetDate = DateTime.Now.AddDays(-5);
+            var targetYear = int.Parse(targetDate.ToString("yyyy"));
+            var targetMonth = MonthOrdinal(targetDate.ToString("MMM"));
 
-            if (CalendarYear < currentYear)
+            if (CalendarYear < targetYear)
             {
                 return true;
-            } else if (CalendarYear == currentYear)
+            } else if (CalendarYear == targetYear)
             {
-                return MonthOrdinal(Month) < currentMonth;
+                return MonthOrdinal(Month) < targetMonth;
             }
             return false;
         }
