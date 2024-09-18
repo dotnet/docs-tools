@@ -24,7 +24,7 @@ export class ApiService {
         }
 
         const searchResults: SearchResults = await response.json() as SearchResults;
-        if (!searchResults || searchResults.count === 0) {
+        if (!searchResults || searchResults.count === 0 || !searchResults.count) {
             return EmptySearchResults.instance;
         }
 

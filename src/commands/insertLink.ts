@@ -5,7 +5,7 @@ import { LinkType } from "./types/LinkType";
 import { mdLinkFormatter } from "./formatters/mdLinkFormatter";
 import { SearchResultQuickPickItem } from "./types/SearchResultQuickPickItem";
 import { UrlFormat } from "./types/UrlFormat";
-import { window, QuickPickItem, QuickPick } from "vscode";
+import { window, QuickPickItem, QuickPick, ProgressLocation } from "vscode";
 import { xrefLinkFormatter } from "./formatters/xrefLinkFormatter";
 import { SearchResult } from "./types/SearchResult";
 import { getUserSelectedText, replaceUserSelectedText } from "../utils";
@@ -26,6 +26,7 @@ export async function insertLink(linkType: LinkType) {
     const searchResults = await ApiService.searchApi(searchTerm);
     if (searchResults instanceof EmptySearchResults && searchResults.isEmpty === true) {
         window.showWarningMessage(`Failed to find results for '${searchTerm}'.`);
+        return;
     }
 
     // Create a quick pick to display the search results, allowing the user to select a type or member.
@@ -47,7 +48,6 @@ export async function insertLink(linkType: LinkType) {
 
             // When the user selects the too many results item, hide and dispose the quick pick.
             if (searchResultSelection.itemType === tooManyResults) {
-                quickPick.hide();
                 quickPick.dispose();
 
                 return;
@@ -104,9 +104,11 @@ export async function insertLink(linkType: LinkType) {
 
         } else if (!!selectedItem) {
             // At this point, the selectedItem.label is a UrlFormat enum value.
+            const urlFormat: UrlFormat = selectedItem.label as UrlFormat;
+
             await createAndInsertLink(
                 linkType,
-                selectedItem.label as UrlFormat,
+                urlFormat,
                 searchResultSelection!,
                 quickPick);
         }
@@ -122,38 +124,63 @@ async function createAndInsertLink(
     quickPick: QuickPick<SearchResultQuickPickItem | QuickPickItem>,
     isTextReplacement: boolean = false) {
 
-    const result = searchResultSelection.result;
+    await window.withProgress({
+        location: ProgressLocation.Notification,
+        title: 'Generating Link',
+        cancellable: true
+    }, async (progress, token) => {
 
-    const rawUrl = await RawGitService.getRawGitUrl(result.url);
-    if (!rawUrl) {
-        return;
-    }
-    const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl)
-    if (!docId) {
-        return;
-    }
+        token.onCancellationRequested(() => {
+            quickPick.dispose();
+        });
 
-    let url;
-    if (linkType === LinkType.Xref) {
-        // Replace some special characters.
-        let encodedDocId = docId.replaceAll('#', '%23');
-        encodedDocId = docId.replaceAll('<', '{');
-        encodedDocId = docId.replaceAll('>', '}');
+        const result = searchResultSelection.result;
 
-        url = await xrefLinkFormatter(format, encodedDocId);
-    }
-    else {
-        url = await mdLinkFormatter(format, searchResultSelection!.result);
-    }
+        progress.report({
+            message: `Requesting metadata for selection...`
+        });
 
-    // Insert the URL into the active text editor
-    if (!insertUrlIntoActiveTextEditor(url, isTextReplacement)) {
-        window.setStatusBarMessage(
-            `Failed to insert URL into the active text editor.`, 3000);
-    }
+        const rawUrl = await RawGitService.getRawGitUrl(result.url);
+        if (!rawUrl || token.isCancellationRequested) {
+            token.isCancellationRequested = true;
+            quickPick.dispose();
+            return;
+        }
 
-    quickPick.hide();
-    quickPick.dispose();
+        progress.report({
+            message: `Requesting document ID...`
+        });
+
+        const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl)
+        if (!docId || token.isCancellationRequested) {
+            token.isCancellationRequested = true;
+            quickPick.dispose();
+            return;
+        }
+
+        let url;
+        if (linkType === LinkType.Xref) {
+            // Replace some special characters.
+            const encodedDocId = docId.replaceAll('#', '%23')
+                .replaceAll('<', '{')
+                .replaceAll('>', '}');
+
+            url = await xrefLinkFormatter(format, encodedDocId);
+        }
+        else {
+            url = await mdLinkFormatter(format, searchResultSelection!.result);
+        }
+
+        // Insert the URL into the active text editor
+        if (!token.isCancellationRequested &&
+            !insertUrlIntoActiveTextEditor(url, isTextReplacement)) {
+            token.isCancellationRequested = true;
+            window.setStatusBarMessage(
+                `Failed to insert URL into the active text editor.`, 3000);
+        }
+
+        quickPick.dispose();
+    });
 }
 
 /**
