@@ -9,7 +9,7 @@ import { window, QuickPickItem, QuickPick, ProgressLocation } from "vscode";
 import { xrefLinkFormatter } from "./formatters/xrefLinkFormatter";
 import { SearchResult } from "./types/SearchResult";
 import { getUserSelectedText, replaceUserSelectedText, searchTermInputValidation } from "../utils";
-import { tooManyResults, urlFormatQuickPickItems } from "../consts";
+import { tooManyResults, urlFormatQuickPickItems, urlFormatQuickPickOverloadItems } from "../consts";
 import { RawGitService } from "../services/raw-git-service";
 import { DocIdService } from "../services/docid-service";
 
@@ -38,6 +38,8 @@ export async function insertLink(linkType: LinkType) {
         (result: SearchResult) => new SearchResultQuickPickItem(result));
     quickPick.title = `📌 Search results for "${searchTerm}"`;
     quickPick.placeholder = 'Type to filter by name, and select a type or member to insert a link to.';
+    quickPick.matchOnDescription = true;
+    quickPick.matchOnDetail = true;
 
     let searchResultSelection: SearchResultQuickPickItem | undefined;
 

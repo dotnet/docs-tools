@@ -59,6 +59,11 @@
               "value": "en-us"
             }
           ]
+        },
+        "xrefHelper.appendOverloads": {
+          "type": "boolean",
+          "description": "Whether to append overloads to the search results.",
+          "default": true
         }
       }
     }

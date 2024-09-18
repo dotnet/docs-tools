@@ -7,7 +7,7 @@ import { toolName } from "../consts";
  */
 export class ConfigReader {
     private static appConfig?: AppConfig = undefined;
-    
+
     /**
      * Reads the configuration settings for the extension.
      * @returns The configuration settings for the extension.
@@ -16,11 +16,19 @@ export class ConfigReader {
         if (ConfigReader.appConfig) {
             return ConfigReader.appConfig;
         }
-        
+
+        workspace.onDidChangeConfiguration(() => {
+            ConfigReader.loadConfig();
+        });
+
+        return ConfigReader.loadConfig();
+    };
+
+    private static loadConfig() {
         const config: WorkspaceConfiguration = workspace.getConfiguration(toolName);
-        
+
         ConfigReader.appConfig = new AppConfig(config);
 
         return ConfigReader.appConfig;
-    };
+    }
 }

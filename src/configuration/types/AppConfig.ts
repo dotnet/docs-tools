@@ -31,20 +31,32 @@ export class AppConfig {
      */
     queryStringParameters: StringPair[] | undefined;
 
+    /**
+     * Whether to append the overloads to the search results.
+     * - When enabled, the search results will include the overloads.
+     * @default true
+     */
+    appendOverloads: boolean | undefined = true;
+
     constructor(workspaceConfig: WorkspaceConfiguration) {
-        const urlFormat = workspaceConfig.get<UrlFormat>(nameof<AppConfig>("defaultUrlFormat"))
-        if (urlFormat) {
+        const urlFormat = workspaceConfig.get<UrlFormat>(nameof<AppConfig>("defaultUrlFormat"));
+        if (urlFormat !== undefined) {
             this.defaultUrlFormat = urlFormat;
         }
 
-        const apiUrl = workspaceConfig.get<string>(nameof<AppConfig>("apiUrl"))
-        if (apiUrl) {
+        const apiUrl = workspaceConfig.get<string>(nameof<AppConfig>("apiUrl"));
+        if (apiUrl !== undefined) {
             this.apiUrl = apiUrl;
         }
 
-        const queryParams = workspaceConfig.get<StringPair[]>(nameof<AppConfig>("queryStringParameters"))
-        if (queryParams) {
+        const queryParams = workspaceConfig.get<StringPair[]>(nameof<AppConfig>("queryStringParameters"));
+        if (queryParams !== undefined) {
             this.queryStringParameters = queryParams;
+        }
+
+        const appendOverloads = workspaceConfig.get<boolean>(nameof<AppConfig>("appendOverloads"));
+        if (appendOverloads !== undefined) {
+            this.appendOverloads = appendOverloads;
         }
     }
 

@@ -14,16 +14,22 @@ export class SearchResultQuickPickItem implements QuickPickItem {
 
     constructor(public readonly result: SearchResult) {
         if (Object.values(ItemType).includes(result.itemType as ItemType)) {
-            this.label = `${this.getSymbolIcon(result.itemType)}`; //` ${result.displayName}`;
+            this.label = `${this.getSymbolIcon(result.itemType)}`;
             this.itemType = result.itemType as ItemType;
+            const isOverload = result.displayName.endsWith("*");
+            const description = isOverload
+                ? `${result.displayName} — ${this.itemType} Overloads`
+                : `${result.displayName} — ${this.itemType}`;
+
+            this.description = description;
         } else {
             this.label = result.displayName;
             this.itemType = result.itemType;
+            this.description = result.description;
         }
 
-        this.kind = result.kind ?? QuickPickItemKind.Default;
-        this.description = `${result.displayName} — (${this.itemType})`;
         this.url = result.url;
+        this.kind = result.kind ?? QuickPickItemKind.Default;
     }
 
     private getSymbolIcon(itemType: ItemType | string): string {
