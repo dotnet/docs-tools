@@ -14,15 +14,15 @@ export class SearchResultQuickPickItem implements QuickPickItem {
 
     constructor(public readonly result: SearchResult) {
         if (Object.values(ItemType).includes(result.itemType as ItemType)) {
-            this.label = `${this.getSymbolIcon(result.itemType)} ${result.displayName}`;
+            this.label = `${this.getSymbolIcon(result.itemType)}`; //` ${result.displayName}`;
             this.itemType = result.itemType as ItemType;
         } else {
             this.label = result.displayName;
             this.itemType = result.itemType;
-        }        
+        }
 
         this.kind = result.kind ?? QuickPickItemKind.Default;
-        this.description = `— (${this.itemType})`;
+        this.description = `${result.displayName} — (${this.itemType})`;
         this.url = result.url;
     }
 
