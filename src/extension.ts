@@ -4,7 +4,8 @@ import * as vscode from 'vscode';
 import { insertLink } from './commands/insertLink';
 import { insertApiRefLinkCommandName, insertXrefLinkCommandName, toolName } from './consts';
 import { LinkType } from './commands/types/LinkType';
-import { xrefStarterAutoComplete } from './commands/autocomplete';
+import { xrefStarterAutoComplete, xrefDisplayTypeAutoComplete } from './commands/autocomplete';
+import { SearchOptions } from './commands/types/SearchOptions';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -20,12 +21,15 @@ export function activate(context: vscode.ExtensionContext) {
   // The commandId parameter must match the command field in package.json
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      insertApiRefLinkCommandName, () => insertLink(LinkType.Markdown)),
+      insertApiRefLinkCommandName, () => insertLink(LinkType.Markdown, undefined)),
 
     vscode.commands.registerCommand(
-      insertXrefLinkCommandName, () => insertLink(LinkType.Xref)),
+      insertXrefLinkCommandName, (args: SearchOptions | undefined) => insertLink(LinkType.Xref, args)),
 
     vscode.languages.registerCompletionItemProvider('markdown', xrefStarterAutoComplete, ':'),
+    vscode.languages.registerCompletionItemProvider('markdown', xrefDisplayTypeAutoComplete, '?'),
+
+    
   );
 }
 

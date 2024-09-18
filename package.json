@@ -21,12 +21,14 @@
       {
         "command": "xrefHelper.insertXrefLink",
         "title": "Insert XREF Link",
-        "shortTitle": "Link to XREF"
+        "shortTitle": "Link to XREF",
+        "enablement": "editorLangId == markdown || editorLangId == xml"
       },
       {
         "command": "xrefHelper.insertApiReferenceLink",
         "title": "Insert API Reference Link",
-        "shortTitle": "Link to API"
+        "shortTitle": "Link to API",
+        "enablement": "editorLangId == markdown || editorLangId == xml"
       }
     ],
     "configuration": {

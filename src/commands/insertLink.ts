@@ -12,8 +12,9 @@ import { getUserSelectedText, replaceUserSelectedText, searchTermInputValidation
 import { tooManyResults, urlFormatQuickPickItems, urlFormatQuickPickOverloadItems } from "../consts";
 import { RawGitService } from "../services/raw-git-service";
 import { DocIdService } from "../services/docid-service";
+import { SearchOptions } from './types/SearchOptions';
 
-export async function insertLink(linkType: LinkType) {
+export async function insertLink(linkType: LinkType, options: SearchOptions | undefined) {
     const searchTerm = await window.showInputBox({        
         title: "🔍 Search APIs",
         placeHolder: `Search for a type or member by name, for example; "HttpClient".`,
