@@ -2,6 +2,7 @@ import { window } from "vscode";
 import { SearchResult } from "../types/SearchResult";
 import { UrlFormat } from "../types/UrlFormat";
 import { getUserSelectedText } from "../../utils";
+import { SearchOptions } from "../types/SearchOptions";
 
 /**
  * When MD links are enabled, the URL should be in the format:
@@ -9,11 +10,13 @@ import { getUserSelectedText } from "../../utils";
  *   For example, `[String](/dotnet/api/system.string)`.
  * @param urlFormat The {@link UrlFormat format} of the URL to insert.
  * @param searchResult The {@link SearchResult search result} to insert as a link.
+ * @param options The {@link SearchOptions options} to use when inserting the link.
  * @returns A `string` that represents the Markdown URL link as a Promise.
  */
 export const mdLinkFormatter = async (
     urlFormat: UrlFormat,
-    searchResult: SearchResult): Promise<string | undefined> => {
+    searchResult: SearchResult,
+    options: SearchOptions | undefined): Promise<string | undefined> => {
 
     const url = searchResult.url;
 

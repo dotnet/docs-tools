@@ -26,6 +26,7 @@ export const insertXrefLinkCommandName: string = `${toolName}.insertXrefLink`;
 
 /**
  * The quick pick items for selecting the URL format.
+ * Excludes the custom name option.
  */
 export const urlFormatQuickPickItems: QuickPickItem[] =
 [
@@ -41,8 +42,17 @@ export const urlFormatQuickPickItems: QuickPickItem[] =
         label: `$(bracket-dot) ${UrlFormat.nameWithType}`, 
         description: 'Displays the type and name in the format. For example, "String.Trim()".',
     },
+];
+
+/**
+ * The quick pick items for selecting the URL format.
+ * Includes the custom name option.
+ */
+export const allUrlFormatQuickPickItems: QuickPickItem[] =
+[
+    ...urlFormatQuickPickItems,
     { 
         label: `$(edit) ${UrlFormat.customName}`, 
         description: 'Lets you enter custom link text. For example, "The string.Trim() method".'
-    },
+    }
 ];
