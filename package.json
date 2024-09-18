@@ -11,7 +11,10 @@
     "Other"
   ],
   "preview": true,
-  "activationEvents": [],
+  "activationEvents": [ 
+    "onLanguage:markdown",
+    "onLanguage:xml"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
