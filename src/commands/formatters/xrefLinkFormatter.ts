@@ -1,5 +1,4 @@
 import { window } from "vscode";
-import { SearchResult } from "../types/SearchResult";
 import { UrlFormat } from "../types/UrlFormat";
 import { getUserSelectedText } from "../../utils";
 
@@ -7,8 +6,8 @@ import { getUserSelectedText } from "../../utils";
  * When XREF links are enabled, the URL should be in the format:
  *   `<xref:{uid}>`, where `{uid}` is the unique identifier of the type or member.
  *   For example, `<xref:System.String>`.
- * @param urlFormat
- * @param uid
+ * @param urlFormat The {@link UrlFormat format} of the URL to insert.
+ * @param uid The unique identifier of the type or member.
  * @returns A `string` that represents the XREF link as a Promise.
  */
 export const xrefLinkFormatter = async (

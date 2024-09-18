@@ -7,8 +7,8 @@ import { getUserSelectedText } from "../../utils";
  * When MD links are enabled, the URL should be in the format:
  *   `[name](url)`, where name is the name of the type or member and url is the URL.
  *   For example, `[String](/dotnet/api/system.string)`.
- * @param urlFormat
- * @param searchResult
+ * @param urlFormat The {@link UrlFormat format} of the URL to insert.
+ * @param searchResult The {@link SearchResult search result} to insert as a link.
  * @returns A `string` that represents the Markdown URL link as a Promise.
  */
 export const mdLinkFormatter = async (

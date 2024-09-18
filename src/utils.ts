@@ -1,4 +1,4 @@
-import { window, Range } from "vscode";
+import { window, Range, InputBoxValidationMessage, InputBoxValidationSeverity } from "vscode";
 
 /**
  * The `nameof` operator returns the name of a variable, type, or member as a `string`.
@@ -44,3 +44,35 @@ export const replaceUserSelectedText = (replacement: string): void => {
         });
     }
 };
+
+/**
+ * Used to validate search term input.
+ */
+export function searchTermInputValidation(text: string): InputBoxValidationMessage | null {
+    if (!text) {
+        return {
+            message: `You must provide a search term.`,
+            severity: InputBoxValidationSeverity.Info
+        }
+    }
+
+    if (text.includes(' ')) {
+        return {
+            message: `Your search cannot contain spaces.`,
+            severity: InputBoxValidationSeverity.Warning
+        }
+    }
+
+    // Angle bracket count must be the same...
+    const openingAngles = text.match(/</g || [])?.length ?? 0;
+    const closingAngles = text.match(/>/g || [])?.length ?? 0;
+
+    if (openingAngles != closingAngles) {
+        return {
+            message: `Your search must include pairs of opening and closing angle brackets.`,
+            severity: InputBoxValidationSeverity.Error
+        }
+    }
+
+    return null;
+}

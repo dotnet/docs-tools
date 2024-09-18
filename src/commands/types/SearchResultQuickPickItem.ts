@@ -22,7 +22,7 @@ export class SearchResultQuickPickItem implements QuickPickItem {
         }        
 
         this.kind = result.kind ?? QuickPickItemKind.Default;
-        this.description = this.itemType.toString();
+        this.description = `— (${this.itemType})`;
         this.url = result.url;
     }
 
@@ -48,8 +48,9 @@ export class SearchResultQuickPickItem implements QuickPickItem {
                 return "$(symbol-property)";
             case ItemType.struct:
                 return "$(symbol-struct)";
+
             default:
-                return "";
+                return "$(symbol-misc)";
         }
     }
 

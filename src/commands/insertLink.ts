@@ -8,33 +8,36 @@ import { UrlFormat } from "./types/UrlFormat";
 import { window, QuickPickItem, QuickPick, ProgressLocation } from "vscode";
 import { xrefLinkFormatter } from "./formatters/xrefLinkFormatter";
 import { SearchResult } from "./types/SearchResult";
-import { getUserSelectedText, replaceUserSelectedText } from "../utils";
-import { tooManyResults } from "../consts";
+import { getUserSelectedText, replaceUserSelectedText, searchTermInputValidation } from "../utils";
+import { tooManyResults, urlFormatQuickPickItems } from "../consts";
 import { RawGitService } from "../services/raw-git-service";
 import { DocIdService } from "../services/docid-service";
 
 export async function insertLink(linkType: LinkType) {
-    const searchTerm = await window.showInputBox({
-        title: "Search APIs",
-        placeHolder: "Search for a type or member by name."
+    const searchTerm = await window.showInputBox({        
+        title: "🔍 Search APIs",
+        placeHolder: `Search for a type or member by name, for example; "HttpClient".`,
+        validateInput: searchTermInputValidation
     });
 
+    // This should never happen, since we're validating, but it also doesn't hurt to have this check.
     if (!searchTerm) {
         return;
     }
 
     const searchResults = await ApiService.searchApi(searchTerm);
     if (searchResults instanceof EmptySearchResults && searchResults.isEmpty === true) {
-        window.showWarningMessage(`Failed to find results for '${searchTerm}'.`);
+        window.showWarningMessage(`We didn't find any results for the "${searchTerm}" search term.`);
         return;
     }
 
     // Create a quick pick to display the search results, allowing the user to select a type or member.
     const quickPick = window.createQuickPick<SearchResultQuickPickItem | QuickPickItem>();
+
     quickPick.items = searchResults.results.map(
         (result: SearchResult) => new SearchResultQuickPickItem(result));
-    quickPick.title = `Search results for '${searchTerm}'`;
-    quickPick.placeholder = 'Select a type or member to insert a link to.';
+    quickPick.title = `📌 Search results for "${searchTerm}"`;
+    quickPick.placeholder = 'Type to filter by name, and select a type or member to insert a link to.';
 
     let searchResultSelection: SearchResultQuickPickItem | undefined;
 
@@ -91,20 +94,17 @@ export async function insertLink(linkType: LinkType) {
             }
 
             // If we make it here, the user will now be prompted to select the URL format.
-            quickPick.items = [
-                { label: UrlFormat.default, description: 'Only displays the API name.' },
-                { label: UrlFormat.fullName, description: 'Displays the fully qualified name.' },
-                { label: UrlFormat.nameWithType, description: 'Displays the type and name in the format "Type.Name".' },
-                { label: UrlFormat.customName, description: 'Lets you enter custom link text.' },
-            ];
-            quickPick.title = 'Select URL format.';
+            quickPick.items = urlFormatQuickPickItems;
+            quickPick.title = '🔗 Select URL format';
             quickPick.value = ''; // Remove user text filtering...
             quickPick.placeholder = 'Select the format of the URL to insert.';
             quickPick.show();
 
         } else if (!!selectedItem) {
-            // At this point, the selectedItem.label is a UrlFormat enum value.
-            const urlFormat: UrlFormat = selectedItem.label as UrlFormat;
+            // At this point, the selectedItem.label is a UrlFormat enum value
+            // with a leading icon, e.g. "$(check) default".
+            const match = selectedItem.label.match(/\$\(.*\) (.+)/);
+            const urlFormat: UrlFormat = match?.[1] as UrlFormat;
 
             await createAndInsertLink(
                 linkType,
@@ -123,6 +123,8 @@ async function createAndInsertLink(
     searchResultSelection: SearchResultQuickPickItem,
     quickPick: QuickPick<SearchResultQuickPickItem | QuickPickItem>,
     isTextReplacement: boolean = false) {
+
+    quickPick.busy = true;
 
     await window.withProgress({
         location: ProgressLocation.Notification,
