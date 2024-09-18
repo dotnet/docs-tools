@@ -287,7 +287,7 @@ internal static class Program
                 string.Concat("pac", packageCounter[opsMoniker]++),
                 string.Concat(squareBrackets, packageEntry.Name),
                 packageEntry.Version
-            );
+                );
             csvDictionary[opsMoniker].Add(entry);
         }
     }
