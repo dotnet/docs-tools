@@ -284,9 +284,9 @@ internal static class Program
                 squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml};libpath=ref]";
 
             CsvEntry entry = CsvEntry.Create(
-            string.Concat("pac", packageCounter[opsMoniker]++),
-            string.Concat(squareBrackets, packageEntry.Name),
-            packageEntry.Version
+                string.Concat("pac", packageCounter[opsMoniker]++),
+                string.Concat(squareBrackets, packageEntry.Name),
+                packageEntry.Version
             );
             csvDictionary[opsMoniker].Add(entry);
         }
