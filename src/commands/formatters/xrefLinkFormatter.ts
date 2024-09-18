@@ -15,28 +15,19 @@ export const xrefLinkFormatter = async (
     urlFormat: UrlFormat,
     uid: string): Promise<string | undefined> => {
 
-    const encodedDisplayName = uid.replaceAll('#', '%23');
-
-    // TODO:
-    // 1. Construct the learn.microsoft.com URL from the search result.
-    // 2. Fetch the HTML content and parse:
-    //    <meta name="gitcommit" content="https://github.com/{owner}/{repo}/blob/{sha}/path/to.xml">
-    // 3. Request the raw XML file from GitHub.
-    // 4. Parse the XML file and return the DocId's that are closest to the search result.
-
     switch (urlFormat) {
         // Displays the API name:
         //   <xref:System.Net.Mail.SmtpClient>
         case UrlFormat.default:
-            return `<xref:${encodedDisplayName}>`;
+            return `<xref:${uid}>`;
 
         // Displays the fully qualified name:
         //   <xref:System.Net.Mail.SmtpClient?displayProperty=fullName>
         case UrlFormat.fullName:
-            return `<xref:${encodedDisplayName}?displayProperty=fullName>`;
+            return `<xref:${uid}?displayProperty=fullName>`;
 
         case UrlFormat.nameWithType:
-            return `<xref:${encodedDisplayName}?displayProperty=nameWithType>`;
+            return `<xref:${uid}?displayProperty=nameWithType>`;
 
         case UrlFormat.customName:
             {
@@ -53,10 +44,10 @@ export const xrefLinkFormatter = async (
                         placeHolder: 'Enter the custom link text to display.'
                     });
 
-                    return `[${inputDisplayName ?? fallbackDisplayName}](xref:${encodedDisplayName})`;
+                    return `[${inputDisplayName ?? fallbackDisplayName}](xref:${uid})`;
                 }
 
-                return `[${selectedText ?? fallbackDisplayName}](xref:${encodedDisplayName})`;
+                return `[${selectedText ?? fallbackDisplayName}](xref:${uid})`;
             }
 
         default:

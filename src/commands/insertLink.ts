@@ -79,6 +79,17 @@ export async function insertLink(linkType: LinkType) {
                 return;
             }
 
+            // If the user wants a Markdown link, then we assume they want custom link text.
+            if (linkType === LinkType.Markdown) {
+                await createAndInsertLink(
+                    linkType,
+                    UrlFormat.customName,
+                    searchResultSelection,
+                    quickPick);
+
+                return;
+            }
+
             // If we make it here, the user will now be prompted to select the URL format.
             quickPick.items = [
                 { label: UrlFormat.default, description: 'Only displays the API name.' },
@@ -122,9 +133,18 @@ async function createAndInsertLink(
         return;
     }
 
-    const url = linkType === LinkType.Xref
-        ? await xrefLinkFormatter(format, docId)
-        : await mdLinkFormatter(format, searchResultSelection!.result);
+    let url;
+    if (linkType === LinkType.Xref) {
+        // Replace some special characters.
+        let encodedDocId = docId.replaceAll('#', '%23');
+        encodedDocId = docId.replaceAll('<', '{');
+        encodedDocId = docId.replaceAll('>', '}');
+
+        url = await xrefLinkFormatter(format, encodedDocId);
+    }
+    else {
+        url = await mdLinkFormatter(format, searchResultSelection!.result);
+    }
 
     // Insert the URL into the active text editor
     if (!insertUrlIntoActiveTextEditor(url, isTextReplacement)) {
