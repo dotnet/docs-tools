@@ -22,15 +22,30 @@
         "command": "xrefHelper.insertXrefLink",
         "title": "Insert XREF Link",
         "shortTitle": "Link to XREF",
-        "enablement": "editorLangId == markdown || editorLangId == xml"
+        "enablement": "(editorLangId == markdown || editorLangId == xml) && !editorReadonly"
       },
       {
         "command": "xrefHelper.insertApiReferenceLink",
         "title": "Insert API Reference Link",
         "shortTitle": "Link to API",
-        "enablement": "editorLangId == markdown || editorLangId == xml"
+        "enablement": "(editorLangId == markdown || editorLangId == xml) && !editorReadonly"
+      },
+      {
+        "command": "xrefHelper.transformXrefToOther",
+        "title": "Convert XREF link between [](xref:) and <xref:>",
+        "shortTitle": "(xref:…) <=> <xref:…>",
+        "enablement": "(editorLangId == markdown || editorLangId == xml) && editorHasSelection && !editorReadonly"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorFocus && !editorReadonly && (editorLangId == markdown || editorLangId == xml) && editorHasSelection",
+          "command": "xrefHelper.transformXrefToOther",
+          "group": "xref-helper"
+        }
+      ]
+    },
     "configuration": {
       "title": "XREF Helper",
       "properties": {

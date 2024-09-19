@@ -25,6 +25,12 @@ export const insertApiRefLinkCommandName: string = `${toolName}.insertApiReferen
 export const insertXrefLinkCommandName: string = `${toolName}.insertXrefLink`;
 
 /**
+ * The name of the transform xref to the opposite version command.
+ * @constant `"xrefHelper.transformXrefToOther"`
+ */
+export const transformXrefToOtherCommandName: string = `${toolName}.transformXrefToOther`;
+
+/**
  * The quick pick items for selecting the URL format.
  * Excludes the custom name option.
  */
