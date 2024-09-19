@@ -26,11 +26,12 @@ export const xrefStarterAutoComplete: CompletionItemProvider = {
                 {
                     command: { 
                         command: insertXrefLinkCommandName, 
-                        title: "Search for API", 
+                        title: "🔍 Search APIs", 
                         arguments: [searchOptions] 
                     },
-                    label: "Search for API",
-                    insertText: ""
+                    label: " — Search APIs...",
+                    insertText: "",
+                    kind: CompletionItemKind.Text,
                 }
             ];
         }
@@ -70,16 +71,14 @@ export const xrefDisplayTypeAutoComplete: CompletionItemProvider = {
 
             return [
                 {
-                    label: 'Full name',
+                    label: '$(array) Full name',
                     insertText: 'displayProperty=fullName',
-                    detail: fullName,
-                    kind: CompletionItemKind.Unit
+                    detail: fullName
                 },
                 {
-                    label: 'Type with name',
+                    label: '$(bracket-dot) Type with name',
                     insertText: 'displayProperty=nameWithType',
-                    detail: nameWithType,
-                    kind: CompletionItemKind.Unit
+                    detail: nameWithType
                 },
             ];
         }
