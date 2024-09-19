@@ -157,6 +157,10 @@ async function createAndInsertLink(
 
         const rawUrl = await RawGitService.getRawGitUrl(result.url);
         if (!rawUrl || token.isCancellationRequested) {
+
+            window.setStatusBarMessage(
+                `Failed to get the raw URL for "${result.url}"`, 5000);
+
             token.isCancellationRequested = true;
             quickPick.dispose();
             return;
@@ -170,7 +174,10 @@ async function createAndInsertLink(
         if (linkType === LinkType.Xref) {
             const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl)
             if (!docId || token.isCancellationRequested) {
-                // TODO - can we show a status message here?
+                
+                window.setStatusBarMessage(
+                    `Failed to get the DocId for "${rawUrl}"`, 5000);
+
                 token.isCancellationRequested = true;
                 quickPick.dispose();
                 return;
@@ -191,8 +198,9 @@ async function createAndInsertLink(
         if (!token.isCancellationRequested &&
             !insertUrlIntoActiveTextEditor(url, isTextReplacement)) {
             token.isCancellationRequested = true;
+
             window.setStatusBarMessage(
-                `Failed to insert URL into the active text editor.`, 3000);
+                `Failed to insert URL into the active text editor.`, 5000);
         }
 
         quickPick.dispose();
