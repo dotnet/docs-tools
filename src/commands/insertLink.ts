@@ -15,9 +15,9 @@ import { DocIdService } from "../services/docid-service";
 import { SearchOptions } from './types/SearchOptions';
 
 export async function insertLink(linkType: LinkType, options: SearchOptions | undefined) {
-    const searchTerm = await window.showInputBox({        
+    const searchTerm = await window.showInputBox({
         title: "🔍 Search APIs",
-        placeHolder: `Search for a type or member by name, for example; "HttpClient".`,
+        placeHolder: `Search for a type or member by name, for example: "SmtpClient".`,
         validateInput: searchTermInputValidation
     });
 
@@ -102,10 +102,10 @@ export async function insertLink(linkType: LinkType, options: SearchOptions | un
             }
 
             // If we make it here, the user will now be prompted to select the URL format.
-            quickPick.items = options && options.hideCustomDisplayStyle === true 
+            quickPick.items = options && options.hideCustomDisplayStyle === true
                 ? urlFormatQuickPickItems
-                : allUrlFormatQuickPickItems;            
-            
+                : allUrlFormatQuickPickItems;
+
             quickPick.title = '🔗 Select URL format';
             quickPick.value = ''; // Remove user text filtering...
             quickPick.placeholder = 'Select the format of the URL to insert.';
@@ -166,15 +166,16 @@ async function createAndInsertLink(
             message: `Requesting document ID...`
         });
 
-        const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl)
-        if (!docId || token.isCancellationRequested) {
-            token.isCancellationRequested = true;
-            quickPick.dispose();
-            return;
-        }
-
         let url;
         if (linkType === LinkType.Xref) {
+            const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl)
+            if (!docId || token.isCancellationRequested) {
+                // TODO - can we show a status message here?
+                token.isCancellationRequested = true;
+                quickPick.dispose();
+                return;
+            }
+
             // Replace some special characters.
             const encodedDocId = docId.replaceAll('#', '%23')
                 .replaceAll('<', '{')

@@ -21,7 +21,7 @@ export const xrefLinkFormatter = async (
         //   <xref:System.Net.Mail.SmtpClient>
         case UrlFormat.default:
             return options && options.skipBrackets === true
-                ? uid 
+                ? uid
                 : `<xref:${uid}>`;
 
         // Displays the fully qualified name:

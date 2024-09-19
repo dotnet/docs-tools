@@ -24,10 +24,10 @@ export const xrefStarterAutoComplete: CompletionItemProvider = {
 
             return [
                 {
-                    command: { 
-                        command: insertXrefLinkCommandName, 
-                        title: "🔍 Search APIs", 
-                        arguments: [searchOptions] 
+                    command: {
+                        command: insertXrefLinkCommandName,
+                        title: "🔍 Search APIs",
+                        arguments: [searchOptions]
                     },
                     label: " — Search APIs...",
                     insertText: "",
@@ -76,7 +76,7 @@ export const xrefDisplayTypeAutoComplete: CompletionItemProvider = {
                     detail: fullName
                 },
                 {
-                    label: '$(bracket-dot) Type with name',
+                    label: '$(bracket-dot) Name with type',
                     insertText: 'displayProperty=nameWithType',
                     detail: nameWithType
                 },

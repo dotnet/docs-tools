@@ -18,31 +18,36 @@ export const mdLinkFormatter = async (
     searchResult: SearchResult,
     options: SearchOptions | undefined): Promise<string | undefined> => {
 
-    const url = searchResult.url;
+    let url = searchResult.url;
+    const displayName = searchResult.displayName;
+
+    if (displayName.endsWith('*')) {
+        // Chop the bookmark off the URL.
+        url = url.split('#')[0];
+    }
 
     switch (urlFormat) {
         // Allows the user to enter a custom name:
         //   [the .NET SmtpClient class](/dotnet/api/system.net.mail.smtpclient)
-        case UrlFormat.customName:
-            {
-                // Try getting the selected text from the active text editor.
-                const selectedText: string | undefined = getUserSelectedText();
+        case UrlFormat.customName: {
+            // Try getting the selected text from the active text editor.
+            const selectedText: string | undefined = getUserSelectedText();
 
-                // Default to the display name of the search result.
-                let fallbackDisplayName = searchResult.displayName;
+            // Default to the display name of the search result.
+            let fallbackDisplayName = searchResult.displayName;
 
-                // If there isn't selected text, prompt the user to enter a custom name.
-                if (!selectedText) {
-                    const inputDisplayName = await window.showInputBox({
-                        title: 'Enter custom link text',
-                        placeHolder: 'Enter the link text to display.'
-                    });
+            // If there isn't selected text, prompt the user to enter a custom name.
+            if (!selectedText) {
+                const inputDisplayName = await window.showInputBox({
+                    title: 'Enter custom link text',
+                    placeHolder: 'Enter the link text to display.'
+                });
 
-                    return `[${inputDisplayName ?? fallbackDisplayName}](${url})`;
-                }
-
-                return `[${fallbackDisplayName}](${url})`;
+                return `[${inputDisplayName ?? fallbackDisplayName}](${url})`;
             }
+
+            return `[${fallbackDisplayName}](${url})`;
+        }
 
         default:
             return undefined;

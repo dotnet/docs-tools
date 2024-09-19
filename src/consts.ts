@@ -30,17 +30,17 @@ export const insertXrefLinkCommandName: string = `${toolName}.insertXrefLink`;
  */
 export const urlFormatQuickPickItems: QuickPickItem[] =
 [
-    { 
-        label: `$(check) ${UrlFormat.default}`, 
-        description: 'Only displays the API name. For example, "Trim()".'
+    {
+        label: `$(check) ${UrlFormat.default}`,
+        description: 'Displays only the API name. For example, "Trim".'
     },
-    { 
-        label: `$(array) ${UrlFormat.fullName}`, 
-        description: 'Displays the fully qualified name. For example, "System.String.Trim()".'
+    {
+        label: `$(array) ${UrlFormat.fullName}`,
+        description: 'Displays the fully qualified name. For example, "System.String.Trim".'
     },
-    { 
-        label: `$(bracket-dot) ${UrlFormat.nameWithType}`, 
-        description: 'Displays the type and name in the format. For example, "String.Trim()".',
+    {
+        label: `$(bracket-dot) ${UrlFormat.nameWithType}`,
+        description: 'Displays the type and name (or namespace and type). For example, "String.Trim".',
     },
 ];
 
@@ -51,8 +51,8 @@ export const urlFormatQuickPickItems: QuickPickItem[] =
 export const allUrlFormatQuickPickItems: QuickPickItem[] =
 [
     ...urlFormatQuickPickItems,
-    { 
-        label: `$(edit) ${UrlFormat.customName}`, 
+    {
+        label: `$(edit) ${UrlFormat.customName}`,
         description: 'Lets you enter custom link text. For example, "The string.Trim() method".'
     }
 ];
