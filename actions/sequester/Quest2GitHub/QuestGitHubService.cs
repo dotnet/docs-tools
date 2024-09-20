@@ -108,7 +108,7 @@ public class QuestGitHubService(
                     {
                         if (questItem != null)
                         {
-                            await UpdateWorkItemAsync(questItem, item, _allIterations, tagMap);
+                            await QuestWorkItem.UpdateWorkItemAsync(questItem, item, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes, defaultParentNode);
                         }
                         else
                         {
@@ -205,7 +205,7 @@ public class QuestGitHubService(
             {
                 // This allows a human to force a manual update: just add the trigger label.
                 // Note that it updates even if the item is closed.
-                await UpdateWorkItemAsync(questItem, ghIssue, _allIterations, tagMap);
+                await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes, defaultParentNode);
 
             }
             // Next, if the item is already linked, consider any updates.
@@ -216,7 +216,7 @@ public class QuestGitHubService(
         }
         else if (sequestered && questItem is not null)
         {
-            await UpdateWorkItemAsync(questItem, ghIssue, _allIterations, tagMap);
+            await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes, defaultParentNode);
         }
     }
 
@@ -298,12 +298,11 @@ public class QuestGitHubService(
     private async Task<QuestWorkItem?> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, QuestIteration currentIteration, IEnumerable<QuestIteration> allIterations)
     {
         int? workItem = LinkedQuestId(issueOrPullRequest);
-        int parentId = parentIdFromIssue(issueOrPullRequest);
         if (workItem is null)
         {
             // Create work item:
-            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, parentId, _azdoClient, _ospoClient, areaPath,
-                _importTriggerLabel?.Id, currentIteration, allIterations, tagMap);
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, areaPath,
+                _importTriggerLabel?.Id, currentIteration, allIterations, tagMap, parentNodes, defaultParentNode);
 
             string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
             string updatedBody = $"""
@@ -354,170 +353,6 @@ public class QuestGitHubService(
             if (label.Name == importTriggerLabelText) _importTriggerLabel = label;
             if (label.Name == importedLabelText) _importedLabel = label;
         }
-    }
-
-    private async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem,
-        QuestIssueOrPullRequest ghIssue,
-        IEnumerable<QuestIteration> allIterations,
-        IEnumerable<LabelToTagMap> tagMap)
-    {
-        int parentId = parentIdFromIssue(ghIssue);
-        string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(_ospoClient);
-        AzDoIdentity? questAssigneeID = default;
-        var proposedQuestState = questItem.State;
-        if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
-        {
-            questAssigneeID = await _azdoClient.GetIDFromEmail(ghAssigneeEmailAddress);
-        }
-        List<JsonPatchDocument> patchDocument = [];
-        if ((parentId != 0) && (parentId != questItem.ParentWorkItemId))
-        {
-            if (questItem.ParentWorkItemId != 0)
-            {
-                // Remove the existing parent relation.
-                patchDocument.Add(new JsonPatchDocument
-                {
-                    Operation = Op.Remove,
-                    Path = "/relations/" + questItem.ParentRelationIndex,
-                });
-            };
-            var parentRelation = new Relation
-            {
-                RelationName = "System.LinkTypes.Hierarchy-Reverse",
-                Url = $"https://dev.azure.com/{_azdoClient.QuestOrg}/{_azdoClient.QuestProject}/_apis/wit/workItems/{parentId}",
-                Attributes =
-                {
-                    ["name"] = "Parent",
-                    ["isLocked"] = false
-                }
-            };
-
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/relations/-",
-                From = default,
-                Value = parentRelation
-            });
-        }
-        if ((questAssigneeID is not null) && (questAssigneeID?.Id != questItem.AssignedToId))
-        {
-            // build patch document for assignment.
-            JsonPatchDocument assignPatch = new ()
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.AssignedTo",
-                Value = questAssigneeID,
-            };
-            patchDocument.Add(assignPatch);
-        }
-        bool questItemOpen = questItem.State is not "Closed";
-        proposedQuestState = ghIssue.IsOpen ? "Committed" : "Closed";
-        if (ghIssue.IsOpen != questItemOpen)
-        {
-
-            // When the issue is opened or closed, 
-            // update the description. That picks up any new
-            // labels and comments.
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.Description",
-                From = default,
-                Value = QuestWorkItem.BuildDescriptionFromIssue(ghIssue, null)
-            });
-        }
-        StoryPointSize? iterationSize = ghIssue.LatestStoryPointSize();
-        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
-        if (iterationSize != null)
-        {
-            Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
-            if ((iterationSize?.IsPastIteration == true) && (ghIssue.IsOpen == true))
-            {
-                Console.WriteLine($"Moving to the backlog / future iteration.");
-                iteration = QuestIteration.FutureIteration(allIterations);
-                proposedQuestState = "New";
-            }
-        }
-        else
-        {
-            Console.WriteLine("No GitHub sprint project found - using current iteration.");
-        }
-        if (proposedQuestState != questItem.State)
-        {
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.State",
-                Value = proposedQuestState,
-            });
-        }
-        if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
-        {
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.IterationPath",
-                Value = iteration.Path,
-            });
-        }
-        if ((iterationSize?.QuestStoryPoint() is not null) && (iterationSize.QuestStoryPoint() != questItem.StoryPoints))
-        {
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                From = default,
-                Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
-                Value = iterationSize.QuestStoryPoint(),
-            });
-        }
-        int? priority = ghIssue.GetPriority(iterationSize);
-        if (priority.HasValue && priority != questItem.Priority)
-        {
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/Microsoft.VSTS.Common.Priority",
-                Value = priority.Value
-            });
-        }
-        var tags = from t in ghIssue.WorkItemTagsForIssue(tagMap)
-                   where !questItem.Tags.Contains(t)
-                   select t;
-        if (tags.Any())
-        {
-            string azDoTags = string.Join(";", tags);
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.Tags",
-                Value = azDoTags
-            });
-        }
-
-        QuestWorkItem? newItem = default;
-        if (patchDocument.Count != 0)
-        {
-            JsonElement jsonDocument = await _azdoClient.PatchWorkItem(questItem.Id, patchDocument);
-            newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
-        }
-        if (!ghIssue.IsOpen && (ghIssue.ClosingPRUrl is not null))
-        {
-            newItem = await questItem.AddClosingPR(_azdoClient, ghIssue.ClosingPRUrl) ?? newItem;
-        }
-        return newItem;
-    }
-
-    private int parentIdFromIssue(QuestIssueOrPullRequest ghIssue)
-    {
-        foreach (ParentForLabel pair in parentNodes)
-        {
-            if (ghIssue.Labels.Any(l => l.Name == pair.Label))
-            {
-                return pair.ParentNodeId;
-            }
-        }
-        return defaultParentNode;
     }
 
     private async Task<QuestWorkItem?> FindLinkedWorkItemAsync(QuestIssueOrPullRequest issue)

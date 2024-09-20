@@ -1,5 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.Utility;
+using Microsoft.DotnetOrg.Ospo;
 
 namespace Quest2GitHub.Models;
 
@@ -123,7 +124,6 @@ public class QuestWorkItem
     /// Create a work item from a GitHub issue.
     /// </summary>
     /// <param name="issue">The GitHub issue.</param>
-    /// <param name="parentId">The ID of the parent ID</param>
     /// <param name="questClient">The quest client.</param>
     /// <param name="ospoClient">the MS open source programs office client.</param>
     /// <param name="path">The path component for the area path.</param>
@@ -139,16 +139,18 @@ public class QuestWorkItem
     /// Json element.
     /// </remarks>
     public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssueOrPullRequest issue,
-        int parentId,
         QuestClient questClient,
         OspoClient? ospoClient,
         string path,
         string? requestLabelNodeId,
         QuestIteration currentIteration,
         IEnumerable<QuestIteration> allIterations,
-        IEnumerable<LabelToTagMap> tagMap)
+        IEnumerable<LabelToTagMap> tagMap,
+        IEnumerable<ParentForLabel> parentNodes,
+        int defaultParentNode)
     {
         string areaPath = $"""{questClient.QuestProject}\{path}""";
+        int parentId = parentIdFromIssue(parentNodes, issue, defaultParentNode);
 
         List<JsonPatchDocument> patchDocument =
         [
@@ -398,6 +400,175 @@ public class QuestWorkItem
             return null;
         }
     }
+
+    static internal async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem,
+        QuestIssueOrPullRequest ghIssue,
+        QuestClient questClient,
+        OspoClient? ospoClient,
+        IEnumerable<QuestIteration> allIterations,
+        IEnumerable<LabelToTagMap> tagMap,
+        IEnumerable<ParentForLabel> parentNodes,
+        int defaultParentNode)
+    {
+        int parentId = parentIdFromIssue(parentNodes, ghIssue, defaultParentNode);
+        string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
+        AzDoIdentity? questAssigneeID = default;
+        var proposedQuestState = questItem.State;
+        if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
+        {
+            questAssigneeID = await questClient.GetIDFromEmail(ghAssigneeEmailAddress);
+        }
+        List<JsonPatchDocument> patchDocument = [];
+        if ((parentId != 0) && (parentId != questItem.ParentWorkItemId))
+        {
+            if (questItem.ParentWorkItemId != 0)
+            {
+                // Remove the existing parent relation.
+                patchDocument.Add(new JsonPatchDocument
+                {
+                    Operation = Op.Remove,
+                    Path = "/relations/" + questItem.ParentRelationIndex,
+                });
+            };
+            var parentRelation = new Relation
+            {
+                RelationName = "System.LinkTypes.Hierarchy-Reverse",
+                Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{parentId}",
+                Attributes =
+                {
+                    ["name"] = "Parent",
+                    ["isLocked"] = false
+                }
+            };
+
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/relations/-",
+                From = default,
+                Value = parentRelation
+            });
+        }
+        if ((questAssigneeID is not null) && (questAssigneeID?.Id != questItem.AssignedToId))
+        {
+            // build patch document for assignment.
+            JsonPatchDocument assignPatch = new()
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.AssignedTo",
+                Value = questAssigneeID,
+            };
+            patchDocument.Add(assignPatch);
+        }
+        bool questItemOpen = questItem.State is not "Closed";
+        proposedQuestState = ghIssue.IsOpen ? "Committed" : "Closed";
+        if (ghIssue.IsOpen != questItemOpen)
+        {
+
+            // When the issue is opened or closed, 
+            // update the description. That picks up any new
+            // labels and comments.
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.Description",
+                From = default,
+                Value = BuildDescriptionFromIssue(ghIssue, null)
+            });
+        }
+        StoryPointSize? iterationSize = ghIssue.LatestStoryPointSize();
+        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
+        if (iterationSize != null)
+        {
+            Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
+            if ((iterationSize?.IsPastIteration == true) && (ghIssue.IsOpen == true))
+            {
+                Console.WriteLine($"Moving to the backlog / future iteration.");
+                iteration = QuestIteration.FutureIteration(allIterations);
+                proposedQuestState = "New";
+            }
+        }
+        else
+        {
+            Console.WriteLine("No GitHub sprint project found - using current iteration.");
+        }
+        if (proposedQuestState != questItem.State)
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.State",
+                Value = proposedQuestState,
+            });
+        }
+        if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.IterationPath",
+                Value = iteration.Path,
+            });
+        }
+        if ((iterationSize?.QuestStoryPoint() is not null) && (iterationSize.QuestStoryPoint() != questItem.StoryPoints))
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                From = default,
+                Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
+                Value = iterationSize.QuestStoryPoint(),
+            });
+        }
+        int? priority = ghIssue.GetPriority(iterationSize);
+        if (priority.HasValue && priority != questItem.Priority)
+        {
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/Microsoft.VSTS.Common.Priority",
+                Value = priority.Value
+            });
+        }
+        var tags = from t in ghIssue.WorkItemTagsForIssue(tagMap)
+                   where !questItem.Tags.Contains(t)
+                   select t;
+        if (tags.Any())
+        {
+            string azDoTags = string.Join(";", tags);
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.Tags",
+                Value = azDoTags
+            });
+        }
+
+        QuestWorkItem? newItem = default;
+        if (patchDocument.Count != 0)
+        {
+            JsonElement jsonDocument = await questClient.PatchWorkItem(questItem.Id, patchDocument);
+            newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
+        }
+        if (!ghIssue.IsOpen && (ghIssue.ClosingPRUrl is not null))
+        {
+            newItem = await questItem.AddClosingPR(questClient, ghIssue.ClosingPRUrl) ?? newItem;
+        }
+        return newItem;
+    }
+
+    static private int parentIdFromIssue(IEnumerable<ParentForLabel> parentNodes, QuestIssueOrPullRequest ghIssue, int defaultParentNode)
+    {
+        foreach (ParentForLabel pair in parentNodes)
+        {
+            if (ghIssue.Labels.Any(l => l.Name == pair.Label))
+            {
+                return pair.ParentNodeId;
+            }
+        }
+        return defaultParentNode;
+    }
+
 
     /// <summary>
     /// Construct a work item from the JSON document.
