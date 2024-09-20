@@ -131,8 +131,9 @@ export const xrefInlineAutoComplete: InlineCompletionItemProvider = {
                 return undefined;
             }
 
-            const docId = await DocIdService.getDocId(
+            const result = await DocIdService.getDocId(
                 firstResult.displayName, firstResult.itemType as ItemType, rawUrl);
+            const docId = result.docId;
             if (docId && token.isCancellationRequested === false) {
                 console.log(`Added completion for ${docId}.`);
 
