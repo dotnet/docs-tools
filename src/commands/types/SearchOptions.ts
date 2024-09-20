@@ -4,17 +4,25 @@
  */
 export type SearchOptions = {
     /**
-     * When true, the resulting string should only contain the UID and none of the <xref:...> brackets.
+     * When `true`, the resulting string should only 
+     * contain the UID and none of the `<xref:...>` brackets.
      */
-    SkipBrackets: boolean,
+    skipBrackets: boolean;
 
     /**
-     * When true, the Insert XREF Link command should not display the display style options.
+     * When `true`, the Insert XREF Link command should not 
+     * display the display style options.
      */
-    SkipDisplayStyle: boolean,
+    skipDisplayStyle: boolean;
 
     /**
-     * When true, the Insert XREF Link command should not display the custom display style option.
+     * When `true`, the Insert XREF Link command should not 
+     * display the custom display style option.
      */
-    HideCustomDisplayStyle: boolean
+    hideCustomDisplayStyle: boolean;
+
+    /**
+     * The text to search for in the API Browser.
+     */
+    searchText?: string | undefined;
 };

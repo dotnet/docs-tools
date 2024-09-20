@@ -1,5 +1,4 @@
 import { WorkspaceConfiguration } from "vscode";
-import { UrlFormat } from "../../commands/types/UrlFormat";
 import { StringPair } from "./StringPair";
 import { nameof } from "../../utils";
 
@@ -7,16 +6,6 @@ import { nameof } from "../../utils";
  * Represents the configuration settings for the extension.
  */
 export class AppConfig {
-    /**
-     * The format of the URL to insert.
-     * - Default: Only displays the API name.
-     * - Full name: Displays the fully qualified name.
-     * - Name with type: Displays the name and its type.
-     * - Custom name: Allows the user to enter a custom name.
-     * @default `undefined`
-     */
-    defaultUrlFormat: UrlFormat | undefined;
-
     /**
      * The default API URL to query.
      * - This URL is used to query the API for search results.
@@ -39,10 +28,6 @@ export class AppConfig {
     appendOverloads: boolean | undefined = true;
 
     constructor(workspaceConfig: WorkspaceConfiguration) {
-        const urlFormat = workspaceConfig.get<UrlFormat>(nameof<AppConfig>("defaultUrlFormat"));
-        if (urlFormat !== undefined) {
-            this.defaultUrlFormat = urlFormat;
-        }
 
         const apiUrl = workspaceConfig.get<string>(nameof<AppConfig>("apiUrl"));
         if (apiUrl !== undefined) {

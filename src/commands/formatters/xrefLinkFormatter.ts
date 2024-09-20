@@ -1,6 +1,7 @@
 import { window } from "vscode";
 import { UrlFormat } from "../types/UrlFormat";
 import { getUserSelectedText } from "../../utils";
+import { SearchOptions } from "../types/SearchOptions";
 
 /**
  * When XREF links are enabled, the URL should be in the format:
@@ -12,21 +13,28 @@ import { getUserSelectedText } from "../../utils";
  */
 export const xrefLinkFormatter = async (
     urlFormat: UrlFormat,
-    uid: string): Promise<string | undefined> => {
+    uid: string,
+    options: SearchOptions | undefined): Promise<string | undefined> => {
 
     switch (urlFormat) {
         // Displays the API name:
         //   <xref:System.Net.Mail.SmtpClient>
         case UrlFormat.default:
-            return `<xref:${uid}>`;
+            return options && options.skipBrackets === true
+                ? uid
+                : `<xref:${uid}>`;
 
         // Displays the fully qualified name:
         //   <xref:System.Net.Mail.SmtpClient?displayProperty=fullName>
         case UrlFormat.fullName:
-            return `<xref:${uid}?displayProperty=fullName>`;
+            return options && options.skipBrackets === true
+                ? `${uid}?displayProperty=fullName`
+                : `<xref:${uid}?displayProperty=fullName>`;
 
         case UrlFormat.nameWithType:
-            return `<xref:${uid}?displayProperty=nameWithType>`;
+            return options && options.skipBrackets === true
+                ? `${uid}?displayProperty=nameWithType`
+                : `<xref:${uid}?displayProperty=nameWithType>`;
 
         case UrlFormat.customName:
             {
@@ -43,10 +51,10 @@ export const xrefLinkFormatter = async (
                         placeHolder: 'Enter the custom link text to display.'
                     });
 
-                    return `[${inputDisplayName ?? fallbackDisplayName}](xref:${uid})`;
+                    return `[${inputDisplayName || fallbackDisplayName}](xref:${uid})`;
                 }
 
-                return `[${selectedText ?? fallbackDisplayName}](xref:${uid})`;
+                return `[${selectedText || fallbackDisplayName}](xref:${uid})`;
             }
 
         default:

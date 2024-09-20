@@ -18,7 +18,7 @@ export class SearchResultQuickPickItem implements QuickPickItem {
             this.itemType = result.itemType as ItemType;
             const isOverload = result.displayName.endsWith("*");
             const description = isOverload
-                ? `${result.displayName} — ${this.itemType} Overloads`
+                ? `${result.displayName} — ${this.itemType} overloads`
                 : `${result.displayName} — ${this.itemType}`;
 
             this.description = description;
@@ -46,6 +46,8 @@ export class SearchResultQuickPickItem implements QuickPickItem {
                 return "$(symbol-field)";
             case ItemType.enum:
                 return "$(symbol-enum)";
+            case ItemType.delegate:
+                return "$(symbol-type-parameter)";
             case ItemType.interface:
                 return "$(symbol-interface)";
             case ItemType.method:

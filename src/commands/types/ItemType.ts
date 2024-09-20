@@ -7,6 +7,7 @@ export enum ItemType {
     struct = 'Struct',
     interface = 'Interface',
     enum = 'Enum',
+    delegate = 'Delegate',
     method = 'Method',
     constructor = 'Constructor',
     property = 'Property',

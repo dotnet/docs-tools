@@ -1,4 +1,3 @@
-import { window } from "vscode";
 import { parseStringPromise } from "xml2js";
 
 export class RawGitService {
@@ -13,7 +12,6 @@ export class RawGitService {
         });
 
         if (!response.ok) {
-            window.setStatusBarMessage('Failed to fetch the raw Git URL.', 3000);
             return undefined;
         }
 

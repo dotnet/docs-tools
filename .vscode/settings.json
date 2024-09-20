@@ -12,6 +12,5 @@
         "camelcase",
         "consts",
         "nameof"
-    ],
-    "sarif-viewer.connectToGithubCodeScanning": "off"
+    ]
 }

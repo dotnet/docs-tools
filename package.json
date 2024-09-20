@@ -1,20 +1,23 @@
 {
   "name": "xref-helper",
   "displayName": "API Reference Link Helper",
-  "description": "TODO",
+  "description": "A Visual Studio Code extension to help you quickly insert API reference (xref) links.",
   "version": "1.0.2",
   "engines": {
     "vscode": "^1.93.1"
   },
   "publisher": "IEvangelist",
   "categories": [
-    "Other"
+    "Other",
+    "Extension Packs",
+    "Formatters"
   ],
   "preview": true,
   "activationEvents": [ 
     "onLanguage:markdown",
     "onLanguage:xml"
   ],
+  "icon": "images/icon.png",
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -22,24 +25,33 @@
         "command": "xrefHelper.insertXrefLink",
         "title": "Insert XREF Link",
         "shortTitle": "Link to XREF",
-        "enablement": "editorLangId == markdown || editorLangId == xml"
+        "enablement": "(editorLangId == markdown || editorLangId == xml) && !editorReadonly"
       },
       {
         "command": "xrefHelper.insertApiReferenceLink",
         "title": "Insert API Reference Link",
         "shortTitle": "Link to API",
-        "enablement": "editorLangId == markdown || editorLangId == xml"
+        "enablement": "(editorLangId == markdown || editorLangId == xml) && !editorReadonly"
+      },
+      {
+        "command": "xrefHelper.transformXrefToOther",
+        "title": "Convert XREF link between [](xref:) and <xref:>",
+        "shortTitle": "(xref:…) <=> <xref:…>",
+        "enablement": "(editorLangId == markdown || editorLangId == xml) && editorHasSelection && !editorReadonly"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorFocus && !editorReadonly && (editorLangId == markdown || editorLangId == xml) && editorHasSelection",
+          "command": "xrefHelper.transformXrefToOther",
+          "group": "xref-helper"
+        }
+      ]
+    },
     "configuration": {
       "title": "XREF Helper",
       "properties": {
-        "xrefHelper.defaultUrlFormat": {
-          "type": "string",
-          "description": "The default URL format to use when inserting an XREF URL.",
-          "enum": [ "Default", "Full name", "Name with type", "Custom name"],
-          "default": "Default"
-        },
         "xrefHelper.apiUrl": {
           "type": "string",
           "description": "The URL to use when searching for XREFs. (Defaults to the .NET API search URL.)",
@@ -82,7 +94,8 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "test-compile": "tsc -p ./",
-    "semantic-release": "semantic-release"
+    "semantic-release": "semantic-release",
+    "build-package": "vsce package -o ./dist/xref-helper.vsix"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
@@ -106,7 +119,8 @@
     "semantic-release-vsce": "^5.5.9",
     "typescript": "^5.0.4",
     "@types/node-fetch": "^2.6.11",
-    "@types/xml2js": "^0.4.14"
+    "@types/xml2js": "^0.4.14",
+    "@vscode/vsce": "^3.1.0"
   },
   "dependencies": {
     "node-fetch": "3.3.2",
