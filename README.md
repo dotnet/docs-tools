@@ -14,6 +14,8 @@ This is a template extension to jumpstart VS Code extension development. It star
 
 No Requirements
 
+
+
 ## Extension Settings
 
 No Extension settings
