@@ -171,11 +171,25 @@ async function createAndInsertLink(
 
         let url;
         if (linkType === LinkType.Xref) {
-            const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl)
+            const docIdResult = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl)
+            const docId = docIdResult.docId;
             if (!docId || token.isCancellationRequested) {
-                
-                window.showWarningMessage(
-                    `Failed to get the DocId for "${rawUrl}"`);
+
+                if (docIdResult.severity && docIdResult.message) {
+                    switch (docIdResult.severity) {
+                        case "error": {
+                            window.showErrorMessage(docIdResult.message);
+                            break;
+                        }
+                        case "warning": {
+                            window.showWarningMessage(docIdResult.message);
+                            break;
+                        }
+                    }
+                } else {
+                    window.showWarningMessage(
+                        `Failed to get the DocId for "${rawUrl}"`);
+                }
 
                 quickPick.dispose();
                 return;

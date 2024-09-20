@@ -7,6 +7,7 @@ import { LinkType } from './commands/types/LinkType';
 import { xrefStarterAutoComplete, xrefDisplayTypeAutoComplete } from './commands/autocomplete';
 import { SearchOptions } from './commands/types/SearchOptions';
 import { transformXrefToOther } from './commands/transform';
+import { DisplayPropertyChanger } from './commands/quickaction';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -14,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   console.log(
-    `Congratulations, your extension "${toolName}" is now active!`
+    `The "${toolName}" is now active.`
   );
 
   // The command has been defined in the package.json file
@@ -32,8 +33,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.languages.registerCompletionItemProvider('markdown', xrefStarterAutoComplete, ':'),
     vscode.languages.registerCompletionItemProvider('markdown', xrefDisplayTypeAutoComplete, '?'),
+    // vscode.languages.registerInlineCompletionItemProvider('markdown', xrefInlineAutoComplete),
 
-    
+    vscode.languages.registerCodeActionsProvider('markdown', new DisplayPropertyChanger(), {
+      providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
+    })
   );
 }
 

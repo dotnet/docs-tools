@@ -2,17 +2,14 @@ import { window, Selection } from "vscode";
 
 export function transformXrefToOther() {
     const editor = window.activeTextEditor;
-
     if (!editor) {
         return;
     }
 
     const text = editor.document.getText(editor.selection);
-
     if (text.startsWith("<xref:") && text.endsWith(">")) {
 
         const match = text.match(/<xref:(.*)\?.*>/);
-
         if (!match) {
             return;
         }
@@ -25,7 +22,6 @@ export function transformXrefToOther() {
     else if (text.startsWith("[") && text.endsWith(")") && text.indexOf("](xref:") !== -1) {
 
         const match = text.match(/\[.*\]\(xref:(.+)\)/);
-
         if (!match) {
             return;
         }
@@ -38,4 +34,3 @@ export function transformXrefToOther() {
         });
     }
 }
-

@@ -1,12 +1,19 @@
 import fetch from "node-fetch";
 import { parseStringPromise } from "xml2js";
 import { ItemType } from "../commands/types/ItemType";
+import { window } from "vscode";
+
+export interface DocIdResult {
+    docId?: string;
+    severity?: "error" | "warning";
+    message?: string;
+}
 
 export class DocIdService {
-    public static async getDocId(displayName: string, apiType: ItemType, gitUrl: string): Promise<string | null> {
+    public static async getDocId(displayName: string, apiType: ItemType, gitUrl: string): Promise<DocIdResult> {
 
         if (apiType === ItemType.namespace) {
-            return displayName;
+            return { docId: displayName };
         }
 
         const response = await fetch(gitUrl, {
@@ -15,8 +22,20 @@ export class DocIdService {
                 "Content-Type": "application/xml",
             }
         });
+
         if (!response.ok) {
-            return null;
+
+            if (response.status === 404) {
+                return {
+                    severity: "error",
+                    message: `HTTP 404: Unable to retrieve xref metadata for "${displayName}". When this happens, it's usually because the GitHub repo for the API docs is private.`
+                };
+            }
+
+            return {
+                severity: "warning",
+                message: `Failed to get the DocId for "${gitUrl}"`
+            };
         }
 
         const text = await response.text();
@@ -24,7 +43,7 @@ export class DocIdService {
 
         if ([ItemType.class, ItemType.struct, ItemType.interface, ItemType.enum].includes(apiType)) {
             const typeSignature = xml.Type.TypeSignature?.find((x: any) => x.$.Language === 'DocId');
-            return typeSignature ? typeSignature.$.Value.substring(2) : null;
+            return { docId: typeSignature ? typeSignature.$.Value.substring(2) : null };
         }
 
         const memberType = apiType;
@@ -50,7 +69,7 @@ export class DocIdService {
 
                 const docId = methodOrCtor.MemberSignature.find((x: any) => x.$.Language === 'DocId').$.Value.substring(2);
                 // Replace the parentheses with *.
-                return docId.split('(')[0].concat('*');
+                return { docId: docId.split('(')[0].concat('*') };
             }
 
             const paramList = displayName.split('(')[1].slice(0, -1);
@@ -65,7 +84,7 @@ export class DocIdService {
                     !x.Parameters.Parameter
                 );
 
-                return methodOrCtor ? methodOrCtor.MemberSignature.find((x: any) => x.$.Language === 'DocId').$.Value.substring(2) : null;
+                return { docId: methodOrCtor ? methodOrCtor.MemberSignature.find((x: any) => x.$.Language === 'DocId').$.Value.substring(2) : null };
             }
 
             // With parameters.
@@ -99,12 +118,15 @@ export class DocIdService {
 
                 if (paramIndex === numParams) {
                     // We found a match.
-                    return candidate.MemberSignature.find((x: any) => x.$.Language === "DocId").$.Value.substring(2);
+                    return { docId: candidate.MemberSignature.find((x: any) => x.$.Language === "DocId").$.Value.substring(2) };
                 }
             }
 
             // We didn't find a matching method/constructor.
-            return null;
+            return {
+                severity: "warning",
+                message: `Failed to get the DocId for "${gitUrl}". Didn't find a matching method/constructor.`
+            };
         }
 
         // Property, Event, Field
@@ -113,6 +135,6 @@ export class DocIdService {
             x.MemberType[0] === memberType
         );
 
-        return member ? member.MemberSignature.find((x: any) => x.$.Language === "DocId").$.Value.substring(2) : null;
+        return { docId: member ? member.MemberSignature.find((x: any) => x.$.Language === "DocId").$.Value.substring(2) : null };
     }
 }
