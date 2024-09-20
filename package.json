@@ -1,14 +1,16 @@
 {
   "name": "xref-helper",
   "displayName": "API Reference Link Helper",
-  "description": "TODO",
+  "description": "A Visual Studio Code extension to help you quickly insert API reference (xref) links.",
   "version": "1.0.2",
   "engines": {
     "vscode": "^1.93.1"
   },
   "publisher": "IEvangelist",
   "categories": [
-    "Other"
+    "Other",
+    "Extension Packs",
+    "Formatters"
   ],
   "preview": true,
   "activationEvents": [ 

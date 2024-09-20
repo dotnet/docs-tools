@@ -158,10 +158,9 @@ async function createAndInsertLink(
         const rawUrl = await RawGitService.getRawGitUrl(result.url);
         if (!rawUrl || token.isCancellationRequested) {
 
-            window.setStatusBarMessage(
-                `Failed to get the raw URL for "${result.url}"`, 5000);
+            window.showWarningMessage(
+                `Failed to get the raw URL for "${result.url}"`);
 
-            token.isCancellationRequested = true;
             quickPick.dispose();
             return;
         }
@@ -175,10 +174,9 @@ async function createAndInsertLink(
             const docId = await DocIdService.getDocId(result.displayName, result.itemType as ItemType, rawUrl)
             if (!docId || token.isCancellationRequested) {
                 
-                window.setStatusBarMessage(
-                    `Failed to get the DocId for "${rawUrl}"`, 5000);
+                window.showWarningMessage(
+                    `Failed to get the DocId for "${rawUrl}"`);
 
-                token.isCancellationRequested = true;
                 quickPick.dispose();
                 return;
             }
@@ -197,10 +195,8 @@ async function createAndInsertLink(
         // Insert the URL into the active text editor
         if (!token.isCancellationRequested &&
             !insertUrlIntoActiveTextEditor(url, isTextReplacement)) {
-            token.isCancellationRequested = true;
-
-            window.setStatusBarMessage(
-                `Failed to insert URL into the active text editor.`, 5000);
+            window.showWarningMessage(
+                `Failed to insert URL into the active text editor.`);
         }
 
         quickPick.dispose();

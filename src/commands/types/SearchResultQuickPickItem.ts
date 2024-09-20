@@ -46,6 +46,8 @@ export class SearchResultQuickPickItem implements QuickPickItem {
                 return "$(symbol-field)";
             case ItemType.enum:
                 return "$(symbol-enum)";
+            case ItemType.delegate:
+                return "$(symbol-type-parameter)";
             case ItemType.interface:
                 return "$(symbol-interface)";
             case ItemType.method:

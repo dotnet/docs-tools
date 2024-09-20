@@ -82,6 +82,8 @@ function appendOverloads(searchResults: SearchResults) {
                     url: previousOverload.url
                 }
             });
+
+            foundOverload = false;
         }
 
         if (result.itemType !== ItemType.method &&
