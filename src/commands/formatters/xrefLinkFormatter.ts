@@ -51,10 +51,10 @@ export const xrefLinkFormatter = async (
                         placeHolder: 'Enter the custom link text to display.'
                     });
 
-                    return `[${inputDisplayName ?? fallbackDisplayName}](xref:${uid})`;
+                    return `[${inputDisplayName || fallbackDisplayName}](xref:${uid})`;
                 }
 
-                return `[${selectedText ?? fallbackDisplayName}](xref:${uid})`;
+                return `[${selectedText || fallbackDisplayName}](xref:${uid})`;
             }
 
         default:

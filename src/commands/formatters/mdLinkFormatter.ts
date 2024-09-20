@@ -43,7 +43,7 @@ export const mdLinkFormatter = async (
                     placeHolder: 'Enter the link text to display.'
                 });
 
-                return `[${inputDisplayName ?? fallbackDisplayName}](${url})`;
+                return `[${inputDisplayName || fallbackDisplayName}](${url})`;
             }
 
             return `[${fallbackDisplayName}](${url})`;
