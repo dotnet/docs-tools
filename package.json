@@ -17,6 +17,7 @@
     "onLanguage:markdown",
     "onLanguage:xml"
   ],
+  "icon": "images/icon.png",
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -93,7 +94,8 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "test-compile": "tsc -p ./",
-    "semantic-release": "semantic-release"
+    "semantic-release": "semantic-release",
+    "build-package": "vsce package -o ./dist/xref-helper.vsix"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
@@ -117,7 +119,8 @@
     "semantic-release-vsce": "^5.5.9",
     "typescript": "^5.0.4",
     "@types/node-fetch": "^2.6.11",
-    "@types/xml2js": "^0.4.14"
+    "@types/xml2js": "^0.4.14",
+    "@vscode/vsce": "^3.1.0"
   },
   "dependencies": {
     "node-fetch": "3.3.2",
