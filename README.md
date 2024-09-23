@@ -1,38 +1,35 @@
-# 🔗 API Reference Link Helper
+# 🔗 API reference link helper
 
-This extension helps content developers quickly insert and edit xref links to the official Microsoft API reference documentation for .NET types and members. It uses the [Microsoft Learn API Browser](https://learn.microsoft.com/api/apibrowser/dotnet/search) to search for a requested type or member. It exposes the ability to insert a markdown link to the markdown file open in the active editor. It supports the creation of links that display only the type or member name in the link text, type name with member name, fully qualified name, or custom text.
+This handy-dandy extension helps content developers quickly insert and edit [cross-reference ("xref") links](https://learn.microsoft.com/contribute/content/how-to-write-links?branch=main#xref-cross-reference-links) to the official Microsoft API reference documentation for .NET types and members. It uses the [Microsoft Learn API Browser](https://learn.microsoft.com/api/apibrowser/dotnet/search) to search for a requested type or member. The extension:
 
-## Example Usage
+- Exposes the ability to insert a Markdown link in the Markdown or XML file that's open in the active editor.
+- Supports different link text variations: display only the type or member name, the member name with its type, the fully qualified name, or custom text.
 
-Open the command palette <kbd>F1</kbd> and search for **Insert XREF Link**. Select the command, and when prompted, enter the type or member name you want to link to.
+## Requirements
 
-![Insert XREF link](images/command-pallette-insert-xref.png)
+- Visual Studio Code
 
-### Search validations
+## Example usage
 
-After you start typing, if you delete the text, there's a validation error that will appear. The extension will not allow you to insert an empty search term:
+1. With your cursor positioned where you want the link to be inserted in your document, open the command palette <kbd>F1</kbd> and search for **Insert XREF Link**.
+2. Select the command, and when prompted, enter the type or member name you want to link to.
 
-![Empty](images/command-pallette-insert-xref-validation-empty.png)
+   ![Insert XREF link](images/command-pallette-insert-xref.png)
 
-The search term cannot contain spaces:
+3. After a valid search term is entered, the extension searches for the configured API and displays the most relevant results.
 
-![Spaces](images/command-pallette-insert-xref-validation-space.png)
+   ![Results](images/command-pallette-insert-xref-results.png)
 
-The search term must include opening and closing bracket pairs:
+4. Once you select a result, you're prompted to choose the format of the link you want to insert.
 
-![Brackets](images/command-pallette-insert-xref-validation-brackets.png)
+   ![URL formats](images/command-pallette-insert-xref-all-formats.png)
 
-After a valid search term is entered, the extension searches for the configured API and displays the most relevant results.
+   The extension inserts the selected link format into the active editor.
 
-![Results](images/command-pallette-insert-xref-results.png)
+> [!TIP]
+> You can also preselect text that you want converted to an xref hyperlink before you select the command. In this case, whatever text you selected is used as the link text. Nifty!
 
-Once you select a result, you're prompted to choose the format of the link you want to insert.
-
-![URL formats](images/command-pallette-insert-xref-all-formats.png)
-
-Finally, the extension inserts the selected link format into the active editor.
-
-## Getting Started
+## Get started
 
 To install the extension, download the [latest _xref-helper.vsix_](https://github.com/IEvangelist/xref-helper/blob/main/dist/xref-helper.vsix) file from the _.dist/_ folder, and from Visual Studio Code, right-click the file and select _Install Extension VSIX_.
 
@@ -50,7 +47,7 @@ The following URL formats are supported, given the example `System.String.Format
 _Command pallette commands:_
 
 - **Insert XREF Link**: Inserts a markdown (`<xref:uid>`) link to the official Microsoft API reference documentation for the selected type or member.
-- **Insert API Reference Link**: Inserts a markdown (`[Name](/link)`) link to the official Microsoft API reference documentation for the selected type or member.
+- **Insert API Reference Link**: Inserts a markdown (`[Name](URL link)`) link to the official Microsoft API reference documentation for the selected type or member.
 - **Transform XREF to Other**: Convert XREF link between `[](xref:)` and `<xref:>`.
 
 _Auto-completions:_
@@ -66,11 +63,21 @@ _Context menu commands:_
 
 - **Convert XREF Link**: When a full `xref` link is selected, a context menu command is available to convert the link between `[](xref:)` and `<xref:>`.
 
-## Requirements
+## Search validations
 
-- Visual Studio Code
+After you start typing, if you delete the text, there's a validation error that will appear. The extension doesn't allow you to insert an empty search term:
 
-## Extension Settings
+![Empty](images/command-pallette-insert-xref-validation-empty.png)
+
+The search term cannot contain spaces:
+
+![Spaces](images/command-pallette-insert-xref-validation-space.png)
+
+If an opening bracket is specified (i.e. if you're looking for a generic API), the search term must also include the closing bracket:
+
+![Brackets](images/command-pallette-insert-xref-validation-brackets.png)
+
+## Extension settings
 
 In Visual Studio Code settings, search for `"XREF Helper"` (or paste this filter into the search bar `@ext:ievangelist.xref-helper`). You can configure the following settings:
 
