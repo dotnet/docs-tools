@@ -1,26 +1,26 @@
 ﻿using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
-namespace RepoMan.Actions;
+namespace DotNetDocs.RepoMan.Actions;
 
-public sealed class Assignees: IRunnerItem
+internal sealed class Assignees: IRunnerItem
 {
     private readonly RunnerItemSubTypes _type;
     private readonly string[] _names;
 
-    public Assignees(YamlNode node, RunnerItemSubTypes subType, State state)
+    public Assignees(YamlNode node, RunnerItemSubTypes subType, InstanceData data)
     {
         if (subType != RunnerItemSubTypes.Add)
             throw new Exception("BUILD: Assignee actions only support add");
 
         _type = subType;
 
-        List<string> names = new List<string>();
+        List<string> names = [];
 
         // Check for direct value or array
         if (node.NodeType == YamlNodeType.Scalar)
         {
-            state.Logger.LogDebugger($"BUILD: Assignee: {node}");
+            data.Logger.LogDebug("BUILD: Assignee: {node}", node);
             names.Add(node.ToString());
         }
 
@@ -28,24 +28,26 @@ public sealed class Assignees: IRunnerItem
         {
             foreach (YamlNode item in node.AsSequenceNode())
             {
-                state.Logger.LogDebugger($"BUILD: Assignee: {item}");
+                data.Logger.LogDebug("BUILD: Assignee: {item}", item);
                 names.Add(item.ToString());
             }
         }
 
-        _names = names.ToArray();
+        _names = [.. names];
     }
 
 
-    public async Task Run(State state)
+    public async Task Run(InstanceData data)
     {
         if (_type == RunnerItemSubTypes.Add)
         {
-            state.Logger.LogInformation($"Adding assignees to pool");
+            data.Logger.LogInformation($"RUN [ASSIGNEE]: Adding assignees to pool");
 
             // Add to state pooled labels for add
             foreach (string item in _names)
-                state.Operations.Assignees.Add(item);
+                data.Operations.Assignees.Add(item);
         }
+
+        await Task.CompletedTask;
     }
 }

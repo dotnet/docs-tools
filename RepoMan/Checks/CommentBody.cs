@@ -1,27 +1,28 @@
-﻿using YamlDotNet.RepresentationModel;
+﻿using Microsoft.Extensions.Logging;
+using YamlDotNet.RepresentationModel;
 
-namespace RepoMan.Checks;
+namespace DotNetDocs.RepoMan.Checks;
 
-public sealed class CommentBody : ICheck
+internal sealed class CommentBody : ICheck
 {
     public string RegEx { get; }
 
-    public CommentBody(YamlMappingNode node, State state)
+    public CommentBody(YamlMappingNode node, InstanceData data)
     {
         RegEx = node["value"].ToString();
-        state.Logger.LogDebugger($"BUILD: comment-body {RegEx}");
+        data.Logger.LogDebug("BUILD: comment-body {regex}", RegEx.Replace("\n", "\\n"));
     }
 
-    public async Task<bool> Run(State state)
+    public async Task<bool> Run(InstanceData data)
     {
-        state.Logger.LogDebugger($"RUN: CommentBody regex check '{RegEx}'");
-        if (Utilities.MatchRegex(RegEx, state.IssuePrBody ?? "", state))
+        data.Logger.LogDebug("RUN CHECK: CommentBody regex check '{regex}'", RegEx.Replace("\n", "\\n"));
+        if (Utilities.MatchRegex(RegEx, data.IssuePrBody ?? "", data))
         {
-            state.Logger.LogDebugger($"RUN: CommentBody pass");
-            return await Task.FromResult<bool>(true);
+            data.Logger.LogDebug("RUN CHECK: CommentBody pass");
+            return await Task.FromResult(true);
         }
 
-        state.Logger.LogDebugger($"RUN: CommentBody fail");
-        return await Task.FromResult<bool>(false);
+        data.Logger.LogDebug("RUN CHECK: CommentBody fail");
+        return await Task.FromResult(false);
     }
 }

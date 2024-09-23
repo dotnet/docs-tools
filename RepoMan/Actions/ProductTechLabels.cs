@@ -1,22 +1,27 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace RepoMan.Actions;
+namespace DotNetDocs.RepoMan.Actions;
 
-public sealed class SetSvcSubSvcLabels: IRunnerItem
+internal sealed class SetSvcSubSvcLabels: IRunnerItem
 {
     public SetSvcSubSvcLabels()
     {
     }
 
-    public async Task Run(State state)
+    public async Task Run(InstanceData data)
     {
-        state.Logger.LogInformation($"Adding service and subservice labels");
+        data.Logger.LogInformation($"RUN [SERVICELABELS]:Adding service and subservice labels");
 
-        if (state.Variables.ContainsKey("ms.service"))
-            state.Operations.LabelsAdd.Add($"{state.Variables["ms.service"]}/svc");
+        if (data.Variables.ContainsKey("ms.service"))
+            data.Operations.LabelsAdd.Add($"{data.Variables["ms.service"]}/svc");
+        else
+            data.Logger.LogInformation("svc metadata wasn't found: {service}", $"{data.Variables["ms.service"]}/svc");
 
-        if (state.Variables.ContainsKey("ms.subservice"))
-            state.Operations.LabelsAdd.Add($"{state.Variables["ms.subservice"]}/subsvc");
+        if (data.Variables.ContainsKey("ms.subservice"))
+            data.Operations.LabelsAdd.Add($"{data.Variables["ms.subservice"]}/subsvc");
+        else
+            data.Logger.LogInformation("subsvc metadata wasn't found: {subservice}", $"{data.Variables["ms.subservice"]}/subsvc");
+
 
         await Task.CompletedTask;
     }

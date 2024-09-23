@@ -1,30 +1,26 @@
-﻿using Markdig.Syntax;
-using Markdig.Syntax.Inlines;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
-namespace RepoMan;
+namespace DotNetDocs.RepoMan;
 
-public static partial class Utilities
+internal static partial class Utilities
 {
-    private static HttpClient _httpClient;
+    private static HttpClient? s_httpClient;
 
     [GeneratedRegex("<meta name=\"(.*)\".*content=\"(.*)\".*/>")]
     public static partial Regex HtmlMetaRegex();
 
-    [GeneratedRegex("\\* Content: \\[.*\\]\\((.*)\\)$")]
-    public static partial Regex CommentMetaContentUrlRegex();
+    public static HttpClient HttpClient => s_httpClient ??= new HttpClient(new SocketsHttpHandler());
 
-    public static HttpClient HttpClient => _httpClient ??= new HttpClient(new SocketsHttpHandler());
-
-    public static async Task<Dictionary<string, string>> ScrapeArticleMetadata(Uri url, State state)
+    public static async Task<Dictionary<string, string>> ScrapeArticleMetadata(Uri url, InstanceData data)
     {
-        state.Logger.LogInformation($"Collecting article metadata from {url}");
+        data.Logger.LogInformation("Collecting article metadata from {url}", url);
 
-        Dictionary<string, string> metadata = new Dictionary<string, string>();
+        Dictionary<string, string> metadata = [];
 
         // Collect the metadata about the article
-        var result = await HttpClient.GetAsync(url);
+        HttpResponseMessage result = await HttpClient.GetAsync(url);
 
         if (result.IsSuccessStatusCode)
         {
@@ -33,92 +29,80 @@ public static partial class Utilities
             foreach (Match match in HtmlMetaRegex().Matches(content).Cast<Match>())
             {
                 metadata[match.Groups[1].Value] = match.Groups[2].Value;
-                state.Logger.LogInformation($"{match.Groups[1].Value} = {match.Groups[2].Value}");
+                data.Logger.LogDebug("{name} = {value}", match.Groups[1].Value, match.Groups[2].Value);
             }
+
+            data.Logger.LogInformation("Metadata items found: {count}", metadata.Count);
         }
         else
-            state.Logger.LogError($"Failed to load {url} with response code {result.StatusCode}");
+            data.Logger.LogError("Failed to load {url} with response code {code}", url, result.StatusCode);
 
         return metadata;
     }
 
-    public static bool MatchRegex(string pattern, string source, State state)
+    public static bool MatchRegex(string pattern, string source, InstanceData data)
     {
-        state.Logger.LogTrace($"Using regex: {pattern} to match {source}");
+        data.Logger.LogTrace("Using regex: {pattern} to match {source}", pattern.Replace("\n","\\n"), source);
         source = source.Replace("\r", null);
         return Regex.IsMatch(source.Replace("\r", null), pattern);
     }
 
-    public static string StripMarkdown(string content)
-    {
-        try
-        {
-            MarkdownDocument markdown = Markdig.Markdown.Parse(content);
-            LinkInline? link = markdown.Descendants<ParagraphBlock>().SelectMany(x => x?.Inline?.Descendants<LinkInline>()!).FirstOrDefault();
 
-            if (link == null)
-                return Markdig.Markdown.ToPlainText(content);
-            else
-                return link.Url ?? "";
-        }
-        catch
-        {
-            return Markdig.Markdown.ToPlainText(content);
-        }
-    }
-
-    public static bool TestStateJMES(string query, State state)
+    public static bool TestStateJMES(string query, InstanceData data)
     {
-        state.Logger.LogInformation($"Processing JMES test: {query}");
+        data.Logger.LogInformation("RUN CHECK: Processing JMES test: {query}", query);
 
         try
         {
-            string githubRequests = state.RequestBody().Root.ToString();
-            DevLab.JmesPath.JmesPath jmesTest = new DevLab.JmesPath.JmesPath();
+            string githubRequests = data.GetJSONObject().Root.ToString();
+            DevLab.JmesPath.JmesPath jmesTest = new();
 
             string result = jmesTest.Transform(githubRequests, query);
 
             if (result != "null" && result != "false")
             {
-                state.Logger.LogInformation("JMES Result: Pass");
+                data.Logger.LogInformation("JMES Result: Pass");
                 return true;
             }
 
-            state.Logger.LogDebugger("JMES Result: Fail");
+            data.Logger.LogDebug("JMES Result: Fail");
             return false;
         }
         catch (Exception e)
         {
-            state.Logger.LogError(e, "JMES Result: Fail with error");
+            data.Logger.LogError(e, "JMES Result: Fail with error");
+            data.HasFailure = true;
+            data.FailureMessage = "JMES check failed to evaluate";
             return false;
         }
     }
 
-    public static string GetJMESResult(string query, State state)
+    public static string GetJMESResult(string query, InstanceData data)
     {
-        state.Logger.LogInformation($"Processing JMES query: {query}");
+        data.Logger.LogInformation("Processing JMES query: {query}", query);
 
         try
         {
-            string githubRequests = state.RequestBody().Root.ToString();
-            DevLab.JmesPath.JmesPath jmesTest = new DevLab.JmesPath.JmesPath();
-            
+            string githubRequests = data.GetJSONObject().Root.ToString();
+            DevLab.JmesPath.JmesPath jmesTest = new();
+
             string result = jmesTest.Transform(githubRequests, query);
 
             if (result.Equals("null", StringComparison.InvariantCultureIgnoreCase))
             {
-                state.Logger.LogDebugger("JMES Result: Null return value");
+                data.Logger.LogDebug("JMES Result: Null return value");
                 return string.Empty;
             }
 
-            state.Logger.LogDebugger($"JMES Result: Returned {result}");
+            data.Logger.LogDebug("JMES Result: Returned {result}", result);
             return result;
         }
         catch (Exception e)
         {
-            state.Logger.LogError(e, "JMES Result: Fail with error");
+            data.Logger.LogError(e, "JMES Result: Fail with error");
+            data.HasFailure = true;
+            data.FailureMessage = "JMES check failed to evaluate";
             return string.Empty;
         }
     }
-
 }

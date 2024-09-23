@@ -1,7 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using YamlDotNet.RepresentationModel;
+using DotNetDocs.RepoMan.Actions;
 
-namespace RepoMan;
+namespace DotNetDocs.RepoMan;
 
 public static class YamlExtensions
 {

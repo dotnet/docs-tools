@@ -1,30 +1,28 @@
 ﻿using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
-namespace RepoMan.Checks;
+namespace DotNetDocs.RepoMan.Checks;
 
-public sealed class Query : ICheck
+internal sealed class Query : ICheck
 {
     public string Value { get; }
 
-    public Query(YamlMappingNode node, State state)
+    public Query(YamlMappingNode node, InstanceData data)
     {
         Value = node["value"].ToString();
-        state.Logger.LogDebugger($"BUILD: Check-Query");
-        state.Logger.LogTrace($"BUILD: {Value}");
+        data.Logger.LogDebug("BUILD: Check-Query");
+        data.Logger.LogTrace("BUILD: {value}", Value);
     }
 
-    public async Task<bool> Run(State state)
+    public async Task<bool> Run(InstanceData data)
     {
-        state.Logger.LogInformation($"Evaluating: {Value}");
-
-        bool result = Utilities.TestStateJMES(Value, state);
+        bool result = Utilities.TestStateJMES(Value, data);
 
         if (result)
-            state.Logger.LogInformation($"PASS");
+            data.Logger.LogInformation("PASS");
         else
-            state.Logger.LogInformation($"FAIL");
+            data.Logger.LogInformation("FAIL");
 
-        return await Task.FromResult<bool>(result);
+        return await Task.FromResult(result);
     }
 }

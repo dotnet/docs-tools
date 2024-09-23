@@ -1,35 +1,35 @@
 ﻿using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
-namespace RepoMan.Checks;
+namespace DotNetDocs.RepoMan.Checks;
 
-public sealed class IsDraft : ICheck
+internal sealed class IsDraft : ICheck
 {
     public bool Condition { get; }
 
-    public IsDraft(YamlMappingNode node, State state)
+    public IsDraft(YamlMappingNode node, InstanceData data)
     {
-        state.Logger.LogDebugger($"BUILD: IsDraft");
+        data.Logger.LogDebug("BUILD: IsDraft");
         Condition = Convert.ToBoolean(node["value"].ToString());
-        state.Logger.LogTrace($"BUILD: - {Condition}");
+        data.Logger.LogTrace("BUILD: - {condition}", Condition);
     }
 
-    public async Task<bool> Run(State state)
+    public async Task<bool> Run(InstanceData data)
     {
-        state.Logger.LogInformation($"Check IsDraft: {Condition}");
+        data.Logger.LogInformation("RUN CHECK: IsDraft {condition}", Condition);
 
-        if (!state.IsPullRequest)
+        if (!data.HasPullRequestData)
         {
-            state.Logger.LogError("Tried to check IsDraft on non-PR");
+            data.Logger.LogError("Tried to check IsDraft on non-PR");
             return await Task.FromResult(false);
         }
 
-        bool result = state.PullRequest?.Draft == Condition;
+        bool result = data.PullRequest?.Draft == Condition;
 
         if (result)
-            state.Logger.LogInformation($"PASS");
+            data.Logger.LogInformation("PASS");
         else
-            state.Logger.LogInformation($"FAIL");
+            data.Logger.LogInformation("FAIL");
 
         return await Task.FromResult(result);
     }

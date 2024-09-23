@@ -1,48 +1,49 @@
 ﻿using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
+using DotNetDocs.RepoMan.Checks;
 
-namespace RepoMan.Checks;
+namespace DotNetDocs.RepoMan.Actions;
 
-public sealed class Group: IRunnerItem
+internal sealed class Group: IRunnerItem
 {
     public List<ICheck> Checks { get; } = new List<ICheck>();
 
     public Runner? PassActions { get; set; }
     public Runner? FailActions { get; set; }
 
-    public async Task Run(State state)
+    public async Task Run(InstanceData data)
     {
-        state.Logger.LogInformation($"Running check group; count: {Checks.Count}");
+        data.Logger.LogInformation("RUN [GROUP]: Running check group; count: {count}", Checks.Count);
 
         bool result = true;
 
         foreach (ICheck check in Checks)
         {
-            if (!await check.Run(state))
+            if (!await check.Run(data))
             {
                 result = false;
                 break;
             }
         }
 
-        state.Logger.LogInformation($"Checks? {result}");
+        data.Logger.LogInformation("Checks passed? {result}", result);
 
         if (result && PassActions != null)
         {
-            state.Logger.LogInformation("Running Pass actions");
-            await PassActions.Run(state);
+            data.Logger.LogInformation("Running Pass actions");
+            await PassActions.Run(data);
         }
 
         if (!result && FailActions != null)
         {
-            state.Logger.LogInformation("Running Fail actions");
-            await FailActions.Run(state);
+            data.Logger.LogInformation("Running Fail actions");
+            await FailActions.Run(data);
         }
     }
 
-    public static Group Build(YamlMappingNode node, State state)
+    public static Group Build(YamlMappingNode node, InstanceData data)
     {
-        state.Logger.LogDebugger("BUILD: Check group start");
+        data.Logger.LogDebug("BUILD: Check group start");
 
         Group checkGroup = new Group();
 
@@ -52,46 +53,49 @@ public sealed class Group: IRunnerItem
         {
             string typeProperty = item["type"].ToString();
 
-            state.Logger.LogDebugger($"BUILD: Finding check type {typeProperty}");
+            data.Logger.LogDebug("BUILD: Finding check type {prop}", typeProperty);
 
             if (typeProperty.Equals("query", StringComparison.OrdinalIgnoreCase))
-                checkGroup.Checks.Add(new Query(item.AsMappingNode(), state));
+                checkGroup.Checks.Add(new Query(item.AsMappingNode(), data));
 
             else if (typeProperty.Equals("metadata-comment", StringComparison.OrdinalIgnoreCase))
-                checkGroup.Checks.Add(new DocMetadata(item.AsMappingNode(), state));
+                checkGroup.Checks.Add(new DocMetadata(item.AsMappingNode(), data));
 
             else if (typeProperty.Equals("metadata-exists", StringComparison.OrdinalIgnoreCase))
-                checkGroup.Checks.Add(new DocMetadataExists(state));
+                checkGroup.Checks.Add(new DocMetadataExists(data));
 
             else if (typeProperty.Equals("metadata-new-exists", StringComparison.OrdinalIgnoreCase))
-                checkGroup.Checks.Add(new DocNewMetadataExists(state));
+                checkGroup.Checks.Add(new DocMetadataExists(data));
 
             else if (typeProperty.Equals("isdraft", StringComparison.OrdinalIgnoreCase))
-                checkGroup.Checks.Add(new IsDraft(item.AsMappingNode(), state));
+                checkGroup.Checks.Add(new IsDraft(item.AsMappingNode(), data));
 
             else if (typeProperty.Equals("variable", StringComparison.OrdinalIgnoreCase))
-                checkGroup.Checks.Add(new Variable(item.AsMappingNode(), state));
+                checkGroup.Checks.Add(new Checks.VariableValue(item.AsMappingNode(), data));
+
+            else if (typeProperty.Equals("variable-exists", StringComparison.OrdinalIgnoreCase))
+                checkGroup.Checks.Add(new Checks.VariableExists(item.AsMappingNode(), data));
 
             else if (typeProperty.Equals("metadata-file", StringComparison.OrdinalIgnoreCase))
             {
                 // Future
             }
             else if (typeProperty.Equals("comment-body", StringComparison.OrdinalIgnoreCase))
-                checkGroup.Checks.Add(new CommentBody(item.AsMappingNode(), state));
+                checkGroup.Checks.Add(new CommentBody(item.AsMappingNode(), data));
             else
             {
-                state.Logger.LogError($"Check type not found: {typeProperty}");
+                data.Logger.LogError("Check type not found: {prop}", typeProperty);
                 checkGroup.Checks.Add(new ForceFail());
             }
         }
 
         if (node.Exists("pass", out YamlSequenceNode? values))
-            checkGroup.PassActions = Runner.Build(values, state);
+            checkGroup.PassActions = Runner.Build(values, data);
 
         if (node.Exists("fail", out YamlSequenceNode? valuesFailed))
-            checkGroup.FailActions = Runner.Build(valuesFailed, state);
+            checkGroup.FailActions = Runner.Build(valuesFailed, data);
 
-        state.Logger.LogTrace("BUILD: Check group end");
+        data.Logger.LogTrace("BUILD: Check group end");
 
         return checkGroup;
     }

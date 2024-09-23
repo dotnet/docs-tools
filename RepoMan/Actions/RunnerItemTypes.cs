@@ -1,4 +1,4 @@
-﻿namespace RepoMan;
+﻿namespace DotNetDocs.RepoMan.Actions;
 
 public enum RunnerItemTypes
 {
@@ -16,7 +16,8 @@ public enum RunnerItemTypes
     Predefined,
     Close,
     Reopen,
-    SvcSubSvcLabels
+    SvcSubSvcLabels,
+    LinkRelatedIssues
 }
 
 public enum RunnerItemSubTypes

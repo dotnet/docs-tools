@@ -1,6 +1,6 @@
-﻿namespace RepoMan.Checks;
+﻿namespace DotNetDocs.RepoMan.Checks;
 
-public interface ICheck
+internal interface ICheck
 {
-    Task<bool> Run(State state);
+    Task<bool> Run(InstanceData state);
 }

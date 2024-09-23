@@ -1,22 +1,21 @@
 ﻿using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
-namespace RepoMan.Actions;
+namespace DotNetDocs.RepoMan.Actions;
 
-public sealed class Comment : IRunnerItem
+internal sealed class Comment : IRunnerItem
 {
     private readonly string _comment;
-    private readonly string _value;
 
-    public Comment(YamlNode node, State state)
+    public Comment(YamlNode node, InstanceData data)
     {
         _comment = node.ToString();
     }
 
-    public async Task Run(State state)
+    public async Task Run(InstanceData data)
     {
-        state.Logger.LogInformation($"Adding comment");
-        state.Logger.LogDebugger(_comment);
-        await GithubCommand.AddComment(_comment, state);
+        data.Logger.LogInformation("RUN [COMMENT]:Adding");
+        data.Logger.LogDebug("comment is: {comment}", _comment);
+        await GitHubCommands.Comments.AddComment(_comment, data);
     }
 }

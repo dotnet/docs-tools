@@ -1,13 +1,18 @@
-﻿namespace RepoMan.Actions;
+﻿
 
-public sealed class CloseObject: IRunnerItem
+using Microsoft.Extensions.Logging;
+
+namespace DotNetDocs.RepoMan.Actions;
+
+internal sealed class CloseObject: IRunnerItem
 {
     public CloseObject()
     {
     }
 
-    public async Task Run(State state)
+    public async Task Run(InstanceData data)
     {
-        await GithubCommand.Close(state);
+        data.Logger.LogInformation("RUN [CLOSE]: Running");
+        await GitHubCommands.IssuePullRequest.Close(data);
     }
 }

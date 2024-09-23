@@ -1,25 +1,27 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace RepoMan.Checks;
+namespace DotNetDocs.RepoMan.Checks;
 
-public sealed class DocMetadataExists : ICheck
+internal sealed class DocMetadataExists : ICheck
 {
-    public DocMetadataExists(State state)
+    public DocMetadataExists(InstanceData data)
     {
-        state.Logger.LogDebugger($"BUILD: Check-metadata-exists");
+        data.Logger.LogDebug("BUILD: Check-metadata-exists");
     }
 
-    public async Task<bool> Run(State state)
+    public async Task<bool> Run(InstanceData data)
     {
-        state.Logger.LogInformation($"Evaluating if doc metadata exists");
+        data.Logger.LogInformation("RUN CHECK: Evaluating if doc v2 metadata exists");
 
-        bool result = state.DocIssueMetadata.Count != 0;
-
-        if (result)
-            state.Logger.LogInformation($"PASS");
+        if (data.HasDocMetadata())
+        {
+            data.Logger.LogInformation("PASS");
+            return await Task.FromResult(true);
+        }
         else
-            state.Logger.LogInformation($"FAIL");
-
-        return await Task.FromResult<bool>(result);
+        {
+            data.Logger.LogInformation("FAIL");
+            return await Task.FromResult(false);
+        }
     }
 }

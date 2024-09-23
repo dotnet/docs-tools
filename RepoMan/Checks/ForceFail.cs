@@ -1,17 +1,17 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace RepoMan.Checks;
+namespace DotNetDocs.RepoMan.Checks;
 
-public sealed class ForceFail : ICheck
+internal sealed class ForceFail : ICheck
 {
     public ForceFail()
     {
         
     }
 
-    public async Task<bool> Run(State state)
+    public async Task<bool> Run(InstanceData data)
     {
-        state.Logger.LogInformation($"Check ForceFail");
+        data.Logger.LogInformation("RUN CHECK: ForceFail");
 
         return await Task.FromResult(false);
     }
