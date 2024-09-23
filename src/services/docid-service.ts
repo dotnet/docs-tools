@@ -1,7 +1,9 @@
 import fetch from "node-fetch";
 import { parseStringPromise } from "xml2js";
 import { ItemType } from "../commands/types/ItemType";
-import { window } from "vscode";
+import { authentication, AuthenticationSession } from "vscode";
+import { HeadersInit } from "node-fetch";
+import { ConfigReader } from "../configuration/config-reader";
 
 export interface DocIdResult {
     docId?: string;
@@ -16,11 +18,33 @@ export class DocIdService {
             return { docId: displayName };
         }
 
-        const response = await fetch(gitUrl, {
-            headers: {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                "Content-Type": "application/xml",
+        let session: AuthenticationSession | undefined;
+
+        const config = ConfigReader.readConfig();
+        if (config.allowGitHubSession) {
+            const providerId = "github";
+            const accounts = await authentication.getAccounts(providerId);
+            if (accounts && accounts.length > 0) {
+                session = await authentication.getSession(
+                    providerId,
+                    ["repo"], {
+                    account: accounts[0],
+                    createIfNone: true
+                });
             }
+        }
+
+        const headers: HeadersInit = {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            "Content-Type": "application/xml",
+        };
+
+        if (session) {
+            headers["Authorization"] = `Bearer ${session.accessToken}`;
+        }
+
+        const response = await fetch(gitUrl, {
+            headers
         });
 
         if (!response.ok) {

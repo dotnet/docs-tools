@@ -27,6 +27,14 @@ export class AppConfig {
      */
     appendOverloads: boolean | undefined = true;
 
+    /**
+     * Whether to allow GitHub session to be used for API requests. 
+     * Enables scenarios where XREF metadata is in a private GitHub repo.
+     * - When enabled, the GitHub session is used to authenticate the API requests.
+     * @default true
+     */
+    allowGitHubSession: boolean | undefined = true;
+
     constructor(workspaceConfig: WorkspaceConfiguration) {
 
         const apiUrl = workspaceConfig.get<string>(nameof<AppConfig>("apiUrl"));
@@ -42,6 +50,11 @@ export class AppConfig {
         const appendOverloads = workspaceConfig.get<boolean>(nameof<AppConfig>("appendOverloads"));
         if (appendOverloads !== undefined) {
             this.appendOverloads = appendOverloads;
+        }
+
+        const allowGitHubSession = workspaceConfig.get<boolean>(nameof<AppConfig>("allowGitHubSession"));
+        if (allowGitHubSession !== undefined) {
+            this.allowGitHubSession = allowGitHubSession;
         }
     }
 
