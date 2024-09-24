@@ -1,0 +1,27 @@
+revision: 1
+schema-version: 5
+owner-ms-alias: adegeo
+
+config:
+  DocMetadata:
+    Headers:
+      - ["---", "#### "]
+
+    ParserRegex: "^\\* (.*): (.*)$"
+
+    ContentUrlRegex:
+      - "### Page URL\n\n(.*)"
+
+projects_v2_item:
+
+  reordered:
+
+    - labels-add: [":world_map: mapQUEST"]
+
+  edited:
+
+    - check:
+        - type: query
+          value: "EventPayload.changes.field_value.field_name == 'Priority' || EventPayload.changes.field_value.field_name == 'Size'"
+      pass:
+        - labels-add: [":world_map: mapQUEST"]
