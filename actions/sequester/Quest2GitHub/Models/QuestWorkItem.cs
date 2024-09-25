@@ -150,7 +150,7 @@ public class QuestWorkItem
         int defaultParentNode)
     {
         string areaPath = $"""{questClient.QuestProject}\{path}""";
-        int parentId = parentIdFromIssue(parentNodes, issue, defaultParentNode, allIterations);
+        int parentId = ParentIdFromIssue(parentNodes, issue, defaultParentNode, allIterations);
 
         List<JsonPatchDocument> patchDocument =
         [
@@ -410,7 +410,7 @@ public class QuestWorkItem
         IEnumerable<ParentForLabel> parentNodes,
         int defaultParentNode)
     {
-        int parentId = parentIdFromIssue(parentNodes, ghIssue, defaultParentNode, allIterations);
+        int parentId = ParentIdFromIssue(parentNodes, ghIssue, defaultParentNode, allIterations);
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
         AzDoIdentity? questAssigneeID = default;
         var proposedQuestState = questItem.State;
@@ -557,7 +557,7 @@ public class QuestWorkItem
         return newItem;
     }
 
-    static private int parentIdFromIssue(IEnumerable<ParentForLabel> parentNodes, QuestIssueOrPullRequest ghIssue, int defaultParentNode, IEnumerable<QuestIteration> allIterations)
+    static private int ParentIdFromIssue(IEnumerable<ParentForLabel> parentNodes, QuestIssueOrPullRequest ghIssue, int defaultParentNode, IEnumerable<QuestIteration> allIterations)
     {
         var iteration = ghIssue.LatestStoryPointSize()?.ProjectIteration(allIterations);
         
