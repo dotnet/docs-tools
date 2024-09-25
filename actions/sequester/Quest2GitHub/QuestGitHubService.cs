@@ -55,9 +55,8 @@ public class QuestGitHubService(
     /// <param name="organization">The GitHub org</param>
     /// <param name="repository">The GitHub repository</param>
     /// <param name="duration">How far back to examine.</param>
-    /// <param name="dryRun">true for a dry run, false to process all issues</param>
     /// <returns></returns>
-    public async Task ProcessIssues(string organization, string repository, int duration, bool dryRun)
+    public async Task ProcessIssues(string organization, string repository, int duration)
     {
         if (_importTriggerLabel is null || _importedLabel is null)
         {
@@ -104,7 +103,7 @@ public class QuestGitHubService(
                     Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
                     // Console.WriteLine(item);
                     QuestWorkItem? questItem = await FindLinkedWorkItemAsync(item);
-                    if (dryRun is false && currentIteration is not null)
+                    if (currentIteration is not null)
                     {
                         if (questItem != null)
                         {

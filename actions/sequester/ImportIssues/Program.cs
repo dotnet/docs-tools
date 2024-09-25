@@ -72,7 +72,7 @@ internal class Program
             else
             {
                 await serviceWorker.ProcessIssues(
-                    org, repo, duration ?? -1, false);
+                    org, repo, duration ?? -1);
             }
         }
         catch (InvalidOperationException e) when (e.Message.StartsWith("HTTP error:"))
