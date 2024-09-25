@@ -150,7 +150,7 @@ public class QuestWorkItem
         int defaultParentNode)
     {
         string areaPath = $"""{questClient.QuestProject}\{path}""";
-        int parentId = parentIdFromIssue(parentNodes, issue, defaultParentNode);
+        int parentId = parentIdFromIssue(parentNodes, issue, defaultParentNode, allIterations);
 
         List<JsonPatchDocument> patchDocument =
         [
@@ -410,7 +410,7 @@ public class QuestWorkItem
         IEnumerable<ParentForLabel> parentNodes,
         int defaultParentNode)
     {
-        int parentId = parentIdFromIssue(parentNodes, ghIssue, defaultParentNode);
+        int parentId = parentIdFromIssue(parentNodes, ghIssue, defaultParentNode, allIterations);
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
         AzDoIdentity? questAssigneeID = default;
         var proposedQuestState = questItem.State;
@@ -557,13 +557,18 @@ public class QuestWorkItem
         return newItem;
     }
 
-    static private int parentIdFromIssue(IEnumerable<ParentForLabel> parentNodes, QuestIssueOrPullRequest ghIssue, int defaultParentNode)
+    static private int parentIdFromIssue(IEnumerable<ParentForLabel> parentNodes, QuestIssueOrPullRequest ghIssue, int defaultParentNode, IEnumerable<QuestIteration> allIterations)
     {
+        var iteration = ghIssue.LatestStoryPointSize()?.ProjectIteration(allIterations);
+        
         foreach (ParentForLabel pair in parentNodes)
         {
-            if (ghIssue.Labels.Any(l => l.Name == pair.Label))
+            if (ghIssue.Labels.Any(l => l.Name == pair.Label) || (pair.Label is null))
             {
-                return pair.ParentNodeId;
+                if ((pair.Semester is null) || (iteration?.IsInSemester(pair.Semester) is true))
+                {
+                    return pair.ParentNodeId;
+                }
             }
         }
         return defaultParentNode;
