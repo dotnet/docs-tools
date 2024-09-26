@@ -6,5 +6,15 @@
     },
     "ImportTriggerLabel": ":world_map: reQUEST",
     "ImportedLabel": ":pushpin: seQUESTered",
-    "DefaultParentNode": 233488
+    "ParentNodes": [
+        {
+            "Semester": "Dilithium",
+            "ParentNodeId": 233488
+        },
+        {
+            "Semester": "Selenium",
+            "ParentNodeId": 286035
+        }
+     ],
+    "DefaultParentNode": 286035
 }

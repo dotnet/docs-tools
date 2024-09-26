@@ -1,6 +1,6 @@
 ﻿namespace Quest2GitHub.Options;
 
-public record struct ParentForLabel(string Label, int ParentNodeId);
+public record struct ParentForLabel(string? Label, string? Semester, int ParentNodeId);
 
 public record struct LabelToTagMap(string Label, string Tag);
 
