@@ -2,7 +2,7 @@
   "name": "xref-helper",
   "displayName": "API Reference Link Helper",
   "description": "A Visual Studio Code extension to help you quickly insert API reference (xref) links.",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "engines": {
     "vscode": "^1.93.1"
   },
@@ -13,7 +13,7 @@
     "Formatters"
   ],
   "preview": true,
-  "activationEvents": [ 
+  "activationEvents": [
     "onLanguage:markdown",
     "onLanguage:xml"
   ],
@@ -64,7 +64,7 @@
             "type": "object"
           },
           "default": [
-            { 
+            {
               "name": "api-version",
               "value": "0.2"
             },
@@ -81,8 +81,8 @@
         },
         "xrefHelper.allowGitHubSession": {
           "type": "boolean",
-          "description": "Whether to allow GitHub session to be used for API requests. Enables scenarios where XREF metadata is in a private GitHub repo.",
-          "default": true
+          "description": "Whether to prompt the user for GitHub auth to allow the GitHub session to be used for API requests. Enables scenarios where XREF metadata is in a private GitHub repo.",
+          "default": false
         }
       }
     }
