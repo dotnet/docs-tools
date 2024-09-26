@@ -54,6 +54,8 @@ export class SearchResultQuickPickItem implements QuickPickItem {
                 return "$(symbol-method)";
             case ItemType.property:
                 return "$(symbol-property)";
+            case ItemType.operator:
+                return "$(symbol-operator)";
             case ItemType.struct:
                 return "$(symbol-struct)";
 
