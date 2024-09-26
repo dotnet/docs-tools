@@ -14,11 +14,7 @@
         {
             "Semester": "Selenium",
             "ParentNodeId": 286035
-        },
-        {
-            "Label": "user-feedback",
-            "ParentNodeId": 233465
         }
-    ],
+     ],
     "DefaultParentNode": 286035
 }
