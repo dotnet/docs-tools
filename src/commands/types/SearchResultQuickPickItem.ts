@@ -63,6 +63,18 @@ export class SearchResultQuickPickItem implements QuickPickItem {
             case ItemType.attachedEvent:
                 return "$(symbol-event)";
 
+            case ItemType.command:
+            case ItemType.function:
+                return "$(symbol-method)";
+            case ItemType.module:
+                return "$(symbol-module)";
+            case ItemType.typeAlias:
+                return "$(symbol-type-parameter)";
+            case ItemType.rootImportPackage:
+            case ItemType.importPackage:
+            case ItemType.package:
+                return "$(symbol-package)";
+
             default:
                 return "$(symbol-misc)";
         }

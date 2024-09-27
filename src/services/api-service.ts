@@ -1,17 +1,61 @@
 import fetch from "node-fetch";
 import { EmptySearchResults, SearchResults } from "../commands/types/SearchResults";
 import { ConfigReader } from "../configuration/config-reader";
-import { AppConfig } from "../configuration/types/AppConfig";
-import { QuickPickItemKind } from "vscode";
+import { ApiConfig, AppConfig } from "../configuration/types/AppConfig";
+import { QuickPickItemKind, window } from "vscode";
 import { tooManyResults } from "../consts";
 import { ItemType } from "../commands/types/ItemType";
 import { SearchResult } from "../commands/types/SearchResult";
+import { ApiName, getSymbolIcon } from "../configuration/types/ApiName";
 
 export class ApiService {
     public static async searchApi(searchTerm: string): Promise<SearchResults | EmptySearchResults> {
         const appConfig: AppConfig = ConfigReader.readConfig();
 
-        const searchApiUrl = appConfig.buildApiUrlWithSearchTerm(searchTerm);
+        if (!appConfig.apis || appConfig.apis.length === 0) {
+            return EmptySearchResults.instance;
+        }
+
+        let apiConfig: ApiConfig | undefined;
+        const enabledApis = appConfig.apis.filter(api => api.enabled);
+        if (!enabledApis || enabledApis.length === 0) {
+            return EmptySearchResults.instance;
+        }
+
+        if (enabledApis.length === 1) {
+            apiConfig = enabledApis[0];
+        } else {
+            // Prompt the user to select an API.
+            // Create the quick pick items.
+            const apiQuickPickItems = enabledApis.map(api => {
+                // @ts-ignore
+                const apiDisplayName = ApiName[api.name!];
+                
+                return {                    
+                    label: `${getSymbolIcon(apiDisplayName)} ${apiDisplayName}`,
+                    description: api.url,
+                    apiName: api.name
+                };
+            });
+
+            const item = await window.showQuickPick(apiQuickPickItems, {
+                title: "✅ Select an API",
+                placeHolder: "Select an API to search"
+            });
+
+            if (item) {
+                apiConfig = appConfig.apis.find(api => {
+                    // @ts-ignore
+                    return api.name === item.apiName;
+                });
+            }
+        }
+
+        if (!apiConfig) {
+            return EmptySearchResults.instance;
+        }
+
+        const searchApiUrl = appConfig.buildApiUrlWithSearchTerm(apiConfig.name!, searchTerm);
 
         const response = await fetch(
             searchApiUrl, {

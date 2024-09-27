@@ -2,7 +2,7 @@
   "name": "xref-helper",
   "displayName": "API Reference Link Helper",
   "description": "A Visual Studio Code extension to help you quickly insert API reference (xref) links.",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "engines": {
     "vscode": "^1.93.1"
   },
@@ -52,25 +52,84 @@
     "configuration": {
       "title": "XREF Helper",
       "properties": {
-        "xrefHelper.apiUrl": {
-          "type": "string",
-          "description": "The URL to use when searching for XREFs. (Defaults to the .NET API search URL.)",
-          "default": "https://learn.microsoft.com/api/apibrowser/dotnet/search"
-        },
-        "xrefHelper.queryStringParameters": {
+        "xrefHelper.apis": {
           "type": "array",
-          "description": "The query string parameters to include when searching for XREFs.",
-          "subItems": {
-            "type": "object"
-          },
+          "description": "The APIs to search for xref links.",
           "default": [
             {
-              "name": "api-version",
-              "value": "0.2"
+              "name": ".NET",
+              "enabled": true,
+              "url": "https://learn.microsoft.com/api/apibrowser/dotnet/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
             },
             {
-              "name": "locale",
-              "value": "en-us"
+              "name": "Java",
+              "enabled": false,
+              "url": "https://learn.microsoft.com/api/apibrowser/java/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
+            },
+            {
+              "name": "JavaScript",
+              "enabled": false,
+              "url": "https://learn.microsoft.com/api/apibrowser/javascript/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
+            },
+            {
+              "name": "Python",
+              "enabled": false,
+              "url": "https://learn.microsoft.com/api/apibrowser/python/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
+            },
+            {
+              "name": "PowerShell",
+              "enabled": false,
+              "url": "https://learn.microsoft.com/api/apibrowser/powershell/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
             }
           ]
         },

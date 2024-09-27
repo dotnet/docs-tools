@@ -1,17 +1,27 @@
 import { WorkspaceConfiguration } from "vscode";
 import { StringPair } from "./StringPair";
 import { nameof } from "../../utils";
+import { ApiName } from "./ApiName";
 
-/**
- * Represents the configuration settings for the extension.
- */
-export class AppConfig {
+export class ApiConfig {
+    /**
+     * Whether the API is enabled.
+     * - When enabled, the API is used to query search results.
+     */
+    enabled: boolean | undefined;
+
+    /**
+     * The name of the API.
+     * - This name is used to identify the API in the extension.
+     */
+    name: ApiName | undefined;
+
     /**
      * The default API URL to query.
      * - This URL is used to query the API for search results.
      * @default "https://learn.microsoft.com/api/apibrowser/dotnet/search"
      */
-    apiUrl: string | undefined;
+    url: string | undefined;
 
     /**
      * The default query string parameters to include in the API URL.
@@ -19,6 +29,17 @@ export class AppConfig {
      * @default [ { "api-version": "0.2" }, { "locale": "en-us" } ]
      */
     queryStringParameters: StringPair[] | undefined;
+}
+
+/**
+ * Represents the configuration settings for the extension.
+ */
+export class AppConfig {
+    /**
+     * The APIs to use for searching.
+     * - These APIs are used to query the search results.
+     */
+    apis: ApiConfig[] | undefined;
 
     /**
      * Whether to append the overloads to the search results.
@@ -38,14 +59,9 @@ export class AppConfig {
 
     constructor(workspaceConfig: WorkspaceConfiguration) {
 
-        const apiUrl = workspaceConfig.get<string>(nameof<AppConfig>("apiUrl"));
-        if (apiUrl !== undefined) {
-            this.apiUrl = apiUrl;
-        }
-
-        const queryParams = workspaceConfig.get<StringPair[]>(nameof<AppConfig>("queryStringParameters"));
-        if (queryParams !== undefined) {
-            this.queryStringParameters = queryParams;
+        const apis = workspaceConfig.get<ApiConfig[]>(nameof<AppConfig>("apis"));
+        if (apis !== undefined) {
+            this.apis = apis;
         }
 
         const appendOverloads = workspaceConfig.get<boolean>(nameof<AppConfig>("appendOverloads"));
@@ -61,15 +77,21 @@ export class AppConfig {
 
     /**
      * Builds the API URL with the search term.
+     * @param name The name of the API to use.
      * @param searchTerm The search term to include in the API URL.
      * @returns A fully qualified URL with query string parameters that includes the search term.
      */
-    public buildApiUrlWithSearchTerm = (searchTerm: string): string => {
-        const queryString = (this.queryStringParameters ?? [])
+    public buildApiUrlWithSearchTerm = (name: string, searchTerm: string): string => {
+        const api = this.apis?.find((api) => api.name === name);
+        if (!api || !api.enabled) {
+            return "";
+        }
+
+        const queryString = (api.queryStringParameters ?? [])
             .map((pair) => Object.entries(pair).map(([key, value]) => `${key}=${value}`).join("&"))
             .join("&");
 
-        return `${this.apiUrl}?${queryString}&search=${searchTerm}`;
+        return `${api.url}?${queryString}&search=${searchTerm}`;
     };
 };
 
