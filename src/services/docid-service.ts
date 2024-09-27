@@ -59,7 +59,7 @@ export class DocIdService {
 
             return {
                 severity: "warning",
-                message: `Failed to get the DocId for "${displayName}"`
+                message: `HTTP ${response.status}: Failed to get the DocId for "${displayName}". Attempted fetching [this Raw GitHub URL](${gitUrl}).`
             };
         }
 
@@ -157,8 +157,8 @@ export class DocIdService {
         }
 
         // Property, Event, or Field.
-        if (apiType === ItemType.property ||
-            apiType === ItemType.event ||
+        if (apiType === ItemType.property || apiType === ItemType.attachedProperty ||
+            apiType === ItemType.event || apiType === ItemType.attachedEvent ||
             apiType === ItemType.field) {
 
             // Special case for "Item" property (which is actually
@@ -216,7 +216,7 @@ export class DocIdService {
         // We didn't find a matching API.
         return {
             severity: "warning",
-            message: `Failed to get the DocId for "${displayName}".`
+            message: `Failed to get the DocId for "${displayName}". Attempted parsing [this Raw GitHub URL](${gitUrl}).`
         };
     }
 }

@@ -10,8 +10,10 @@ export enum ItemType {
     delegate = 'Delegate',
     method = 'Method',
     constructor = 'Constructor',
-    property = 'Property',
     operator = 'Operator',
     field = 'Field',
-    event = 'Event'
+    property = 'Property',
+    event = 'Event',
+    attachedProperty = 'AttacheProperty',
+    attachedEvent = 'AttachedEvent'
 }

@@ -36,8 +36,6 @@ export class SearchResultQuickPickItem implements QuickPickItem {
         switch (itemType) {
             case ItemType.class:
                 return "$(symbol-class)";
-            case ItemType.event:
-                return "$(symbol-event)";
             case ItemType.constructor:
                 return "$(symbol-constructor)";
             case ItemType.namespace:
@@ -52,12 +50,18 @@ export class SearchResultQuickPickItem implements QuickPickItem {
                 return "$(symbol-interface)";
             case ItemType.method:
                 return "$(symbol-method)";
-            case ItemType.property:
-                return "$(symbol-property)";
             case ItemType.operator:
                 return "$(symbol-operator)";
             case ItemType.struct:
                 return "$(symbol-struct)";
+            case ItemType.operator:
+                return "$(symbol-operator)";
+            case ItemType.property:
+            case ItemType.attachedProperty:
+                return "$(symbol-property)";
+            case ItemType.event:
+            case ItemType.attachedEvent:
+                return "$(symbol-event)";
 
             default:
                 return "$(symbol-misc)";
