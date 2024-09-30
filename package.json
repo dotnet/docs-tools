@@ -178,7 +178,7 @@
     "glob": "^11.0.0",
     "mocha": "^10.2.0",
     "rimraf": "^6.0.1",
-    "semantic-release": "^24.1.1",
+    "semantic-release": "^24.1.2",
     "semantic-release-stop-before-publish": "^1.0.0",
     "semantic-release-vsce": "^5.5.9",
     "typescript": "^5.0.4",
