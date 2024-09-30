@@ -2,7 +2,7 @@
   "name": "xref-helper",
   "displayName": "API Reference Link Helper",
   "description": "A Visual Studio Code extension to help you quickly insert API reference (xref) links.",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "engines": {
     "vscode": "^1.93.1"
   },
@@ -188,7 +188,8 @@
   },
   "dependencies": {
     "node-fetch": "3.3.2",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "yaml": "^2.5.1"
   },
   "repository": {
     "type": "git",

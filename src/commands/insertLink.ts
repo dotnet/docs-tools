@@ -10,9 +10,10 @@ import { xrefLinkFormatter } from "./formatters/xrefLinkFormatter";
 import { SearchResult } from "./types/SearchResult";
 import { getUserSelectedText, replaceUserSelectedText, searchTermInputValidation } from "../utils";
 import { allUrlFormatQuickPickItems, tooManyResults, urlFormatQuickPickItems } from "../consts";
-import { RawGitService } from "../services/raw-git-service";
+import { LearnPageParserService } from "../services/learn-page-parser-service";
 import { DocIdService } from "../services/docid-service";
 import { SearchOptions } from './types/SearchOptions';
+import { ApiName } from "../configuration/types/ApiName";
 
 export async function insertLink(linkType: LinkType, options: SearchOptions | undefined) {
     const searchTerm = await window.showInputBox({
@@ -31,6 +32,17 @@ export async function insertLink(linkType: LinkType, options: SearchOptions | un
         window.showWarningMessage(`We didn't find any results for the "${searchTerm}" search term.`);
         return;
     }
+
+    if (options) {
+        options.apiName = searchResults.apiName;
+    } else {
+        options = options || {
+            skipBrackets: false, // @ts-ignore
+            skipDisplayStyle: ApiName[searchResults.apiName!] === ApiName.powershell ? true : false,
+            hideCustomDisplayStyle: false,
+            apiName: searchResults.apiName,
+        };
+    }    
 
     // Create a quick pick to display the search results, allowing the user to select a type or member.
     const quickPick = window.createQuickPick<SearchResultQuickPickItem | QuickPickItem>();
@@ -134,7 +146,7 @@ async function createAndInsertLink(
     format: UrlFormat,
     searchResultSelection: SearchResultQuickPickItem,
     quickPick: QuickPick<SearchResultQuickPickItem | QuickPickItem>,
-    options: SearchOptions | undefined = undefined,
+    options: SearchOptions,
     isTextReplacement: boolean = false) {
 
     quickPick.busy = true;
@@ -155,7 +167,26 @@ async function createAndInsertLink(
             message: `Requesting metadata for selection...`
         });
 
-        const rawUrl = await RawGitService.getRawGitUrl(result.url);
+        // @ts-ignore
+        if (ApiName[options.apiName] === ApiName.powershell) {
+            const uid = await LearnPageParserService.getPageUid(result.url);
+            if (uid) {                
+                const url = `[${result.displayName}](xref:${uid})`;
+                if (!token.isCancellationRequested &&
+                    !insertUrlIntoActiveTextEditor(url, isTextReplacement)) {
+                    window.showWarningMessage(
+                        `Failed to insert URL into the active text editor.`);
+                }
+            } else {
+                window.showWarningMessage(
+                    `Failed to get the UID for "${result.url}"`);
+            }
+
+            quickPick.dispose();
+            return;
+        }
+
+        const rawUrl = await LearnPageParserService.getRawGitUrl(result.url);
         if (!rawUrl || token.isCancellationRequested) {
 
             window.showWarningMessage(

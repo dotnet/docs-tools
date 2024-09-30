@@ -78,6 +78,8 @@ export class ApiService {
             appendOverloads(searchResults);
         }
 
+        searchResults.apiName = apiConfig.name;
+
         // When there are more results, let the user know they should refine their search.
         if (searchResults["@nextLink"] !== undefined) {
             searchResults.results.push({

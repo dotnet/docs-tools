@@ -12,6 +12,7 @@ export enum ItemType {
     constructor = 'Constructor',
     operator = 'Operator',
     field = 'Field',
+    member = 'Member',
     property = 'Property',
     event = 'Event',
     attachedProperty = 'AttachedProperty',

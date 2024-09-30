@@ -1,3 +1,4 @@
+import { ApiName } from "../../configuration/types/ApiName";
 import { SearchResult } from "./SearchResult";
 
 export type SearchResults = {
@@ -5,6 +6,7 @@ export type SearchResults = {
     "@nextLink"?: string | undefined;
     count: number;
     results: SearchResult[];
+    apiName: ApiName | undefined;
 };
 
 export class EmptySearchResults implements SearchResults {
@@ -13,6 +15,7 @@ export class EmptySearchResults implements SearchResults {
     count: number = 0;
     results: SearchResult[] = [];
     isEmpty: boolean = true;
+    apiName: ApiName | undefined = undefined;
 
     private static readonly _instance: EmptySearchResults = new EmptySearchResults();
 

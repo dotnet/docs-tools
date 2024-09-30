@@ -33,6 +33,11 @@ This handy-dandy extension helps content developers quickly insert and edit [cro
 
 To install the extension, download the [latest _xref-helper.vsix_](https://github.com/IEvangelist/xref-helper/blob/main/dist/xref-helper.vsix) file from the _.dist/_ folder, and from Visual Studio Code, right-click the file and select _Install Extension VSIX_.
 
+Alternatively, to install the VSIX extension, open the command palette <kbd>F1</kbd> and select **Extensions: Install from VSIX...**. Then, browse to the downloaded _xref-helper.vsix_ file and select it.
+
+> [!TIP]
+> Since this extension isn't published to the Visual Studio Code Marketplace, you'll need to download the VSIX file from the GitHub repository every time an update is made available and manually reinstall it.
+
 ## Features
 
 The following URL formats are supported, given the example `System.String.Format` method when selecting the [overloads option](#overloads-option) and **Method overloads** search result:
@@ -83,8 +88,97 @@ In Visual Studio Code settings, search for `"XREF Helper"` (or paste this filter
 
 | Setting | Description | Default |
 |--|--|--|
-| **Xref Helper: Api Url** <br/> `xref-helper.apiUrl` | The URL to use when searching for XREFs. (Defaults to the .NET API search URL.) | `https://learn.microsoft.com/api/apibrowser/dotnet/search` |
+| **Xref Helper: Allow Git Hub Session** <br/> `xref-helper.allowGitHubSession` | Whether to prompt the user for GitHub auth to allow the GitHub session to be used for API requests. Enables scenarios where XREF metadata is in a private GitHub repo. | `false` |
+| **Xref Helper: Apis** <br/> `xref-helper.apis` | The APIs to search for xref links. | [See defaults below](#api-defaults). |
 | <a name="overloads-option" />**Xref Helper: Append Overloads** <br/> `xref-helper.appendOverloads` | Whether to append overloads to the search results. Applies to methods and constructors. | `true` |
-| **Xref Helper: Query String Parameters** <br/> `xref-helper.queryStringParameters` | The query string parameters to include when searching for XREFs. | `[ { "name": "api-version", "value": "0.2" }, { "name": "locale", "value": "en-us" } ]` |
 
 ![Settings Screenshot](images/settings.png)
+
+<details>
+<summary id="api-defaults">API defaults</summary>
+
+By default, only .NET is enabled. To enable other APIs, update the `xref-helper.apis` setting JSON:
+
+```json
+[
+   {
+      "name": ".NET",
+      "enabled": true,
+      "url": "https://learn.microsoft.com/api/apibrowser/dotnet/search",
+      "queryStringParameters": [
+         {
+         "name": "api-version",
+         "value": "0.2"
+         },
+         {
+         "name": "locale",
+         "value": "en-us"
+         }
+      ]
+   },
+   {
+      "name": "Java",
+      "enabled": false,
+      "url": "https://learn.microsoft.com/api/apibrowser/java/search",
+      "queryStringParameters": [
+         {
+         "name": "api-version",
+         "value": "0.2"
+         },
+         {
+         "name": "locale",
+         "value": "en-us"
+         }
+      ]
+   },
+   {
+      "name": "JavaScript",
+      "enabled": false,
+      "url": "https://learn.microsoft.com/api/apibrowser/javascript/search",
+      "queryStringParameters": [
+         {
+         "name": "api-version",
+         "value": "0.2"
+         },
+         {
+         "name": "locale",
+         "value": "en-us"
+         }
+      ]
+   },
+   {
+      "name": "Python",
+      "enabled": false,
+      "url": "https://learn.microsoft.com/api/apibrowser/python/search",
+      "queryStringParameters": [
+         {
+         "name": "api-version",
+         "value": "0.2"
+         },
+         {
+         "name": "locale",
+         "value": "en-us"
+         }
+      ]
+   },
+   {
+      "name": "PowerShell",
+      "enabled": false,
+      "url": "https://learn.microsoft.com/api/apibrowser/powershell/search",
+      "queryStringParameters": [
+         {
+         "name": "api-version",
+         "value": "0.2"
+         },
+         {
+         "name": "locale",
+         "value": "en-us"
+         }
+      ]
+   }
+]
+```
+
+</details>
+
+![Settings JSON Screenshot](images/settings-json.png)

@@ -3,7 +3,7 @@ import { insertXrefLinkCommandName } from '../consts';
 import { SearchOptions } from './types/SearchOptions';
 import { ApiService } from "../services/api-service";
 import { EmptySearchResults } from "./types/SearchResults";
-import { RawGitService } from "../services/raw-git-service";
+import { LearnPageParserService } from "../services/learn-page-parser-service";
 import { DocIdService } from "../services/docid-service";
 import { ItemType } from "./types/ItemType";
 
@@ -125,7 +125,7 @@ export const xrefInlineAutoComplete: InlineCompletionItemProvider = {
 
             const firstResult = results.results[0];
 
-            const rawUrl = await RawGitService.getRawGitUrl(firstResult.url);
+            const rawUrl = await LearnPageParserService.getRawGitUrl(firstResult.url);
             if (!rawUrl || token.isCancellationRequested) {
                 console.log(`Cancellation requested after raw git URL found.`);
                 return undefined;

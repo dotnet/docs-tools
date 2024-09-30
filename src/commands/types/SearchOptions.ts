@@ -1,3 +1,4 @@
+import { ApiName } from "../../configuration/types/ApiName";
 
 /**
  * Options to use when searching the API Browser.
@@ -25,4 +26,9 @@ export type SearchOptions = {
      * The text to search for in the API Browser.
      */
     searchText?: string | undefined;
+
+    /**
+     * The API to search in.
+     */
+    apiName: ApiName | undefined;
 };
