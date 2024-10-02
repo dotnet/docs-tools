@@ -29,10 +29,9 @@ export class ApiService {
             // Create the quick pick items.
             const apiQuickPickItems = enabledApis.map(api => {
                 // @ts-ignore
-                const apiDisplayName = ApiName[api.name!];
-                
-                return {                    
-                    label: `${getSymbolIcon(apiDisplayName)} ${apiDisplayName}`,
+
+                return {
+                    label: `${getSymbolIcon(api.displayName)} ${api.displayName}`,
                     description: api.url,
                     apiName: api.name
                 };
@@ -55,7 +54,7 @@ export class ApiService {
             return EmptySearchResults.instance;
         }
 
-        const searchApiUrl = appConfig.buildApiUrlWithSearchTerm(apiConfig.name!, searchTerm);
+        const searchApiUrl = appConfig.buildApiUrlWithSearchTerm(apiConfig.displayName!, searchTerm);
 
         const response = await fetch(
             searchApiUrl, {
@@ -105,7 +104,7 @@ export class ApiService {
 /**
  * Iterate all search results, and when there are constructor or method overloads,
  * inject a single new result before all overloads that's a copy of the first overload.
- * @param searchResults 
+ * @param searchResults
  */
 function appendOverloads(searchResults: SearchResults) {
     let visitedDisplayName: string = "";

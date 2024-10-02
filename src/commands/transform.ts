@@ -7,9 +7,9 @@ export function transformXrefToOther() {
     }
 
     const text = editor.document.getText(editor.selection);
-    if (text.startsWith("<xref:") && text.endsWith(">")) {
+    if (text.toLowerCase().startsWith("<xref:") && text.endsWith(">")) {
 
-        const match = text.match(/<xref:(.*)\?.*>/);
+        const match = text.toLowerCase().match(/<xref:(.*)\?.*>/);
         if (!match) {
             return;
         }
@@ -19,9 +19,12 @@ export function transformXrefToOther() {
             editor.selection = new Selection(editor.selection.start.translate(0, 1), editor.selection.start.translate(0, 5));
         });
     }
-    else if (text.startsWith("[") && text.endsWith(")") && text.indexOf("](xref:") !== -1) {
+    else if (
+        text.startsWith("[") &&
+        text.endsWith(")") &&
+        text.toLowerCase().indexOf("](xref:") !== -1) {
 
-        const match = text.match(/\[.*\]\(xref:(.+)\)/);
+        const match = text.toLowerCase().match(/\[.*\]\(xref:(.+)\)/);
         if (!match) {
             return;
         }

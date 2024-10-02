@@ -11,10 +11,15 @@ export class ApiConfig {
     enabled: boolean | undefined;
 
     /**
-     * The name of the API.
+     * The name of the API, e.g. "dotnet".
      * - This name is used to identify the API in the extension.
      */
     name: ApiName | undefined;
+
+    /**
+     * The display name of the API, e.g. ".NET".
+     */
+    displayName: string | undefined;
 
     /**
      * The default API URL to query.
@@ -82,7 +87,7 @@ export class AppConfig {
      * @returns A fully qualified URL with query string parameters that includes the search term.
      */
     public buildApiUrlWithSearchTerm = (name: string, searchTerm: string): string => {
-        const api = this.apis?.find((api) => api.name === name);
+        const api = this.apis?.find((api) => api.displayName === name);
         if (!api || !api.enabled) {
             return "";
         }

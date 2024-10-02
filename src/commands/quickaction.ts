@@ -13,7 +13,7 @@ export class DisplayPropertyChanger implements CodeActionProvider {
 
         const line = document.lineAt(range.start.line);
         const text = line.text;
-        const match = text.match(/<xref:.+\?displayProperty=(\w+)>/);
+        const match = text.match(/<(xref|Xref|XRef|XREF):.+\?displayProperty=(\w+)>/);
         if (match) {
             const displayProperty = match[1];
 
@@ -23,13 +23,13 @@ export class DisplayPropertyChanger implements CodeActionProvider {
                         document,
                         range,
                         '?displayProperty=nameWithType',
-                        'Format as name with type, i.e.; "String.Trim()".')
+                        'Format as name with type, for example, "String.Trim()".')
 
                     : this.createFix(
                         document,
                         range,
                         '?displayProperty=fullName',
-                        'Format as full name, i.e.; "System.String.Trim()".')
+                        'Format as full name, for example, "System.String.Trim()".')
             ];
         }
 
@@ -54,10 +54,10 @@ export class DisplayPropertyChanger implements CodeActionProvider {
         // targetRange:
         //   <xref:System.Net.Mail.SmtpClient.Port?displayProperty=fullName>
         const targetRange = document.getWordRangeAtPosition(
-            range.start, /<xref:.+\?displayProperty=.+>/);
+            range.start, /<(xref|Xref|XRef|XREF):.+\?displayProperty=.+>/);
 
         const text = document.getText(targetRange);
-        const match = text.match(/(<xref:.+)(\?displayProperty=.+>)/);
+        const match = text.match(/(<(xref|Xref|XRef|XREF):.+)(\?displayProperty=.+>)/);
         // match:
         //   0 <xref:System.Net.Mail.SmtpClient.Port?displayProperty=fullName>
         //   1 <xref:System.Net.Mail.SmtpClient.Port

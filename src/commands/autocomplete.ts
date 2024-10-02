@@ -14,7 +14,7 @@ export const xrefStarterAutoComplete: CompletionItemProvider = {
         token: CancellationToken,
         context: CompletionContext): ProviderResult<CompletionList<CompletionItem> | CompletionItem[]> => {
 
-        const range = document.getWordRangeAtPosition(position, /[<(]xref:/);
+        const range = document.getWordRangeAtPosition(position, /[<(](xref|Xref|XRef|XREF):/);
         if (range) {
 
             const text = document.getText(range);
@@ -32,7 +32,7 @@ export const xrefStarterAutoComplete: CompletionItemProvider = {
                         title: "🔍 Search APIs",
                         arguments: [searchOptions]
                     },
-                    label: " — Search APIs...",
+                    label: " — Search for an API...",
                     insertText: "",
                     kind: CompletionItemKind.Text,
                 }
@@ -50,23 +50,23 @@ export const xrefDisplayTypeAutoComplete: CompletionItemProvider = {
         token: CancellationToken,
         context: CompletionContext): ProviderResult<CompletionList<CompletionItem> | CompletionItem[]> => {
 
-        const range = document.getWordRangeAtPosition(position, /<xref:[^\s>]+>/);
+        const range = document.getWordRangeAtPosition(position, /<(xref|Xref|XRef|XREF):[^\s>]+>/);
         if (range) {
 
-            // Get the full name sans trailing * for overloads
+            // Get the full name sans trailing * for overloads.
             let fullName = document.getText(range).replace('%2A', '').replace('*', '');
 
-            // Trim off the ending regex result of ?>
+            // Trim off the ending regex result of ?>.
             fullName = fullName.substring(6, fullName.length - 2);
 
             let nameWithType = fullName;
 
-            // If the full name has method () trim it down to (...) for display
+            // If the full name has method (), trim it down to (...) for display.
             if (nameWithType.indexOf('(') !== -1) {
                 nameWithType = `${nameWithType.substring(0, nameWithType.indexOf('('))}(…)`;
             }
 
-            // If the full name has . in it, trim it down to the last two parts for name with type display
+            // If the full name has . in it, trim it down to the last two parts for name with type display.
             if (nameWithType.indexOf('.') !== -1) {
                 const items = nameWithType.split('.');
                 nameWithType = `${items.at(-2)}.${items.at(-1)}`;
@@ -97,7 +97,7 @@ export const xrefInlineAutoComplete: InlineCompletionItemProvider = {
         context: InlineCompletionContext,
         token: CancellationToken): Promise<InlineCompletionItem[] | InlineCompletionList | undefined> => {
 
-        const regexp = /[<(]xref:(.+)[>)]/;
+        const regexp = /[<(](xref|Xref|XRef|XREF):(.+)[>)]/;
         if (position.line <= 0) {
             return undefined;
         }

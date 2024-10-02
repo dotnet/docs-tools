@@ -38,11 +38,11 @@ export async function insertLink(linkType: LinkType, options: SearchOptions | un
     } else {
         options = options || {
             skipBrackets: false, // @ts-ignore
-            skipDisplayStyle: ApiName[searchResults.apiName!] === ApiName.powershell ? true : false,
+            skipDisplayStyle: ApiName[searchResults.apiName!] === ApiName.dotnet ? false : true,
             hideCustomDisplayStyle: false,
             apiName: searchResults.apiName,
         };
-    }    
+    }
 
     // Create a quick pick to display the search results, allowing the user to select a type or member.
     const quickPick = window.createQuickPick<SearchResultQuickPickItem | QuickPickItem>();
@@ -170,7 +170,7 @@ async function createAndInsertLink(
         // @ts-ignore
         if (ApiName[options.apiName] === ApiName.powershell) {
             const uid = await LearnPageParserService.getPageUid(result.url);
-            if (uid) {                
+            if (uid) {
                 const url = `[${result.displayName}](xref:${uid})`;
                 if (!token.isCancellationRequested &&
                     !insertUrlIntoActiveTextEditor(url, isTextReplacement)) {
@@ -237,7 +237,7 @@ async function createAndInsertLink(
             url = await mdLinkFormatter(format, searchResultSelection!.result, options);
         }
 
-        // Insert the URL into the active text editor
+        // Insert the URL into the active text editor.
         if (!token.isCancellationRequested &&
             !insertUrlIntoActiveTextEditor(url, isTextReplacement)) {
             window.showWarningMessage(

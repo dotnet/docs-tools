@@ -7,7 +7,7 @@ export enum ApiName {
      * - The .NET API is used to search the .NET API documentation.
      */
     dotnet = ".NET",
-    
+
     /**
      * Java API
      * - The Java API is used to search the Java API documentation.

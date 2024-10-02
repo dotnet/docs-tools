@@ -45,8 +45,10 @@ export class DocIdService {
         switch (textType) {
             case "xml":
                 parserFactory = parseXml;
+                break;
             case "yml":
                 parserFactory = parseYaml;
+                break;
         }
 
         if (!parserFactory) {
@@ -253,7 +255,7 @@ async function parseYaml(text: string, displayName: string, apiType: ItemType, g
     if (apiType === ItemType.package || apiType === ItemType.module || apiType === ItemType.typeAlias) {
         return { docId: displayName };
     }
-    
+
     const yml = parse(text);
     if (!yml) {
         return {
