@@ -307,6 +307,13 @@ async function parseYaml(text: string, displayName: string, apiType: ItemType, g
         }
     }
 
+    if (apiType === ItemType.class || 
+        apiType === ItemType.struct || 
+        apiType === ItemType.interface || 
+        apiType === ItemType.enum) {
+        uid = yml.uid;
+    }
+
     if (uid) {
         return { docId: uid };
     }
