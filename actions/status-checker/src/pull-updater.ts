@@ -4,7 +4,7 @@ import { FileChange } from "./types/FileChange";
 import { PullRequestDetails } from "./types/PullRequestDetails";
 import { NodeOf } from "./types/NodeOf";
 import { workflowInput } from "./types/WorkflowInput";
-import { getHeadingTextFrom } from "./file-heading-extractor";
+import { getHeadingTextFrom, getHeadingTextFromRaw } from "./file-heading-extractor";
 import { ChangeType } from "./types/ChangeType";
 
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
@@ -58,12 +58,12 @@ export async function tryUpdatePullRequestBody(token: string) {
       allFiles = [...allFiles, ...moreFiles];
     }
 
-    if (isPullRequestModifyingMarkdownFiles(allFiles) === false) {
-      info("No updated markdown files...");
+    if (isPullRequestModifyingPreviewEnabledFiles(allFiles) === false) {
+      info("No updated markdown or .yml files...");
       return;
     }
 
-    const { files, exceedsMax } = getModifiedMarkdownFiles(allFiles);
+    const { files, exceedsMax } = getModifiedPreviewEnabledFiles(allFiles);
     const commitOid = context.payload.pull_request?.head.sha;
     const markdownTable = await buildMarkdownPreviewTable(
       prNumber,
@@ -121,17 +121,17 @@ async function getPullRequest(
 ): Promise<PullRequestDetails> {
   /*
 You can verify the query below, by running the following in the GraphQL Explorer:
-    https://docs.github.com/en/graphql/overview/explorer
+  https://docs.github.com/en/graphql/overview/explorer
  
 1. Sign in to GitHub.
 2. Paste the query string value into the query window.
 3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
-  {
-    "name": "docs",
-    "owner": "dotnet",
-    "number": 36636,
-    "cursor": null
-  }
+{
+  "name": "docs",
+  "owner": "dotnet",
+  "number": 36636,
+  "cursor": null
+}
 4. Click the "Play" button.
 */
 
@@ -168,11 +168,12 @@ You can verify the query below, by running the following in the GraphQL Explorer
   });
 }
 
-function isFilePreviewable(_: NodeOf<FileChange>) {
+function isFilePreviewEnabled(_: NodeOf<FileChange>) {
   return (
     _.node.path.includes("includes/") === false &&
     _.node.path.endsWith("README.md") === false &&
-    _.node.path.endsWith(".md") === true &&
+    (_.node.path.endsWith(".md") === true ||
+      _.node.path.endsWith(".yml") === true) &&
     (_.node.changeType == "ADDED" ||
       _.node.changeType == "CHANGED" ||
       _.node.changeType == "MODIFIED" ||
@@ -180,28 +181,26 @@ function isFilePreviewable(_: NodeOf<FileChange>) {
   );
 }
 
-function isPullRequestModifyingMarkdownFiles(
+function isPullRequestModifyingPreviewEnabledFiles(
   files: NodeOf<FileChange>[]
 ): boolean {
   return (
-    files &&
-    files.length > 0 &&
-    files.some((_) => isFilePreviewable(_) && _.node.path.endsWith(".md"))
+    files && files.length > 0 && files.some((_) => isFilePreviewEnabled(_))
   );
 }
 
 /**
- * Gets the modified markdown files using the following filtering rules:
- * -  It's a markdown file, that isn't an "include", and is considered previewable.
+ * Gets the modified markdown or YAML files using the following filtering rules:
+ * -  It's a markdown or .yml file, that isn't an "include", and is considered preview-enabled.
  * -  Files are sorted by most changes in descending order, a max number of files are returned.
  * -  The remaining files are then sorted alphabetically.
  */
-function getModifiedMarkdownFiles(allFiles: NodeOf<FileChange>[]): {
+function getModifiedPreviewEnabledFiles(allFiles: NodeOf<FileChange>[]): {
   files: FileChange[];
   exceedsMax: boolean;
 } {
   const modifiedFiles = allFiles
-    .filter((_) => isFilePreviewable(_))
+    .filter((_) => isFilePreviewEnabled(_))
     .map((_) => _.node);
 
   const exceedsMax = modifiedFiles.length > workflowInput.maxRowCount;
@@ -267,7 +266,10 @@ function toGitHubLink(
 function toPreviewLink(file: string, prNumber: number): string {
   const docsPath = workflowInput.docsPath;
 
-  let path = file.replace(`${docsPath}/`, "").replace(".md", "");
+  let path = file
+    .replace(`${docsPath}/`, "")
+    .replace(".md", "")
+    .replace(".yml", "");
   const opaqueLeadingUrlSegments: Map<string, string> =
     workflowInput.opaqueLeadingUrlSegments;
 
@@ -292,7 +294,8 @@ async function buildMarkdownPreviewTable(
   files: FileChange[],
   checksUrl: string,
   commitOid: string | undefined | null,
-  exceedsMax = false
+  exceedsMax = false,
+  readRawGitHubFile = true
 ): Promise<string> {
   const links = new Map<string, string>();
   files.forEach((file) => {
@@ -310,8 +313,11 @@ async function buildMarkdownPreviewTable(
   markdownTable += "|:--|:--|\n";
 
   for (const [file, link] of links) {
-    const heading = await getHeadingTextFrom(file);
-    const previewTitle = heading || file.replace(".md", "");
+    const heading = readRawGitHubFile
+      ? await getHeadingTextFromRaw(file, context, commitOid)
+      : await getHeadingTextFrom(file);
+    const previewTitle =
+      heading || file.replace(".md", "").replace(".yml", "");
     markdownTable += `| [${file}](${toGitHubLink(
       file,
       commitOid
@@ -364,9 +370,9 @@ ${PREVIEW_TABLE_END}`;
 export const exportedForTesting = {
   appendTable,
   buildMarkdownPreviewTable,
-  getModifiedMarkdownFiles,
-  isFilePreviewable,
-  isPullRequestModifyingMarkdownFiles,
+  getModifiedPreviewEnabledFiles,
+  isFilePreviewEnabled,
+  isPullRequestModifyingPreviewEnabledFiles,
   PREVIEW_TABLE_END,
   PREVIEW_TABLE_START,
   replaceExistingTable,

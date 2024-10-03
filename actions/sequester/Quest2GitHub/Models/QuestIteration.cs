@@ -7,6 +7,8 @@ public class QuestIteration
     public required string Name { get; init; }
     public required string Path { get; init; }
 
+    public bool IsInSemester(string semesterName) => Path.Contains(semesterName);
+
     public static QuestIteration? CurrentIteration(IEnumerable<QuestIteration> iterations)
     {
         var currentYear = int.Parse(DateTime.Now.ToString("yyyy"));
