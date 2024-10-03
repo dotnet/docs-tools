@@ -109,7 +109,7 @@ export const xrefInlineAutoComplete: InlineCompletionItemProvider = {
 
         const line = document.getText(range);
         const match = line.match(regexp);
-        const text = match?.[1];
+        const text = match?.[2];
 
         if (text && !token.isCancellationRequested) {
 

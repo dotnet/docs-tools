@@ -44,10 +44,10 @@ The following URL formats are supported, given the example `System.String.Format
 
 | Format | Resulting Markdown | Example HTML |
 |--|--|--|
-| Default | `<xref:System.String.Format*>` | `<a href="https://docs.microsoft.com/dotnet/api/system.string.format">Format</a>` |
-| Full name | `<xref:System.String.Format*?displayProperty=fullName>` | `<a href="https://docs.microsoft.com/dotnet/api/system.string.format">System.String.Format</a>` |
-| Name with type | `<xref:System.String.Format*?displayProperty=nameWithType>` | `<a href="https://docs.microsoft.com/dotnet/api/system.string.format">String.Format</a>` |
-| Custom link text | `[The string.Format method](xref:System.String.Format*)` | `<a href="https://docs.microsoft.com/dotnet/api/system.string.format">The string.Format method</a>` |
+| Default | `<xref:System.String.Format*>` | `<a href="https://learn.microsoft.com/dotnet/api/system.string.format">Format</a>` |
+| Name with type | `<xref:System.String.Format*?displayProperty=nameWithType>` | `<a href="https://learn.microsoft.com/dotnet/api/system.string.format">String.Format</a>` |
+| Full name | `<xref:System.String.Format*?displayProperty=fullName>` | `<a href="https://learn.microsoft.com/dotnet/api/system.string.format">System.String.Format</a>` |
+| Custom link text | `[The string.Format method](xref:System.String.Format*)` | `<a href="https://learn.microsoft.com/dotnet/api/system.string.format">The string.Format method</a>` |
 
 _Command pallette commands:_
 

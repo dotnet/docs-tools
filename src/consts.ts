@@ -35,30 +35,30 @@ export const transformXrefToOtherCommandName: string = `${toolName}.transformXre
  * Excludes the custom name option.
  */
 export const urlFormatQuickPickItems: QuickPickItem[] =
-[
-    {
-        label: `$(check) ${UrlFormat.default}`,
-        description: 'Displays only the API name. For example, "Trim".'
-    },
-    {
-        label: `$(array) ${UrlFormat.fullName}`,
-        description: 'Displays the fully qualified name. For example, "System.String.Trim".'
-    },
-    {
-        label: `$(bracket-dot) ${UrlFormat.nameWithType}`,
-        description: 'Displays the type and name (or namespace and type). For example, "String.Trim".',
-    },
-];
+    [
+        {
+            label: `$(check) ${UrlFormat.default}`,
+            description: 'Displays only the API name. For example, "Trim".'
+        },
+        {
+            label: `$(bracket-dot) ${UrlFormat.nameWithType}`,
+            description: 'Displays the type and name (or namespace and type). For example, "String.Trim".',
+        },
+        {
+            label: `$(array) ${UrlFormat.fullName}`,
+            description: 'Displays the fully qualified name. For example, "System.String.Trim".'
+        },
+    ];
 
 /**
  * The quick pick items for selecting the URL format.
  * Includes the custom name option.
  */
 export const allUrlFormatQuickPickItems: QuickPickItem[] =
-[
-    ...urlFormatQuickPickItems,
-    {
-        label: `$(edit) ${UrlFormat.customName}`,
-        description: 'Lets you enter custom link text. For example, "The string.Trim() method".'
-    }
-];
+    [
+        ...urlFormatQuickPickItems,
+        {
+            label: `$(edit) ${UrlFormat.customName}`,
+            description: 'Lets you enter custom link text. For example, "The string.Trim() method".'
+        }
+    ];

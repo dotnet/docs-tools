@@ -9,14 +9,14 @@
 export enum UrlFormat {
     /**
      * Only displays the API name.
-     * @description When formatting an `xref` link, no query strings are used.
+     * @description No query parameters are used to format the `xref` link.
      * @example <xref:System.String.Trim> -> "Trim()"
      */
     default = 'Default',
 
     /**
      * Displays the fully qualified name.
-     * @description When formatting an `xref` link, the `?displayProperty=fullName` 
+     * @description When formatting an `xref` link, the `?displayProperty=fullName`
      * query parameter is used to display the fully qualified name.
      * @example <xref:System.String.Trim?displayProperty=fullName> -> "System.String.Trim()"
      */

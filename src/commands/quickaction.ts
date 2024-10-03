@@ -15,7 +15,7 @@ export class DisplayPropertyChanger implements CodeActionProvider {
         const text = line.text;
         const match = text.match(/<(xref|Xref|XRef|XREF):.+\?displayProperty=(\w+)>/);
         if (match) {
-            const displayProperty = match[1];
+            const displayProperty = match[2];
 
             return [
                 displayProperty === 'fullName'
@@ -61,7 +61,8 @@ export class DisplayPropertyChanger implements CodeActionProvider {
         // match:
         //   0 <xref:System.Net.Mail.SmtpClient.Port?displayProperty=fullName>
         //   1 <xref:System.Net.Mail.SmtpClient.Port
-        //   2 ?displayProperty=fullName>
+        //   2 xref
+        //   3 ?displayProperty = fullName >
 
         if (targetRange && match) {
             const start = targetRange.start.translate(0, match[1].length);
