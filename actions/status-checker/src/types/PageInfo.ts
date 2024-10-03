@@ -1,4 +1,4 @@
 export type PageInfo = {
-  hasNextPage: boolean;
-  endCursor: string;
+    hasNextPage: boolean;
+    endCursor: string;
 };
