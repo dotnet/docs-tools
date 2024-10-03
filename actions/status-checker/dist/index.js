@@ -2,54 +2,76 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 3767:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getHeadingTextFrom = void 0;
+exports.getHeadingTextFrom = exports.getHeadingTextFromRaw = void 0;
 const promises_1 = __nccwpck_require__(3292);
 const h1RegExp = /^# (?<h1>.*$)/gim;
 const titleRegExp = /^title:\s*(?<title>.*)$/gim;
-function getHeadingTextFrom(path) {
-    var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const content = yield (0, promises_1.readFile)(path, "utf-8");
+async function getHeadingTextFromRaw(path, context, commitOid) {
+    try {
+        const owner = context.actor;
+        const repo = context.repo.repo;
+        // TODO: Can we pass the token?
+        const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${commitOid}/${path}`;
+        const response = await fetch(raw);
+        if (response && response.ok) {
+            const content = await response.text();
             if (!content) {
                 console.log(`Unable to read content for '${path}'.`);
                 return null;
             }
-            let result = (_a = tryGetRegExpMatch(h1RegExp, "h1", content)) !== null && _a !== void 0 ? _a : tryGetRegExpMatch(titleRegExp, "title", content);
-            console.log(`Found ${result} from '${path}' contents.`);
-            if (result && result.indexOf("<xref:") > -1) {
-                result = normalizeHeadingOrTitleText(result);
-                console.log(`  normalized as ${result}`);
-            }
-            return result;
+            return tryGetTextFromContent(content, path);
         }
-        catch (error) {
-            if (error) {
-                console.log(error.toString());
-            }
-            else {
-                console.log(`Unknown error reading content for '${path}'.`);
-            }
+        else {
+            console.log(`Error reading content for '${path}'. Status: ${response.status}`);
         }
-        return null;
-    });
+    }
+    catch (error) {
+        if (error) {
+            console.log(error.toString());
+        }
+        else {
+            console.log(`Unknown error reading content for '${path}'.`);
+        }
+    }
+    return null;
+}
+exports.getHeadingTextFromRaw = getHeadingTextFromRaw;
+async function getHeadingTextFrom(path) {
+    try {
+        const content = await (0, promises_1.readFile)(path, "utf-8");
+        if (!content) {
+            console.log(`Unable to read content for '${path}'.`);
+            return null;
+        }
+        return tryGetTextFromContent(content, path);
+    }
+    catch (error) {
+        if (error) {
+            console.log(error.toString());
+        }
+        else {
+            console.log(`Unknown error reading content for '${path}'.`);
+        }
+    }
+    return null;
 }
 exports.getHeadingTextFrom = getHeadingTextFrom;
 const xrefRegExp = /<xref:([^>]+)>/gim;
+function tryGetTextFromContent(content, path) {
+    var _a;
+    let result = (_a = tryGetRegExpMatch(h1RegExp, "h1", content)) !== null && _a !== void 0 ? _a : tryGetRegExpMatch(titleRegExp, "title", content);
+    console.log(`Found ${result} from '${path}' contents.`);
+    if (result && result.indexOf("<xref:") > -1) {
+        result = normalizeHeadingOrTitleText(result);
+        console.log(`  normalized as ${result}`);
+    }
+    return result;
+}
 function normalizeHeadingOrTitleText(headingText) {
     // If contains xref markdown, extract only the text from it.
     // Example: "<xref:System.Globalization.CompareInfo> class"
@@ -74,70 +96,11 @@ function tryGetRegExpMatch(expression, groupName, content) {
 
 /***/ }),
 
-/***/ 3109:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const wait_1 = __nccwpck_require__(5817);
-const status_checker_1 = __nccwpck_require__(6430);
-const core_1 = __nccwpck_require__(2186);
-const pull_updater_1 = __nccwpck_require__(8791);
-const WorkflowInput_1 = __nccwpck_require__(6741);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const token = WorkflowInput_1.workflowInput.repoToken;
-            // Wait 60 seconds before checking status check result.
-            yield (0, wait_1.wait)(60000);
-            console.log("Waited 60 seconds.");
-            // When the status is passed, try to update the PR body.
-            const isSuccess = yield (0, status_checker_1.isSuccessStatus)(token);
-            if (isSuccess) {
-                console.log("✅ Build status is good...");
-            }
-            else {
-                console.log("❌ Build status has warnings or errors!");
-            }
-            if (WorkflowInput_1.workflowInput.mode === "preview") {
-                yield (0, pull_updater_1.tryUpdatePullRequestBody)(token);
-            }
-        }
-        catch (error) {
-            const e = error;
-            (0, core_1.setFailed)(e.message);
-        }
-    });
-}
-run();
-
-
-/***/ }),
-
 /***/ 8791:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
 const core_1 = __nccwpck_require__(2186);
@@ -146,89 +109,87 @@ const WorkflowInput_1 = __nccwpck_require__(6741);
 const file_heading_extractor_1 = __nccwpck_require__(3767);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
-function tryUpdatePullRequestBody(token) {
+async function tryUpdatePullRequestBody(token) {
     var _a, _b, _c, _d, _e;
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const prNumber = github_1.context.payload.number;
-            (0, core_1.info)(`Update pull ${prNumber} request body.`);
-            let allFiles = [];
-            let details = yield getPullRequest(token, null);
+    try {
+        const prNumber = github_1.context.payload.number;
+        (0, core_1.info)(`Update pull ${prNumber} request body.`);
+        let allFiles = [];
+        let details = await getPullRequest(token, null);
+        if (!details) {
+            (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
+        }
+        const pullRequest = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
+        if (!pullRequest) {
+            (0, core_1.info)("Unable to pull request details from object-graph.");
+        }
+        if (pullRequest.changedFiles === 0) {
+            (0, core_1.info)("No files changed at all...");
+            return;
+        }
+        else {
+            try {
+                (0, core_1.startGroup)("Pull request JSON body");
+                (0, core_1.info)(JSON.stringify(pullRequest, undefined, 2));
+                (0, core_1.endGroup)();
+            }
+            catch (_f) {
+                (0, core_1.endGroup)();
+            }
+        }
+        allFiles = [...pullRequest.files.edges];
+        while (details.repository.pullRequest.files.pageInfo.hasNextPage) {
+            const cursor = details.repository.pullRequest.files.pageInfo.endCursor;
+            details = await getPullRequest(token, cursor);
             if (!details) {
                 (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
             }
-            const pullRequest = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
-            if (!pullRequest) {
+            const moreFiles = (_d = (_c = (_b = details.repository) === null || _b === void 0 ? void 0 : _b.pullRequest) === null || _c === void 0 ? void 0 : _c.files) === null || _d === void 0 ? void 0 : _d.edges;
+            if (!moreFiles) {
                 (0, core_1.info)("Unable to pull request details from object-graph.");
             }
-            if (pullRequest.changedFiles === 0) {
-                (0, core_1.info)("No files changed at all...");
-                return;
-            }
-            else {
-                try {
-                    (0, core_1.startGroup)("Pull request JSON body");
-                    (0, core_1.info)(JSON.stringify(pullRequest, undefined, 2));
-                    (0, core_1.endGroup)();
-                }
-                catch (_f) {
-                    (0, core_1.endGroup)();
-                }
-            }
-            allFiles = [...pullRequest.files.edges];
-            while (details.repository.pullRequest.files.pageInfo.hasNextPage) {
-                const cursor = details.repository.pullRequest.files.pageInfo.endCursor;
-                details = yield getPullRequest(token, cursor);
-                if (!details) {
-                    (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
-                }
-                const moreFiles = (_d = (_c = (_b = details.repository) === null || _b === void 0 ? void 0 : _b.pullRequest) === null || _c === void 0 ? void 0 : _c.files) === null || _d === void 0 ? void 0 : _d.edges;
-                if (!moreFiles) {
-                    (0, core_1.info)("Unable to pull request details from object-graph.");
-                }
-                allFiles = [...allFiles, ...moreFiles];
-            }
-            if (isPullRequestModifyingMarkdownFiles(allFiles) === false) {
-                (0, core_1.info)("No updated markdown files...");
-                return;
-            }
-            const { files, exceedsMax } = getModifiedMarkdownFiles(allFiles);
-            const commitOid = (_e = github_1.context.payload.pull_request) === null || _e === void 0 ? void 0 : _e.head.sha;
-            const markdownTable = yield buildMarkdownPreviewTable(prNumber, files, pullRequest.checksUrl, commitOid, exceedsMax);
-            let updatedBody = "";
-            if (pullRequest.body.includes(PREVIEW_TABLE_START) &&
-                pullRequest.body.includes(PREVIEW_TABLE_END)) {
-                // Replace existing preview table.
-                updatedBody = replaceExistingTable(pullRequest.body, markdownTable);
-            }
-            else {
-                // Append preview table to bottom.
-                updatedBody = appendTable(pullRequest.body, markdownTable);
-            }
-            (0, core_1.startGroup)("Proposed PR body");
-            (0, core_1.info)(updatedBody);
-            (0, core_1.endGroup)();
-            const octokit = (0, github_1.getOctokit)(token);
-            const response = yield octokit.rest.pulls.update({
-                owner: github_1.context.repo.owner,
-                repo: github_1.context.repo.repo,
-                pull_number: prNumber,
-                body: updatedBody,
-            });
-            if (response && response.status === 200) {
-                (0, core_1.info)("Pull request updated...");
-            }
-            else {
-                (0, core_1.info)("Unable to update pull request...");
-            }
+            allFiles = [...allFiles, ...moreFiles];
         }
-        catch (error) {
-            (0, core_1.warning)(`Unable to process markdown preview: ${error}`);
+        if (isPullRequestModifyingPreviewEnabledFiles(allFiles) === false) {
+            (0, core_1.info)("No updated markdown or .yml files...");
+            return;
         }
-        finally {
-            (0, core_1.info)("Finished attempting to generate preview.");
+        const { files, exceedsMax } = getModifiedPreviewEnabledFiles(allFiles);
+        const commitOid = (_e = github_1.context.payload.pull_request) === null || _e === void 0 ? void 0 : _e.head.sha;
+        const markdownTable = await buildMarkdownPreviewTable(prNumber, files, pullRequest.checksUrl, commitOid, exceedsMax);
+        let updatedBody = "";
+        if (pullRequest.body.includes(PREVIEW_TABLE_START) &&
+            pullRequest.body.includes(PREVIEW_TABLE_END)) {
+            // Replace existing preview table.
+            updatedBody = replaceExistingTable(pullRequest.body, markdownTable);
         }
-    });
+        else {
+            // Append preview table to bottom.
+            updatedBody = appendTable(pullRequest.body, markdownTable);
+        }
+        (0, core_1.startGroup)("Proposed PR body");
+        (0, core_1.info)(updatedBody);
+        (0, core_1.endGroup)();
+        const octokit = (0, github_1.getOctokit)(token);
+        const response = await octokit.rest.pulls.update({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            pull_number: prNumber,
+            body: updatedBody,
+        });
+        if (response && response.status === 200) {
+            (0, core_1.info)("Pull request updated...");
+        }
+        else {
+            (0, core_1.info)("Unable to update pull request...");
+        }
+    }
+    catch (error) {
+        (0, core_1.warning)(`Unable to process markdown preview: ${error}`);
+    }
+    finally {
+        (0, core_1.info)("Finished attempting to generate preview.");
+    }
 }
 exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
 /**
@@ -237,26 +198,25 @@ exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
  * @param token The GITHUB_TOKEN value to obtain an instance of octokit with.
  * @returns A {Promise} of {PullRequestDetails}.
  */
-function getPullRequest(token, cursor = null) {
-    return __awaiter(this, void 0, void 0, function* () {
-        /*
-      You can verify the query below, by running the following in the GraphQL Explorer:
-          https://docs.github.com/en/graphql/overview/explorer
-      
-      1. Sign in to GitHub.
-      2. Paste the query string value into the query window.
-      3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
-        {
-          "name": "docs",
-          "owner": "dotnet",
-          "number": 36636,
-          "cursor": null
-        }
-      4. Click the "Play" button.
-      */
-        const octokit = (0, github_1.getOctokit)(token);
-        return yield octokit.graphql({
-            query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
+async function getPullRequest(token, cursor = null) {
+    /*
+You can verify the query below, by running the following in the GraphQL Explorer:
+    https://docs.github.com/en/graphql/overview/explorer
+ 
+1. Sign in to GitHub.
+2. Paste the query string value into the query window.
+3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
+  {
+    "name": "docs",
+    "owner": "dotnet",
+    "number": 36636,
+    "cursor": null
+  }
+4. Click the "Play" button.
+*/
+    const octokit = (0, github_1.getOctokit)(token);
+    return await octokit.graphql({
+        query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
       repository(name: $name, owner: $owner) {
         pullRequest(number: $number) {
           body
@@ -280,36 +240,34 @@ function getPullRequest(token, cursor = null) {
         }
       }
     }`,
-            name: github_1.context.repo.repo,
-            owner: github_1.context.repo.owner,
-            number: github_1.context.payload.number,
-            cursor,
-        });
+        name: github_1.context.repo.repo,
+        owner: github_1.context.repo.owner,
+        number: github_1.context.payload.number,
+        cursor,
     });
 }
-function isFilePreviewable(_) {
+function isFilePreviewEnabled(_) {
     return (_.node.path.includes("includes/") === false &&
         _.node.path.endsWith("README.md") === false &&
-        _.node.path.endsWith(".md") === true &&
+        (_.node.path.endsWith(".md") === true ||
+            _.node.path.endsWith(".yml") === true) &&
         (_.node.changeType == "ADDED" ||
             _.node.changeType == "CHANGED" ||
             _.node.changeType == "MODIFIED" ||
             _.node.changeType == "RENAMED"));
 }
-function isPullRequestModifyingMarkdownFiles(files) {
-    return (files &&
-        files.length > 0 &&
-        files.some((_) => isFilePreviewable(_) && _.node.path.endsWith(".md")));
+function isPullRequestModifyingPreviewEnabledFiles(files) {
+    return (files && files.length > 0 && files.some((_) => isFilePreviewEnabled(_)));
 }
 /**
- * Gets the modified markdown files using the following filtering rules:
- * -  It's a markdown file, that isn't an "include", and is considered previewable.
+ * Gets the modified markdown or YAML files using the following filtering rules:
+ * -  It's a markdown or .yml file, that isn't an "include", and is considered preview-enabled.
  * -  Files are sorted by most changes in descending order, a max number of files are returned.
  * -  The remaining files are then sorted alphabetically.
  */
-function getModifiedMarkdownFiles(allFiles) {
+function getModifiedPreviewEnabledFiles(allFiles) {
     const modifiedFiles = allFiles
-        .filter((_) => isFilePreviewable(_))
+        .filter((_) => isFilePreviewEnabled(_))
         .map((_) => _.node);
     const exceedsMax = modifiedFiles.length > WorkflowInput_1.workflowInput.maxRowCount;
     const mostChanged = sortByMostChanged(modifiedFiles, true);
@@ -353,7 +311,10 @@ function toGitHubLink(file, commitOid) {
 }
 function toPreviewLink(file, prNumber) {
     const docsPath = WorkflowInput_1.workflowInput.docsPath;
-    let path = file.replace(`${docsPath}/`, "").replace(".md", "");
+    let path = file
+        .replace(`${docsPath}/`, "")
+        .replace(".md", "")
+        .replace(".yml", "");
     const opaqueLeadingUrlSegments = WorkflowInput_1.workflowInput.opaqueLeadingUrlSegments;
     let queryString = "";
     for (const [key, query] of opaqueLeadingUrlSegments) {
@@ -368,34 +329,32 @@ function toPreviewLink(file, prNumber) {
     const qs = queryString ? `&${queryString}` : "";
     return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}${qs}`;
 }
-function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceedsMax = false) {
+async function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceedsMax = false) {
     var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        const links = new Map();
-        files.forEach((file) => {
-            links.set(file.path, toPreviewLink(file.path, prNumber));
-        });
-        let markdownTable = "#### Internal previews\n\n";
-        const isCollapsible = ((_a = WorkflowInput_1.workflowInput.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < links.size;
-        if (isCollapsible) {
-            markdownTable +=
-                "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
-        }
-        markdownTable += "| 📄 File | 🔗 Preview link |\n";
-        markdownTable += "|:--|:--|\n";
-        for (const [file, link] of links) {
-            const heading = yield (0, file_heading_extractor_1.getHeadingTextFrom)(file);
-            const previewTitle = heading || file.replace(".md", "");
-            markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${link}) |\n`;
-        }
-        if (isCollapsible) {
-            markdownTable += "\n</details>\n";
-        }
-        if (exceedsMax /* include footnote when we're truncating... */) {
-            markdownTable += `\n> [!NOTE]\n> This table shows preview links for the ${WorkflowInput_1.workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
-        }
-        return markdownTable;
+    const links = new Map();
+    files.forEach((file) => {
+        links.set(file.path, toPreviewLink(file.path, prNumber));
     });
+    let markdownTable = "#### Internal previews\n\n";
+    const isCollapsible = ((_a = WorkflowInput_1.workflowInput.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < links.size;
+    if (isCollapsible) {
+        markdownTable +=
+            "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
+    }
+    markdownTable += "| 📄 File | 🔗 Preview link |\n";
+    markdownTable += "|:--|:--|\n";
+    for (const [file, link] of links) {
+        const heading = await (0, file_heading_extractor_1.getHeadingTextFromRaw)(file, github_1.context, commitOid);
+        const previewTitle = heading || file.replace(".md", "").replace(".yml", "");
+        markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${link}) |\n`;
+    }
+    if (isCollapsible) {
+        markdownTable += "\n</details>\n";
+    }
+    if (exceedsMax /* include footnote when we're truncating... */) {
+        markdownTable += `\n> [!NOTE]\n> This table shows preview links for the ${WorkflowInput_1.workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
+    }
+    return markdownTable;
 }
 function replaceExistingTable(body, table) {
     const startIndex = body.indexOf(PREVIEW_TABLE_START);
@@ -429,9 +388,9 @@ ${PREVIEW_TABLE_END}`;
 exports.exportedForTesting = {
     appendTable,
     buildMarkdownPreviewTable,
-    getModifiedMarkdownFiles,
-    isFilePreviewable,
-    isPullRequestModifyingMarkdownFiles,
+    getModifiedPreviewEnabledFiles,
+    isFilePreviewEnabled,
+    isPullRequestModifyingPreviewEnabledFiles,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
     replaceExistingTable,
@@ -442,39 +401,48 @@ exports.exportedForTesting = {
 /***/ }),
 
 /***/ 6430:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.isSuccessStatus = void 0;
 const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
 const wait_1 = __nccwpck_require__(5817);
-function isSuccessStatus(token) {
+async function isSuccessStatus(token) {
     var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        const octokit = (0, github_1.getOctokit)(token);
-        const owner = github_1.context.repo.owner;
-        const repo = github_1.context.repo.repo;
-        const payload = github_1.context.payload;
-        if (["pull_request", "pull_request_target"].includes(github_1.context.eventName) &&
-            (payload === null || payload === void 0 ? void 0 : payload.action)) {
-            const prNumber = payload.number;
-            console.log({ prNumber });
-            const commit = (_a = payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha;
-            console.log({ commit });
-            let buildStatus;
-            const { data: statuses } = yield octokit.rest.repos.listCommitStatusesForRef({
+    const octokit = (0, github_1.getOctokit)(token);
+    const owner = github_1.context.repo.owner;
+    const repo = github_1.context.repo.repo;
+    const payload = github_1.context.payload;
+    if (["pull_request", "pull_request_target"].includes(github_1.context.eventName) &&
+        (payload === null || payload === void 0 ? void 0 : payload.action)) {
+        const prNumber = payload.number;
+        console.log({ prNumber });
+        const commit = (_a = payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha;
+        console.log({ commit });
+        let buildStatus;
+        const { data: statuses } = await octokit.rest.repos.listCommitStatusesForRef({
+            owner,
+            repo,
+            ref: commit,
+        });
+        // Get the most recent OPS status.
+        for (const status of statuses) {
+            if (status.context === "OpenPublishing.Build") {
+                buildStatus = status;
+                console.log("Found OPS status check.");
+                break;
+            }
+        }
+        // Loop and wait if there's no OPS build status yet.
+        // (This is unusual.)
+        const loops = 30;
+        for (let i = 0; i < loops && !buildStatus; i++) {
+            // Sleep for 10 seconds.
+            await (0, wait_1.wait)(10000);
+            const { data: statuses } = await octokit.rest.repos.listCommitStatusesForRef({
                 owner,
                 repo,
                 ref: commit,
@@ -487,75 +455,55 @@ function isSuccessStatus(token) {
                     break;
                 }
             }
-            // Loop and wait if there's no OPS build status yet.
-            // (This is unusual.)
-            const loops = 30;
-            for (let i = 0; i < loops && !buildStatus; i++) {
-                // Sleep for 10 seconds.
-                yield (0, wait_1.wait)(10000);
-                const { data: statuses } = yield octokit.rest.repos.listCommitStatusesForRef({
-                    owner,
-                    repo,
-                    ref: commit,
-                });
-                // Get the most recent OPS status.
-                for (const status of statuses) {
-                    if (status.context === "OpenPublishing.Build") {
-                        buildStatus = status;
-                        console.log("Found OPS status check.");
-                        break;
-                    }
+        }
+        // Didn't find OPS status. This is bad.
+        if (!buildStatus) {
+            (0, core_1.setFailed)(`Did not find OPS status check after waiting for ${(loops * 10) / 60} minutes. If it shows 'Expected — Waiting for status to be reported', close and reopen the pull request to trigger a build.`);
+        }
+        // Check state of OPS status check.
+        while (buildStatus.state === "pending") {
+            console.log("OPS status check is still pending; sleeping for 10 seconds.");
+            // Sleep for 10 seconds.
+            await (0, wait_1.wait)(10000);
+            // Get latest OPS status.
+            const { data: statuses } = await octokit.rest.repos.listCommitStatusesForRef({
+                owner,
+                repo,
+                ref: commit,
+            });
+            buildStatus = null;
+            for (const status of statuses) {
+                if (status.context === "OpenPublishing.Build") {
+                    buildStatus = status;
+                    break;
                 }
             }
-            // Didn't find OPS status. This is bad.
+            // This should never happen since if nothing else,
+            // we'll find the OPS status we found initially.
             if (!buildStatus) {
-                (0, core_1.setFailed)(`Did not find OPS status check after waiting for ${(loops * 10) / 60} minutes. If it shows 'Expected — Waiting for status to be reported', close and reopen the pull request to trigger a build.`);
+                throw new Error("Did not find OPS status check.");
             }
-            // Check state of OPS status check.
-            while (buildStatus.state === "pending") {
-                console.log("OPS status check is still pending; sleeping for 10 seconds.");
-                // Sleep for 10 seconds.
-                yield (0, wait_1.wait)(10000);
-                // Get latest OPS status.
-                const { data: statuses } = yield octokit.rest.repos.listCommitStatusesForRef({
-                    owner,
-                    repo,
-                    ref: commit,
-                });
-                buildStatus = null;
-                for (const status of statuses) {
-                    if (status.context === "OpenPublishing.Build") {
-                        buildStatus = status;
-                        break;
-                    }
-                }
-                // This should never happen since if nothing else,
-                // we'll find the OPS status we found initially.
-                if (!buildStatus) {
-                    throw new Error("Did not find OPS status check.");
-                }
-            }
-            // Status is no longer pending.
-            console.log("OPS status check has completed.");
-            if (buildStatus.state === "success") {
-                if (buildStatus.description === "Validation status: warnings") {
-                    (0, core_1.setFailed)("Please fix OPS build warnings before merging. To see the warnings, click 'Details' next to the OpenPublishing.build status check at the bottom of your pull request.");
-                }
-                else {
-                    console.log("OpenPublishing.Build status check does not have warnings.");
-                    return true;
-                }
+        }
+        // Status is no longer pending.
+        console.log("OPS status check has completed.");
+        if (buildStatus.state === "success") {
+            if (buildStatus.description === "Validation status: warnings") {
+                (0, core_1.setFailed)("Please fix OPS build warnings before merging. To see the warnings, click 'Details' next to the OpenPublishing.build status check at the bottom of your pull request.");
             }
             else {
-                // Build status is error/failure.
-                (0, core_1.setFailed)("OpenPublishing.Build status is either failure or error.");
+                console.log("OpenPublishing.Build status check does not have warnings.");
+                return true;
             }
         }
         else {
-            (0, core_1.setFailed)("Event is not a pull request or payload action is undefined.");
+            // Build status is error/failure.
+            (0, core_1.setFailed)("OpenPublishing.Build status is either failure or error.");
         }
-        return false;
-    });
+    }
+    else {
+        (0, core_1.setFailed)("Event is not a pull request or payload action is undefined.");
+    }
+    return false;
 }
 exports.isSuccessStatus = isSuccessStatus;
 
@@ -617,29 +565,18 @@ exports.workflowInput = new WorkflowInput();
 /***/ }),
 
 /***/ 5817:
-/***/ (function(__unused_webpack_module, exports) {
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.wait = void 0;
-function wait(milliseconds) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return new Promise((resolve) => {
-            if (isNaN(milliseconds)) {
-                throw new Error("milliseconds not a number");
-            }
-            setTimeout(() => resolve("done!"), milliseconds);
-        });
+async function wait(milliseconds) {
+    return new Promise((resolve) => {
+        if (isNaN(milliseconds)) {
+            throw new Error("milliseconds not a number");
+        }
+        setTimeout(() => resolve("done!"), milliseconds);
     });
 }
 exports.wait = wait;
@@ -10423,13 +10360,46 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(3109);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+var exports = __webpack_exports__;
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const wait_1 = __nccwpck_require__(5817);
+const status_checker_1 = __nccwpck_require__(6430);
+const core_1 = __nccwpck_require__(2186);
+const pull_updater_1 = __nccwpck_require__(8791);
+const WorkflowInput_1 = __nccwpck_require__(6741);
+async function run() {
+    try {
+        const token = WorkflowInput_1.workflowInput.repoToken;
+        // Wait 60 seconds before checking status check result.
+        await (0, wait_1.wait)(60000);
+        console.log("Waited 60 seconds.");
+        // When the status is passed, try to update the PR body.
+        const isSuccess = await (0, status_checker_1.isSuccessStatus)(token);
+        if (isSuccess) {
+            console.log("✅ Build status is good...");
+        }
+        else {
+            console.log("❌ Build status has warnings or errors!");
+        }
+        if (WorkflowInput_1.workflowInput.mode === "preview") {
+            await (0, pull_updater_1.tryUpdatePullRequestBody)(token);
+        }
+    }
+    catch (error) {
+        const e = error;
+        (0, core_1.setFailed)(e.message);
+    }
+}
+run();
+
+})();
+
+module.exports = __webpack_exports__;
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map
