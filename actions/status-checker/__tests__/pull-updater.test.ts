@@ -6,9 +6,9 @@ import { PullRequestDetails } from "../src/types/PullRequestDetails";
 const {
   appendTable,
   buildMarkdownPreviewTable,
-  getModifiedMarkdownFiles,
-  isFilePreviewable,
-  isPullRequestModifyingMarkdownFiles,
+  getModifiedPreviewEnabledFiles,
+  isFilePreviewEnabled,
+  isPullRequestModifyingPreviewEnabledFiles,
   PREVIEW_TABLE_END,
   PREVIEW_TABLE_START,
   replaceExistingTable,
@@ -96,7 +96,9 @@ ${PREVIEW_TABLE_END}`;
         },
       ],
       "",
-      "oid"
+      "oid",
+      false,
+      false
     );
     expect(actual).toEqual(
       `#### Internal previews\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [test/markdown.md](https://github.com/dotnet/docs/blob/oid/test/markdown.md) | [test/markdown](https://review.learn.microsoft.com/en-us/dotnet/test/markdown?branch=pr-en-us-7) |\n`
@@ -180,16 +182,18 @@ ${PREVIEW_TABLE_END}`;
         },
       ],
       "",
-      "oid"
+      "oid",
+      false,
+      false
     );
     expect(actual).toEqual(
       `#### Internal previews\n\n<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n| 📄 File | 🔗 Preview link |\n|:--|:--|\n| [1/one.md](https://github.com/dotnet/docs/blob/oid/1/one.md) | [1/one](https://review.learn.microsoft.com/en-us/dotnet/1/one?branch=pr-en-us-7) |\n| [2/two.md](https://github.com/dotnet/docs/blob/oid/2/two.md) | [2/two](https://review.learn.microsoft.com/en-us/dotnet/2/two?branch=pr-en-us-7) |\n| [__tests__/3/three.md](https://github.com/dotnet/docs/blob/oid/__tests__/3/three.md) | [THREE](https://review.learn.microsoft.com/en-us/dotnet/__tests__/3/three?branch=pr-en-us-7) |\n| [4/four.md](https://github.com/dotnet/docs/blob/oid/4/four.md) | [4/four](https://review.learn.microsoft.com/en-us/dotnet/4/four?branch=pr-en-us-7) |\n| [5/five.md](https://github.com/dotnet/docs/blob/oid/5/five.md) | [5/five](https://review.learn.microsoft.com/en-us/dotnet/5/five?branch=pr-en-us-7) |\n\n</details>\n`
     );
   });
 
-  it("isFilePreviewable returns false when the file is a README.md", () => {
+  it("isFilePreviewEnabled returns false when the file is a README.md", () => {
     expect(
-      isFilePreviewable({
+      isFilePreviewEnabled({
         node: {
           deletions: 1,
           additions: 1,
@@ -200,9 +204,9 @@ ${PREVIEW_TABLE_END}`;
     ).toBe(false);
   });
 
-  it("isFilePreviewable returns false when no file change types match", () => {
+  it("isFilePreviewEnabled returns false when no file change types match", () => {
     expect(
-      isFilePreviewable({
+      isFilePreviewEnabled({
         node: {
           deletions: 1,
           additions: 1,
@@ -213,9 +217,9 @@ ${PREVIEW_TABLE_END}`;
     ).toBe(false);
   });
 
-  it("isFilePreviewable returns true when file change types match", () => {
+  it("isFilePreviewEnabled returns true when file change types match", () => {
     expect(
-      isFilePreviewable({
+      isFilePreviewEnabled({
         node: {
           deletions: 1,
           additions: 1,
@@ -226,8 +230,8 @@ ${PREVIEW_TABLE_END}`;
     ).toBe(true);
   });
 
-  it("getModifiedMarkdownFiles gets only modified files", () => {
-    const { files, exceedsMax } = getModifiedMarkdownFiles([
+  it("getModifiedPreviewEnabledFiles gets only modified files", () => {
+    const { files, exceedsMax } = getModifiedPreviewEnabledFiles([
       {
         node: {
           deletions: 1,
@@ -279,8 +283,8 @@ ${PREVIEW_TABLE_END}`;
     ]);
   });
 
-  it("isPullRequestModifyingMarkdownFiles returns false when no modified .md files", () => {
-    const actual = isPullRequestModifyingMarkdownFiles([
+  it("isPullRequestModifyingPreviewEnabledFiles returns false when no modified .md files", () => {
+    const actual = isPullRequestModifyingPreviewEnabledFiles([
       {
         node: {
           deletions: 1,
@@ -302,8 +306,8 @@ ${PREVIEW_TABLE_END}`;
     expect(actual).toBeFalsy();
   });
 
-  it("isPullRequestModifyingMarkdownFiles returns true when modified .md files", () => {
-    const actual = isPullRequestModifyingMarkdownFiles([
+  it("isPullRequestModifyingPreviewEnabledFiles returns true when modified .md files", () => {
+    const actual = isPullRequestModifyingPreviewEnabledFiles([
       {
         node: {
           deletions: 1,
