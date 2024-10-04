@@ -119,7 +119,7 @@ function appendOverloads(searchResults: SearchResults) {
             // Add a new result before the overload.
             resultsToInject.set(
                 visitedDisplayName, {
-                targetIndex: index + 1,
+                targetIndex: index,
                 result: {
                     displayName: `${visitedDisplayName}*`,
                     itemType: previousOverload.itemType,
@@ -149,6 +149,22 @@ function appendOverloads(searchResults: SearchResults) {
         const d = result.displayName.substring(0, i > 0 && j > 0 ? Math.min(i, j) : i || j);
 
         visitedDisplayName = d;
+    }
+
+    // If we fall off the loop and we still have an overload, add a new result.
+    if (foundOverload && previousOverload) {
+        resultsToInject.set(
+            visitedDisplayName, {
+            targetIndex: 0,
+            result: {
+                displayName: `${visitedDisplayName}*`,
+                itemType: previousOverload.itemType,
+                description: previousOverload.description,
+                url: previousOverload.url
+            }
+        });
+
+        foundOverload = false;
     }
 
     const overloads = Array.from(resultsToInject.values()).reverse();
