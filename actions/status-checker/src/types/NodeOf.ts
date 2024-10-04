@@ -1,3 +1,3 @@
 export type NodeOf<T> = {
-  readonly node: T;
+    readonly node: T;
 };

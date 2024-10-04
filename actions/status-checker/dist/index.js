@@ -15,7 +15,6 @@ async function getHeadingTextFromRaw(path, context, commitOid) {
     try {
         const owner = context.actor;
         const repo = context.repo.repo;
-        // TODO: Can we pass the token?
         const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${commitOid}/${path}`;
         const response = await fetch(raw);
         if (response && response.ok) {
@@ -200,20 +199,20 @@ exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
  */
 async function getPullRequest(token, cursor = null) {
     /*
-You can verify the query below, by running the following in the GraphQL Explorer:
+  You can verify the query below, by running the following in the GraphQL Explorer:
     https://docs.github.com/en/graphql/overview/explorer
- 
-1. Sign in to GitHub.
-2. Paste the query string value into the query window.
-3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
+   
+  1. Sign in to GitHub.
+  2. Paste the query string value into the query window.
+  3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
   {
     "name": "docs",
     "owner": "dotnet",
     "number": 36636,
     "cursor": null
   }
-4. Click the "Play" button.
-*/
+  4. Click the "Play" button.
+  */
     const octokit = (0, github_1.getOctokit)(token);
     return await octokit.graphql({
         query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
@@ -329,7 +328,7 @@ function toPreviewLink(file, prNumber) {
     const qs = queryString ? `&${queryString}` : "";
     return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}${qs}`;
 }
-async function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceedsMax = false) {
+async function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceedsMax = false, readRawGitHubFile = true) {
     var _a;
     const links = new Map();
     files.forEach((file) => {
@@ -344,7 +343,9 @@ async function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, 
     markdownTable += "| 📄 File | 🔗 Preview link |\n";
     markdownTable += "|:--|:--|\n";
     for (const [file, link] of links) {
-        const heading = await (0, file_heading_extractor_1.getHeadingTextFromRaw)(file, github_1.context, commitOid);
+        const heading = readRawGitHubFile
+            ? await (0, file_heading_extractor_1.getHeadingTextFromRaw)(file, github_1.context, commitOid)
+            : await (0, file_heading_extractor_1.getHeadingTextFrom)(file);
         const previewTitle = heading || file.replace(".md", "").replace(".yml", "");
         markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${link}) |\n`;
     }
