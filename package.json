@@ -4,7 +4,7 @@
   "description": "A Visual Studio Code extension to help you quickly insert API reference (xref) links.",
   "version": "1.0.12",
   "engines": {
-    "vscode": "^1.93.1"
+    "vscode": "^1.94.0"
   },
   "publisher": "IEvangelist",
   "categories": [
