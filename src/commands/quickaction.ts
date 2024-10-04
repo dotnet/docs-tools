@@ -13,7 +13,7 @@ export class DisplayPropertyChanger implements CodeActionProvider {
 
         const line = document.lineAt(range.start.line);
         const text = line.text;
-        const match = text.match(/<(xref|Xref|XRef|XREF):.+\?displayProperty=(\w+)>/);
+        let match = text.match(/<(xref|Xref|XRef|XREF):.+\?displayProperty=(\w+)>/);
         if (match) {
             const displayProperty = match[2];
 
@@ -33,6 +33,20 @@ export class DisplayPropertyChanger implements CodeActionProvider {
             ];
         }
 
+        // The display property is not set if we've gotten this far...
+        match = text.match(/(<xref:.+?)[`|(](.+?)>/si);
+        // If it's a match, the xref is a method signature.
+        if (match) {
+            return [
+                this.createFix(
+                    document,
+                    range,
+                    `*>`,
+                    'Convert to overload syntax, for example, <xref:System.String.Trim*>.',
+                    this.getReplacementRangeForMethodOverload)
+            ];
+        }
+
         return undefined;
     }
 
@@ -40,14 +54,38 @@ export class DisplayPropertyChanger implements CodeActionProvider {
         document: TextDocument,
         range: Range,
         newText: string,
-        title: string): CodeAction {
+        title: string,
+        getRange: (d: TextDocument, r: Range) => Range = this.getReplacementRange): CodeAction {
 
         const action = new CodeAction(title);
         action.edit = new WorkspaceEdit();
-        const targetRange = this.getReplacementRange(document, range);
+        const targetRange = getRange(document, range);
         action.edit.replace(document.uri, targetRange, newText);
 
         return action;
+    }
+
+    private getReplacementRangeForMethodOverload(document: TextDocument, range: Range): Range {
+        // targetRange:
+        //   <xref:System.Uri.GetObjectData(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)>
+        const targetRange = document.getWordRangeAtPosition(
+            range.start, /(<xref:.+?)[`|(](.+?)>/si);
+
+        const text = document.getText(targetRange);
+        const match = text.match(/(<xref:.+?)[`|(](.+?)>/si);
+        // match:
+        //   0 <xref:System.Uri.GetObjectData(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)>
+        //   1 <xref:System.Uri.GetObjectData
+        //   2 (System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)>
+
+        if (targetRange && match) {
+            const start = targetRange.start.translate(0, match[1].length);
+            const end = targetRange.end.translate(0, match[2].length);
+
+            return new Range(start, end);
+        }
+
+        return range;
     }
 
     private getReplacementRange(document: TextDocument, range: Range): Range {
