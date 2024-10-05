@@ -13,7 +13,7 @@ export class DisplayPropertyChanger implements CodeActionProvider {
 
         const line = document.lineAt(range.start.line);
         const text = line.text;
-        let match = text.match(/<(xref|Xref|XRef|XREF):.+\?displayProperty=(\w+)>/);
+        let match = text.match(/<(xref):.+\?displayProperty=(\w+)>/si);
         if (match) {
             const displayProperty = match[2];
 
@@ -92,10 +92,10 @@ export class DisplayPropertyChanger implements CodeActionProvider {
         // targetRange:
         //   <xref:System.Net.Mail.SmtpClient.Port?displayProperty=fullName>
         const targetRange = document.getWordRangeAtPosition(
-            range.start, /<(xref|Xref|XRef|XREF):.+\?displayProperty=.+>/);
+            range.start, /<(xref):.+\?displayProperty=.+>/si);
 
         const text = document.getText(targetRange);
-        const match = text.match(/(<(xref|Xref|XRef|XREF):.+)(\?displayProperty=.+>)/);
+        const match = text.match(/(<(xref):.+)(\?displayProperty=.+>)/si);
         // match:
         //   0 <xref:System.Net.Mail.SmtpClient.Port?displayProperty=fullName>
         //   1 <xref:System.Net.Mail.SmtpClient.Port
