@@ -89,8 +89,10 @@ export async function insertLink(linkType: LinkType, options: SearchOptions | un
             // When the user selects a namespace (or we're configured to skip),
             // create a link using the default format.
             // Namespaces are always displayed as fully qualified names.
+            // Constructors do not have a display property style.
             if (searchResultSelection.itemType === ItemType.namespace ||
-                options && options.skipDisplayStyle === true) {
+                searchResultSelection.itemType === ItemType.constructor ||
+                (options && options.skipDisplayStyle === true)) {
                 await createAndInsertLink(
                     linkType,
                     UrlFormat.default,
