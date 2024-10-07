@@ -9,7 +9,7 @@ import { SearchResult } from "../commands/types/SearchResult";
 import { ApiName, getSymbolIcon } from "../configuration/types/ApiName";
 
 export class ApiService {
-    public static async searchApi(searchTerm: string): Promise<SearchResults | EmptySearchResults> {
+    public static async searchApi(searchTerm: string, top: number = 25): Promise<SearchResults | EmptySearchResults> {
         const appConfig: AppConfig = ConfigReader.readConfig();
 
         if (!appConfig.apis || appConfig.apis.length === 0) {
@@ -31,6 +31,7 @@ export class ApiService {
                 // @ts-ignore
 
                 return {
+                    // @ts-ignore
                     label: `${getSymbolIcon(api.displayName)} ${api.displayName}`,
                     description: api.url,
                     apiName: api.name
@@ -54,7 +55,7 @@ export class ApiService {
             return EmptySearchResults.instance;
         }
 
-        const searchApiUrl = appConfig.buildApiUrlWithSearchTerm(apiConfig.displayName!, searchTerm);
+        const searchApiUrl = appConfig.buildApiUrlWithSearchTerm(apiConfig.displayName!, searchTerm, top);
 
         const response = await fetch(
             searchApiUrl, {

@@ -86,7 +86,7 @@ export class AppConfig {
      * @param searchTerm The search term to include in the API URL.
      * @returns A fully qualified URL with query string parameters that includes the search term.
      */
-    public buildApiUrlWithSearchTerm = (name: string, searchTerm: string): string => {
+    public buildApiUrlWithSearchTerm = (name: string, searchTerm: string, top: number = 25): string => {
         const api = this.apis?.find((api) => api.displayName === name);
         if (!api || !api.enabled) {
             return "";
@@ -96,7 +96,7 @@ export class AppConfig {
             .map((pair) => Object.entries(pair).map(([key, value]) => `${key}=${value}`).join("&"))
             .join("&");
 
-        return `${api.url}?${queryString}&search=${searchTerm}`;
+        return `${api.url}?${queryString}&search=${searchTerm}&$top=${top}`;
     };
 };
 

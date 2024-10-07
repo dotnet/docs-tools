@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { insertLink } from './commands/insertLink';
 import { insertApiRefLinkCommandName, insertXrefLinkCommandName, transformXrefToOtherCommandName, toolName } from './consts';
 import { LinkType } from './commands/types/LinkType';
-import { xrefStarterAutoComplete, xrefDisplayTypeAutoComplete } from './commands/autocomplete';
+import { xrefStarterAutoComplete, xrefDisplayTypeAutoComplete, xrefInlineAutoComplete } from './commands/autocomplete';
 import { SearchOptions } from './commands/types/SearchOptions';
 import { transformXrefToOther } from './commands/transform';
 import { DisplayPropertyChanger } from './commands/quickaction';
@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   console.log(
-    `The "${toolName}" is now active.`
+    `🤓 The "${toolName}" extension is now active.`
   );
 
   // The command has been defined in the package.json file
@@ -23,20 +23,23 @@ export function activate(context: vscode.ExtensionContext) {
   // The commandId parameter must match the command field in package.json
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      insertApiRefLinkCommandName, () => insertLink(LinkType.Markdown, undefined)),
+      insertApiRefLinkCommandName, 
+      async () => await insertLink(LinkType.Markdown, undefined)),
 
     vscode.commands.registerCommand(
-      insertXrefLinkCommandName, (args: SearchOptions | undefined) => insertLink(LinkType.Xref, args)),
+      insertXrefLinkCommandName, 
+      async (args: SearchOptions | undefined) => await insertLink(LinkType.Xref, args)),
 
     vscode.commands.registerCommand(
       transformXrefToOtherCommandName, () => transformXrefToOther()),
 
     vscode.languages.registerCompletionItemProvider('markdown', xrefStarterAutoComplete, ':'),
     vscode.languages.registerCompletionItemProvider('markdown', xrefDisplayTypeAutoComplete, '?'),
-    // vscode.languages.registerInlineCompletionItemProvider('markdown', xrefInlineAutoComplete),
+
+    //vscode.languages.registerInlineCompletionItemProvider('markdown', xrefInlineAutoComplete),
 
     vscode.languages.registerCodeActionsProvider('markdown', new DisplayPropertyChanger(), {
-      providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
+     providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
     })
   );
 }

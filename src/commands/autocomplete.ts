@@ -6,6 +6,7 @@ import { EmptySearchResults } from "./types/SearchResults";
 import { LearnPageParserService } from "../services/learn-page-parser-service";
 import { DocIdService } from "../services/docid-service";
 import { ItemType } from "./types/ItemType";
+import { ApiName } from "../configuration/types/ApiName";
 
 export const xrefStarterAutoComplete: CompletionItemProvider = {
     provideCompletionItems: (
@@ -14,12 +15,13 @@ export const xrefStarterAutoComplete: CompletionItemProvider = {
         token: CancellationToken,
         context: CompletionContext): ProviderResult<CompletionList<CompletionItem> | CompletionItem[]> => {
 
-        const range = document.getWordRangeAtPosition(position, /[<(](xref|Xref|XRef|XREF):/);
+        const range = document.getWordRangeAtPosition(position, /[<(](xref):/si);
         if (range) {
 
             const text = document.getText(range);
 
             const searchOptions: SearchOptions = {
+                apiName: ApiName.dotnet,
                 skipBrackets: true,
                 skipDisplayStyle: text.startsWith('('),
                 hideCustomDisplayStyle: text.startsWith('<')
@@ -50,7 +52,7 @@ export const xrefDisplayTypeAutoComplete: CompletionItemProvider = {
         token: CancellationToken,
         context: CompletionContext): ProviderResult<CompletionList<CompletionItem> | CompletionItem[]> => {
 
-        const range = document.getWordRangeAtPosition(position, /<(xref|Xref|XRef|XREF):[^\s>]+>/);
+        const range = document.getWordRangeAtPosition(position, /<(xref):[^\s>]+>/si);
         if (range) {
 
             // Get the full name sans trailing * for overloads.
@@ -95,59 +97,68 @@ export const xrefInlineAutoComplete: InlineCompletionItemProvider = {
         document: TextDocument,
         position: Position,
         context: InlineCompletionContext,
-        token: CancellationToken): Promise<InlineCompletionItem[] | InlineCompletionList | undefined> => {
+        token: CancellationToken): Promise<InlineCompletionList> => {
 
-        const regexp = /[<(](xref|Xref|XRef|XREF):(.+)[>)]/;
+        const result: InlineCompletionList = {
+            items: []
+        };
+
+        const regexp = /[<(]xref:(.+)[>)]/si;
         if (position.line <= 0) {
-            return undefined;
+            return result;
         }
 
         const range = document.getWordRangeAtPosition(position, regexp);
         if (!range) {
-            return undefined;
+            return result;
         }
 
         const line = document.getText(range);
         const match = line.match(regexp);
-        const text = match?.[2];
+        const text = match?.[1];
 
         if (text && !token.isCancellationRequested) {
 
-            const results = await ApiService.searchApi(text);
+            const results = await ApiService.searchApi(text, 1);
             if (results instanceof EmptySearchResults && results.isEmpty === true) {
-                return undefined;
+                return result;
             }
 
             if (token.isCancellationRequested) {
                 console.log(`Cancellation requested after search results found.`);
-                return undefined;
+                return result;
             }
 
             const firstResult = results.results[0];
 
             const rawUrl = await LearnPageParserService.getRawGitUrl(firstResult.url);
             if (!rawUrl || token.isCancellationRequested) {
-                console.log(`Cancellation requested after raw git URL found.`);
-                return undefined;
+               console.log(`Cancellation requested after raw git URL found.`);
+               return result;
             }
 
-            const result = await DocIdService.getDocId(
+            const doc = await DocIdService.getDocId(
                 firstResult.displayName, firstResult.itemType as ItemType, rawUrl);
-            const docId = result.docId;
+            const docId = doc.docId;
             if (docId && token.isCancellationRequested === false) {
                 console.log(`Added completion for ${docId}.`);
 
                 const insertText = docId.substring(text.length);
 
+                const insertRange = range.with(
+                    range.start, range.end.translate(0, insertText.length));
+
                 const item = new InlineCompletionItem(
-                    insertText, range);
+                    insertText, insertRange);
 
                 item.filterText = docId;
 
-                return [item];
+                result.items.push(item);
+
+                return result;
             }
         }
 
-        return undefined;
+        return result;
     }
 }
