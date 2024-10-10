@@ -97,7 +97,6 @@ internal partial class InstanceData: IRepositoryProvider
         Issue = payload.Issue;
         IssuePrBody = payload.Issue.Body ?? string.Empty;
         EventAction = payload.Action;
-        Issue.ClosedBy.
 
         Logger.LogInformation("RepoID: {repoid} RepoOrg/Name: '{repoowner}/{reponame}' Issue #: {issueid}", RepositoryId, RepositoryOwner, RepositoryName, Issue.Number);
 
