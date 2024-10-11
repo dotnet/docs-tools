@@ -145,11 +145,7 @@ function appendOverloads(searchResults: SearchResults) {
             foundOverload = true;
         }
 
-        const i = result.displayName.indexOf('(');
-        const j = result.displayName.indexOf('<');
-        const d = result.displayName.substring(0, i > 0 && j > 0 ? Math.min(i, j) : i || j);
-
-        visitedDisplayName = d;
+        visitedDisplayName = result.displayName.substring(0, result.displayName.indexOf('('));
     }
 
     // If we fall off the loop and we still have an overload, add a new result.

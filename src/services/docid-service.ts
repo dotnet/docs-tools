@@ -125,9 +125,10 @@ async function parseXml(text: string, displayName: string, apiType: ItemType, gi
                 x.MemberType[0] === memberType
             );
 
-            const docId = methodOrCtor.MemberSignature.find((x: any) => x.$.Language === 'DocId').$.Value.substring(2);
-            // Replace the parentheses with *.
-            return { docId: docId.split('(')[0].concat('*') };
+            let docId = methodOrCtor.MemberSignature.find((x: any) => x.$.Language === 'DocId').$.Value.substring(2);
+            // Add * (and remove parens and double backticks, if present).
+            docId = docId.split('(')[0].split("``")[0];
+            return { docId: docId.concat('*') };
         }
 
         const paramList = displayName.split('(')[1].slice(0, -1);
