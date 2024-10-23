@@ -20,7 +20,7 @@ internal static class IssuePullRequest
                 Base = data.PullRequest.Base.Ref,
                 Body = data.PullRequest.Body,
                 Title = data.PullRequest.Title,
-                State = ItemState.Closed
+                State = ItemState.Closed,
             };
 
             if (!data.IsDryRun)
@@ -30,6 +30,7 @@ internal static class IssuePullRequest
         {
             IssueUpdate updatedIssue = data.Issue.ToUpdate();
             updatedIssue.State = ItemState.Closed;
+            updatedIssue.StateReason = ItemStateReason.Completed;
 
             if (!data.IsDryRun)
                 await data.GitHubRESTClient.Issue.Update(data.RepositoryId, data.Issue.Number, updatedIssue);
