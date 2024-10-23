@@ -8,7 +8,7 @@
     <RootNamespace>DotNetDocs.RepoMan</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
-    <MyVersion>5.0.12</MyVersion>
+    <MyVersion>5.0.13</MyVersion>
     <AssemblyVersion>$(MyVersion).0</AssemblyVersion>
     <Version>$(MyVersion)</Version>
     <FileVersion>$(MyVersion).0</FileVersion>
