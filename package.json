@@ -1,8 +1,7 @@
 {
   "name": "xref-helper",
-  "displayName": "API Reference Link Helper",
   "description": "A Visual Studio Code extension to help you quickly insert API reference (xref) links.",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "engines": {
     "vscode": "^1.94.0"
   },
@@ -10,16 +9,36 @@
   "categories": [
     "Other",
     "Extension Packs",
-    "Formatters"
+    "Formatters",
+    "AI",
+    "Chat",
+    "Programming Languages"
   ],
   "preview": true,
   "activationEvents": [
     "onLanguage:markdown",
-    "onLanguage:xml"
+    "onLanguage:xml",
+    "onChatParticipant:participantId:learn"
   ],
   "icon": "images/icon.png",
   "main": "./out/extension.js",
   "contributes": {
+    "chatParticipants": [
+      {
+        "id": "learn",
+        "name": "learn",
+        "fullName": "Microsoft Learn Copilot",
+        "description": "The Microsoft Learn Copilot for quickly generating documentation.",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "breaking-changes",
+            "isSticky": true,
+            "description": "Provide a GitHub issue URL and `@learn` will generate a breaking-change article based on it."
+          }
+        ]
+      }
+    ],
     "commands": [
       {
         "command": "xrefHelper.insertXrefLink",
@@ -194,7 +213,8 @@
   "dependencies": {
     "node-fetch": "3.3.2",
     "xml2js": "^0.6.2",
-    "yaml": "^2.6.0"
+    "yaml": "^2.6.0",
+    "@octokit/rest": "^21.0.2"
   },
   "repository": {
     "type": "git",

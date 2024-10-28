@@ -5,6 +5,7 @@ import { authentication, AuthenticationSession } from "vscode";
 import { HeadersInit } from "node-fetch";
 import { ConfigReader } from "../configuration/config-reader";
 import { parse } from "yaml";
+import { getGitHubSessionToken } from "./github-auth-service";
 
 export interface DocIdResult {
     docId?: string;
@@ -63,29 +64,15 @@ export class DocIdService {
 }
 
 async function getResponse(gitUrl: string) {
-    let session: AuthenticationSession | undefined;
-
-    const config = ConfigReader.readConfig();
-    if (config.allowGitHubSession) {
-        const providerId = "github";
-        const accounts = await authentication.getAccounts(providerId);
-        if (accounts && accounts.length > 0) {
-            session = await authentication.getSession(
-                providerId,
-                ["repo"], {
-                account: accounts[0],
-                createIfNone: true
-            });
-        }
-    }
+    const accessToken = await getGitHubSessionToken();
 
     const headers: HeadersInit = {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         "Content-Type": "application/xml",
     };
 
-    if (session) {
-        headers["Authorization"] = `Bearer ${session.accessToken}`;
+    if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
     }
 
     const response = await fetch(gitUrl, {
