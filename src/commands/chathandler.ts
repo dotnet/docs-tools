@@ -11,8 +11,6 @@ import {
 import { BASE_PROMPT, getBreakingChangePrompt, MODEL_SELECTOR } from '../consts';
 import { getIssue } from '../services/github-api';
 
-const textDecoder = new TextDecoder();
-
 export const chatRequestHandler: ChatRequestHandler = async (
     request: ChatRequest,
     context: ChatContext,
@@ -38,11 +36,14 @@ export const chatRequestHandler: ChatRequestHandler = async (
             LanguageModelChatMessage.User(prompt),
         ];
 
+        let markdown = '';
+
         const chatResponse = await model.sendRequest(messages, {}, token);
         for await (const fragment of chatResponse.text) {
+            markdown += fragment;
             stream.markdown(fragment);
         }
-    }
 
-    return;
+        env.clipboard.writeText(markdown);
+    }
 };
