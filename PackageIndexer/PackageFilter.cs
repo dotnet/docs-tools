@@ -78,6 +78,7 @@ public sealed class PackageFilter(IEnumerable<PackageFilterExpression> includes,
         [
             PackageFilterExpression.Parse("Microsoft.Bcl.*"),
             PackageFilterExpression.Parse("Microsoft.Extensions.*"),
+            PackageFilterExpression.Parse("Microsoft.IO.Redist"),
             PackageFilterExpression.Parse("Microsoft.Win32.*"),
             PackageFilterExpression.Parse("System.*"),
         ],
