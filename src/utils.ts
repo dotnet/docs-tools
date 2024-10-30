@@ -1,4 +1,4 @@
-import { window, Range, InputBoxValidationMessage, InputBoxValidationSeverity } from "vscode";
+import { window, Selection, Range, InputBoxValidationMessage, InputBoxValidationSeverity } from "vscode";
 
 /**
  * The `nameof` operator returns the name of a variable, type, or member as a `string`.
@@ -32,10 +32,32 @@ export const getUserSelectedText = (): string | undefined => {
 
 /**
  * Replaces the user's selected text with the specified `replacement`.
- * @param replacement Replaces the user's selected text with the specified `replacement`.
+ * @param replacement The string to replace the user's selected text with.
  */
 export const replaceUserSelectedText = (replacement: string): void => {
     const editor = window.activeTextEditor;
+    const selection = editor?.selection;
+
+    if (selection && !selection.isEmpty) {
+        editor.edit((editBuilder) => {
+            editBuilder.replace(selection, replacement);
+        });
+    }
+};
+
+/**
+ * Replaces the existing <xref:> text with the specified `replacement`.
+ * @param replacement The string to replace the <xref:> text with.
+ */
+export const replaceExistingXrefText = (replacement: string): void => {
+    const editor = window.activeTextEditor;
+
+    // The final angle bracket may or may not be present.
+    const range = editor?.document.getWordRangeAtPosition(editor?.selection.end, /<(xref):>?/si);
+    if (range) {
+        editor!.selection = new Selection(range.start, range.end);
+    }
+
     const selection = editor?.selection;
 
     if (selection && !selection.isEmpty) {

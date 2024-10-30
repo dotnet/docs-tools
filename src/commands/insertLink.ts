@@ -8,7 +8,7 @@ import { UrlFormat } from "./types/UrlFormat";
 import { window, QuickPickItem, QuickPick, ProgressLocation } from "vscode";
 import { xrefLinkFormatter } from "./formatters/xrefLinkFormatter";
 import { SearchResult } from "./types/SearchResult";
-import { getUserSelectedText, replaceUserSelectedText, searchTermInputValidation } from "../utils";
+import { getUserSelectedText, replaceUserSelectedText, replaceExistingXrefText, searchTermInputValidation } from "../utils";
 import { allUrlFormatQuickPickItems, tooManyResults, urlFormatQuickPickItems } from "../consts";
 import { LearnPageParserService } from "../services/learn-page-parser-service";
 import { DocIdService } from "../services/docid-service";
@@ -241,7 +241,7 @@ async function createAndInsertLink(
 
         // Insert the URL into the active text editor.
         if (!token.isCancellationRequested &&
-            !insertUrlIntoActiveTextEditor(url, isTextReplacement)) {
+            !insertUrlIntoActiveTextEditor(url, isTextReplacement, options.replaceXrefAndBrackets)) {
             window.showWarningMessage(
                 `Failed to insert URL into the active text editor.`);
         }
@@ -257,13 +257,16 @@ async function createAndInsertLink(
  */
 function insertUrlIntoActiveTextEditor(
     url?: string | undefined,
-    isTextReplacement: boolean = false): boolean {
+    isUserTextReplacement: boolean = false,
+    isXrefTextReplacement: boolean = false): boolean {
     if (!url) {
         return false;
     }
 
-    if (isTextReplacement) {
+    if (isUserTextReplacement) {
         replaceUserSelectedText(url);
+    } else if (isXrefTextReplacement) {
+        replaceExistingXrefText(url);
     }
 
     if (window.activeTextEditor || window.activeTextEditor!.selection) {

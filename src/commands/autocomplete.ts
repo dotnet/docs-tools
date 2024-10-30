@@ -24,7 +24,8 @@ export const xrefStarterAutoComplete: CompletionItemProvider = {
                 apiName: ApiName.dotnet,
                 skipBrackets: true,
                 skipDisplayStyle: text.startsWith('('),
-                hideCustomDisplayStyle: text.startsWith('<')
+                hideCustomDisplayStyle: false,
+                replaceXrefAndBrackets: true
             };
 
             return [
