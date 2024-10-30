@@ -1,81 +1,31 @@
-﻿using CleanRepo.Extensions;
-using CommandLine;
-using Microsoft.Build.Construction;
-using System.Data;
+﻿using System.Data;
 using System.Diagnostics;
+using System.Runtime;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using CleanRepo.Extensions;
+using Microsoft.Build.Construction;
+using Microsoft.Extensions.Configuration;
 using Tesseract;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace CleanRepo;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1304:Specify CultureInfo", Justification = "Annoying")]
-static class Program
+class Program
 {
     static void Main(string[] args)
     {
-#if DEBUG
-        // TODO: Consider using launchSettings.json with command line args instead:
-        //
-        //   {
-        //     "profiles": {
-        //       "CleanRepo": {
-        //         "commandName": "Project",
-        //         "commandLineArgs": "--orphaned-images\r\n--base-path=\"/dotnet\""
-        //       }
-        //     }
-        //   }
-        //
-        // ... to avoid hardcoded values in DEBUG preprocessor directives like this:
-        args = new[] {
-                    "--help"
-        };
-        //args = new[] { "--orphaned-snippets", "--relative-links", "--remove-hops", "--replace-redirects", "--orphaned-includes", "--orphaned-articles", "--orphaned-images",
-        //"--articles-directory=c:\\users\\gewarren\\docs\\docs\\fundamentals", "--media-directory=c:\\users\\gewarren\\docs\\docs\\core",
-        //"--includes-directory=c:\\users\\gewarren\\docs\\includes", "--snippets-directory=c:\\users\\gewarren\\docs\\samples\\snippets\\csharp\\vs_snippets_clr",
-        //"--docfx-directory=c:\\users\\gewarren\\docs", "--url-base-path=/dotnet", "--delete=false"};
-#endif
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-        /*
+        IConfiguration configuration = builder.Build();
 
-        Display help screen
+        var options = new Options();
+        configuration.GetSection("Options").Bind(options);
 
-        args = new[] {
-        "--help"
-         */
-
-
-        /*
-
-        Catalog images with text
-
-        args = new[] {
-        "--catalog-images-with-text", 
-        "--url-base-path=/azure/developer/javascript",
-        "--ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast",
-        "--articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles",
-        "--media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media"};
-         */
-
-        /*
-
-        Filter images for text
-
-        args = new[] {
-        "--filter-images-for-text",
-        "--filter-text-json-file=c:\\Users\\diberry\\repos\\filter-text.json",
-        "--url-base-path=/azure/developer/javascript",
-        "--ocr-model-directory=c:\\Users\\diberry\\repos\\temp\\tesseract\\tessdata_fast",
-        "--articles-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles",
-        "--media-directory=c:\\Users\\diberry\\repos\\writing\\docs\\azure-dev-docs-pr-2\\articles\\javascript\\media"};
-         */
-
-
-
-
-        Parser.Default.ParseArguments<Options>(args).WithParsed(RunOptions);
+        RunOptions(options);
     }
 
     static void RunOptions(Options options)
@@ -176,7 +126,7 @@ static class Program
 
             Console.WriteLine($"\nSearching the '{options.ArticlesDirectory}' directory and its subdirectories for orphaned articles...");
 
-            List<FileInfo> markdownFiles = GetMarkdownFiles(options.ArticlesDirectory, "snippets");
+            List<FileInfo> markdownFiles = HelperMethods.GetMarkdownFiles(options.ArticlesDirectory, "snippets");
 
             if (docFxRepo.AllTocFiles is null || markdownFiles is null)
                 return;
@@ -211,7 +161,7 @@ static class Program
 
             // Gather media file names.
             if (docFxRepo._imageRefs is null)
-                docFxRepo._imageRefs = GetMediaFiles(options.MediaDirectory);
+                docFxRepo._imageRefs = HelperMethods.GetMediaFiles(options.MediaDirectory);
 
             Console.WriteLine($"\nSearching the '{options.MediaDirectory}' directory recursively for orphaned .png/.jpg/.gif/.svg files...\n");
 
@@ -252,7 +202,7 @@ static class Program
 
             // Gather media file names.
             if (docFxRepo._imageRefs is null)
-                docFxRepo._imageRefs = GetMediaFiles(options.MediaDirectory);
+                docFxRepo._imageRefs = HelperMethods.GetMediaFiles(options.MediaDirectory);
 
             Console.WriteLine($"\nCataloging '{docFxRepo._imageRefs.Count}' images (recursively) in the '{options.MediaDirectory}' directory...\n");
 
@@ -262,9 +212,7 @@ static class Program
                 List<string> mediaFilesList = docFxRepo._imageRefs.Keys.ToList();
 
                 // Pass hash keys to ScanMediaFiles
-                docFxRepo._ocrRefs = ScanMediaFiles(mediaFilesList, options.OcrModelDirectory);
-
-
+                docFxRepo._ocrRefs = HelperMethods.ScanMediaFiles(mediaFilesList, options.OcrModelDirectory);
 
                 docFxRepo.OutputImageReferences(true);
             }
@@ -314,15 +262,15 @@ static class Program
                 // Extract hash keys from the dictionary
                 List<string> mediaFilesList = docFxRepo._imageRefs.Keys.ToList();
 
-                if(mediaFilesList.Count==0)
+                if (mediaFilesList.Count == 0)
                 {
                     Console.WriteLine($"\nNo media files found.");
                 }
                 // Pass hash keys to ScanMediaFiles
-                Dictionary<string, string> unfilteredResults = ScanMediaFiles(mediaFilesList, options.OcrModelDirectory);
+                Dictionary<string, string> unfilteredResults = HelperMethods.ScanMediaFiles(mediaFilesList, options.OcrModelDirectory);
 
                 // Filter results
-                docFxRepo._ocrFilteredRefs = FilterMediaFiles(unfilteredResults, searchTerms);
+                docFxRepo._ocrFilteredRefs = HelperMethods.FilterMediaFiles(unfilteredResults, searchTerms);
 
                 docFxRepo.OutputImageReferences(true, true);
             }
@@ -441,8 +389,8 @@ static class Program
             List<Redirect> redirects = docFxRepo.GetAllRedirects();
 
             // Get all the markdown and YAML files.
-            List<FileInfo> linkingFiles = GetMarkdownFiles(options.ArticlesDirectory);
-            linkingFiles.AddRange(GetYAMLFiles(options.ArticlesDirectory));
+            List<FileInfo> linkingFiles = HelperMethods.GetMarkdownFiles(options.ArticlesDirectory);
+            linkingFiles.AddRange(HelperMethods.GetYAMLFiles(options.ArticlesDirectory));
 
             // Check all links, including in toc.yml, to files in the redirects list.
             // Replace links to redirected files.
@@ -494,8 +442,8 @@ static class Program
                 $"the '{options.ArticlesDirectory}' directory with file-relative links.\n");
 
             // Get all the markdown and YAML files in the search directory.
-            List<FileInfo> linkingFiles = GetMarkdownFiles(options.ArticlesDirectory);
-            linkingFiles.AddRange(GetYAMLFiles(options.ArticlesDirectory));
+            List<FileInfo> linkingFiles = HelperMethods.GetMarkdownFiles(options.ArticlesDirectory);
+            linkingFiles.AddRange(HelperMethods.GetYAMLFiles(options.ArticlesDirectory));
 
             // Check all links in these files.
             ReplaceLinks(linkingFiles, docFxRepo.UrlBasePath, rootDirectory);
@@ -608,7 +556,7 @@ static class Program
         // Get the actual casing of the file on the file system.
         try
         {
-            absolutePath = GetActualCaseForFilePath(absolutePath);
+            absolutePath = HelperMethods.GetActualCaseForFilePath(absolutePath);
         }
         catch (FileNotFoundException)
         {
@@ -656,7 +604,7 @@ static class Program
     private static void ListOrphanedIncludes(string inputDirectory, Dictionary<string, int> includeFiles, bool deleteOrphanedIncludes)
     {
         // Get all files that could possibly link to the include files
-        List<FileInfo>? files = GetAllMarkdownFiles(inputDirectory, out DirectoryInfo? rootDirectory);
+        List<FileInfo>? files = HelperMethods.GetAllMarkdownFiles(inputDirectory, out DirectoryInfo? rootDirectory);
 
         if (files is null || rootDirectory is null)
             return;
@@ -848,7 +796,7 @@ static class Program
 
             string projExtension = GetProjectExtension(filePath);
 
-            DirectoryInfo? projectDir = GetDirectory(new DirectoryInfo(fi.DirectoryName!), $"*{projExtension}");
+            DirectoryInfo? projectDir = HelperMethods.GetDirectory(new DirectoryInfo(fi.DirectoryName!), $"*{projExtension}");
             if (projectDir != null)
                 snippetFiles[i] = (filePath, projectDir.FullName);
         }
@@ -900,9 +848,9 @@ static class Program
         List<FileInfo>? files;
         DirectoryInfo? rootDirectory;
         if (searchEcmaXmlFiles)
-            files = GetAllEcmaXmlFiles(inputDirectory, out rootDirectory);
+            files = HelperMethods.GetAllEcmaXmlFiles(inputDirectory, out rootDirectory);
         else
-            files = GetAllMarkdownFiles(inputDirectory, out rootDirectory);
+            files = HelperMethods.GetAllMarkdownFiles(inputDirectory, out rootDirectory);
 
         if (files is null || rootDirectory is null)
             return;
@@ -1417,7 +1365,7 @@ static class Program
 
             foreach (FileInfo tocFile in tocFiles)
             {
-                if (IsFileLinkedFromFile(markdownFile, tocFile))
+                if (HelperMethods.IsFileLinkedFromFile(markdownFile, tocFile))
                     topics[markdownFile.FullName]++;
             }
         }
@@ -1437,12 +1385,15 @@ static class Program
             Console.Write(output.ToString());
     }
     #endregion
+}
 
-    #region Generic helper methods
+#region Generic helper methods
+static class HelperMethods
+{
     /// <summary>
     /// Gets the actual (case-sensitive) file path on the file system for a specified case-insensitive file path.
     /// </summary>
-    private static string GetActualCaseForFilePath(string pathAndFileName)
+    public static string GetActualCaseForFilePath(string pathAndFileName)
     {
         string? directory = Path.GetDirectoryName(pathAndFileName) ??
             throw new FileNotFoundException($"File not found: {pathAndFileName}.");
@@ -1471,7 +1422,7 @@ static class Program
     /// <summary>
     /// Gets the actual (case-sensitive) directory path on the file system for a specified case-insensitive directory path.
     /// </summary>
-    private static string? GetDirectoryCaseSensitive(string directory)
+    public static string? GetDirectoryCaseSensitive(string directory)
     {
         var directoryInfo = new DirectoryInfo(directory);
         if (directoryInfo.Exists)
@@ -1601,7 +1552,7 @@ static class Program
     /// <summary>
     /// Checks if the specified file path is referenced in the specified file.
     /// </summary>
-    private static bool IsFileLinkedFromFile(FileInfo linkedFile, FileInfo linkingFile)
+    public static bool IsFileLinkedFromFile(FileInfo linkedFile, FileInfo linkingFile)
     {
         if (!File.Exists(linkingFile.FullName))
             return false;
@@ -1665,7 +1616,7 @@ static class Program
     /// <summary>
     /// Gets all *.md files recursively, starting in the specified directory.
     /// </summary>
-    private static List<FileInfo> GetMarkdownFiles(string directoryPath, params string[] dirsToIgnore)
+    public static List<FileInfo> GetMarkdownFiles(string directoryPath, params string[] dirsToIgnore)
     {
         DirectoryInfo dir = new(directoryPath);
         IEnumerable<FileInfo> files = dir.EnumerateFiles("*.md", SearchOption.AllDirectories).ToList();
@@ -1685,7 +1636,7 @@ static class Program
     /// <summary>
     /// Gets all *.yml files recursively, starting in the specified directory.
     /// </summary>
-    private static List<FileInfo> GetYAMLFiles(string directoryPath)
+    public static List<FileInfo> GetYAMLFiles(string directoryPath)
     {
         DirectoryInfo dir = new(directoryPath);
         return dir.EnumerateFiles("*.yml", SearchOption.AllDirectories).ToList();
@@ -1695,7 +1646,7 @@ static class Program
     /// Returns a dictionary of all .png/.jpg/.gif/.svg files in the directory.
     /// The search includes the specified directory and (optionally) all its subdirectories.
     /// </summary>
-    private static Dictionary<string, List<string>> GetMediaFiles(string mediaDirectory, bool searchRecursively = true)
+    public static Dictionary<string, List<string>> GetMediaFiles(string mediaDirectory, bool searchRecursively = true)
     {
         DirectoryInfo dir = new(mediaDirectory);
 
@@ -1703,7 +1654,7 @@ static class Program
 
         Dictionary<string, List<string>> mediaFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
-        string[] fileExtensions = [ "*.png", "*.jpg", "*.gif", "*.svg" ]; // Correctly initialize the array
+        string[] fileExtensions = ["*.png", "*.jpg", "*.gif", "*.svg"]; // Correctly initialize the array
 
         foreach (string extension in fileExtensions)
         {
@@ -1722,12 +1673,12 @@ static class Program
     /// Returns a dictionary of all .png/.jpg/.gif/.svg files in the directory.
     /// The search includes the text found in the files.
     /// </summary>
-    private static Dictionary<string, string> ScanMediaFiles(List<string>? imageFilePaths, string ocrModelDirectory)
+    public static Dictionary<string, string> ScanMediaFiles(List<string>? imageFilePaths, string ocrModelDirectory)
     {
 
         Dictionary<string, string> ocrDataForFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
-        if (imageFilePaths is null or { Count : 0 })
+        if (imageFilePaths is null or { Count: 0 })
         {
             Console.WriteLine("\nNo .png/.jpg/.gif/.svg files to scan!");
             return ocrDataForFiles;
@@ -1746,7 +1697,7 @@ static class Program
     }
 
     // Filter ocrDictionary by filterTerms
-    private static Dictionary<string, List<KeyValuePair<string, string>>> FilterMediaFiles(Dictionary<string, string> ocrDictionary, List<string> filterTerms)
+    public static Dictionary<string, List<KeyValuePair<string, string>>> FilterMediaFiles(Dictionary<string, string> ocrDictionary, List<string> filterTerms)
     {
         // Sort the filterTerms to ensure the result is sorted by filterTerm
         filterTerms.Sort();
@@ -1844,5 +1795,5 @@ static class Program
 
         return dir;
     }
-    #endregion
 }
+#endregion
