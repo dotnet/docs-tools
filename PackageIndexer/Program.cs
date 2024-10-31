@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Xml.Linq;
 using CsvHelper;
@@ -8,81 +9,10 @@ namespace PackageIndexer;
 
 internal static class Program
 {
-    static readonly Dictionary<string, string> s_tfmToOpsMoniker = new()
-        {
-            { "net462", "netframework-4.6.2" },
-            { "net47", "netframework-4.7" },
-            { "net471", "netframework-4.7.1" },
-            { "net472", "netframework-4.7.2" },
-            { "net48", "netframework-4.8" },
-            { "net481", "netframework-4.8.1" },
-            { "net6.0", "net-6.0" },
-            { "net7.0", "net-7.0" },
-            { "net8.0", "net-8.0" },
-            { "net9.0", "net-9.0" },
-            { "netstandard2.0", "netstandard-2.0" },
-            { "netstandard2.1", "netstandard-2.1" }
-        };
-
-    static readonly List<string> s_packagesWithTruthDocs =
-    [
-        "Microsoft.Bcl.AsyncInterfaces",
-        "Microsoft.Bcl.Cryptography",
-        "Microsoft.Bcl.Memory",
-        "Microsoft.Bcl.Numerics",
-        "Microsoft.Bcl.TimeProvider",
-        "Microsoft.Extensions.Caching.Abstractions",
-        "Microsoft.Extensions.Caching.Memory",
-        "Microsoft.Extensions.Configuration",
-        "Microsoft.Extensions.Configuration.Abstractions",
-        "Microsoft.Extensions.Configuration.Binder",
-        "Microsoft.Extensions.Configuration.CommandLine",
-        "Microsoft.Extensions.Configuration.EnvironmentVariables",
-        "Microsoft.Extensions.Configuration.FileExtensions",
-        "Microsoft.Extensions.Configuration.Ini",
-        "Microsoft.Extensions.Configuration.Json",
-        "Microsoft.Extensions.Configuration.UserSecrets",
-        "Microsoft.Extensions.Configuration.Xml",
-        "Microsoft.Extensions.DependencyInjection",
-        "Microsoft.Extensions.DependencyInjection.Abstractions",
-        "Microsoft.Extensions.DependencyInjection.Specification.Tests",
-        "Microsoft.Extensions.Diagnostics",
-        "Microsoft.Extensions.Diagnostics.Abstractions",
-        "Microsoft.Extensions.FileProviders.Abstractions",
-        "Microsoft.Extensions.FileProviders.Composite",
-        "Microsoft.Extensions.FileProviders.Physical",
-        "Microsoft.Extensions.HostFactoryResolver.Sources",
-        "Microsoft.Extensions.Hosting",
-        "Microsoft.Extensions.Hosting.Abstractions",
-        "Microsoft.Extensions.Hosting.Systemd",
-        "Microsoft.Extensions.Hosting.WindowsServices",
-        "Microsoft.Extensions.Http",
-        "Microsoft.Extensions.Logging",
-        "Microsoft.Extensions.Logging.Abstractions",
-        "Microsoft.Extensions.Logging.Configuration",
-        "Microsoft.Extensions.Logging.Console",
-        "Microsoft.Extensions.Logging.Debug",
-        "Microsoft.Extensions.Logging.EventLog",
-        "Microsoft.Extensions.Logging.EventSource",
-        "Microsoft.Extensions.Logging.TraceSource",
-        "Microsoft.Extensions.Options",
-        "Microsoft.Extensions.Options.ConfigurationExtensions",
-        "Microsoft.Extensions.Options.DataAnnotations",
-        "Microsoft.Extensions.Primitives",
-        "System.Composition",
-        "System.Diagnostics.EventLog.Messages",
-        "System.Formats.Cbor",
-        "System.Formats.Nrbf",
-        "System.Net.ServerSentEvents",
-        "System.Numerics.Tensors",
-        "System.Runtime.Serialization.Schema",
-        "System.Speech"
-    ];
-
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 0911b", "preview"];
+        args = [@"c:\users\gewarren\desktop\Package Index 1030", "preview"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -130,167 +60,167 @@ internal static class Program
         await DownloadDotnetPackageListAsync(packageListPath, usePreviewVersions);
         await GeneratePackageIndexAsync(packageListPath, packagesPath, indexPackagesPath); //, frameworksPath);
 
-        GenerateCSVFiles(indexPackagesPath, csvPath);
+        CsvUtils.GenerateCSVFiles(indexPackagesPath, csvPath);
 
         Console.WriteLine($"Completed in {stopwatch.Elapsed}");
         Console.WriteLine($"Peak working set: {Process.GetCurrentProcess().PeakWorkingSet64 / (1024 * 1024):N2} MB");
     }
 
-    private static void GenerateCSVFiles(string indexPackagesPath, string csvPath)
-    {
-        Console.WriteLine("Generating CSV files from package index.");
+    //private static void GenerateCSVFiles(string indexPackagesPath, string csvPath)
+    //{
+    //    Console.WriteLine("Generating CSV files from package index.");
 
-        // For each package XML file
-        //   For each framework
-        //     Map it to a known framework name
-        //     Generate a collection of that version + later versions of that framework
-        //     (e.g. add 4.7, 4.7.1, 4.7.2, 4.8, 4.8.1 for net462; add 2.1 for netstandard2.0; add 7.0, 8.0, 9.0 for net6.0)
-        //     Create a dictionary or add to an existing dictionary *for that version* that will become the CSV file -
-        //       pac<num>,[tfm=<tfm>;includeXml=false]<package name>,<package version>
-        //       Example: pac01,[tfm=net9.0;includeXml=false]Microsoft.Extensions.Caching.Abstractions,9.0.0-preview.2.24128.5
-        // Generate a CSV file from each dictionary
+    //    // For each package XML file
+    //    //   For each framework
+    //    //     Map it to a known framework name
+    //    //     Generate a collection of that version + later versions of that framework
+    //    //     (e.g. add 4.7, 4.7.1, 4.7.2, 4.8, 4.8.1 for net462; add 2.1 for netstandard2.0; add 7.0, 8.0, 9.0 for net6.0)
+    //    //     Create a dictionary or add to an existing dictionary *for that version* that will become the CSV file -
+    //    //       pac<num>,[tfm=<tfm>;includeXml=false]<package name>,<package version>
+    //    //       Example: pac01,[tfm=net9.0;includeXml=false]Microsoft.Extensions.Caching.Abstractions,9.0.0-preview.2.24128.5
+    //    // Generate a CSV file from each dictionary
 
-        Dictionary<string, IList<CsvEntry>> csvDictionary = [];
-        Dictionary<string, int> packageCounter = []; // Used for "pac" number in CSV file.
-        foreach (string moniker in s_tfmToOpsMoniker.Values)
-        {
-            csvDictionary.Add(moniker, []);
-            packageCounter.Add(moniker, 1);
-        }
+    //    Dictionary<string, IList<CsvEntry>> csvDictionary = [];
+    //    Dictionary<string, int> packageCounter = []; // Used for "pac" number in CSV file.
+    //    foreach (string moniker in s_tfmToOpsMoniker.Values)
+    //    {
+    //        csvDictionary.Add(moniker, []);
+    //        packageCounter.Add(moniker, 1);
+    //    }
 
-        // Get all XML files (ignores disabled indexes).
-        IEnumerable<string> packageIndexFiles = Directory.EnumerateFiles(indexPackagesPath, "*.xml");
-        foreach (string packageIndexFile in packageIndexFiles)
-        {
-            // Read XML file to get each listed framework.
-            PackageEntry packageEntry = XmlEntryFormat.ReadPackageEntry(packageIndexFile);
+    //    // Get all XML files (ignores disabled indexes).
+    //    IEnumerable<string> packageIndexFiles = Directory.EnumerateFiles(indexPackagesPath, "*.xml");
+    //    foreach (string packageIndexFile in packageIndexFiles)
+    //    {
+    //        // Read XML file to get each listed framework.
+    //        PackageEntry packageEntry = XmlEntryFormat.ReadPackageEntry(packageIndexFile);
 
-            Console.WriteLine($"Creating CSV entries for package {packageEntry.Name}.");
+    //        Console.WriteLine($"Creating CSV entries for package {packageEntry.Name}.");
 
-            // Add to each applicable CSV file.
-            foreach (FrameworkEntry frameworkEntry in packageEntry.FrameworkEntries)
-            {
-                string framework = frameworkEntry.FrameworkName;
-                string opsMoniker;
-                switch (framework)
-                {
-                    case "net462":
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
-                        framework = "net47";
-                        goto case "net47";
-                    case "net47":
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
-                        framework = "net471";
-                        goto case "net471";
-                    case "net471":
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
-                        framework = "net472";
-                        goto case "net472";
-                    case "net472":
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
-                        framework = "net48";
-                        goto case "net48";
-                    case "net48":
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
-                        framework = "net481";
-                        goto case "net481";
-                    case "net481":
-                    case "net6.0":
-                    case "net7.0":
-                    case "net8.0":
-                    case "net9.0":
-                    case "netstandard2.0":
-                    case "netstandard2.1":
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
-                        break;
-                    default:
-                        Console.WriteLine($"Ignoring target framework {framework}.");
-                        break;
-                }
-            }
-        }
+    //        // Add to each applicable CSV file.
+    //        foreach (FrameworkEntry frameworkEntry in packageEntry.FrameworkEntries)
+    //        {
+    //            string framework = frameworkEntry.FrameworkName;
+    //            string opsMoniker;
+    //            switch (framework)
+    //            {
+    //                case "net462":
+    //                    opsMoniker = s_tfmToOpsMoniker[framework];
+    //                    AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+    //                    framework = "net47";
+    //                    goto case "net47";
+    //                case "net47":
+    //                    opsMoniker = s_tfmToOpsMoniker[framework];
+    //                    AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+    //                    framework = "net471";
+    //                    goto case "net471";
+    //                case "net471":
+    //                    opsMoniker = s_tfmToOpsMoniker[framework];
+    //                    AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+    //                    framework = "net472";
+    //                    goto case "net472";
+    //                case "net472":
+    //                    opsMoniker = s_tfmToOpsMoniker[framework];
+    //                    AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+    //                    framework = "net48";
+    //                    goto case "net48";
+    //                case "net48":
+    //                    opsMoniker = s_tfmToOpsMoniker[framework];
+    //                    AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+    //                    framework = "net481";
+    //                    goto case "net481";
+    //                case "net481":
+    //                case "net6.0":
+    //                case "net7.0":
+    //                case "net8.0":
+    //                case "net9.0":
+    //                case "netstandard2.0":
+    //                case "netstandard2.1":
+    //                    opsMoniker = s_tfmToOpsMoniker[framework];
+    //                    AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, frameworkEntry);
+    //                    break;
+    //                default:
+    //                    Console.WriteLine($"Ignoring target framework {framework}.");
+    //                    break;
+    //            }
+    //        }
+    //    }
 
-        // Update 08/14: Removed since it caused the pipeline to fail on dependencies.
-        //// Special case for System.ServiceModel.Primitives - add version 4.10.3.
-        //// (See https://github.com/dotnet/dotnet-api-docs/pull/10164#discussion_r1696016010.)
-        //AddCsvEntryToDict("netstandard-2.0", csvDictionary, packageCounter,
-        //    PackageEntry.Create("System.ServiceModel.Primitives", "4.10.3", "https://github.com/dotnet/wcf", []),
-        //    FrameworkEntry.Create("netstandard2.0")
-        //    );
+    //    // Update 08/14: Removed since it caused the pipeline to fail on dependencies.
+    //    //// Special case for System.ServiceModel.Primitives - add version 4.10.3.
+    //    //// (See https://github.com/dotnet/dotnet-api-docs/pull/10164#discussion_r1696016010.)
+    //    //AddCsvEntryToDict("netstandard-2.0", csvDictionary, packageCounter,
+    //    //    PackageEntry.Create("System.ServiceModel.Primitives", "4.10.3", "https://github.com/dotnet/wcf", []),
+    //    //    FrameworkEntry.Create("netstandard2.0")
+    //    //    );
 
-        // Create the directory.
-        Directory.CreateDirectory(csvPath);
+    //    // Create the directory.
+    //    Directory.CreateDirectory(csvPath);
 
-        foreach (KeyValuePair<string, IList<CsvEntry>> tfm in csvDictionary)
-        {
-            // CSV file names must match the folder name in the "binaries" repo:
-            // e.g. netframework-4.6.2, netstandard-2.0, net-8.0.
-            string filePath = Path.Combine(csvPath, string.Concat(tfm.Key, ".csv"));
+    //    foreach (KeyValuePair<string, IList<CsvEntry>> tfm in csvDictionary)
+    //    {
+    //        // CSV file names must match the folder name in the "binaries" repo:
+    //        // e.g. netframework-4.6.2, netstandard-2.0, net-8.0.
+    //        string filePath = Path.Combine(csvPath, string.Concat(tfm.Key, ".csv"));
 
-            // Delete the file if it already exists.
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
+    //        // Delete the file if it already exists.
+    //        if (File.Exists(filePath))
+    //        {
+    //            File.Delete(filePath);
+    //        }
 
-            using var writer = new StreamWriter(filePath);
+    //        using var writer = new StreamWriter(filePath);
 
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-            {
-                // Don't write the header.
-                HasHeaderRecord = false,
-            };
-            using var csv = new CsvWriter(writer, config);
-            csv.WriteRecords(tfm.Value);
-        }
+    //        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+    //        {
+    //            // Don't write the header.
+    //            HasHeaderRecord = false,
+    //        };
+    //        using var csv = new CsvWriter(writer, config);
+    //        csv.WriteRecords(tfm.Value);
+    //    }
 
-        static void AddCsvEntryToDict(
-            string opsMoniker,
-            Dictionary<string, IList<CsvEntry>> csvDictionary,
-            Dictionary<string, int> packageCounter,
-            PackageEntry packageEntry,
-            FrameworkEntry tfm
-            )
-        {
-            // Special case for packages from dotnet/extensions repo - include XML files.
-            bool includeXml = string.Equals(
-                packageEntry.Repository,
-                "https://github.com/dotnet/extensions",
-                StringComparison.InvariantCultureIgnoreCase
-                );
+    //    static void AddCsvEntryToDict(
+    //        string opsMoniker,
+    //        Dictionary<string, IList<CsvEntry>> csvDictionary,
+    //        Dictionary<string, int> packageCounter,
+    //        PackageEntry packageEntry,
+    //        FrameworkEntry tfm
+    //        )
+    //    {
+    //        // Special case for packages from dotnet/extensions repo - include XML files.
+    //        bool includeXml = string.Equals(
+    //            packageEntry.Repository,
+    //            "https://github.com/dotnet/extensions",
+    //            StringComparison.InvariantCultureIgnoreCase
+    //            );
 
-            // Except don't include XML file for Microsoft.Extensions.Diagnostics.ResourceMonitoring
-            // See https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787.
-            if (string.Equals(
-                packageEntry.Name,
-                "Microsoft.Extensions.Diagnostics.ResourceMonitoring",
-                StringComparison.InvariantCultureIgnoreCase))
-                includeXml = false;
+    //        // Except don't include XML file for Microsoft.Extensions.Diagnostics.ResourceMonitoring
+    //        // See https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787.
+    //        if (string.Equals(
+    //            packageEntry.Name,
+    //            "Microsoft.Extensions.Diagnostics.ResourceMonitoring",
+    //            StringComparison.InvariantCultureIgnoreCase))
+    //            includeXml = false;
 
-            // Special case for newer assemblies - include XML documentation files.
-            if (s_packagesWithTruthDocs.Contains(packageEntry.Name))
-                includeXml = true;
+    //        // Special case for newer assemblies - include XML documentation files.
+    //        if (s_packagesWithTruthDocs.Contains(packageEntry.Name))
+    //            includeXml = true;
 
-            string squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml}]";
+    //        string squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml}]";
 
-            // Special case for System.ServiceModel.Primitives - use reference assemblies.
-            if (string.Equals(packageEntry.Name, "System.ServiceModel.Primitives", StringComparison.InvariantCultureIgnoreCase))
-                squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml};libpath=ref]";
+    //        // Special case for System.ServiceModel.Primitives - use reference assemblies.
+    //        if (string.Equals(packageEntry.Name, "System.ServiceModel.Primitives", StringComparison.InvariantCultureIgnoreCase))
+    //            squareBrackets = $"[tfm={tfm.FrameworkName};includeXml={includeXml};libpath=ref]";
 
-            CsvEntry entry = CsvEntry.Create(
-                string.Concat("pac", packageCounter[opsMoniker]++),
-                string.Concat(squareBrackets, packageEntry.Name),
-                packageEntry.Version
-                );
-            csvDictionary[opsMoniker].Add(entry);
-        }
-    }
+    //        CsvEntry entry = CsvEntry.Create(
+    //            string.Concat("pac", packageCounter[opsMoniker]++),
+    //            string.Concat(squareBrackets, packageEntry.Name),
+    //            packageEntry.Version
+    //            );
+    //        csvDictionary[opsMoniker].Add(entry);
+    //    }
+    //}
 
     private static async Task DownloadDotnetPackageListAsync(string packageListPath, bool usePreviewVersions)
     {
