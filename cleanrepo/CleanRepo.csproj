@@ -17,6 +17,6 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Tesseract" Version="5.2.0" />
-    <PackageReference Include="Microsoft.Build" Version="17.11.4" />
+    <PackageReference Include="Microsoft.Build" Version="17.12.6" />
   </ItemGroup>
 </Project>
