@@ -111,7 +111,7 @@ class Program
                     if (docFxRepo.AllTocFiles is null || markdownFiles is null)
                         return;
 
-                    ListOrphanedArticles(docFxRepo.AllTocFiles, markdownFiles, options.Delete!.Value);
+                    ListOrphanedArticles(docFxRepo.AllTocFiles, markdownFiles, options.Delete);
                     break;
                 }
             case "FindOrphanedImages":
@@ -127,7 +127,7 @@ class Program
                     Console.WriteLine($"\nSearching the '{options.TargetDirectory}' directory recursively " +
                         $"for orphaned .png/.jpg/.gif/.svg files...\n");
 
-                    docFxRepo.ListOrphanedImages(options.Delete!.Value, "snippets");
+                    docFxRepo.ListOrphanedImages(options.Delete, "snippets");
                     break;
                 }
             case "CatalogImages":
@@ -265,7 +265,7 @@ class Program
                     else
                         Console.WriteLine($"\nChecking {includeFiles.Count} include files.");
 
-                    ListOrphanedIncludes(options.TargetDirectory, includeFiles, options.Delete!.Value);
+                    ListOrphanedIncludes(options.TargetDirectory, includeFiles, options.Delete);
                     break;
                 }
             case "FindOrphanedSnippets":
@@ -287,7 +287,7 @@ class Program
                     List<(string, List<string?>)> solutionFiles = GetSolutionFiles(options.TargetDirectory);
 
                     ListOrphanedSnippets(options.TargetDirectory, snippetFiles, solutionFiles,
-                        options.Delete!.Value, options.XmlSource);
+                        options.Delete, options.XmlSource);
                     break;
                 }
             // Replace links to articles that are redirected in the master redirection files.
