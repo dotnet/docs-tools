@@ -12,7 +12,7 @@ namespace CleanRepo;
 class DocFxRepo(string startDirectory, string urlBasePath)
 {
     internal string UrlBasePath { get; set; } = urlBasePath;
-    public DirectoryInfo? DocFxDirectory { get; private set; } = Program.GetDirectory(new DirectoryInfo(startDirectory), "docfx.json");
+    public DirectoryInfo? DocFxDirectory { get; private set; } = HelperMethods.GetDirectory(new DirectoryInfo(startDirectory), "docfx.json");
 
     internal Dictionary<string, List<string>>? _imageRefs = null;
     internal Dictionary<string, string>? _ocrRefs = null;
@@ -36,8 +36,8 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         {
             if (_allMdAndYmlFiles == null)
             {
-                _allMdAndYmlFiles = Program.GetAllMarkdownFiles(DocFxDirectory!.FullName, out _);
-                List<FileInfo>? yamlFiles = Program.GetAllYamlFiles(DocFxDirectory!.FullName, out _);
+                _allMdAndYmlFiles = HelperMethods.GetAllMarkdownFiles(DocFxDirectory!.FullName, out _);
+                List<FileInfo>? yamlFiles = HelperMethods.GetAllYamlFiles(DocFxDirectory!.FullName, out _);
                 if (yamlFiles is not null)
                     _allMdAndYmlFiles?.AddRange(yamlFiles);
             }
@@ -66,7 +66,7 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         get
         {
             if (_opsConfigFile == null)
-                _opsConfigFile = Program.GetFileHereOrInParent(DocFxDirectory!.FullName, ".openpublishing.publish.config.json");
+                _opsConfigFile = HelperMethods.GetFileHereOrInParent(DocFxDirectory!.FullName, ".openpublishing.publish.config.json");
 
             if (_opsConfigFile == null)
                 throw new InvalidOperationException($"Could not find OPS config file for the {DocFxDirectory!.FullName} directory.");
