@@ -14,6 +14,11 @@ This command-line tool helps you clean up a DocFx-based content repo. It can:
 
 ## Usage
 
+If you're building the app yourself, it's easiest to set the configuration settings in the `appsettings.json` file.
+You can also set some or all of the configuration settings in the command line, for example, "CleanRepo.exe /Options:DocFxDirectory c:\path\to\docs\repo".
+
+The settings are described in the next section.
+
 | Config setting | Description |
 | - | - |
 | FindOrphanedArticles | Find orphaned .md articles. |
