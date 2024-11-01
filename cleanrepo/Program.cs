@@ -29,10 +29,6 @@ class Program
 
     static void Main(string[] args)
     {
-        //var builder = new ConfigurationBuilder()
-        //    .SetBasePath(Directory.GetCurrentDirectory())
-        //    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
         builder.Configuration.Sources.Clear();
 
@@ -48,13 +44,6 @@ class Program
         Options options = new();
         builder.Configuration.GetSection(nameof(Options))
             .Bind(options);
-
-        using IHost host = builder.Build();
-
-        //IConfiguration configuration = builder.Build();
-
-        //var options = new Options();
-        //configuration.GetSection("Options").Bind(options);
 
         RunOptions(options);
     }
