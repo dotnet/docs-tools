@@ -6,78 +6,27 @@ branding:
   icon: 'sliders'
   color: 'purple'
 inputs:
+  function:
+    description: 'The function you want to run: FindOrphanedArticles, FindOrphanedImages, FindOrphanedIncludes, FindOrphanedSnippets, CatalogImages, CatalogImagesWithText, FilterImagesForText, ReplaceRedirectTargets, ReplaceWithRelativeLinks, or RemoveRedirectHops.'
+    required: true
   docfx_directory:
     description: 'The directory that contains the docfx.json file for the docset.'
     required: true
-  articles_directory:
-    description: 'The directory in which you want to clean up orphaned Markdown files (except INCLUDE files), 
-                  update redirected links, or replace site-relative links with file-relative links.'
-  media_directory:
-    description: 'The directory in which you want to clean up orphaned image files.'
-  snippets_directory:
-    description: 'The directory in which you want to clean up orphaned .cs and .vb files.'
-  includes_directory:
-    description: 'The directory in which you want to clean up orphaned Markdown INCLUDE files.'
+  target_directory:
+    description: 'The top-level directory that you want to "clean".'
+    required: true
   url_base_path:
-    description: 'The URL base path for the docset, e.g. "/windows/uwp" or "/dotnet"'
-  delete:
-    description: 'True to delete orphaned files.'
-    default: 'false'
-  orphaned_articles:
-    description: 'Find orphaned Markdown articles.'
-    default: 'false'
-  orphaned_images:
-    description: 'Find orphaned .png, .gif, .jpg, or .svg files.'
-    default: 'false'
-  catalog_images:
-    description: 'Map images to the markdown/YAML files that reference them.'
-    default: 'false'
-  orphaned_snippets:
-    description: 'Find orphaned .cs and .vb files.'
-    default: 'false'
-  orphaned_includes:
-    description: 'Find orphaned INCLUDE files.'
-    default: 'false'
-  replace_redirects:
-    description: 'Find backlinks to redirected files and update them with the new target.'
-    default: 'false'
-  relative_links:
-    description: 'Replace site-relative links with file-relative links.'
-    default: 'false'
-  remove_hops:
-    description: 'Clean redirection JSON file by replacing targets that are themselves redirected (daisy chains).'
-    default: 'false'
+    description: 'The URL base path for your docset, for example, /dotnet or /windows/uwp.'
+    required: true
 runs:
   using: docker
   image: Dockerfile
   args:
-    - '--docfx-directory'
+    - '/Options:Function'
+    - ${{ inputs.function }}
+    - '/Options:DocFxDirectory'
     - ${{ inputs.docfx_directory }}
-    - '--snippets-directory'
-    - ${{ inputs.snippets_directory }}
-    - '--includes-directory'
-    - ${{ inputs.includes_directory }}
-    - '--media-directory'
-    - ${{ inputs.media_directory }}
-    - '--articles-directory'
-    - ${{ inputs.articles_directory }}
-    - '--url-base-path'
+    - '/Options:TargetDirectory'
+    - ${{ inputs.target_directory }}
+    - '/Options:UrlBasePath'
     - ${{ inputs.url_base_path }}
-    - '--delete'
-    - ${{ inputs.delete }}
-    - '--orphaned-articles'
-    - ${{ inputs.orphaned_articles }}
-    - '--orphaned-images'
-    - ${{ inputs.orphaned_images }}
-    - '--catalog-images'
-    - ${{ inputs.catalog_images }}
-    - '--orphaned-snippets'
-    - ${{ inputs.orphaned_snippets }} 
-    - '--orphaned-includes'
-    - ${{ inputs.orphaned_includes }}
-    - '--replace-redirects'
-    - ${{ inputs.replace_redirects }}
-    - '--relative-links'
-    - ${{ inputs.relative_links }}
-    - '--remove-hops'
-    - ${{ inputs.remove_hops }}
