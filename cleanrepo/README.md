@@ -14,12 +14,12 @@ This command-line tool helps you clean up a DocFx-based content repo. It can:
 
 ## Usage
 
-If you're building the app yourself, it's easiest to set the configuration settings in the `appsettings.json` file.
-You can also set some or all of the configuration settings in the command line, for example, "CleanRepo.exe /Options:DocFxDirectory c:\path\to\docs\repo".
+If you're running the app locally, it's easiest to set the configuration settings in the `appsettings.json` file.
+You can also set some or all of the configuration settings in the command line, for example, `CleanRepo.exe /Options:Function FindOrphanedArticles /Options:DocFxDirectory c:\path\to\docs\repo /Options:TargetDirectory c:\path\to\docs\repo\subfolder /Options:UrlBasePath /dotnet`.
 
 The settings are described in the next section.
 
-| Config setting | Description |
+| Function | Description |
 | - | - |
 | FindOrphanedArticles | Find orphaned .md articles. |
 | FindOrphanedImages | Find orphaned .png, .gif, .svg, or .jpg files.<br/>**Note:** The tool does not know if images are referenced in a code sample project, so we recommend not running this option on a directory that contains samples. |
@@ -31,8 +31,6 @@ The settings are described in the next section.
 | ReplaceWithRelativeLinks | Replace site-relative links with file-relative links. |
 | CatalogImagesWithText | Map images to the markdown/YAML files that reference them, with all text found in images. The output file is prefixed with `OcrImageFiles-`. |
 | FilterImagesForText | Filter images for text. The output file is prefixed with `FilteredOcrImageFiles-`. |
-| OcrModelDirectory | Directory that contains the OCR (Tesseract) models for image scanning. |
-| FilterTextJsonFile | JSON file of array of strings to filter OCR results with, example: ["Azure","Microsoft"]. |
 
 ## Image to text examples
 
