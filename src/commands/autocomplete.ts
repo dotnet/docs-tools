@@ -15,15 +15,15 @@ export const xrefStarterAutoComplete: CompletionItemProvider = {
         token: CancellationToken,
         context: CompletionContext): ProviderResult<CompletionList<CompletionItem> | CompletionItem[]> => {
 
-        const range = document.getWordRangeAtPosition(position, /[<(](xref):/si);
+        const range = document.getWordRangeAtPosition(position, /<xref:/si);
         if (range) {
 
             const text = document.getText(range);
 
             const searchOptions: SearchOptions = {
                 apiName: ApiName.dotnet,
-                skipBrackets: true,
-                skipDisplayStyle: text.startsWith('('),
+                skipBrackets: false,
+                skipDisplayStyle: false,
                 hideCustomDisplayStyle: false,
                 replaceXrefAndBrackets: true
             };

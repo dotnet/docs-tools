@@ -53,7 +53,7 @@ export const replaceExistingXrefText = (replacement: string): void => {
     const editor = window.activeTextEditor;
 
     // The final angle bracket may or may not be present.
-    const range = editor?.document.getWordRangeAtPosition(editor?.selection.end, /<(xref):>?/si);
+    const range = editor?.document.getWordRangeAtPosition(editor?.selection.end, /<xref:>?/si);
     if (range) {
         editor!.selection = new Selection(range.start, range.end);
     }
