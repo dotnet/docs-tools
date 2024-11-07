@@ -4,11 +4,13 @@ import {
     ChatRequest,
     ChatRequestHandler,
     ChatResponseStream,
+    Command,
     env,
     LanguageModelChatMessage,
     lm,
+    window,
 } from 'vscode';
-import { BASE_PROMPT, getBreakingChangePrompt, MODEL_SELECTOR } from '../consts';
+import { BASE_PROMPT, copyAIStreamToClipboard, getBreakingChangePrompt, MODEL_SELECTOR } from '../consts';
 import { getIssue } from '../services/github-api';
 
 export const chatRequestHandler: ChatRequestHandler = async (
@@ -19,18 +21,24 @@ export const chatRequestHandler: ChatRequestHandler = async (
 
     console.log(`Received chat request: ${request.prompt}`);
 
-    const userPrompt = request.prompt;
     let prompt = '';
 
     if (request.command === 'breaking-changes') {
-        const issue = await getIssue(userPrompt);
+        const issueUrl = request.prompt;
+        const issue = await getIssue(issueUrl);
         if (issue) {
-            prompt = getBreakingChangePrompt(issue);
+            prompt = getBreakingChangePrompt(issue, issueUrl);
         }
     }
 
-    const [model] = await lm.selectChatModels(MODEL_SELECTOR);
-    if (model) {
+    if (prompt === '') {
+        return;
+    }
+
+    const models = await lm.selectChatModels(MODEL_SELECTOR);
+    if (models?.length > 0) {
+        const model = models[0];
+
         const messages = [
             LanguageModelChatMessage.Assistant(BASE_PROMPT),
             LanguageModelChatMessage.User(prompt),
@@ -38,12 +46,34 @@ export const chatRequestHandler: ChatRequestHandler = async (
 
         let markdown = '';
 
+        let tokenCount = 0;
+        messages.forEach(async (message) => {
+            tokenCount += await model.countTokens(message);
+        });
+
+        if (tokenCount > model.maxInputTokens) {
+            stream.markdown(
+                `Sorry, but the AI model can't process that much text. 😟`
+            );
+            return;
+        }
+
         const chatResponse = await model.sendRequest(messages, {}, token);
         for await (const fragment of chatResponse.text) {
             markdown += fragment;
             stream.markdown(fragment);
         }
 
-        env.clipboard.writeText(markdown);
+        const command: Command = {
+            title: 'Copy raw AI response to clipboard?',
+            command: copyAIStreamToClipboard,
+            arguments: [markdown]
+        };
+
+        stream.button(command);
+    } else {
+        stream.markdown(
+            `Sorry, but we're not seeing any AI models available. 😟`
+        );
     }
 };

@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { insertLink } from './commands/insertLink';
-import { insertApiRefLinkCommandName, insertXrefLinkCommandName, transformXrefToOtherCommandName, toolName } from './consts';
+import { insertApiRefLinkCommandName, insertXrefLinkCommandName, transformXrefToOtherCommandName, toolName, copyAIStreamToClipboard } from './consts';
 import { LinkType } from './commands/types/LinkType';
 import { xrefStarterAutoComplete, xrefDisplayTypeAutoComplete, xrefInlineAutoComplete } from './commands/autocomplete';
 import { SearchOptions } from './commands/types/SearchOptions';
@@ -33,6 +33,12 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       insertApiRefLinkCommandName,
       async () => await insertLink(LinkType.Markdown, undefined)),
+
+    vscode.commands.registerCommand(
+      copyAIStreamToClipboard,
+      (markdown) =>{
+        vscode.env.clipboard.writeText(markdown);
+      }),
 
     vscode.commands.registerCommand(
       insertXrefLinkCommandName,

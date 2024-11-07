@@ -32,6 +32,12 @@ export const insertXrefLinkCommandName: string = `${toolName}.insertXrefLink`;
 export const transformXrefToOtherCommandName: string = `${toolName}.transformXrefToOther`;
 
 /**
+ * The name of the copy AI stream to clipboard command.
+ * @constant `"xrefHelper.copyAIStreamToClipboard"`
+ */
+export const copyAIStreamToClipboard: string = `${toolName}.copyAIStreamToClipboard`;
+
+/**
  * The quick pick items for selecting the URL format.
  * Excludes the custom name option.
  */
@@ -71,7 +77,7 @@ export const MODEL_SELECTOR: LanguageModelChatSelector = {
     family: "gpt-4o"
 };
 
-export function getBreakingChangePrompt(issue: Issue): string {
+export function getBreakingChangePrompt(issue: Issue, issueUrl: string): string {
     return `All headings and titles should be in sentence case-but start with a capital letter for the first word. Please create a Markdown file that contains the breaking changes from the following GitHub issue:
     
     "${issue.body}"
@@ -82,6 +88,7 @@ export function getBreakingChangePrompt(issue: Issue): string {
     description: <TODO: Summarize the article here, but limit to 160 characters.>
     ms.date: ${new Date().toLocaleDateString('en-US')}
     ai-usage: ai-assisted
+    ms.custom: ${issueUrl}
     ---
 
     And then the following sections:
