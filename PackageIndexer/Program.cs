@@ -1,9 +1,5 @@
-﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Globalization;
+﻿using System.Diagnostics;
 using System.Xml.Linq;
-using CsvHelper;
-using CsvHelper.Configuration;
 
 namespace PackageIndexer;
 
@@ -12,7 +8,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 1030", "preview"];
+        args = [@"c:\users\gewarren\desktop\Package Index 1106", "preview"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -58,7 +54,7 @@ internal static class Program
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         await DownloadDotnetPackageListAsync(packageListPath, usePreviewVersions);
-        await GeneratePackageIndexAsync(packageListPath, packagesPath, indexPackagesPath); //, frameworksPath);
+        await GeneratePackageIndexAsync(packageListPath, packagesPath, indexPackagesPath);
 
         CsvUtils.GenerateCSVFiles(indexPackagesPath, csvPath);
 
