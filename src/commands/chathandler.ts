@@ -46,18 +46,6 @@ export const chatRequestHandler: ChatRequestHandler = async (
 
         let markdown = '';
 
-        let tokenCount = 0;
-        messages.forEach(async (message) => {
-            tokenCount += await model.countTokens(message);
-        });
-
-        if (tokenCount > model.maxInputTokens) {
-            stream.markdown(
-                `Sorry, but the AI model can't process that much text. 😟`
-            );
-            return;
-        }
-
         const chatResponse = await model.sendRequest(messages, {}, token);
         for await (const fragment of chatResponse.text) {
             markdown += fragment;
