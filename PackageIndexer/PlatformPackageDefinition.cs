@@ -8,11 +8,14 @@ internal static class PlatformPackageDefinition
 
     public static readonly List<string> PackagesWithTruthDocs =
     [
-        "Microsoft.Bcl.AsyncInterfaces",
-        "Microsoft.Bcl.Cryptography",
-        "Microsoft.Bcl.Memory",
-        "Microsoft.Bcl.Numerics",
-        "Microsoft.Bcl.TimeProvider",
+        // Don't include docs from Microsoft.Bcl* packages.
+        // For example, Ms.Bcl.Memory includes the System types Index and Range,
+        // and some very bad docs for these types. (Convo with Carlos 11/18/24.)
+        //"Microsoft.Bcl.AsyncInterfaces",
+        //"Microsoft.Bcl.Cryptography",
+        //"Microsoft.Bcl.Memory",
+        //"Microsoft.Bcl.Numerics",
+        //"Microsoft.Bcl.TimeProvider",
         "Microsoft.Extensions.Caching.Abstractions",
         "Microsoft.Extensions.Caching.Memory",
         "Microsoft.Extensions.Configuration",
@@ -53,6 +56,7 @@ internal static class PlatformPackageDefinition
         "Microsoft.Extensions.Primitives",
         "System.Composition",
         "System.Diagnostics.EventLog.Messages",
+        "System.Formats.Asn1",
         "System.Formats.Cbor",
         "System.Formats.Nrbf",
         "System.Net.ServerSentEvents",
