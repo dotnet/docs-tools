@@ -5,10 +5,8 @@ import {
     ChatRequestHandler,
     ChatResponseStream,
     Command,
-    env,
     LanguageModelChatMessage,
     lm,
-    window,
 } from 'vscode';
 import { BASE_PROMPT, copyAIStreamToClipboard, getBreakingChangePrompt, MODEL_SELECTOR } from '../consts';
 import { getIssue } from '../services/github-api';

@@ -109,12 +109,31 @@ export class ApiService {
  */
 function appendOverloads(searchResults: SearchResults) {
     let visitedDisplayName: string = "";
+    let visitedItemType: ItemType | undefined = undefined;
     let foundOverload: boolean = false;
     let previousOverload: SearchResult | undefined = undefined;
     const resultsToInject: Map<string, { targetIndex: number; result: SearchResult; }> = new Map();
 
     for (let index = searchResults.results.length - 1; index >= 0; index--) {
         const result = searchResults.results[index];
+
+        if (result.itemType !== ItemType.method &&
+            result.itemType !== ItemType.constructor) {
+            foundOverload = false;
+            visitedItemType = undefined;
+            continue;
+        }
+
+        if (visitedDisplayName && result.displayName.startsWith(visitedDisplayName) &&
+            result.itemType === visitedItemType) {
+            // We have an overload, so add a new result.
+            console.log(`found overload: ${result.displayName}`);
+            previousOverload = result;
+            foundOverload = true;
+        }
+
+        visitedItemType = result.itemType;
+        visitedDisplayName = result.displayName.substring(0, result.displayName.indexOf('('));
 
         if (foundOverload && previousOverload) {
             // Add a new result before the overload.
@@ -131,37 +150,6 @@ function appendOverloads(searchResults: SearchResults) {
 
             foundOverload = false;
         }
-
-        if (result.itemType !== ItemType.method &&
-            result.itemType !== ItemType.constructor) {
-            foundOverload = false;
-            continue;
-        }
-
-        if (visitedDisplayName && result.displayName.startsWith(visitedDisplayName)) {
-            // We have an overload, so add a new result.
-            console.log(`found overload: ${result.displayName}`);
-            previousOverload = result;
-            foundOverload = true;
-        }
-
-        visitedDisplayName = result.displayName.substring(0, result.displayName.indexOf('('));
-    }
-
-    // If we fall off the loop and we still have an overload, add a new result.
-    if (foundOverload && previousOverload) {
-        resultsToInject.set(
-            visitedDisplayName, {
-            targetIndex: 0,
-            result: {
-                displayName: `${visitedDisplayName}*`,
-                itemType: previousOverload.itemType,
-                description: previousOverload.description,
-                url: previousOverload.url
-            }
-        });
-
-        foundOverload = false;
     }
 
     const overloads = Array.from(resultsToInject.values()).reverse();

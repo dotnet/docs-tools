@@ -1,9 +1,7 @@
 import fetch from "node-fetch";
 import { parseStringPromise } from "xml2js";
 import { ItemType } from "../commands/types/ItemType";
-import { authentication, AuthenticationSession } from "vscode";
 import { HeadersInit } from "node-fetch";
-import { ConfigReader } from "../configuration/config-reader";
 import { parse } from "yaml";
 import { getGitHubSessionToken } from "./github-auth-service";
 
