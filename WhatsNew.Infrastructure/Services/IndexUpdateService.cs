@@ -15,8 +15,11 @@ public class IndexUpdateService
 
     public async Task UpdateWhatsNewLandingPage()
     {
-        if (_configuration.Repository.NavigationOptions is null)
+        if (_configuration.Repository.NavigationOptions?.RepoIndexFolder is null)
+        {
+            Console.WriteLine("No index folder specified in the configuration. Skipping index update.");
             return;
+        }
 
         // Update Index.YML:
         var indexFile = Path.Combine(Path.Combine(_configuration.PathToRepoRoot, _configuration.Repository.NavigationOptions.RepoIndexFolder), "index.yml");

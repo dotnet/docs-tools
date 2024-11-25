@@ -16,8 +16,11 @@ public class TocUpdateService
 
     public async Task UpdateWhatsNewToc()
     {
-        if (_configuration.Repository.NavigationOptions is null)
+        if (_configuration.Repository.NavigationOptions?.RepoTocFolder is null)
+        {
+            Console.WriteLine("No TOC folder specified in the configuration. Skipping TOC update.");
             return;
+        }
 
         // Update TOC.YML:
         // 1. Read Toc:
