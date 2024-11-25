@@ -15,7 +15,7 @@ public class IndexUpdateService
 
     public async Task UpdateWhatsNewLandingPage()
     {
-        if (_configuration.Repository.NavigationOptions is null)
+        if (_configuration.Repository.NavigationOptions?.RepoIndexFolder is null)
             return;
 
         // Update Index.YML:

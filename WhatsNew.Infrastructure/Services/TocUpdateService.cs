@@ -16,7 +16,7 @@ public class TocUpdateService
 
     public async Task UpdateWhatsNewToc()
     {
-        if (_configuration.Repository.NavigationOptions is null)
+        if (_configuration.Repository.NavigationOptions?.RepoTocFolder is null)
             return;
 
         // Update TOC.YML:
