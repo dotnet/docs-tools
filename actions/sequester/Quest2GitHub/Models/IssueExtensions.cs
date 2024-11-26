@@ -17,7 +17,12 @@ public static class IssueExtensions
         int? priority = issue.GetPriority(storySize);
         bool isPastIteration = storySize?.IsPastIteration ?? false;
 
-        QuestIteration? iteration = storySize?.ProjectIteration(iterations);
+        QuestIteration iteration = storySize?.ProjectIteration(iterations) ?? QuestIteration.FutureIteration(iterations);
+
+        if (isPastIteration || iteration is null)
+        {
+            iteration = QuestIteration.FutureIteration(iterations);
+        }
 
         int parentNodeId = 0;
 
@@ -27,7 +32,7 @@ public static class IssueExtensions
             {
                 if (issue.Labels.Any(l => l.Name == pair.Label) || (pair.Label is null))
                 {
-                    if ((pair.Semester is null) || (iteration?.IsInSemester(pair.Semester) is true))
+                    if ((pair.Semester is null) || (iteration.IsInSemester(pair.Semester) is true))
                     {
                         parentNodeId = pair.ParentNodeId;
                         break;

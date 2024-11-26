@@ -127,10 +127,7 @@ public class QuestWorkItem
     /// <param name="questClient">The quest client.</param>
     /// <param name="ospoClient">the MS open source programs office client.</param>
     /// <param name="path">The path component for the area path.</param>
-    /// <param name="currentIteration">The current AzDo iteration</param>
-    /// <param name="allIterations">The set of all iterations to search</param>
     /// <param name="requestLabelNodeId">The ID of the request label</param>
-    /// <param name="tagMap">The map of GH label to tags</param>
     /// <returns>The newly created linked Quest work item.</returns>
     /// <remarks>
     /// Fill in the Json patch document from the GitHub issue.
@@ -143,13 +140,9 @@ public class QuestWorkItem
         OspoClient? ospoClient,
         string path,
         string? requestLabelNodeId,
-        QuestIteration currentIteration,
-        IEnumerable<QuestIteration> allIterations,
-        IEnumerable<LabelToTagMap> tagMap,
-        IEnumerable<ParentForLabel> parentNodes)
+        ExtendedIssueProperties issueProperties)
     {
         string areaPath = $"""{questClient.QuestProject}\{path}""";
-        var issueProperties = issue.ExtendedProperties(allIterations, tagMap, parentNodes);
 
         List<JsonPatchDocument> patchDocument =
         [
@@ -208,18 +201,11 @@ public class QuestWorkItem
             Value = assigneeID
         };
         patchDocument.Add(assignPatch);
-        QuestIteration? iteration = issueProperties.LatestIteration;
-        Console.WriteLine($"Latest GitHub sprint project: {issueProperties.Month}-{issueProperties.CalendarYear}, size: {issueProperties.GitHubSize}");
-        if (issueProperties.IsPastIteration)
-        {
-            Console.WriteLine($"Moving to the backlog / future iteration.");
-            iteration = QuestIteration.FutureIteration(allIterations);
-        }
         patchDocument.Add(new JsonPatchDocument
         {
             Operation = Op.Add,
             Path = "/fields/System.IterationPath",
-            Value = iteration?.Path ?? currentIteration.Path,
+            Value = issueProperties.IterationPath,
         });
         if (issueProperties.StoryPoints is not null)
         {
@@ -265,26 +251,6 @@ public class QuestWorkItem
             });
         */
 
-        // TODO:  I don't think this works. I think the state is ignored for newly created
-        // work items. An update must be called to fix it.
-        if (!issue.IsOpen)
-        {
-            // Created completed work item:
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.State",
-                Value = "Closed",
-            });
-        } else 
-        {
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.State",
-                Value = (issueProperties.IsPastIteration) ? "New" : "Committed",
-            });
-        }
         JsonElement result = default;
         QuestWorkItem? newItem;
         try
@@ -304,11 +270,6 @@ public class QuestWorkItem
             // Yes, this could throw again. IF so, it's a new error.
             result = await questClient.CreateWorkItem(patchDocument);
             newItem = WorkItemFromJson(result);
-        }
-        // Add the closing PR in a separate request. 
-        if (issue.ClosingPRUrl is not null)
-        {
-            newItem = await newItem.AddClosingPR(questClient, issue.ClosingPRUrl) ?? newItem;
         }
         return newItem;
     }
@@ -397,21 +358,18 @@ public class QuestWorkItem
         QuestIssueOrPullRequest ghIssue,
         QuestClient questClient,
         OspoClient? ospoClient,
-        IEnumerable<QuestIteration> allIterations,
-        IEnumerable<LabelToTagMap> tagMap,
-        IEnumerable<ParentForLabel> parentNodes)
+        ExtendedIssueProperties issueProperties)
     {
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
         AzDoIdentity? questAssigneeID = default;
         var proposedQuestState = questItem.State;
-        var issueProperties = ghIssue.ExtendedProperties(allIterations, tagMap, parentNodes);
 
         if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
         {
             questAssigneeID = await questClient.GetIDFromEmail(ghAssigneeEmailAddress);
         }
         List<JsonPatchDocument> patchDocument = [];
-        if ((issueProperties.ParentNodeId != 0) && (issueProperties.ParentNodeId != questItem.ParentWorkItemId))
+        if (issueProperties.ParentNodeId != questItem.ParentWorkItemId)
         {
             if (questItem.ParentWorkItemId != 0)
             {
@@ -422,24 +380,27 @@ public class QuestWorkItem
                     Path = "/relations/" + questItem.ParentRelationIndex,
                 });
             };
-            var parentRelation = new Relation
+            if (issueProperties.ParentNodeId != 0)
             {
-                RelationName = "System.LinkTypes.Hierarchy-Reverse",
-                Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{issueProperties.ParentNodeId}",
-                Attributes =
+                var parentRelation = new Relation
                 {
-                    ["name"] = "Parent",
-                    ["isLocked"] = false
-                }
-            };
+                    RelationName = "System.LinkTypes.Hierarchy-Reverse",
+                    Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{issueProperties.ParentNodeId}",
+                    Attributes =
+                    {
+                        ["name"] = "Parent",
+                        ["isLocked"] = false
+                    }
+                };
 
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/relations/-",
-                From = default,
-                Value = parentRelation
-            });
+                patchDocument.Add(new JsonPatchDocument
+                {
+                    Operation = Op.Add,
+                    Path = "/relations/-",
+                    From = default,
+                    Value = parentRelation
+                });
+            }
         }
         if ((questAssigneeID is not null) && (questAssigneeID?.Id != questItem.AssignedToId))
         {
@@ -468,12 +429,11 @@ public class QuestWorkItem
                 Value = BuildDescriptionFromIssue(ghIssue, null)
             });
         }
-        QuestIteration? iteration = issueProperties.LatestIteration;
+        QuestIteration iteration = issueProperties.LatestIteration;
         Console.WriteLine($"Latest GitHub sprint project: {issueProperties.Month}-{issueProperties.CalendarYear}, size: {issueProperties.GitHubSize}");
         if ((issueProperties.IsPastIteration == true) && (ghIssue.IsOpen == true))
         {
             Console.WriteLine($"Moving to the backlog / future iteration.");
-            iteration = QuestIteration.FutureIteration(allIterations);
             proposedQuestState = "New";
         }
         if (proposedQuestState != questItem.State)
@@ -485,7 +445,7 @@ public class QuestWorkItem
                 Value = proposedQuestState,
             });
         }
-        if ((iteration is not null) && (iteration.Path != questItem.IterationPath))
+        if (iteration.Path != questItem.IterationPath)
         {
             patchDocument.Add(new JsonPatchDocument
             {

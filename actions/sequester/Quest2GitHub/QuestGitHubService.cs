@@ -99,20 +99,21 @@ public class QuestGitHubService(
             {
                 if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
                 {
+                    var issueProperties = item.ExtendedProperties(_allIterations, tagMap, parentNodes);
+
                     // TODO: Move to issue Properties ToString:
                     // Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
                     // Console.WriteLine(item);
                     QuestWorkItem? questItem = await FindLinkedWorkItemAsync(item);
-                    if (currentIteration is not null)
+                    if (questItem != null)
                     {
-                        if (questItem != null)
-                        {
-                            await QuestWorkItem.UpdateWorkItemAsync(questItem, item, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes);
-                        }
-                        else
-                        {
-                            questItem = await LinkIssueAsync(item, currentIteration, _allIterations);
-                        }
+                        await QuestWorkItem.UpdateWorkItemAsync(questItem, item, _azdoClient, _ospoClient, issueProperties);
+                    }
+                    else
+                    {
+                        questItem = await LinkIssueAsync(item, issueProperties);
+                        // Because some fields can't be set in the initial creation, update the item.
+                        await QuestWorkItem.UpdateWorkItemAsync(questItem, item, _azdoClient, _ospoClient, issueProperties);
                     }
                     totalImport++;
                 }
@@ -164,8 +165,7 @@ public class QuestGitHubService(
         
         _allIterations ??= await RetrieveIterationLabelsAsync();
 
-        QuestIteration currentIteration = QuestIteration.CurrentIteration(_allIterations)
-            ?? throw new Exception("No current iteration found");
+        QuestIteration currentIteration = QuestIteration.CurrentIteration(_allIterations);
 
         //Retrieve the GitHub issue.
         QuestIssueOrPullRequest? ghIssue = null;
@@ -189,6 +189,8 @@ public class QuestGitHubService(
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
+        var issueProperties = ghIssue.ExtendedProperties(_allIterations, tagMap, parentNodes);
+
         // The order here is important to avoid a race condition that causes
         // an issue to be triggered multiple times.
         // First, if an issue is open and the trigger label is added, link or 
@@ -198,13 +200,13 @@ public class QuestGitHubService(
         {
             if (questItem is null)
             {
-                questItem = await LinkIssueAsync(ghIssue, currentIteration, _allIterations);
+                questItem = await LinkIssueAsync(ghIssue, issueProperties);
             }
             else if (questItem is not null)
             {
                 // This allows a human to force a manual update: just add the trigger label.
                 // Note that it updates even if the item is closed.
-                await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes);
+                await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, issueProperties);
 
             }
             // Next, if the item is already linked, consider any updates.
@@ -215,7 +217,7 @@ public class QuestGitHubService(
         }
         else if (sequestered && questItem is not null)
         {
-            await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes);
+            await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, issueProperties);
         }
     }
 
@@ -294,14 +296,14 @@ public class QuestGitHubService(
         }
     }
 
-    private async Task<QuestWorkItem?> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, QuestIteration currentIteration, IEnumerable<QuestIteration> allIterations)
+    private async Task<QuestWorkItem> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, ExtendedIssueProperties issueProperties)
     {
         int? workItem = LinkedQuestId(issueOrPullRequest);
         if (workItem is null)
         {
             // Create work item:
             QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, areaPath,
-                _importTriggerLabel?.Id, currentIteration, allIterations, tagMap, parentNodes);
+                _importTriggerLabel?.Id, issueProperties);
 
             string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
             string updatedBody = $"""

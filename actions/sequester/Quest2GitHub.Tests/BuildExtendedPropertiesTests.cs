@@ -532,7 +532,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("🐂 Medium (3-5d)", extendedProperties.GitHubSize);
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("07 Jul", extendedProperties.LatestIteration?.Name);
+        Assert.Equal("Future", extendedProperties.LatestIteration?.Name);
         Assert.True(extendedProperties.IsPastIteration);
         Assert.Equal("Jul", extendedProperties.Month);
         Assert.Equal(2024, extendedProperties.CalendarYear);
@@ -549,7 +549,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("🐂 Medium (3-5d)", extendedProperties.GitHubSize);
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("10 Oct", extendedProperties.LatestIteration?.Name);
+        Assert.Equal("Future", extendedProperties.LatestIteration?.Name);
         Assert.True(extendedProperties.IsPastIteration);
         Assert.Equal("Oct", extendedProperties.Month);
         Assert.Equal(2024, extendedProperties.CalendarYear);
@@ -566,7 +566,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Unknown", extendedProperties.GitHubSize);
         Assert.Equal(null, extendedProperties.StoryPoints);
         Assert.Equal(null, extendedProperties.Priority);
-        Assert.Equal(null, extendedProperties.LatestIteration?.Name);
+        Assert.Equal("Future", extendedProperties.LatestIteration?.Name);
         Assert.False(extendedProperties.IsPastIteration);
         Assert.Equal("Unknown", extendedProperties.Month);
         Assert.Equal(0, extendedProperties.CalendarYear);
