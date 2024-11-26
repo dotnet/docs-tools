@@ -351,6 +351,12 @@ class Program
                     Console.WriteLine("\nFinished removing redirect hops.");
                     break;
                 }
+            default:
+                {
+                    Console.WriteLine($"\nUnknown function '{options.Function}'. " +
+                        $"Please specify one of the following functions: {string.Join(", ", s_functions)}.");
+                    break;
+                }
         }
 
         stopwatch.Stop();
