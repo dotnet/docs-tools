@@ -146,11 +146,10 @@ public class QuestWorkItem
         QuestIteration currentIteration,
         IEnumerable<QuestIteration> allIterations,
         IEnumerable<LabelToTagMap> tagMap,
-        IEnumerable<ParentForLabel> parentNodes,
-        int defaultParentNode)
+        IEnumerable<ParentForLabel> parentNodes)
     {
         string areaPath = $"""{questClient.QuestProject}\{path}""";
-        int parentId = ParentIdFromIssue(parentNodes, issue, defaultParentNode, allIterations);
+        var issueProperties = issue.ExtendedProperties(allIterations, tagMap, parentNodes);
 
         List<JsonPatchDocument> patchDocument =
         [
@@ -173,12 +172,12 @@ public class QuestWorkItem
                 Value = areaPath,
             }
         ];
-        if (parentId != 0)
+        if (issueProperties.ParentNodeId != 0)
         {
             var parentRelation = new Relation
             {
                 RelationName = "System.LinkTypes.Hierarchy-Reverse",
-                Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{parentId}",
+                Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{issueProperties.ParentNodeId}",
                 Attributes =
                 {
                     ["name"] = "Parent",
@@ -209,7 +208,6 @@ public class QuestWorkItem
             Value = assigneeID
         };
         patchDocument.Add(assignPatch);
-        var issueProperties = issue.ExtendedProperties(allIterations, tagMap);
         QuestIteration? iteration = issueProperties.LatestIteration;
         Console.WriteLine($"Latest GitHub sprint project: {issueProperties.Month}-{issueProperties.CalendarYear}, size: {issueProperties.GitHubSize}");
         if (issueProperties.IsPastIteration)
@@ -401,19 +399,19 @@ public class QuestWorkItem
         OspoClient? ospoClient,
         IEnumerable<QuestIteration> allIterations,
         IEnumerable<LabelToTagMap> tagMap,
-        IEnumerable<ParentForLabel> parentNodes,
-        int defaultParentNode)
+        IEnumerable<ParentForLabel> parentNodes)
     {
-        int parentId = ParentIdFromIssue(parentNodes, ghIssue, defaultParentNode, allIterations);
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
         AzDoIdentity? questAssigneeID = default;
         var proposedQuestState = questItem.State;
+        var issueProperties = ghIssue.ExtendedProperties(allIterations, tagMap, parentNodes);
+
         if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
         {
             questAssigneeID = await questClient.GetIDFromEmail(ghAssigneeEmailAddress);
         }
         List<JsonPatchDocument> patchDocument = [];
-        if ((parentId != 0) && (parentId != questItem.ParentWorkItemId))
+        if ((issueProperties.ParentNodeId != 0) && (issueProperties.ParentNodeId != questItem.ParentWorkItemId))
         {
             if (questItem.ParentWorkItemId != 0)
             {
@@ -427,7 +425,7 @@ public class QuestWorkItem
             var parentRelation = new Relation
             {
                 RelationName = "System.LinkTypes.Hierarchy-Reverse",
-                Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{parentId}",
+                Url = $"https://dev.azure.com/{questClient.QuestOrg}/{questClient.QuestProject}/_apis/wit/workItems/{issueProperties.ParentNodeId}",
                 Attributes =
                 {
                     ["name"] = "Parent",
@@ -470,7 +468,6 @@ public class QuestWorkItem
                 Value = BuildDescriptionFromIssue(ghIssue, null)
             });
         }
-        var issueProperties = ghIssue.ExtendedProperties(allIterations, tagMap);
         QuestIteration? iteration = issueProperties.LatestIteration;
         Console.WriteLine($"Latest GitHub sprint project: {issueProperties.Month}-{issueProperties.CalendarYear}, size: {issueProperties.GitHubSize}");
         if ((issueProperties.IsPastIteration == true) && (ghIssue.IsOpen == true))
@@ -542,25 +539,6 @@ public class QuestWorkItem
         }
         return newItem;
     }
-
-    static private int ParentIdFromIssue(IEnumerable<ParentForLabel> parentNodes, QuestIssueOrPullRequest ghIssue, int defaultParentNode, IEnumerable<QuestIteration> allIterations)
-    {
-        var props = ghIssue.ExtendedProperties(allIterations, []);
-        var iteration = props.LatestIteration;
-        
-        foreach (ParentForLabel pair in parentNodes)
-        {
-            if (ghIssue.Labels.Any(l => l.Name == pair.Label) || (pair.Label is null))
-            {
-                if ((pair.Semester is null) || (iteration?.IsInSemester(pair.Semester) is true))
-                {
-                    return pair.ParentNodeId;
-                }
-            }
-        }
-        return defaultParentNode;
-    }
-
 
     /// <summary>
     /// Construct a work item from the JSON document.

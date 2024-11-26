@@ -81,7 +81,6 @@ public static class ImportOptionsExtensions
         Console.WriteLine($"  options.AzureDevOps.Org = \"{options?.AzureDevOps?.Org}\"");
         Console.WriteLine($"  options.AzureDevOps.Project = \"{options?.AzureDevOps?.Project}\"");
         Console.WriteLine($"  options.AzureDevOps.AreaPath = \"{options?.AzureDevOps?.AreaPath}\"");
-        Console.WriteLine($"  options.DefaultParentNode = \"{options?.DefaultParentNode}\"");
         Console.WriteLine($"  options.ParentNodes:");
         foreach (var node in options?.ParentNodes ?? Enumerable.Empty<ParentForLabel>())
         {

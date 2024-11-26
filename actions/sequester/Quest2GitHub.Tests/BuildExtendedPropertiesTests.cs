@@ -1,17 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO.Compression;
-using System.Linq;
-using System.Reflection.Emit;
-using System.Runtime.ConstrainedExecution;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using DotNet.DocsTools.GitHubObjects;
-using DotNet.DocsTools.GraphQLQueries;
-using Org.BouncyCastle.Bcpg.Sig;
 using Quest2GitHub.Models;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Quest2GitHub.Tests;
 
@@ -480,8 +469,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Mar", extendedProperties.Month);
         Assert.Equal(2025, extendedProperties.CalendarYear);
         Assert.Empty(extendedProperties.Tags);
-
-        // TODO: Add Parent (2)
+        Assert.Equal(2, extendedProperties.ParentNodeId);
     }
 
     [Fact]
@@ -498,8 +486,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Mar", extendedProperties.Month);
         Assert.Equal(2025, extendedProperties.CalendarYear);
         Assert.Equal(["content-curation"], extendedProperties.Tags);
-
-        // TODO: Add Parent (2)
+        Assert.Equal(2, extendedProperties.ParentNodeId);
     }
 
     [Fact]
@@ -516,8 +503,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Mar", extendedProperties.Month);
         Assert.Equal(2025, extendedProperties.CalendarYear);
         Assert.Empty(extendedProperties.Tags);
-
-        // TODO: Add Parent (1)
+        Assert.Equal(1, extendedProperties.ParentNodeId);
     }
 
     [Fact]
@@ -534,8 +520,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Mar", extendedProperties.Month);
         Assert.Equal(2025, extendedProperties.CalendarYear);
         Assert.Empty(extendedProperties.Tags);
-
-        // TODO: Add Parent (1)
+        Assert.Equal(2, extendedProperties.ParentNodeId);
     }
 
     [Fact]
@@ -552,8 +537,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Jul", extendedProperties.Month);
         Assert.Equal(2024, extendedProperties.CalendarYear);
         Assert.Empty(extendedProperties.Tags);
-
-        // TODO: Add Parent (null)
+        Assert.Equal(0, extendedProperties.ParentNodeId);
     }
 
     [Fact]
@@ -570,8 +554,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Oct", extendedProperties.Month);
         Assert.Equal(2024, extendedProperties.CalendarYear);
         Assert.Equal(["content-curation"], extendedProperties.Tags);
-
-        // TODO: Add Parent (null)
+        Assert.Equal(0, extendedProperties.ParentNodeId);
     }
 
     [Fact]
@@ -588,8 +571,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Unknown", extendedProperties.Month);
         Assert.Equal(0, extendedProperties.CalendarYear);
         Assert.Empty(extendedProperties.Tags);
-
-        // TODO: Add Parent (null)
+        Assert.Equal(0, extendedProperties.ParentNodeId);
     }
 
 
@@ -602,7 +584,7 @@ public class BuildExtendedPropertiesTests
             issueNumber = 1111
         };
         JsonElement element = JsonDocument.Parse(jsonDocument).RootElement;
-        return QuestIssue.FromJsonElement(element, variables).ExtendedProperties(_allIterations, _tagMap);
+        return QuestIssue.FromJsonElement(element, variables).ExtendedProperties(_allIterations, _tagMap, _parentMap);
     }
 
 }

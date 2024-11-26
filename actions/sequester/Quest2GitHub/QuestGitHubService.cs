@@ -22,7 +22,6 @@ namespace Quest2GitHub;
 /// <param name="areaPath">The area path for work items from this repo</param>
 /// <param name="importTriggerLabelText">The text of the label that triggers an import</param>
 /// <param name="importedLabelText">The text of the label that indicates an issue has been imported</param>
-/// <param name="defaultParentNode">The ID of the default parent work item ID.</param>
 /// <param name="parentNodes">A dictionary of label / parent ID pairs.</param>
 /// <remarks>
 /// The OAuth token takes precedence over the GitHub token, if both are 
@@ -37,7 +36,6 @@ public class QuestGitHubService(
     string areaPath,
     string importTriggerLabelText,
     string importedLabelText,
-    int defaultParentNode,
     List<ParentForLabel> parentNodes,
     IEnumerable<LabelToTagMap> tagMap) : IDisposable
 {
@@ -109,7 +107,7 @@ public class QuestGitHubService(
                     {
                         if (questItem != null)
                         {
-                            await QuestWorkItem.UpdateWorkItemAsync(questItem, item, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes, defaultParentNode);
+                            await QuestWorkItem.UpdateWorkItemAsync(questItem, item, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes);
                         }
                         else
                         {
@@ -206,7 +204,7 @@ public class QuestGitHubService(
             {
                 // This allows a human to force a manual update: just add the trigger label.
                 // Note that it updates even if the item is closed.
-                await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes, defaultParentNode);
+                await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes);
 
             }
             // Next, if the item is already linked, consider any updates.
@@ -217,7 +215,7 @@ public class QuestGitHubService(
         }
         else if (sequestered && questItem is not null)
         {
-            await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes, defaultParentNode);
+            await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, _allIterations, tagMap, parentNodes);
         }
     }
 
@@ -303,7 +301,7 @@ public class QuestGitHubService(
         {
             // Create work item:
             QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, areaPath,
-                _importTriggerLabel?.Id, currentIteration, allIterations, tagMap, parentNodes, defaultParentNode);
+                _importTriggerLabel?.Id, currentIteration, allIterations, tagMap, parentNodes);
 
             string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
             string updatedBody = $"""

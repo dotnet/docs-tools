@@ -59,15 +59,6 @@ public sealed record class ImportOptions
     public List<ParentForLabel> ParentNodes { get; init; } = [];
 
     /// <summary>
-    /// The default parent node for any quest item.
-    /// </summary>
-    /// <remarks>
-    /// If an issue doesn't match any of the configured labels
-    /// the default parent node is set for the work item.
-    /// </remarks>
-    public int DefaultParentNode { get; init; }
-
-    /// <summary>
     /// A map of GitHub labels to Azure DevOps tags.
     /// </summary>
     /// <remarks>

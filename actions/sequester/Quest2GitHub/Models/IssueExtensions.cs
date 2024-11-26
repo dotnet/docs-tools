@@ -4,7 +4,10 @@ namespace Quest2GitHub.Models;
 
 public static class IssueExtensions
 {
-    public static ExtendedIssueProperties ExtendedProperties(this QuestIssueOrPullRequest issue, IEnumerable<QuestIteration> iterations, IEnumerable<LabelToTagMap> tags)
+    public static ExtendedIssueProperties ExtendedProperties(this QuestIssueOrPullRequest issue,
+        IEnumerable<QuestIteration> iterations,
+        IEnumerable<LabelToTagMap> tags,
+        IEnumerable<ParentForLabel> parentNodes)
     {
         StoryPointSize? storySize = issue.LatestStoryPointSize();
         string GitHubSize = storySize?.Size ?? "Unknown";
@@ -16,8 +19,25 @@ public static class IssueExtensions
 
         QuestIteration? iteration = storySize?.ProjectIteration(iterations);
 
+        int parentNodeId = 0;
+
+        if (!isPastIteration)
+        {
+            foreach (ParentForLabel pair in parentNodes)
+            {
+                if (issue.Labels.Any(l => l.Name == pair.Label) || (pair.Label is null))
+                {
+                    if ((pair.Semester is null) || (iteration?.IsInSemester(pair.Semester) is true))
+                    {
+                        parentNodeId = pair.ParentNodeId;
+                        break;
+                    }
+                }
+            }
+        }
+
         IEnumerable<string> workItemTags = issue.WorkItemTagsForIssue(tags);
-        return new ExtendedIssueProperties(GitHubSize, storyPoints, priority, iteration, isPastIteration, month, calendarYear, workItemTags);
+        return new ExtendedIssueProperties(GitHubSize, storyPoints, priority, iteration, isPastIteration, month, calendarYear, workItemTags, parentNodeId);
     }
     private static StoryPointSize? LatestStoryPointSize(this QuestIssueOrPullRequest issue)
     {

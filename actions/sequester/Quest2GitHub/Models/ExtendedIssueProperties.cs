@@ -20,4 +20,5 @@ public record ExtendedIssueProperties(
     bool IsPastIteration,
     string Month,
     int CalendarYear,
-    IEnumerable<string> Tags);
+    IEnumerable<string> Tags,
+    int ParentNodeId);
