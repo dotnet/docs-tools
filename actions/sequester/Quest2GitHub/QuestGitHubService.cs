@@ -101,7 +101,8 @@ public class QuestGitHubService(
             {
                 if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
                 {
-                    Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
+                    // TODO: Move to issue Properties ToString:
+                    // Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
                     // Console.WriteLine(item);
                     QuestWorkItem? questItem = await FindLinkedWorkItemAsync(item);
                     if (currentIteration is not null)
@@ -324,6 +325,7 @@ public class QuestGitHubService(
             }
             // All work items are created in the "New" state, despite the REST packet
             // indicating the "Committed" status. So, update the state to "Committed".
+            // TODO:  Update closed items correctly here. And updated "future" items here as well.
             List<JsonPatchDocument> patchDocument = [];
             patchDocument.Add(new JsonPatchDocument
             {

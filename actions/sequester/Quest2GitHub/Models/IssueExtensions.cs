@@ -4,7 +4,22 @@ namespace Quest2GitHub.Models;
 
 public static class IssueExtensions
 {
-    public static StoryPointSize? LatestStoryPointSize(this QuestIssueOrPullRequest issue)
+    public static ExtendedIssueProperties ExtendedProperties(this QuestIssueOrPullRequest issue, IEnumerable<QuestIteration> iterations, IEnumerable<LabelToTagMap> tags)
+    {
+        StoryPointSize? storySize = issue.LatestStoryPointSize();
+        string GitHubSize = storySize?.Size ?? "Unknown";
+        string month = storySize?.Month ?? "Unknown";
+        int calendarYear = storySize?.CalendarYear ?? 0;
+        int? storyPoints = storySize?.QuestStoryPoint();
+        int? priority = issue.GetPriority(storySize);
+        bool isPastIteration = storySize?.IsPastIteration ?? false;
+
+        QuestIteration? iteration = storySize?.ProjectIteration(iterations);
+
+        IEnumerable<string> workItemTags = issue.WorkItemTagsForIssue(tags);
+        return new ExtendedIssueProperties(GitHubSize, storyPoints, priority, iteration, isPastIteration, month, calendarYear, workItemTags);
+    }
+    private static StoryPointSize? LatestStoryPointSize(this QuestIssueOrPullRequest issue)
     {
         IEnumerable<StoryPointSize> sizes = from size in issue.ProjectStoryPoints
                     let month = StoryPointSize.MonthOrdinal(size.Month)
@@ -15,7 +30,7 @@ public static class IssueExtensions
         return sizes.FirstOrDefault();
     }
 
-    public static int? QuestStoryPoint(this StoryPointSize storyPointSize)
+    private static int? QuestStoryPoint(this StoryPointSize storyPointSize)
     {
         if (storyPointSize.Size.Contains("Tiny"))
         {
@@ -40,7 +55,7 @@ public static class IssueExtensions
         return null;
     }
 
-    public static int? GetPriority(this QuestIssueOrPullRequest issue, StoryPointSize? storySize)
+    private static int? GetPriority(this QuestIssueOrPullRequest issue, StoryPointSize? storySize)
     {
         if (storySize?.Priority is not null) return storySize.Priority;
 
@@ -102,7 +117,7 @@ public static class IssueExtensions
     /// <param name="issue">The GitHub issue or pull request</param>
     /// <param name="tags">The mapping from issue to tag</param>
     /// <returns>An enumerable of tags</returns>
-    public static IEnumerable<string> WorkItemTagsForIssue(this QuestIssueOrPullRequest issue, IEnumerable<LabelToTagMap> tags)
+    private static IEnumerable<string> WorkItemTagsForIssue(this QuestIssueOrPullRequest issue, IEnumerable<LabelToTagMap> tags)
     {
         foreach (var label in issue.Labels)
         {

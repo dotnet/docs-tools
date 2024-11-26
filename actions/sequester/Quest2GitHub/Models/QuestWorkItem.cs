@@ -209,20 +209,13 @@ public class QuestWorkItem
             Value = assigneeID
         };
         patchDocument.Add(assignPatch);
-        StoryPointSize? iterationSize = issue.LatestStoryPointSize();
-        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
-        if (iterationSize != null)
+        var issueProperties = issue.ExtendedProperties(allIterations, tagMap);
+        QuestIteration? iteration = issueProperties.LatestIteration;
+        Console.WriteLine($"Latest GitHub sprint project: {issueProperties.Month}-{issueProperties.CalendarYear}, size: {issueProperties.GitHubSize}");
+        if (issueProperties.IsPastIteration)
         {
-            Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
-            if (iterationSize?.IsPastIteration == true)
-            {
-                Console.WriteLine($"Moving to the backlog / future iteration.");
-                iteration = QuestIteration.FutureIteration(allIterations);
-            }
-        }
-        else
-        {
-            Console.WriteLine("No GitHub sprint project found - using current iteration");
+            Console.WriteLine($"Moving to the backlog / future iteration.");
+            iteration = QuestIteration.FutureIteration(allIterations);
         }
         patchDocument.Add(new JsonPatchDocument
         {
@@ -230,32 +223,30 @@ public class QuestWorkItem
             Path = "/fields/System.IterationPath",
             Value = iteration?.Path ?? currentIteration.Path,
         });
-        if (iterationSize?.QuestStoryPoint() is not null)
+        if (issueProperties.StoryPoints is not null)
         {
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
                 From = default,
                 Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
-                Value = iterationSize.QuestStoryPoint(),
+                Value = issueProperties.StoryPoints,
             });
         }
-        int? priority = issue.GetPriority(iterationSize);
-        if (priority.HasValue)
+        if (issueProperties.Priority.HasValue)
         {
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
                 From = default,
                 Path = "/fields/Microsoft.VSTS.Common.Priority",
-                Value = priority
+                Value = issueProperties.Priority
             });
         }
 
-        var tags = issue.WorkItemTagsForIssue(tagMap);
-        if (tags.Any())
+        if (issueProperties.Tags.Any())
         {
-            string azDoTags = string.Join(";", tags);
+            string azDoTags = string.Join(";", issueProperties.Tags);
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
@@ -275,6 +266,9 @@ public class QuestWorkItem
                 Value = creator ?? "dotnet-bot"
             });
         */
+
+        // TODO:  I don't think this works. I think the state is ignored for newly created
+        // work items. An update must be called to fix it.
         if (!issue.IsOpen)
         {
             // Created completed work item:
@@ -290,7 +284,7 @@ public class QuestWorkItem
             {
                 Operation = Op.Add,
                 Path = "/fields/System.State",
-                Value = (iterationSize?.IsPastIteration == true) ? "New" : "Committed",
+                Value = (issueProperties.IsPastIteration) ? "New" : "Committed",
             });
         }
         JsonElement result = default;
@@ -476,21 +470,14 @@ public class QuestWorkItem
                 Value = BuildDescriptionFromIssue(ghIssue, null)
             });
         }
-        StoryPointSize? iterationSize = ghIssue.LatestStoryPointSize();
-        QuestIteration? iteration = iterationSize?.ProjectIteration(allIterations);
-        if (iterationSize != null)
+        var issueProperties = ghIssue.ExtendedProperties(allIterations, tagMap);
+        QuestIteration? iteration = issueProperties.LatestIteration;
+        Console.WriteLine($"Latest GitHub sprint project: {issueProperties.Month}-{issueProperties.CalendarYear}, size: {issueProperties.GitHubSize}");
+        if ((issueProperties.IsPastIteration == true) && (ghIssue.IsOpen == true))
         {
-            Console.WriteLine($"Latest GitHub sprint project: {iterationSize?.Month}-{iterationSize?.CalendarYear}, size: {iterationSize?.Size}");
-            if ((iterationSize?.IsPastIteration == true) && (ghIssue.IsOpen == true))
-            {
-                Console.WriteLine($"Moving to the backlog / future iteration.");
-                iteration = QuestIteration.FutureIteration(allIterations);
-                proposedQuestState = "New";
-            }
-        }
-        else
-        {
-            Console.WriteLine("No GitHub sprint project found - using current iteration.");
+            Console.WriteLine($"Moving to the backlog / future iteration.");
+            iteration = QuestIteration.FutureIteration(allIterations);
+            proposedQuestState = "New";
         }
         if (proposedQuestState != questItem.State)
         {
@@ -510,27 +497,26 @@ public class QuestWorkItem
                 Value = iteration.Path,
             });
         }
-        if ((iterationSize?.QuestStoryPoint() is not null) && (iterationSize.QuestStoryPoint() != questItem.StoryPoints))
+        if ((issueProperties.StoryPoints is not null) && (issueProperties.StoryPoints != questItem.StoryPoints))
         {
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
                 From = default,
                 Path = "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
-                Value = iterationSize.QuestStoryPoint(),
+                Value = issueProperties.StoryPoints,
             });
         }
-        int? priority = ghIssue.GetPriority(iterationSize);
-        if (priority.HasValue && priority != questItem.Priority)
+        if (issueProperties.Priority.HasValue && issueProperties.Priority != questItem.Priority)
         {
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
                 Path = "/fields/Microsoft.VSTS.Common.Priority",
-                Value = priority.Value
+                Value = issueProperties.Priority.Value
             });
         }
-        var tags = from t in ghIssue.WorkItemTagsForIssue(tagMap)
+        var tags = from t in issueProperties.Tags
                    where !questItem.Tags.Contains(t)
                    select t;
         if (tags.Any())
@@ -559,7 +545,8 @@ public class QuestWorkItem
 
     static private int ParentIdFromIssue(IEnumerable<ParentForLabel> parentNodes, QuestIssueOrPullRequest ghIssue, int defaultParentNode, IEnumerable<QuestIteration> allIterations)
     {
-        var iteration = ghIssue.LatestStoryPointSize()?.ProjectIteration(allIterations);
+        var props = ghIssue.ExtendedProperties(allIterations, []);
+        var iteration = props.LatestIteration;
         
         foreach (ParentForLabel pair in parentNodes)
         {
