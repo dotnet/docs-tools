@@ -27,24 +27,22 @@ public class ExtendedIssueProperties
         StoryPoints = QuestStoryPoint(storySize) ?? 0;
         Priority = GetPriority(issue, storySize) ?? -1;
         var latestIteration = storySize?.ProjectIteration(iterations) ?? QuestIteration.FutureIteration(iterations);
-        bool IsBackLog = storySize?.IsPastIteration ?? true;
-
-        if (IsBackLog)
+        if (storySize?.IsPastIteration == true)
         {
             latestIteration = QuestIteration.FutureIteration(iterations);
         }
 
-        WorkItemState = (issue.IsOpen, IsBackLog) switch
+        WorkItemState = (issue.IsOpen, latestIteration.Name) switch
         {
             (false, _) => "Closed",
-            (true, false) => "Committed",
-            (_) => "New"
+            (true, "Future") => "New",
+            (_) => "Committed"
         };
         IterationPath = latestIteration.Path;
 
         ParentNodeId = 0;
 
-        if (!IsBackLog)
+        if (WorkItemState is not "New")
         {
             foreach (ParentForLabel pair in parentNodes)
             {
