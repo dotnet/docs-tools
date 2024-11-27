@@ -207,7 +207,7 @@ public class QuestWorkItem
             Path = "/fields/System.IterationPath",
             Value = issueProperties.IterationPath,
         });
-        if (issueProperties.StoryPoints is not null)
+        if (issueProperties.StoryPoints != 0)
         {
             patchDocument.Add(new JsonPatchDocument
             {
@@ -217,7 +217,7 @@ public class QuestWorkItem
                 Value = issueProperties.StoryPoints,
             });
         }
-        if (issueProperties.Priority.HasValue)
+        if (issueProperties.Priority != -1)
         {
             patchDocument.Add(new JsonPatchDocument
             {
@@ -414,7 +414,7 @@ public class QuestWorkItem
             patchDocument.Add(assignPatch);
         }
         bool questItemOpen = questItem.State is not "Closed";
-        proposedQuestState = ghIssue.IsOpen ? "Committed" : "Closed";
+        proposedQuestState = issueProperties.WorkItemState;
         if (ghIssue.IsOpen != questItemOpen)
         {
 
@@ -429,13 +429,7 @@ public class QuestWorkItem
                 Value = BuildDescriptionFromIssue(ghIssue, null)
             });
         }
-        QuestIteration iteration = issueProperties.LatestIteration;
-        Console.WriteLine($"Latest GitHub sprint project: {issueProperties.Month}-{issueProperties.CalendarYear}, size: {issueProperties.GitHubSize}");
-        if ((issueProperties.IsPastIteration == true) && (ghIssue.IsOpen == true))
-        {
-            Console.WriteLine($"Moving to the backlog / future iteration.");
-            proposedQuestState = "New";
-        }
+        Console.WriteLine(issueProperties.IssueLogString);
         if (proposedQuestState != questItem.State)
         {
             patchDocument.Add(new JsonPatchDocument
@@ -445,16 +439,16 @@ public class QuestWorkItem
                 Value = proposedQuestState,
             });
         }
-        if (iteration.Path != questItem.IterationPath)
+        if (issueProperties.IterationPath != questItem.IterationPath)
         {
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
                 Path = "/fields/System.IterationPath",
-                Value = iteration.Path,
+                Value = issueProperties.IterationPath,
             });
         }
-        if ((issueProperties.StoryPoints is not null) && (issueProperties.StoryPoints != questItem.StoryPoints))
+        if (issueProperties.StoryPoints != questItem.StoryPoints)
         {
             patchDocument.Add(new JsonPatchDocument
             {
@@ -464,13 +458,13 @@ public class QuestWorkItem
                 Value = issueProperties.StoryPoints,
             });
         }
-        if (issueProperties.Priority.HasValue && issueProperties.Priority != questItem.Priority)
+        if (issueProperties.Priority != questItem.Priority)
         {
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
                 Path = "/fields/Microsoft.VSTS.Common.Priority",
-                Value = issueProperties.Priority.Value
+                Value = issueProperties.Priority
             });
         }
         var tags = from t in issueProperties.Tags

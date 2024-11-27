@@ -178,6 +178,52 @@ public class BuildExtendedPropertiesTests
     }        
     """;
 
+    private const string SingleActiveIssueClosed= $$"""
+    {
+      "id": "I_kwDOFn2dfM6YkX0J",
+      "number": 1111,
+      "title": "This is an issue",
+      "state": "CLOSED",
+      "author": {
+        "login": "BillWagner",
+        "name": "Bill Wagner"
+      },
+      "timelineItems": {
+        "nodes": []
+      },
+      "projectItems": {
+        "nodes": [
+          {{FutureProject}}
+        ]
+      },
+      "bodyHTML": "<p dir=\"auto\">This is a bad, bad, thing.</p>",
+      "body": "This is a bad, bad, thing.",
+      "assignees": {
+        "nodes": [
+          {
+            "login": "BillWagner",
+            "name": "Bill Wagner"
+          }
+        ]
+      },
+      "labels": {
+        "nodes": [
+          {
+            "name": "{{labelWithoutParent}}",
+            "id": "MDU6TGFiZWwzMDkwMTEzMzI1"
+          },
+          {
+            "name": ":pushpin: seQUESTered",
+            "id": "LA_kwDOFn2dfM8AAAABK0cMjA"
+          }
+        ]
+      },
+      "comments": {
+        "nodes": []
+      }
+    }        
+    """;
+
     private const string SingleIssueFutureProjectWithTags = $$"""
     {
       "id": "I_kwDOFn2dfM6YkX0J",
@@ -363,6 +409,53 @@ public class BuildExtendedPropertiesTests
     }        
     """;
 
+    private const string SingleClosedIssuePastProject = $$"""
+    {
+      "id": "I_kwDOFn2dfM6YkX0J",
+      "number": 1111,
+      "title": "This is an issue",
+      "state": "CLOSED",
+      "author": {
+        "login": "BillWagner",
+        "name": "Bill Wagner"
+      },
+      "timelineItems": {
+        "nodes": []
+      },
+      "projectItems": {
+        "nodes": [
+          {{PastProject}}
+        ]
+      },
+      "bodyHTML": "<p dir=\"auto\">This is a bad, bad, thing.</p>",
+      "body": "This is a bad, bad, thing.",
+      "assignees": {
+        "nodes": [
+          {
+            "login": "BillWagner",
+            "name": "Bill Wagner"
+          }
+        ]
+      },
+      "labels": {
+        "nodes": [
+          {
+            "name": "{{labelWithParent}}",
+            "id": "MDU6TGFiZWwzMDkwMTEzMzI1"
+          },
+          {
+            "name": ":pushpin: seQUESTered",
+            "id": "LA_kwDOFn2dfM8AAAABK0cMjA"
+          }
+        ]
+      },
+      "comments": {
+        "nodes": []
+      }
+    }        
+    """;
+
+
     private const string MultipleIssuePastProject = $$"""
     {
       "id": "I_kwDOFn2dfM6YkX0J",
@@ -454,6 +547,49 @@ public class BuildExtendedPropertiesTests
     }        
     """;
 
+    private const string NoProjectClosed = $$"""
+    {
+      "id": "I_kwDOFn2dfM6YkX0J",
+      "number": 1111,
+      "title": "This is an issue",
+      "state": "CLOSED",
+      "author": {
+        "login": "BillWagner",
+        "name": "Bill Wagner"
+      },
+      "timelineItems": {
+        "nodes": []
+      },
+      "projectItems": {
+        "nodes": []
+      },
+      "bodyHTML": "<p dir=\"auto\">This is a bad, bad, thing.</p>",
+      "body": "This is a bad, bad, thing.",
+      "assignees": {
+        "nodes": [
+          {
+            "login": "BillWagner",
+            "name": "Bill Wagner"
+          }
+        ]
+      },
+      "labels": {
+        "nodes": [
+          {
+            "name": "{{labelWithParent}}",
+            "id": "MDU6TGFiZWwzMDkwMTEzMzI1"
+          },
+          {
+            "name": ":pushpin: seQUESTered",
+            "id": "LA_kwDOFn2dfM8AAAABK0cMjA"
+          }
+        ]
+      },
+      "comments": {
+        "nodes": []
+      }
+    }        
+    """;
 
     [Fact]
     public static void BuildExtensionForFutureProject()
@@ -461,30 +597,37 @@ public class BuildExtendedPropertiesTests
         var extendedProperties = CreateIssueObject(SingleIssueFutureProject);
 
         // Check each property:
-        Assert.Equal("🐂 Medium (3-5d)", extendedProperties.GitHubSize);
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("03 Mar", extendedProperties.LatestIteration?.Name);
-        Assert.False(extendedProperties.IsPastIteration);
-        Assert.Equal("Mar", extendedProperties.Month);
-        Assert.Equal(2025, extendedProperties.CalendarYear);
+        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
     }
 
+    [Fact]
+    public static void BuildExtensionForClosedIssueInFutureProject()
+    {
+        var extendedProperties = CreateIssueObject(SingleActiveIssueClosed);
+
+        // Check each property:
+        Assert.Equal(5, extendedProperties.StoryPoints);
+        Assert.Equal(2, extendedProperties.Priority);
+        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Closed", extendedProperties.WorkItemState);
+        Assert.Empty(extendedProperties.Tags);
+        Assert.Equal(2, extendedProperties.ParentNodeId);
+    }
     [Fact]
     public static void BuildExtensionForFutureProjectWithTag()
     {
         var extendedProperties = CreateIssueObject(SingleIssueFutureProjectWithTags);
 
         // Check each property:
-        Assert.Equal("🐂 Medium (3-5d)", extendedProperties.GitHubSize);
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("03 Mar", extendedProperties.LatestIteration?.Name);
-        Assert.False(extendedProperties.IsPastIteration);
-        Assert.Equal("Mar", extendedProperties.Month);
-        Assert.Equal(2025, extendedProperties.CalendarYear);
+        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Equal(["content-curation"], extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
     }
@@ -495,13 +638,10 @@ public class BuildExtendedPropertiesTests
         var extendedProperties = CreateIssueObject(SingleIssueFutureProjectWithParentLabel);
 
         // Check each property:
-        Assert.Equal("🐂 Medium (3-5d)", extendedProperties.GitHubSize);
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("03 Mar", extendedProperties.LatestIteration?.Name);
-        Assert.False(extendedProperties.IsPastIteration);
-        Assert.Equal("Mar", extendedProperties.Month);
-        Assert.Equal(2025, extendedProperties.CalendarYear);
+        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(1, extendedProperties.ParentNodeId);
     }
@@ -512,13 +652,10 @@ public class BuildExtendedPropertiesTests
         var extendedProperties = CreateIssueObject(MultipleFutureProjects);
 
         // Check each property:
-        Assert.Equal("🐂 Medium (3-5d)", extendedProperties.GitHubSize);
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("03 Mar", extendedProperties.LatestIteration?.Name);
-        Assert.False(extendedProperties.IsPastIteration);
-        Assert.Equal("Mar", extendedProperties.Month);
-        Assert.Equal(2025, extendedProperties.CalendarYear);
+        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
     }
@@ -529,30 +666,37 @@ public class BuildExtendedPropertiesTests
         var extendedProperties = CreateIssueObject(SingleIssuePastProject);
 
         // Check each property:
-        Assert.Equal("🐂 Medium (3-5d)", extendedProperties.GitHubSize);
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Future", extendedProperties.LatestIteration?.Name);
-        Assert.True(extendedProperties.IsPastIteration);
-        Assert.Equal("Jul", extendedProperties.Month);
-        Assert.Equal(2024, extendedProperties.CalendarYear);
+        Assert.Equal("Content\\Future", extendedProperties.IterationPath);
+        Assert.Equal("New", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(0, extendedProperties.ParentNodeId);
     }
 
+    [Fact]
+    public static void BuildExtensionForClosedIsssueSinglePastProject()
+    {
+        var extendedProperties = CreateIssueObject(SingleClosedIssuePastProject);
+
+        // Check each property:
+        Assert.Equal(5, extendedProperties.StoryPoints);
+        Assert.Equal(2, extendedProperties.Priority);
+        Assert.Equal("Content\\Future", extendedProperties.IterationPath);
+        Assert.Equal("Closed", extendedProperties.WorkItemState);
+        Assert.Empty(extendedProperties.Tags);
+        Assert.Equal(0, extendedProperties.ParentNodeId);
+    }
     [Fact]
     public static void BuildExtensionForMultiplePastProject()
     {
         var extendedProperties = CreateIssueObject(MultipleIssuePastProject);
 
         // Check each property:
-        Assert.Equal("🐂 Medium (3-5d)", extendedProperties.GitHubSize);
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Future", extendedProperties.LatestIteration?.Name);
-        Assert.True(extendedProperties.IsPastIteration);
-        Assert.Equal("Oct", extendedProperties.Month);
-        Assert.Equal(2024, extendedProperties.CalendarYear);
+        Assert.Equal("Content\\Future", extendedProperties.IterationPath);
+        Assert.Equal("New", extendedProperties.WorkItemState);
         Assert.Equal(["content-curation"], extendedProperties.Tags);
         Assert.Equal(0, extendedProperties.ParentNodeId);
     }
@@ -563,17 +707,27 @@ public class BuildExtendedPropertiesTests
         var extendedProperties = CreateIssueObject(NoProject);
 
         // Check each property:
-        Assert.Equal("Unknown", extendedProperties.GitHubSize);
-        Assert.Equal(null, extendedProperties.StoryPoints);
-        Assert.Equal(null, extendedProperties.Priority);
-        Assert.Equal("Future", extendedProperties.LatestIteration?.Name);
-        Assert.False(extendedProperties.IsPastIteration);
-        Assert.Equal("Unknown", extendedProperties.Month);
-        Assert.Equal(0, extendedProperties.CalendarYear);
+        Assert.Equal(0, extendedProperties.StoryPoints);
+        Assert.Equal(-1, extendedProperties.Priority);
+        Assert.Equal("Content\\Future", extendedProperties.IterationPath);
+        Assert.Equal("New", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(0, extendedProperties.ParentNodeId);
     }
 
+    [Fact]
+    public static void BuildExtensionForNoProjectClosed()
+    {
+        var extendedProperties = CreateIssueObject(NoProjectClosed);
+
+        // Check each property:
+        Assert.Equal(0, extendedProperties.StoryPoints);
+        Assert.Equal(-1, extendedProperties.Priority);
+        Assert.Equal("Content\\Future", extendedProperties.IterationPath);
+        Assert.Equal("Closed", extendedProperties.WorkItemState);
+        Assert.Empty(extendedProperties.Tags);
+        Assert.Equal(0, extendedProperties.ParentNodeId);
+    }
 
     private static ExtendedIssueProperties CreateIssueObject(string jsonDocument)
     {
@@ -584,7 +738,7 @@ public class BuildExtendedPropertiesTests
             issueNumber = 1111
         };
         JsonElement element = JsonDocument.Parse(jsonDocument).RootElement;
-        return QuestIssue.FromJsonElement(element, variables).ExtendedProperties(_allIterations, _tagMap, _parentMap);
+        return new ExtendedIssueProperties(QuestIssue.FromJsonElement(element, variables), _allIterations, _tagMap, _parentMap);
     }
 
 }

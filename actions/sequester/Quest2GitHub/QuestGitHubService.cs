@@ -99,7 +99,7 @@ public class QuestGitHubService(
             {
                 if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
                 {
-                    var issueProperties = item.ExtendedProperties(_allIterations, tagMap, parentNodes);
+                    var issueProperties = new ExtendedIssueProperties(item, _allIterations, tagMap, parentNodes);
 
                     // TODO: Move to issue Properties ToString:
                     // Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
@@ -189,7 +189,7 @@ public class QuestGitHubService(
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
-        var issueProperties = ghIssue.ExtendedProperties(_allIterations, tagMap, parentNodes);
+        var issueProperties = new ExtendedIssueProperties(ghIssue, _allIterations, tagMap, parentNodes);
 
         // The order here is important to avoid a race condition that causes
         // an issue to be triggered multiple times.
