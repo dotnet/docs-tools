@@ -27,7 +27,7 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         "lightbox\\s*=\\s*\"(?<path>.*?(\\.(png|gif|jpg|svg))+)\"", // lightbox="media/azure.png"
         ":::image [^:]*?source\\s*=\\s*\"(?<path>.*?(\\.(png|gif|jpg|svg))+)(\\?[\\w\\s=\\.]+)?\\s*\"", // :::image type="content" source="media/publish.png?text=Publish dialog." alt-text="Publish dialog.":::
         "<a href=\"(?<path>[^\"]*?(\\.(png|gif|jpg|svg))+)\"", // <a href="./media/job-large.png" target="_blank"><img src="./media/job-small.png"></a>
-        "\\((?<path>[^\\)]*?(\\.(png|jpg|gif|svg)))+(#lightbox)\\s*\\)" // (./media/functions-scenarios/process-file-uploads-expanded.png#lightbox)
+        "\\]\\((?<path>[^\\)]*?(\\.(png|jpg|gif|svg)))+(#lightbox)[\\s|\\)]" //](../images/alignment-expansion-large.png#lightbox)
     ];
     private List<FileInfo>? _allMdAndYmlFiles;
     private List<FileInfo>? AllMdAndYmlFiles
