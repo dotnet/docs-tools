@@ -101,8 +101,7 @@ public class QuestGitHubService(
                 {
                     var issueProperties = new ExtendedIssueProperties(item, _allIterations, tagMap, parentNodes);
 
-                    // TODO: Move to issue Properties ToString:
-                    // Console.WriteLine($"{item.Number}: {item.Title}, {item.LatestStoryPointSize()?.Month ?? "???"}-{(item.LatestStoryPointSize()?.CalendarYear)?.ToString() ?? "??"}");
+                    Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
                     // Console.WriteLine(item);
                     QuestWorkItem? questItem = await FindLinkedWorkItemAsync(item);
                     if (questItem != null)
@@ -322,21 +321,6 @@ public class QuestGitHubService(
             {
                 var prMutation = new Mutation<SequesteredPullRequestMutation, SequesterVariables>(ghClient);
                 await prMutation.PerformMutation(new SequesterVariables(pr.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
-            }
-            // All work items are created in the "New" state, despite the REST packet
-            // indicating the "Committed" status. So, update the state to "Committed".
-            // TODO:  Update closed items correctly here. And updated "future" items here as well.
-            List<JsonPatchDocument> patchDocument = [];
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.State",
-                Value = "Committed",
-            });
-            if (patchDocument.Count != 0)
-            {
-                JsonElement jsonDocument = await _azdoClient.PatchWorkItem(questItem.Id, patchDocument);
-                questItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
             }
             return questItem;
         }

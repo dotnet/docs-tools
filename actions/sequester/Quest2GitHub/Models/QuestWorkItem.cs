@@ -338,7 +338,7 @@ public class QuestWorkItem
         try
         {
             JsonElement jsonDocument = await azdoClient.PatchWorkItem(Id, patchDocument);
-            var newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
+            var newItem = WorkItemFromJson(jsonDocument);
             s_linkedGitHubRepo = true;
             return newItem;
         }
@@ -362,7 +362,6 @@ public class QuestWorkItem
     {
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
         AzDoIdentity? questAssigneeID = default;
-        var proposedQuestState = questItem.State;
 
         if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
         {
@@ -413,30 +412,14 @@ public class QuestWorkItem
             };
             patchDocument.Add(assignPatch);
         }
-        bool questItemOpen = questItem.State is not "Closed";
-        proposedQuestState = issueProperties.WorkItemState;
-        if (ghIssue.IsOpen != questItemOpen)
-        {
-
-            // When the issue is opened or closed, 
-            // update the description. That picks up any new
-            // labels and comments.
-            patchDocument.Add(new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.Description",
-                From = default,
-                Value = BuildDescriptionFromIssue(ghIssue, null)
-            });
-        }
         Console.WriteLine(issueProperties.IssueLogString);
-        if (proposedQuestState != questItem.State)
+        if (issueProperties.WorkItemState != questItem.State)
         {
             patchDocument.Add(new JsonPatchDocument
             {
                 Operation = Op.Add,
                 Path = "/fields/System.State",
-                Value = proposedQuestState,
+                Value = issueProperties.WorkItemState,
             });
         }
         if (issueProperties.IterationPath != questItem.IterationPath)
@@ -448,7 +431,7 @@ public class QuestWorkItem
                 Value = issueProperties.IterationPath,
             });
         }
-        if (issueProperties.StoryPoints != questItem.StoryPoints)
+        if (issueProperties.StoryPoints != (questItem.StoryPoints ?? 0))
         {
             patchDocument.Add(new JsonPatchDocument
             {
@@ -464,7 +447,7 @@ public class QuestWorkItem
             {
                 Operation = Op.Add,
                 Path = "/fields/Microsoft.VSTS.Common.Priority",
-                Value = issueProperties.Priority
+                Value = (issueProperties.Priority == -1) ? 4 : issueProperties.Priority
             });
         }
         var tags = from t in issueProperties.Tags
@@ -484,8 +467,16 @@ public class QuestWorkItem
         QuestWorkItem? newItem = default;
         if (patchDocument.Count != 0)
         {
+            // If any updates are needed, add the description.
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.Description",
+                From = default,
+                Value = BuildDescriptionFromIssue(ghIssue, null)
+            });
             JsonElement jsonDocument = await questClient.PatchWorkItem(questItem.Id, patchDocument);
-            newItem = QuestWorkItem.WorkItemFromJson(jsonDocument);
+            newItem = WorkItemFromJson(jsonDocument);
         }
         if (!ghIssue.IsOpen && (ghIssue.ClosingPRUrl is not null))
         {
