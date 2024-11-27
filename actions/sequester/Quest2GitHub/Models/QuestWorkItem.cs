@@ -140,7 +140,7 @@ public class QuestWorkItem
         OspoClient? ospoClient,
         string path,
         string? requestLabelNodeId,
-        ExtendedIssueProperties issueProperties)
+        WorkItemProperties issueProperties)
     {
         string areaPath = $"""{questClient.QuestProject}\{path}""";
 
@@ -358,7 +358,7 @@ public class QuestWorkItem
         QuestIssueOrPullRequest ghIssue,
         QuestClient questClient,
         OspoClient? ospoClient,
-        ExtendedIssueProperties issueProperties)
+        WorkItemProperties issueProperties)
     {
         string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
         AzDoIdentity? questAssigneeID = default;

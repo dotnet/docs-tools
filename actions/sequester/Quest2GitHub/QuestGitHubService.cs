@@ -99,7 +99,7 @@ public class QuestGitHubService(
             {
                 if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
                 {
-                    var issueProperties = new ExtendedIssueProperties(item, _allIterations, tagMap, parentNodes);
+                    var issueProperties = new WorkItemProperties(item, _allIterations, tagMap, parentNodes);
 
                     Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
                     // Console.WriteLine(item);
@@ -188,7 +188,7 @@ public class QuestGitHubService(
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
-        var issueProperties = new ExtendedIssueProperties(ghIssue, _allIterations, tagMap, parentNodes);
+        var issueProperties = new WorkItemProperties(ghIssue, _allIterations, tagMap, parentNodes);
 
         // The order here is important to avoid a race condition that causes
         // an issue to be triggered multiple times.
@@ -295,7 +295,7 @@ public class QuestGitHubService(
         }
     }
 
-    private async Task<QuestWorkItem> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, ExtendedIssueProperties issueProperties)
+    private async Task<QuestWorkItem> LinkIssueAsync(QuestIssueOrPullRequest issueOrPullRequest, WorkItemProperties issueProperties)
     {
         int? workItem = LinkedQuestId(issueOrPullRequest);
         if (workItem is null)

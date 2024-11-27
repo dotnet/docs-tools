@@ -16,9 +16,9 @@ namespace Quest2GitHub.Models;
 /// properties, the project(s) that the issue is a member of
 /// and the environment settings.
 /// </remarks>
-public class ExtendedIssueProperties
+public class WorkItemProperties
 {
-    public ExtendedIssueProperties (QuestIssueOrPullRequest issue,
+    public WorkItemProperties (QuestIssueOrPullRequest issue,
         IEnumerable<QuestIteration> iterations,
         IEnumerable<LabelToTagMap> tags,
         IEnumerable<ParentForLabel> parentNodes)
