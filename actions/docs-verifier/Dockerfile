@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 COPY . ./
 RUN dotnet publish ./src/ActionRunner/ActionRunner.csproj -c Release -o out --no-self-contained
