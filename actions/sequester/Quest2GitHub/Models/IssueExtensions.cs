@@ -4,61 +4,6 @@ namespace Quest2GitHub.Models;
 
 public static class IssueExtensions
 {
-    public static StoryPointSize? LatestStoryPointSize(this QuestIssueOrPullRequest issue)
-    {
-        IEnumerable<StoryPointSize> sizes = from size in issue.ProjectStoryPoints
-                    let month = StoryPointSize.MonthOrdinal(size.Month)
-                    orderby size.CalendarYear descending,
-                    month descending
-                    select size;
-
-        return sizes.FirstOrDefault();
-    }
-
-    public static int? QuestStoryPoint(this StoryPointSize storyPointSize)
-    {
-        if (storyPointSize.Size.Contains("Tiny"))
-        {
-            return 1;
-        }
-        else if (storyPointSize.Size.Contains("Small"))
-        {
-            return 3;
-        }
-        else if (storyPointSize.Size.Contains("Medium"))
-        {
-            return 5;
-        }
-        else if (storyPointSize.Size.Contains("Large"))
-        {
-            return 8;
-        }
-        else if (storyPointSize.Size.Contains("X-Large"))
-        {
-            return 13;
-        }
-        return null;
-    }
-
-    public static int? GetPriority(this QuestIssueOrPullRequest issue, StoryPointSize? storySize)
-    {
-        if (storySize?.Priority is not null) return storySize.Priority;
-
-        // Well, check for priority on the issue itself:
-        foreach(var label in issue.Labels)
-        {
-            //Start at 1, because DevOps uses 1 - 4.
-            if (label.Name.StartsWith("P", true, null))
-            {
-                if (label.Name.Contains("0")) return 1;
-                if (label.Name.Contains("1")) return 2;
-                if (label.Name.Contains("2")) return 3;
-                if (label.Name.Contains("3")) return 4;
-            }
-        }
-        return default;
-    }
-
     public static QuestIteration? ProjectIteration(this StoryPointSize storyPoints, IEnumerable<QuestIteration> iterations)
     {
         // New form: Content\Gallium\FY24Q1\07
@@ -94,23 +39,5 @@ public static class IssueExtensions
             }
         }
         return default;
-    }
-
-    /// <summary>
-    /// Return tags for a given issue
-    /// </summary>
-    /// <param name="issue">The GitHub issue or pull request</param>
-    /// <param name="tags">The mapping from issue to tag</param>
-    /// <returns>An enumerable of tags</returns>
-    public static IEnumerable<string> WorkItemTagsForIssue(this QuestIssueOrPullRequest issue, IEnumerable<LabelToTagMap> tags)
-    {
-        foreach (var label in issue.Labels)
-        {
-            var tag = tags.FirstOrDefault(t => t.Label == label.Name);
-            if (tag.Tag is not null)
-            {
-                yield return tag.Tag;
-            }
-        }
     }
 }

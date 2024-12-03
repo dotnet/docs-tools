@@ -9,15 +9,16 @@ public class QuestIteration
 
     public bool IsInSemester(string semesterName) => Path.Contains(semesterName);
 
-    public static QuestIteration? CurrentIteration(IEnumerable<QuestIteration> iterations)
+    public static QuestIteration CurrentIteration(IEnumerable<QuestIteration> iterations)
     {
         var currentYear = int.Parse(DateTime.Now.ToString("yyyy"));
         var currentMonth = DateTime.Now.ToString("MMM");
-        return IssueExtensions.ProjectIteration(currentMonth, currentYear, iterations);
+        var iteration = IssueExtensions.ProjectIteration(currentMonth, currentYear, iterations);
+        return iteration ?? throw new InvalidOperationException("No current iteration found.");
     }
 
-    public static QuestIteration? FutureIteration(IEnumerable<QuestIteration> iterations)
-        => iterations.SingleOrDefault(sprint => sprint.Name is "Future");
+    public static QuestIteration FutureIteration(IEnumerable<QuestIteration> iterations)
+        => iterations.Single(sprint => sprint.Name is "Future");
 
     override public string ToString() => $"{Identifier} {Id} {Name} ({Path})";
 
