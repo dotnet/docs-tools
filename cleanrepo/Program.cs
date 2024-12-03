@@ -1014,9 +1014,11 @@ class Program
 
         Dictionary<string, int> filesToKeep = [];
 
+        // Exclude certain Markdown files.
         static bool IsArticleFile(FileInfo file) =>
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}misc{Path.DirectorySeparatorChar}") &&
+            !file.FullName.Contains($"{Path.DirectorySeparatorChar}mermaidjs{Path.DirectorySeparatorChar}") &&
             string.Compare(file.Name, "TOC.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0;
 
