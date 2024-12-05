@@ -5,7 +5,9 @@ internal sealed class EnvironmentVariableReader
     internal static ApiKeys GetApiKeys()
     {
         var githubToken = CoalesceEnvVar(("ImportOptions__ApiKeys__GitHubToken", "GitHubKey"));
-        var questKey = CoalesceEnvVar(("ImportOptions__ApiKeys__QuestKey", "QuestKey"));
+        // This is optional so that developers can run the app locally without setting up the devOps token.
+        // In GitHub Actions, this is preferred.
+        var questToken = CoalesceEnvVar(("ImportOptions__ApiKeys__QuestAccessToken", "QuestAccessToken"), false);
 
         // These keys are used when the app is run as an org enabled action. They are optional. 
         // If missing, the action runs using repo-only rights.
@@ -14,11 +16,15 @@ internal sealed class EnvironmentVariableReader
 
         var azureAccessToken = CoalesceEnvVar(("ImportOptions__ApiKeys__AzureAccessToken", "AZURE_ACCESS_TOKEN"), false);
 
+        // This key is the PAT for Quest access. It's now a legacy key. Secretless should be better.
+        var questKey = CoalesceEnvVar(("ImportOptions__ApiKeys__QuestKey", "QuestKey"), false);
+
         if (!int.TryParse(appIDString, out int appID)) appID = 0;
 
         return new ApiKeys()
         {
             GitHubToken = githubToken,
+            QuestAccessToken =  questToken,
             AzureAccessToken = azureAccessToken,
             QuestKey = questKey,
             SequesterPrivateKey = oauthPrivateKey,
