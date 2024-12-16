@@ -661,7 +661,7 @@ public class BuildExtendedPropertiesTests
     }
 
     [Fact]
-    public static void BuildExtensionForSinglePastProject()
+    public static void BuildExtensionForOpenIssueSinglePastProject()
     {
         var extendedProperties = CreateIssueObject(SingleIssuePastProject);
 
@@ -682,13 +682,13 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Future", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Dilithium\\FY25Q1\\07 Jul", extendedProperties.IterationPath);
         Assert.Equal("Closed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
-        Assert.Equal(0, extendedProperties.ParentNodeId);
+        Assert.Equal(11, extendedProperties.ParentNodeId);
     }
     [Fact]
-    public static void BuildExtensionForMultiplePastProject()
+    public static void BuildExtensionForOpenIssueMultiplePastProject()
     {
         var extendedProperties = CreateIssueObject(MultipleIssuePastProject);
 
