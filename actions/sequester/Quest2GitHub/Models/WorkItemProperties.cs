@@ -27,7 +27,7 @@ public class WorkItemProperties
         StoryPoints = QuestStoryPoint(storySize) ?? 0;
         Priority = GetPriority(issue, storySize) ?? -1;
         var latestIteration = storySize?.ProjectIteration(iterations) ?? QuestIteration.FutureIteration(iterations);
-        if (storySize?.IsPastIteration == true)
+        if ((storySize?.IsPastIteration == true) && issue.IsOpen)
         {
             latestIteration = QuestIteration.FutureIteration(iterations);
         }
