@@ -143,18 +143,11 @@ async function parseXml(text: string, displayName: string, apiType: ItemType, gi
             for (const parameter of candidate.Parameters[0].Parameter) {
                 let xmlType = parameter.$.Type;
 
-                // Parameter type could be have a generic type argument.
-                // For example: 'System.ReadOnlySpan<System.Char>' or
-                // 'System.Action<Microsoft.Extensions.Hosting.HostBuilderContext,Microsoft.Extensions.Configuration.IConfigurationBuilder>'.
-                // In this case, the parameter type to match
-                // in the displayName is 'ReadOnlySpan<Char>' or
-                // 'Action<HostBuilderContext,IConfigurationBuilder>' respectively.
-                if (xmlType.includes('<')) {
-                    // Remove the namespaces.
-                    xmlType = simplifyGenericType(xmlType)
-                }
+                // Unqualify all type names within the parameter.
+                xmlType = unqualifyType(xmlType);
 
-                if (paramTypes[paramIndex] !== xmlType.split('.').pop()) {
+                if (xmlType !== paramTypes[paramIndex]) {
+                    // Doesn't match the expected parameter type at this position.
                     break;
                 }
 
@@ -267,24 +260,18 @@ function splitParamList(input: string): string[] {
     return result;
 }
 
-// Removes namespaces from type and type arguments.
-function simplifyGenericType(input: string): string {
-    // Regular expression to match the type and its generic parameters
-    const regex = /(\w+)<([^>]+)>(\[?\]?)/;
-    const match = input.match(regex);
+// Removes fully qualified part of each type name.
+function unqualifyType(input: string): string {
+    let unqualifiedType = input;
 
-    if (!match) {
-        return input;
+    const regex = /(\w|\.)*/g;
+
+    const matches = input.matchAll(regex);
+    for (const match of matches) {
+        unqualifiedType = unqualifiedType.replace(match[0], match[0].substring(match[0].lastIndexOf(".") + 1));
     }
 
-    const typeName = match[1];
-    const genericParams = match[2]
-        .split(',')
-        .map(param => param.trim().split('.').pop())
-        .join(',');
-    const brackets = match.length > 3 ? match[3] : '';
-
-    return `${typeName}<${genericParams}>${brackets}`;
+    return unqualifiedType;
 }
 
 async function parseYaml(text: string, displayName: string, apiType: ItemType, gitUrl: string): Promise<DocIdResult> {
