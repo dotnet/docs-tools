@@ -116,7 +116,7 @@ The following properties are supported in the JSON configuration file.
 | `docLinkSettings`*  | Settings to control the construction of links to docs in the generated Markdown. See [docLinkSettings properties](#doclinksettings-properties). | `"docLinkSettings": { "linkFormat": "relative", "relativeLinkPrefix": "/dotnet/" }` |
 | `docSetProductName`*| The name of the product supported by this docset. This value is used in the H1 heading and other locations in the generated Markdown file. | `"docSetProductName": ".NET"` |
 | `rootDirectory`*    | The GitHub repository's root directory path containing the docs. | `"rootDirectory": "docs/"` |
-| `inclusionCriteria` | Settings to control the inclusion/exclusion of PRs and community contributors. See [inclusionCriteria properties](#inclusioncriteria-properties). | `"inclusionCriteria": { "additionalMicrosoftOrgs": [ "ASP.NET" ], "minAdditionsToFile": 60 }` |
+| `inclusionCriteria` | Settings to control the inclusion/exclusion of PRs and community contributors. See [inclusionCriteria properties](#inclusioncriteria-properties). | `"inclusionCriteria": { "minAdditionsToFile": 60 }` |
 | `navigationOptions` | Settings used to update the index.yml and toc.yml files. If null, those files aren't updated. | `"navigationOptions": { "maximumNumberOfArticles": 3, "tocParentNode": "What's new", "repoTocFolder": "docs/whats-new", "indexParentNode": "Find .NET updates", "repoIndexFolder": "docs/whats-new" }` |
 
 *Indicates a required property
