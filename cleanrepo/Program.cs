@@ -287,7 +287,7 @@ class Program
                     List<(string, List<string?>)> solutionFiles = GetSolutionFiles(options.TargetDirectory);
 
                     ListOrphanedSnippets(options.TargetDirectory, snippetFiles, solutionFiles,
-                        options.Delete, options.XmlSource);
+                        options.Delete, options.XmlSource, options.LimitReferencingDirectories);
                     break;
                 }
             // Replace links to articles that are redirected in the master redirection files.
@@ -483,8 +483,10 @@ class Program
     ///          If found, BREAK to the next include file
     private static void ListOrphanedIncludes(string inputDirectory, Dictionary<string, int> includeFiles, bool deleteOrphanedIncludes)
     {
+        DirectoryInfo? rootDirectory = null;
+
         // Get all files that could possibly link to the include files
-        List<FileInfo>? files = HelperMethods.GetAllMarkdownFiles(inputDirectory, out DirectoryInfo? rootDirectory);
+        List<FileInfo>? files = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
 
         if (files is null || rootDirectory is null)
             return;
@@ -711,31 +713,38 @@ class Program
         return solutionFiles;
     }
 
-    private static void ListOrphanedSnippets(
-        string inputDirectory,
-        List<(string, string?)> snippetFiles,
-        List<(string, List<string?>)> solutionFiles,
-        bool deleteOrphanedSnippets
-        ) => ListOrphanedSnippets(inputDirectory, snippetFiles, solutionFiles, deleteOrphanedSnippets, false);
-
     private static void ListOrphanedSnippets(string inputDirectory,
         List<(string, string?)> snippetFiles,
         List<(string, List<string?>)> solutionFiles,
         bool deleteOrphanedSnippets,
-        bool searchEcmaXmlFiles)
+        bool searchEcmaXmlFiles,
+        List<string>? limitReferencingDirectories)
     {
         // Get all files that could possibly link to the snippet files.
         List<FileInfo>? files;
-        DirectoryInfo? rootDirectory;
-        if (searchEcmaXmlFiles)
-            files = HelperMethods.GetAllEcmaXmlFiles(inputDirectory, out rootDirectory);
-        else
-            files = HelperMethods.GetAllMarkdownFiles(inputDirectory, out rootDirectory);
+        DirectoryInfo? rootDirectory = null;
 
-        if (files is null || rootDirectory is null)
+        // XML or Markdown file repo?
+        string searchPattern = searchEcmaXmlFiles ? "*.xml" : "*.md";
+
+        if (limitReferencingDirectories is null)
+            files = HelperMethods.GetAllReferencingFiles(searchPattern, inputDirectory, ref rootDirectory);
+        else
+        {
+            files = [];
+            foreach (string directory in limitReferencingDirectories)
+            {
+                List<FileInfo>? ecmaXmlFiles = HelperMethods.GetAllReferencingFiles(searchPattern, directory, ref rootDirectory, false);
+                if (ecmaXmlFiles is not null)
+                    files.AddRange(ecmaXmlFiles);
+            }
+        }
+
+        if (files is null || files.Count == 0 || rootDirectory is null)
             return;
 
-        Console.WriteLine($"Checking {snippetFiles.Count} snippet files.");
+        Console.WriteLine($"Checking {snippetFiles.Count} snippet files " +
+            $"against {files.Count} {(searchEcmaXmlFiles ? "XML" : "Markdown")} files.");
 
         int countOfOrphans = 0;
         // Prints out the snippet files that have zero references.
@@ -770,7 +779,8 @@ class Program
                 continue;
 
             // First try to find a reference to the actual snippet file.
-            foreach (FileInfo mdOrXmlFile in files)
+            //foreach (FileInfo mdOrXmlFile in files)
+            Parallel.ForEach(files, mdOrXmlFile =>
             {
                 // Matches the following types of snippet syntax:
                 // :::code language="csharp" source="snippets/EventCounters/MinimalEventCounterSource.cs":::
@@ -828,9 +838,10 @@ class Program
                 }
 
                 if (foundSnippetReference)
-                    break;
+                    //break;
+                    return;
                 // else check the next Markdown file.
-            }
+            });
 
             if (!foundSnippetReference && !isPartOfProject)
             {
@@ -1609,45 +1620,34 @@ static class HelperMethods
     }
 
     /// <summary>
-    /// Gets all *.yml files recursively, starting in the ancestor directory that contains docfx.json.
+    /// Gets all files that match <paramref name="searchPattern"/>, starting in the ancestor directory that contains docfx.json.
     /// </summary>
-    internal static List<FileInfo>? GetAllYamlFiles(string directoryPath, out DirectoryInfo? rootDirectory)
+    internal static List<FileInfo>? GetAllReferencingFiles(
+        string searchPattern,
+        string directoryPath,
+        ref DirectoryInfo? rootDirectory,
+        bool searchRootDirectory = true)
     {
-        // Look further up the path until we find docfx.json.
-        rootDirectory = GetDirectory(new DirectoryInfo(directoryPath), "docfx.json");
+        DirectoryInfo? currentRootDir = rootDirectory;
 
-        if (rootDirectory is null)
-            return null;
-
-        return rootDirectory.EnumerateFiles("*.yml", SearchOption.AllDirectories).ToList();
-    }
-
-    /// <summary>
-    /// Gets all *.md files recursively, starting in the ancestor directory that contains docfx.json.
-    /// </summary>
-    internal static List<FileInfo>? GetAllMarkdownFiles(string directoryPath, out DirectoryInfo? rootDirectory)
-    {
         // Look further up the path until we find docfx.json
         rootDirectory = GetDirectory(new DirectoryInfo(directoryPath), "docfx.json");
 
         if (rootDirectory is null)
             return null;
+        else if (currentRootDir != null && string.Compare(rootDirectory.FullName, currentRootDir.FullName) != 0)
+        {
+            Console.WriteLine($"\n**WARNING** The provided referencing directories are from multiple docsets, which isn't allowed.\n");
+        }
 
-        return rootDirectory.EnumerateFiles("*.md", SearchOption.AllDirectories).ToList();
-    }
-
-    /// <summary>
-    /// Gets all *.xml files recursively, starting in the ancestor directory that contains docfx.json.
-    /// </summary>
-    internal static List<FileInfo>? GetAllEcmaXmlFiles(string directoryPath, out DirectoryInfo? rootDirectory)
-    {
-        // Look further up the path until we find docfx.json
-        rootDirectory = GetDirectory(new DirectoryInfo(directoryPath), "docfx.json");
-
-        if (rootDirectory is null)
-            return null;
-
-        return rootDirectory.EnumerateFiles("*.xml", SearchOption.AllDirectories).ToList();
+        if (searchRootDirectory)
+            return rootDirectory.EnumerateFiles(searchPattern, SearchOption.AllDirectories).ToList();
+        else
+        {
+            // Only search the specified directory and its subdirectories.
+            DirectoryInfo searchDirInfo = new(directoryPath);
+            return searchDirInfo.EnumerateFiles(searchPattern, SearchOption.AllDirectories).ToList();
+        }
     }
 
     /// <summary>
