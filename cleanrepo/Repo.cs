@@ -34,10 +34,11 @@ class DocFxRepo(string startDirectory, string urlBasePath)
     {
         get
         {
+            DirectoryInfo? rootDirectory = null;
             if (_allMdAndYmlFiles == null)
             {
-                _allMdAndYmlFiles = HelperMethods.GetAllMarkdownFiles(DocFxDirectory!.FullName, out _);
-                List<FileInfo>? yamlFiles = HelperMethods.GetAllYamlFiles(DocFxDirectory!.FullName, out _);
+                _allMdAndYmlFiles = HelperMethods.GetAllReferencingFiles("*.md", DocFxDirectory!.FullName, ref rootDirectory);
+                List<FileInfo>? yamlFiles = HelperMethods.GetAllReferencingFiles("*.yml", DocFxDirectory!.FullName, ref rootDirectory);
                 if (yamlFiles is not null)
                     _allMdAndYmlFiles?.AddRange(yamlFiles);
             }
