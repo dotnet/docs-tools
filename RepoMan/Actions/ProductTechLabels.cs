@@ -15,12 +15,12 @@ internal sealed class SetSvcSubSvcLabels: IRunnerItem
         if (data.Variables.ContainsKey("ms.service"))
             data.Operations.LabelsAdd.Add($"{data.Variables["ms.service"]}/svc");
         else
-            data.Logger.LogInformation("svc metadata wasn't found: {service}", $"{data.Variables["ms.service"]}/svc");
+            data.Logger.LogInformation("svc metadata wasn't found");
 
         if (data.Variables.ContainsKey("ms.subservice"))
             data.Operations.LabelsAdd.Add($"{data.Variables["ms.subservice"]}/subsvc");
         else
-            data.Logger.LogInformation("subsvc metadata wasn't found: {subservice}", $"{data.Variables["ms.subservice"]}/subsvc");
+            data.Logger.LogInformation("subsvc metadata wasn't found");
 
 
         await Task.CompletedTask;
