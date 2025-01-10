@@ -30,7 +30,7 @@ internal class CsvUtils
         //   For each framework
         //     Map it to a known framework name
         //     Generate a collection of that version + later versions of that framework
-        //     (e.g. add 4.7, 4.7.1, 4.7.2, 4.8, 4.8.1 for net462; add 2.1 for netstandard2.0; add 7.0, 8.0, 9.0 for net6.0)
+        //     (e.g. add 4.7, 4.7.1, 4.7.2, 4.8, 4.8.1 for net462; add 7.0, 8.0, 9.0 for net6.0)
         //     Create a dictionary or add to an existing dictionary *for that version* that will become the CSV file -
         //       pac<num>,[tfm=<tfm>;includeXml=false]<package name>,<package version>
         //       Example: pac01,[tfm=net9.0;includeXml=false]Microsoft.Extensions.Caching.Abstractions,9.0.0-preview.2.24128.5
@@ -61,35 +61,55 @@ internal class CsvUtils
                 switch (framework)
                 {
                     case "net462":
+                        framework = "net462";
                         opsMoniker = s_tfmToOpsMoniker[framework];
                         AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        framework = "net47";
                         goto case "net47";
                     case "net47":
+                        framework = "net47";
                         opsMoniker = s_tfmToOpsMoniker[framework];
                         AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        framework = "net471";
                         goto case "net471";
                     case "net471":
+                        framework = "net471";
                         opsMoniker = s_tfmToOpsMoniker[framework];
                         AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        framework = "net472";
                         goto case "net472";
                     case "net472":
+                        framework = "net472";
                         opsMoniker = s_tfmToOpsMoniker[framework];
                         AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        framework = "net48";
                         goto case "net48";
                     case "net48":
+                        framework = "net48";
                         opsMoniker = s_tfmToOpsMoniker[framework];
                         AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        framework = "net481";
                         goto case "net481";
                     case "net481":
+                        framework = "net481";
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
+                        break;
                     case "net6.0":
+                        framework = "net6.0";
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
+                        goto case "net7.0";
                     case "net7.0":
+                        framework = "net7.0";
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
+                        goto case "net8.0";
                     case "net8.0":
+                        framework = "net8.0";
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
+                        goto case "net9.0";
                     case "net9.0":
+                        framework = "net9.0";
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
+                        break;
                     case "netstandard2.0":
                     case "netstandard2.1":
                         opsMoniker = s_tfmToOpsMoniker[framework];
@@ -137,11 +157,12 @@ internal class CsvUtils
             )
         {
             // Special case for packages from dotnet/extensions repo - include XML files.
-            bool includeXml = string.Equals(
-                packageEntry.Repository,
+            string[] reposToIncludeXmlComments = [
                 "https://github.com/dotnet/extensions",
-                StringComparison.InvariantCultureIgnoreCase
-                );
+                "https://devdiv.visualstudio.com/DevDiv/_git/AITestingTools"
+                ];
+
+            bool includeXml = reposToIncludeXmlComments.Contains(packageEntry.Repository);
 
             // Except don't include XML file for Microsoft.Extensions.Diagnostics.ResourceMonitoring
             // See https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787.
