@@ -58,9 +58,9 @@ public class PageGenerationService
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(existingMarkdownFile))
+        if (string.IsNullOrWhiteSpace(existingMarkdownFile) || !File.Exists(existingMarkdownFile))
         {
-            var filePath = GetMarkdownFilePath();
+            var filePath = string.IsNullOrWhiteSpace(existingMarkdownFile) ? GetMarkdownFilePath() : existingMarkdownFile;
             await using TextWriter stream = new StreamWriter(filePath);
 
             await GenerateHeader(stream);
