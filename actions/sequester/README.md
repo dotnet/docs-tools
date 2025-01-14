@@ -60,7 +60,7 @@ The consuming repository would ideally define the config file. As an example, it
     "AreaPath": "Production\\Digital and App Innovation\\DotNet and more\\dotnet"
   },
   "ImportTriggerLabel": ":world_map: reQUEST",
-  "ImportedLabel": ":pushpin: seQUESTered"
+  "ImportedLabel": ":pushpin: seQUESTered",
   "ParentNodes": [
     {
       "Semester": "Selenium",
