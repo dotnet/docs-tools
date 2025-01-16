@@ -25,7 +25,6 @@ To install the GitHub actions:
    - **SEQUESTER_PRIVATEKEY**: This is the private key to authorize sequester. Get this from one of the App admins (Bill or Immo).
    - **QUEST_KEY**: Generate a PAT at [MSFT-SKILLING](https://dev.azure.com/msft-skilling/_usersSettings/tokens) with the following permissions:
      - *Identity*: Read
-     - *Project & Team*: Read/Write
      - *WorkItems*: Read/Write
    - **CLIENT_ID**:  The client ID used for secretless authentication
    - **TENANT_ID**: The Tenant ID used for secretless authentication
@@ -61,20 +60,66 @@ The consuming repository would ideally define the config file. As an example, it
     "AreaPath": "Production\\Digital and App Innovation\\DotNet and more\\dotnet"
   },
   "ImportTriggerLabel": ":world_map: reQUEST",
-  "ImportedLabel": ":pushpin: seQUESTered"
+  "ImportedLabel": ":pushpin: seQUESTered",
   "ParentNodes": [
-  {
-    "Label": "okr-health",
-    "ParentNodeId": 199082
-  },
-  {
-    "Label": "dotnet-csharp/svc",
-    "ParentNodeId": 227484
-  }
+    {
+      "Semester": "Selenium",
+      "Label": "okr-freshness",
+      "ParentNodeId": 286034
+    },
+    {
+      "Semester": "Selenium",
+      "ParentNodeId": 308199
+    },
+    {
+      "Semester": "Dilithium",
+       "Label": "okr-freshness",
+       "ParentNodeId": 237266
+    },
+    {
+      "Semester": "Dilithium",
+      "ParentNodeId": 227485
+    }
   ],
-  "DefaultParentNode": 228485
+  "DefaultParentNode": 308199,
+  "WorkItemTags": [
+    {
+      "Label": ":checkered_flag: Release: .NET 9",
+      "Tag": "new-feature"
+    },
+    {
+      "Label": ":checkered_flag: Release: .NET 9",
+      "Tag": "major-updates"
+    },
+    {
+     "Label": "okr-curation",
+      "Tag": "content-curation"
+    },
+    {
+      "Label": ":world_map: reQUEST",
+      "Tag" : "GitHub"
+    },
+    {
+      "Label": ":pushpin: seQUESTered",
+      "Tag" : "GitHub"
+    }
+  ]
 }
 ```
+
+There are several mandatory and optional nodes in the previous example:
+
+### Mandatory nodes
+
+- **AzureDevOps**: The three elements of this node specify the AzureDevOps "org", "project" and the area path for all work items imported from a given repo.
+- **ImportTriggerLabel**: This label indicates an issue that should be imported. It's assumed that it hasn't been imported yet, but the code will look for an associated work item that has already been imported. If found, the code updates that work item.
+- **ImportedLabel**: This label indicates an issue that has been imported. The app updates the associated work item. If the associated work item isn't found, and error is reported.
+- **DefaultParentNode**: This is the fallback when an issue doesn't match any parent nodes.
+
+### Optional nodes
+
+- **ParentNodes**: These elements determine how to set the parent in Azure DevOps. Every work item needs a parent. The parent is based on the iteration (which will be part of a semester), the kind of activity, and the configured repository. The kind of activity is represented by some of the configured labels. Each team can define their own labels for given parents. Either "semester" or "label" can be missing. When those are missing, that node matches all values. The first match wins to set the parent, as a work item can have only 1 parent.
+- **WorkItemTags**: This maps a GitHub label to an Azure DevOps tag. Tags are used for reporting. As the preceding example shows, labels can create multiple tags, and multiple labels can add the same tag.
 
 ## Workflow files
 
