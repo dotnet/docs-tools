@@ -24,7 +24,8 @@ class Program
         "FilterImagesForText",
         "ReplaceRedirectTargets",
         "ReplaceWithRelativeLinks",
-        "RemoveRedirectHops"
+        "RemoveRedirectHops",
+        "AuditMSDate"
     ];
 
     static void Main(string[] args)
@@ -351,6 +352,36 @@ class Program
                     Console.WriteLine("\nFinished removing redirect hops.");
                     break;
                 }
+            // Audit the 'ms.date' property in all markdown files.
+            case "AuditMSDate":
+                {
+                    Console.WriteLine($"\nAuditing the 'ms.date' property in all markdown files in '{options.TargetDirectory}'...");
+
+                    if (docFxRepo.AllTocFiles is null)
+                        return;
+
+                    List<FileInfo> articleFiles = HelperMethods.GetMarkdownFiles(options.TargetDirectory, "snippets", "includes");
+
+
+                    articleFiles.AddRange(HelperMethods.GetYAMLFiles(options.TargetDirectory));
+
+                    if (articleFiles is null)
+                        return;
+
+                    var linkedArticles = from article in articleFiles
+                                         where (string.Compare(article.Name, "toc.md", true) != 0) &&
+                                         (string.Compare(article.Name, "toc.yml", true) != 0) &&
+                                         docFxRepo.AllTocFiles.Any(tocFile => IsFileLinkedFromTocFile(article, tocFile))
+                                         select article;
+                    foreach (var article in linkedArticles)
+                    {
+                        // Get the ms.date value:
+                        DateOnly? msDate = GetmsDate(article.FullName);
+                        Console.WriteLine($"{article.FullName}: {msDate}");
+                    }
+
+                    break;
+                }
             default:
                 {
                     Console.WriteLine($"\nUnknown function '{options.Function}'. " +
@@ -361,6 +392,32 @@ class Program
 
         stopwatch.Stop();
         Console.WriteLine($"Elapsed time: {stopwatch.Elapsed.ToHumanReadableString()}");
+    }
+
+    private static DateOnly? GetmsDate(string filePath)
+    {
+        DateOnly? msDate = default;
+        foreach (var line in File.ReadLines(filePath))
+        {
+            if (line.Contains("ms.date"))
+            {
+                string[] parts = line.Split(":");
+                if (parts.Length > 1)
+                {
+                    string date = parts[1].Trim().Replace("\"", ""); // yeah, remove quotes.
+                    if (DateOnly.TryParse(date, out DateOnly parsedDate))
+                    {
+                        msDate = parsedDate;
+                        break;
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine($"Invalid date format in {filePath}: {date}");
+                    }
+                }
+            }
+        }
+        return msDate;
     }
 
     #region Replace site-relative links
