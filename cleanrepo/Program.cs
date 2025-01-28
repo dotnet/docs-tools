@@ -4,6 +4,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using CleanRepo.Extensions;
+using DotNet.DocsTools.GitHubObjects;
+using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GraphQLQueries;
 using Microsoft.Build.Construction;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -28,7 +31,7 @@ class Program
         "AuditMSDate"
     ];
 
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
         builder.Configuration.Sources.Clear();
@@ -46,10 +49,10 @@ class Program
         builder.Configuration.GetSection(nameof(Options))
             .Bind(options);
 
-        RunOptions(options);
+        await RunOptions(options);
     }
 
-    static void RunOptions(Options options)
+    static async Task RunOptions(Options options)
     {
         if (String.IsNullOrEmpty(options.Function))
         {
@@ -357,6 +360,12 @@ class Program
                 {
                     Console.WriteLine($"\nAuditing the 'ms.date' property in all markdown files in '{options.TargetDirectory}'...");
 
+                    var config = new ConfigurationBuilder()
+                        .AddEnvironmentVariables()
+                        .Build();
+                    string key = config["GitHubKey"]!;
+                    IGitHubClient client = IGitHubClient.CreateGitHubClient(key);
+
                     if (docFxRepo.AllTocFiles is null)
                         return;
 
@@ -376,8 +385,29 @@ class Program
                     foreach (var article in linkedArticles)
                     {
                         // Get the ms.date value:
-                        DateOnly? msDate = GetmsDate(article.FullName);
-                        Console.WriteLine($"{article.FullName}: {msDate}");
+                        DateOnly? msDate = await GetmsDate(article.FullName);
+
+                        var query = new EnumerationQuery<FileHistory, FileHistoryVariables>(client);
+                        var path = article.FullName.Replace(options.DocFxDirectory, "").Replace('\\', '/').Remove(0,1);
+
+                        var variables = new FileHistoryVariables("dotnet", "docs", path);
+                        DateOnly? commitDate = default;
+                        int numberChanges = 0;
+                        int numberPRs = 0;
+                        await foreach (var history in query.PerformQuery(variables))
+                        {
+                            numberPRs++;
+                            commitDate ??= DateOnly.FromDateTime(history.CommittedDate);
+                            if (msDate >= DateOnly.FromDateTime(history.CommittedDate.AddDays(-7))) // edit vs. merge.
+                            {
+                                break;
+                            }
+                            numberChanges += Math.Max(history.Deletions, history.Additions);
+                        }
+                        if (numberChanges > 0)
+                        {
+                            Console.WriteLine($"msDate: {msDate}, commitDate: {commitDate}, {numberPRs} merged with {numberChanges} changes to {path}");
+                        }
                     }
 
                     break;
@@ -394,10 +424,10 @@ class Program
         Console.WriteLine($"Elapsed time: {stopwatch.Elapsed.ToHumanReadableString()}");
     }
 
-    private static DateOnly? GetmsDate(string filePath)
+    private static async Task<DateOnly?> GetmsDate(string filePath)
     {
         DateOnly? msDate = default;
-        foreach (var line in File.ReadLines(filePath))
+        await foreach (var line in File.ReadLinesAsync(filePath))
         {
             if (line.Contains("ms.date"))
             {
