@@ -94,6 +94,9 @@ public static class DotnetPackageIndex
                 packageIds.Add(packageId);
         }
 
+        // Special case since not owned by dotnetframework (yet)
+        packageIds.Add("Microsoft.Extensions.VectorData.Abstractions");
+
         Console.WriteLine($"Found {packageIds.Count:N0} package IDs owned by .NET.");
 
         Console.WriteLine("Getting versions...");
@@ -163,8 +166,12 @@ public static class DotnetPackageIndex
 
             if (usePreviewVersions)
             {
+                // TODO - this seems clunky.
                 // Make sure it's a .NET 9 preview version.
-                if ((latestPrerelease != default) && latestPrerelease.packageId.Version.Major == 9)
+                if (latestPrerelease != default &&
+                    (latestPrerelease.packageId.Version.Major == 9 ||
+                    // Special case for major version (0) of Microsoft.Extensions.AI.Evaluation.
+                    latestPrerelease.packageId.Id.StartsWith("Microsoft.Extensions.AI.Evaluation")))
                     result.Add(latestPrerelease.packageId);
             }
         }

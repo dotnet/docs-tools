@@ -8,7 +8,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 1106", "preview"];
+        args = [@"c:\users\gewarren\desktop\Package Index 0130", "preview"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -101,9 +101,9 @@ internal static class Program
             string disabledPath = Path.Join(indexPackagesPath, $"{id}-all.disabled");
             string failedVersionPath = Path.Join(indexPackagesPath, $"{id}-{version}.failed");
 
-            bool alreadyIndexed = !retryIndexed && File.Exists(path) ||
-                                 !retryDisabled && File.Exists(disabledPath) ||
-                                 !retryFailed && File.Exists(failedVersionPath);
+            bool alreadyIndexed = (!retryIndexed && File.Exists(path)) ||
+                                 (!retryDisabled && File.Exists(disabledPath)) ||
+                                 (!retryFailed && File.Exists(failedVersionPath));
 
             if (alreadyIndexed)
             {
