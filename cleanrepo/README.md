@@ -11,6 +11,7 @@ This command-line tool helps you clean up a DocFx-based content repo. It can:
 - Remove daisy chains (or hops) within the redirection files for the docset.
 - Replace site-relative links with file-relative links (includes image links).
 - Filter image list based on strings found in images.
+- Compare `ms.date` metadata and recent commit data.
 
 ## Usage
 
@@ -31,6 +32,7 @@ The available functions are described in the following table.
 | ReplaceWithRelativeLinks | Replace site-relative links with file-relative links. |
 | CatalogImagesWithText | Map images to the markdown/YAML files that reference them, with all text found in images. The output file is prefixed with `OcrImageFiles-`. |
 | FilterImagesForText | Filter images for text. The output file is prefixed with `FilteredOcrImageFiles-`. |
+| AuditMSDate | Compare `ms.date` metadata to most recent commits. This can take a long time on a full repo. It also requires a [GitHub PAT](https://github.com/settings/tokens) with read privileges for the repository you want to check. Store this PAT in an environment variable named `GITHUB_KEY`.
 
 ## Image to text examples
 
