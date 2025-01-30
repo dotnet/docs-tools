@@ -389,6 +389,8 @@ class Program
 
     private static async Task AuditMSDateAccuracy(Options options, DocFxRepo docFxRepo, List<FileInfo> articleFiles)
     {
+        if (options.DocFxDirectory is null)
+            return;
         var config = new ConfigurationBuilder()
             .AddEnvironmentVariables()
             .Build();
@@ -399,7 +401,7 @@ class Program
         int freshArticles = 0;
         int trulyStateArticles = 0;
         int falseStaleArticles = 0;
-        // Make this configurable:
+        // This could be configurable in time (or now, even):
         DateOnly staleContentDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-1));
 
         var linkedArticles = from article in articleFiles
