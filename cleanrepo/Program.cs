@@ -358,7 +358,10 @@ class Program
             // Audit the 'ms.date' property in all markdown files.
             case "AuditMSDate":
                 {
+                    string[] progressMarkers = ["| -", "/ \\", "- |", "\\ /"];
+                    string erase = "\b\b\b\b\b\b\b\b\b\b\b";
                     Console.WriteLine($"\nAuditing the 'ms.date' property in all markdown files in '{options.TargetDirectory}'...");
+
 
                     var config = new ConfigurationBuilder()
                         .AddEnvironmentVariables()
@@ -374,6 +377,8 @@ class Program
 
                     articleFiles.AddRange(HelperMethods.GetYAMLFiles(options.TargetDirectory));
 
+                    Console.WriteLine($"Total number of files to process: {articleFiles.Count}");
+
                     if (articleFiles is null)
                         return;
 
@@ -382,34 +387,67 @@ class Program
                                          (string.Compare(article.Name, "toc.yml", true) != 0) &&
                                          docFxRepo.AllTocFiles.Any(tocFile => IsFileLinkedFromTocFile(article, tocFile))
                                          select article;
+                    int totalArticles = 0;
+                    int freshArticles = 0;
+                    int trulyStateArticles = 0;
+                    int falseStaleArticles = 0;
+                    // Make this configurable:
+                    DateOnly staleContentDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-1));
+                    Console.WriteLine($"PRs Changes Last Commit    ms.date Path");
+                    Console.Write($"{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
                     foreach (var article in linkedArticles)
                     {
-                        // Get the ms.date value:
+                        totalArticles++;
+                        Console.Write($"{erase}{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
+                        // Do the cheapest test first: Is this fresh?
                         DateOnly? msDate = await GetmsDate(article.FullName);
+                        if (msDate > staleContentDate)
+                        {
+                            freshArticles++;
+                            continue;
+                        }
+
+                        // Next cheapest test: Are there recent commits?
+                        DateOnly? commitDate = GetCommitDate(options.DocFxDirectory, article.FullName);
+                        if (commitDate < staleContentDate)
+                        {
+                            trulyStateArticles++;
+                            continue;
+                        }
+
+                        // reset commit Date. That way, the value from GitHub is used
+                        // instead of the file value.
+                        commitDate = null;
+                        // Give a week from msDate to allow for PR edits before merging.
+                        DateOnly msDateMergeDate = DateOnly.FromDateTime(new DateTime(msDate.Value, default).AddDays(7));
 
                         var query = new EnumerationQuery<FileHistory, FileHistoryVariables>(client);
                         var path = article.FullName.Replace(options.DocFxDirectory, "").Replace('\\', '/').Remove(0,1);
 
                         var variables = new FileHistoryVariables("dotnet", "docs", path);
-                        DateOnly? commitDate = default;
                         int numberChanges = 0;
                         int numberPRs = 0;
                         await foreach (var history in query.PerformQuery(variables))
                         {
-                            numberPRs++;
                             commitDate ??= DateOnly.FromDateTime(history.CommittedDate);
-                            if (msDate >= DateOnly.FromDateTime(history.CommittedDate.AddDays(-7))) // edit vs. merge.
+                            if ((DateOnly.FromDateTime(history.CommittedDate) <= msDateMergeDate) ||
+                                (DateOnly.FromDateTime(history.CommittedDate) <= staleContentDate))
                             {
                                 break;
                             }
-                            numberChanges += Math.Max(history.Deletions, history.Additions);
+                            numberPRs++;
+                            if (history.ChangedFilesIfAvailable < 500)
+                                numberChanges += Math.Max(history.Deletions, history.Additions);
                         }
                         if (numberChanges > 0)
                         {
-                            Console.WriteLine($"msDate: {msDate}, commitDate: {commitDate}, {numberPRs} merged with {numberChanges} changes to {path}");
+                            Console.Write(erase);
+                            falseStaleArticles++;
+                            Console.WriteLine($"{numberPRs,3} {numberChanges,7}  {commitDate:MM-dd-yyyy} {msDate:MM-dd-yyyy} {path}");
+                            Console.Write($"{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
                         }
                     }
-
+                    Console.WriteLine($"{erase} {totalArticles} checked. Fresh: {freshArticles}. Truly stale: {trulyStateArticles}. Updated but not fresh: {falseStaleArticles}");
                     break;
                 }
             default:
@@ -422,6 +460,28 @@ class Program
 
         stopwatch.Stop();
         Console.WriteLine($"Elapsed time: {stopwatch.Elapsed.ToHumanReadableString()}");
+    }
+
+    private static DateOnly GetCommitDate(string folder, string path)
+    {
+        // Create a new process
+        Process process = new Process();
+        process.StartInfo.FileName = "git";
+        process.StartInfo.Arguments = $"""log -1 --format="%cd" --date=short {path}""";
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.CreateNoWindow = true;
+        process.StartInfo.WorkingDirectory = folder;
+
+        // Start the process
+        process.Start();
+
+        // Read the output
+        string output = process.StandardOutput.ReadToEnd();
+
+        // Wait for the process to exit
+        process.WaitForExit();
+        return DateOnly.Parse(output);
     }
 
     private static async Task<DateOnly?> GetmsDate(string filePath)
