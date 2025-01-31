@@ -4,6 +4,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using CleanRepo.Extensions;
+using DotNet.DocsTools.GitHubObjects;
+using DotNetDocs.Tools.GitHubCommunications;
+using DotNetDocs.Tools.GraphQLQueries;
 using Microsoft.Build.Construction;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -24,10 +27,11 @@ class Program
         "FilterImagesForText",
         "ReplaceRedirectTargets",
         "ReplaceWithRelativeLinks",
-        "RemoveRedirectHops"
+        "RemoveRedirectHops",
+        "AuditMSDate"
     ];
 
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
         builder.Configuration.Sources.Clear();
@@ -45,10 +49,10 @@ class Program
         builder.Configuration.GetSection(nameof(Options))
             .Bind(options);
 
-        RunOptions(options);
+        await RunOptions(options);
     }
 
-    static void RunOptions(Options options)
+    static async Task RunOptions(Options options)
     {
         if (String.IsNullOrEmpty(options.Function))
         {
@@ -351,6 +355,23 @@ class Program
                     Console.WriteLine("\nFinished removing redirect hops.");
                     break;
                 }
+            // Audit the 'ms.date' property in all markdown files.
+            case "AuditMSDate":
+                {
+                    Console.WriteLine($"\nAuditing the 'ms.date' property in all markdown files in '{options.TargetDirectory}'...");
+
+                    if (docFxRepo.AllTocFiles is null)
+                        return;
+
+                    List<FileInfo> articleFiles = HelperMethods.GetMarkdownFiles(options.TargetDirectory, "snippets", "includes");
+
+                    articleFiles.AddRange(HelperMethods.GetYAMLFiles(options.TargetDirectory));
+
+                    Console.WriteLine($"Total number of files to process: {articleFiles.Count}");
+
+                    await AuditMSDateAccuracy(options, docFxRepo, articleFiles);
+                    break;
+                }
             default:
                 {
                     Console.WriteLine($"\nUnknown function '{options.Function}'. " +
@@ -361,6 +382,93 @@ class Program
 
         stopwatch.Stop();
         Console.WriteLine($"Elapsed time: {stopwatch.Elapsed.ToHumanReadableString()}");
+    }
+
+    private static async Task AuditMSDateAccuracy(Options options, DocFxRepo docFxRepo, List<FileInfo> articleFiles)
+    {
+        if (options.DocFxDirectory is null)
+            return;
+        var config = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .Build();
+        string key = config["GitHubKey"]!;
+        IGitHubClient client = IGitHubClient.CreateGitHubClient(key);
+
+        int totalArticles = 0;
+        int freshArticles = 0;
+        int trulyStateArticles = 0;
+        int falseStaleArticles = 0;
+        // This could be configurable in time (or now, even):
+        DateOnly staleContentDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-1));
+
+        string[] progressMarkers = ["| -", "/ \\", "- |", "\\ /"];
+        const string removeProgressMarkers = "\b\b\b\b\b\b\b\b\b\b\b";
+
+        Console.WriteLine($"PRs Changes Last Commit    ms.date Path");
+        Console.Write($"{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
+        foreach (var article in articleFiles)
+        {
+            totalArticles++;
+            Console.Write($"{removeProgressMarkers}{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
+            // First, don't do more work on fresh artricles. This is the
+            // least expensive (in time) test to look for.
+            DateOnly? msDate = await HelperMethods.GetmsDate(article.FullName);
+            if (msDate is null)
+            {
+                continue;
+            }
+            if (msDate > staleContentDate)
+            {
+                freshArticles++;
+                continue;
+            }
+
+            // Next, use git history to get the last commit. This starts a process,
+            // so it's quite a bit more expensive than the msDate check.
+            DateOnly? commitDate = await HelperMethods.GetCommitDate(options.DocFxDirectory, article.FullName);
+            if (commitDate < staleContentDate)
+            {
+                trulyStateArticles++;
+                continue;
+            }
+
+            // Give a week from msDate to allow for PR edits before merging.
+            // Without this buffer of time, the checks below often include
+            // the PR where the date was updated. That results in a lot of
+            // false positives.
+            DateOnly msDateMergeDate = DateOnly.FromDateTime(new DateTime(msDate.Value, default).AddDays(7));
+
+            var query = new EnumerationQuery<FileHistory, FileHistoryVariables>(client);
+
+            // Even on windows, the paths need to be unix-style for the GitHub API,
+            // and the opening slash must be removed.
+            var path = article.FullName.Replace(options.DocFxDirectory, "").Replace('\\', '/').Remove(0, 1);
+
+            var variables = new FileHistoryVariables("dotnet", "docs", path);
+            int numberChanges = 0;
+            int numberPRs = 0;
+            await foreach (var history in query.PerformQuery(variables))
+            {
+                if ((DateOnly.FromDateTime(history.CommittedDate) <= msDateMergeDate) ||
+                    (DateOnly.FromDateTime(history.CommittedDate) <= staleContentDate))
+                {
+                    break;
+                }
+                if (history.ChangedFilesIfAvailable < 100) // not a bulk PR
+                {
+                    numberPRs++;
+                    numberChanges += Math.Max(history.Deletions, history.Additions);
+                }
+            }
+            if (numberChanges > 0)
+            {
+                Console.Write(removeProgressMarkers);
+                falseStaleArticles++;
+                Console.WriteLine($"{numberPRs,3} {numberChanges,7}  {commitDate:MM-dd-yyyy} {msDate:MM-dd-yyyy} {path}");
+                Console.Write($"{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
+            }
+        }
+        Console.WriteLine($"{removeProgressMarkers} {totalArticles} checked. Fresh: {freshArticles}. Truly stale: {trulyStateArticles}. Updated but not fresh: {falseStaleArticles}");
     }
 
     #region Replace site-relative links
@@ -1676,6 +1784,54 @@ static class HelperMethods
         }
 
         return dir;
+    }
+
+    internal static async Task<DateOnly?> GetmsDate(string filePath)
+    {
+        DateOnly? msDate = default;
+        await foreach (var line in File.ReadLinesAsync(filePath))
+        {
+            if (line.Contains("ms.date"))
+            {
+                string[] parts = line.Split(":");
+                if (parts.Length > 1)
+                {
+                    string date = parts[1].Trim().Replace("\"", ""); // yeah, remove quotes.
+                    if (DateOnly.TryParse(date, out DateOnly parsedDate))
+                    {
+                        msDate = parsedDate;
+                        break;
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine($"Invalid date format in {filePath}: {date}");
+                    }
+                }
+            }
+        }
+        return msDate;
+    }
+
+    internal static async Task<DateOnly> GetCommitDate(string folder, string path)
+    {
+        // Create a new process
+        Process process = new Process();
+        process.StartInfo.FileName = "git";
+        process.StartInfo.Arguments = $"""log -1 --format="%cd" --date=short {path}""";
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.CreateNoWindow = true;
+        process.StartInfo.WorkingDirectory = folder;
+
+        // Start the process
+        process.Start();
+
+        // Read the output
+        string output = await process.StandardOutput.ReadToEndAsync();
+
+        // Wait for the process to exit
+        await process.WaitForExitAsync();
+        return DateOnly.Parse(output);
     }
 }
 #endregion

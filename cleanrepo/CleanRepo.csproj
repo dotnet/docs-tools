@@ -22,6 +22,9 @@
     <PackageReference Include="Microsoft.Build" Version="17.12.6" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DotNet.DocsTools\DotNet.DocsTools.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="appSettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
