@@ -369,9 +369,6 @@ class Program
 
                     Console.WriteLine($"Total number of files to process: {articleFiles.Count}");
 
-                    if (articleFiles is null)
-                        return;
-
                     await AuditMSDateAccuracy(options, docFxRepo, articleFiles);
                     break;
                 }
@@ -404,23 +401,22 @@ class Program
         // This could be configurable in time (or now, even):
         DateOnly staleContentDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-1));
 
-        var linkedArticles = from article in articleFiles
-                             where (string.Compare(article.Name, "toc.md", true) != 0) &&
-                             (string.Compare(article.Name, "toc.yml", true) != 0) &&
-                             docFxRepo.AllTocFiles.Any(tocFile => IsFileLinkedFromTocFile(article, tocFile))
-                             select article;
         string[] progressMarkers = ["| -", "/ \\", "- |", "\\ /"];
         const string removeProgressMarkers = "\b\b\b\b\b\b\b\b\b\b\b";
 
         Console.WriteLine($"PRs Changes Last Commit    ms.date Path");
         Console.Write($"{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
-        foreach (var article in linkedArticles)
+        foreach (var article in articleFiles)
         {
             totalArticles++;
             Console.Write($"{removeProgressMarkers}{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
             // First, don't do more work on fresh artricles. This is the
             // least expensive (in time) test to look for.
             DateOnly? msDate = await HelperMethods.GetmsDate(article.FullName);
+            if (msDate is null)
+            {
+                continue;
+            }
             if (msDate > staleContentDate)
             {
                 freshArticles++;
