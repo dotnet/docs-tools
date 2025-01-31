@@ -438,7 +438,7 @@ class Program
 
             // Give a week from msDate to allow for PR edits before merging.
             // Without this buffer of time, the checks below often include
-            // the PR where the date was updated. That creates in a lot of
+            // the PR where the date was updated. That results in a lot of
             // false positives.
             DateOnly msDateMergeDate = DateOnly.FromDateTime(new DateTime(msDate.Value, default).AddDays(7));
 
