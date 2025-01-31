@@ -159,6 +159,7 @@ internal class CsvUtils
             // Special case for packages from dotnet/extensions repo - include XML files.
             string[] reposToIncludeXmlComments = [
                 "https://github.com/dotnet/extensions",
+                "https://github.com/microsoft/semantic-kernel",
                 "https://devdiv.visualstudio.com/DevDiv/_git/AITestingTools"
                 ];
 
