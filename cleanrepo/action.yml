@@ -20,7 +20,7 @@ inputs:
     required: true
 runs:
   using: docker
-  image: ../cleanrepo/Dockerfile
+  image: ../cleanrepo.Dockerfile
   args:
     - '/Options:Function'
     - ${{ inputs.function }}
