@@ -61,8 +61,7 @@ internal static class PlatformPackageDefinition
         "System.Formats.Nrbf",
         "System.Net.ServerSentEvents",
         "System.Numerics.Tensors",
-        "System.Runtime.Serialization.Schema",
-        "System.Speech"
+        "System.Runtime.Serialization.Schema"
     ];
 
     public static FrozenSet<string> Owners = FrozenSet.ToFrozenSet(

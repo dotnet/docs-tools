@@ -7,7 +7,6 @@ namespace PackageIndexer;
 public class NuGetStore
 {
     private readonly NuGetFeed[] _feeds;
-    private readonly Dictionary<string, IReadOnlyList<NuGetVersion>> _packageVersionCache = new();
 
     public NuGetStore(string packagesCachePath, params NuGetFeed[] feeds)
     {
