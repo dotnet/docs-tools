@@ -112,4 +112,10 @@ internal static class ResponseExtractors
         }
         throw new ArgumentException($"Property {propertyName} not found in Json element. Did you possibly access the parent node?", nameof(element));
     }
+
+    internal static DateTime DateTimeProperty(JsonElement element, string propertyName)
+    {
+        return OptionalDateProperty(element, propertyName)
+            ?? throw new ArgumentException("Requested property shouldn't be null", nameof(propertyName));
+    }
 }
