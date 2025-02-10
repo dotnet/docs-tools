@@ -110,12 +110,13 @@ class Program
                 {
                     Console.WriteLine($"\nSearching the '{options.TargetDirectory}' directory and its subdirectories for orphaned articles...");
 
-                    List<FileInfo> markdownFiles = HelperMethods.GetMarkdownFiles(options.TargetDirectory, "snippets");
+                    List<FileInfo> articleFiles = HelperMethods.GetMarkdownFiles(options.TargetDirectory, "snippets");
+                    articleFiles.AddRange(HelperMethods.GetYAMLFiles(options.TargetDirectory, "snippets"));
 
-                    if (docFxRepo.AllTocFiles is null || markdownFiles is null)
+                    if (docFxRepo.AllTocFiles is null || articleFiles is null)
                         return;
 
-                    ListOrphanedArticles(docFxRepo.AllTocFiles, markdownFiles, options.Delete);
+                    ListOrphanedArticles(docFxRepo.AllTocFiles, articleFiles, options.Delete);
                     break;
                 }
             case "FindOrphanedImages":
@@ -1127,25 +1128,27 @@ class Program
     /// <summary>
     /// Lists the markdown files that aren't referenced from a TOC file.
     /// </summary>
-    private static void ListOrphanedArticles(List<FileInfo> tocFiles, List<FileInfo> markdownFiles, bool deleteOrphanedTopics)
+    private static void ListOrphanedArticles(List<FileInfo> tocFiles, List<FileInfo> articleFiles, bool deleteOrphanedTopics)
     {
-        Console.WriteLine($"Checking {markdownFiles.Count} Markdown files in {tocFiles.Count} TOC files.");
+        Console.WriteLine($"Checking {articleFiles.Count} Markdown/YAML files in {tocFiles.Count} TOC files.");
 
         Dictionary<string, int> filesToKeep = [];
 
-        // Exclude certain Markdown files.
+        // Exclude certain files.
         static bool IsArticleFile(FileInfo file) =>
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}misc{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}mermaidjs{Path.DirectorySeparatorChar}") &&
-            string.Compare(file.Name, "TOC.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
-            string.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0;
+            string.Compare(file.Name, "toc.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "toc.yml", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "index.yml", StringComparison.InvariantCultureIgnoreCase) != 0;
 
         List<FileInfo> orphanedFiles = [];
 
         StringBuilder sb = new("\n");
 
-        Parallel.ForEach(markdownFiles.Where(IsArticleFile), markdownFile =>
+        Parallel.ForEach(articleFiles.Where(IsArticleFile), markdownFile =>
         //foreach (var markdownFile in markdownFiles)
         {
             // Ignore TOC files.
@@ -1166,7 +1169,7 @@ class Program
         // Delete files if the option is set.
         if (deleteOrphanedTopics)
         {
-            Parallel.ForEach(markdownFiles, linkingFile =>
+            Parallel.ForEach(articleFiles, linkingFile =>
             {
                 CheckFileLinks(orphanedFiles, linkingFile, ref filesToKeep);
             });
@@ -1637,10 +1640,21 @@ static class HelperMethods
     /// <summary>
     /// Gets all *.yml files recursively, starting in the specified directory.
     /// </summary>
-    public static List<FileInfo> GetYAMLFiles(string directoryPath)
+    public static List<FileInfo> GetYAMLFiles(string directoryPath, params string[] dirsToIgnore)
     {
         DirectoryInfo dir = new(directoryPath);
-        return dir.EnumerateFiles("*.yml", SearchOption.AllDirectories).ToList();
+        IEnumerable<FileInfo> files = dir.EnumerateFiles("*.yml", SearchOption.AllDirectories).ToList();
+
+        if (dirsToIgnore.Length > 0)
+        {
+            foreach (string ignoreDir in dirsToIgnore)
+            {
+                string dirWithSeparators = $"{Path.DirectorySeparatorChar}{ignoreDir}{Path.DirectorySeparatorChar}";
+                files = files.Where(f => !f.DirectoryName!.Contains(dirWithSeparators, StringComparison.InvariantCultureIgnoreCase));
+            }
+        }
+
+        return files.ToList();
     }
 
     /// <summary>
