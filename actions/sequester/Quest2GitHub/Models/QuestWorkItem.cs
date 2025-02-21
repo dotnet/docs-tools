@@ -1,6 +1,5 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.Utility;
-using Microsoft.DotnetOrg.Ospo;
 
 namespace Quest2GitHub.Models;
 
@@ -354,8 +353,7 @@ public class QuestWorkItem
         }
     }
 
-    static internal async Task<QuestWorkItem?> UpdateWorkItemAsync(QuestWorkItem questItem,
-        QuestIssueOrPullRequest ghIssue,
+    public async Task UpdateWorkItemAsync(QuestIssueOrPullRequest ghIssue,
         QuestClient questClient,
         OspoClient? ospoClient,
         WorkItemProperties issueProperties)
@@ -368,15 +366,15 @@ public class QuestWorkItem
             questAssigneeID = await questClient.GetIDFromEmail(ghAssigneeEmailAddress);
         }
         List<JsonPatchDocument> patchDocument = [];
-        if (issueProperties.ParentNodeId != questItem.ParentWorkItemId)
+        if (issueProperties.ParentNodeId != ParentWorkItemId)
         {
-            if (questItem.ParentWorkItemId != 0)
+            if (ParentWorkItemId != 0)
             {
                 // Remove the existing parent relation.
                 patchDocument.Add(new JsonPatchDocument
                 {
                     Operation = Op.Remove,
-                    Path = "/relations/" + questItem.ParentRelationIndex,
+                    Path = "/relations/" + ParentRelationIndex,
                 });
             };
             if (issueProperties.ParentNodeId != 0)
@@ -401,7 +399,7 @@ public class QuestWorkItem
                 });
             }
         }
-        if ((questAssigneeID is not null) && (questAssigneeID?.Id != questItem.AssignedToId))
+        if ((questAssigneeID is not null) && (questAssigneeID?.Id != AssignedToId))
         {
             // build patch document for assignment.
             JsonPatchDocument assignPatch = new()
@@ -413,7 +411,7 @@ public class QuestWorkItem
             patchDocument.Add(assignPatch);
         }
         Console.WriteLine(issueProperties.IssueLogString);
-        if (issueProperties.WorkItemState != questItem.State)
+        if (issueProperties.WorkItemState != State)
         {
             patchDocument.Add(new JsonPatchDocument
             {
@@ -422,7 +420,7 @@ public class QuestWorkItem
                 Value = issueProperties.WorkItemState,
             });
         }
-        if (issueProperties.IterationPath != questItem.IterationPath)
+        if (issueProperties.IterationPath != IterationPath)
         {
             patchDocument.Add(new JsonPatchDocument
             {
@@ -431,7 +429,7 @@ public class QuestWorkItem
                 Value = issueProperties.IterationPath,
             });
         }
-        if (issueProperties.StoryPoints != (questItem.StoryPoints ?? 0))
+        if (issueProperties.StoryPoints != (StoryPoints ?? 0))
         {
             patchDocument.Add(new JsonPatchDocument
             {
@@ -441,7 +439,7 @@ public class QuestWorkItem
                 Value = issueProperties.StoryPoints,
             });
         }
-        if (issueProperties.Priority != questItem.Priority)
+        if (issueProperties.Priority != Priority)
         {
             patchDocument.Add(new JsonPatchDocument
             {
@@ -451,7 +449,7 @@ public class QuestWorkItem
             });
         }
         var tags = from t in issueProperties.Tags
-                   where !questItem.Tags.Contains(t)
+                   where !Tags.Contains(t)
                    select t;
         if (tags.Any())
         {
@@ -475,15 +473,56 @@ public class QuestWorkItem
                 From = default,
                 Value = BuildDescriptionFromIssue(ghIssue, null)
             });
-            JsonElement jsonDocument = await questClient.PatchWorkItem(questItem.Id, patchDocument);
+            JsonElement jsonDocument = await questClient.PatchWorkItem(Id, patchDocument);
             newItem = WorkItemFromJson(jsonDocument);
         }
         if (!ghIssue.IsOpen && (ghIssue.ClosingPRUrl is not null))
         {
-            newItem = await questItem.AddClosingPR(questClient, ghIssue.ClosingPRUrl) ?? newItem;
+            newItem = await AddClosingPR(questClient, ghIssue.ClosingPRUrl) ?? newItem;
         }
-        return newItem;
     }
+
+    public async Task RemoveWorkItem(QuestIssueOrPullRequest ghIssue,
+        QuestClient questClient,
+        WorkItemProperties issueProperties)
+    {
+        List<JsonPatchDocument> patchDocument = [];
+        patchDocument.Add(new JsonPatchDocument
+        {
+            Operation = Op.Add,
+            Path = "/fields/System.State",
+            Value = "Removed",
+        });
+        var tags = from t in issueProperties.Tags
+                   where !Tags.Contains(t)
+                   select t;
+        if (tags.Any())
+        {
+            string azDoTags = string.Join(";", tags);
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.Tags",
+                Value = azDoTags
+            });
+        }
+
+        QuestWorkItem? newItem = default;
+        if (patchDocument.Count != 0)
+        {
+            // If any updates are needed, add the description.
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.Description",
+                From = default,
+                Value = BuildDescriptionFromIssue(ghIssue, null)
+            });
+            JsonElement jsonDocument = await questClient.PatchWorkItem(Id, patchDocument);
+            newItem = WorkItemFromJson(jsonDocument);
+        }
+    }
+
 
     /// <summary>
     /// Construct a work item from the JSON document.

@@ -48,6 +48,20 @@ public sealed record class ImportOptions
     public required string ImportedLabel { get; init; } = ":pushpin: seQUESTered";
 
     /// <summary>
+    /// The label used to indicate that a previously linked issue should be removed
+    /// from Azure Devops.  Defaults to <c>💣 vanQUEST</c>.
+    /// </summary>
+    /// Assign this from an environment variable with the following key, <c>ImportOptions__UnlinkLabel</c>:
+    /// <code>
+    /// env:  # Defaults to '💣 vanQUEST'
+    ///   ImportOptions__ImportedLabel: ':smile: example'
+    /// </code>
+    /// If your label has an emoji in it, you must specify this using the GitHub emoji colon syntax:
+    /// <a href="https://github.com/ikatyang/emoji-cheat-sheet"></a>
+    /// </remarks>
+    public required string UnlinkLabel { get; init; } = ":bomb: vanQUEST";
+
+    /// <summary>
     /// The set of labels where specific parent nodes should be used.
     /// </summary>
     /// <remarks>
