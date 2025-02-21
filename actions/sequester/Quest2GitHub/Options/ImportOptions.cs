@@ -59,7 +59,7 @@ public sealed record class ImportOptions
     /// If your label has an emoji in it, you must specify this using the GitHub emoji colon syntax:
     /// <a href="https://github.com/ikatyang/emoji-cheat-sheet"></a>
     /// </remarks>
-    public required string UnlinkLabel { get; init; } = ":bomb: vanQUEST";
+    public string UnlinkLabel { get; init; } = ":bomb: vanQUEST";
 
     /// <summary>
     /// The set of labels where specific parent nodes should be used.
