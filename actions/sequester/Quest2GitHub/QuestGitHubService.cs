@@ -1,6 +1,7 @@
 ﻿using System.Xml.XPath;
 using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
+using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace Quest2GitHub;
 
@@ -22,6 +23,7 @@ namespace Quest2GitHub;
 /// <param name="areaPath">The area path for work items from this repo</param>
 /// <param name="importTriggerLabelText">The text of the label that triggers an import</param>
 /// <param name="importedLabelText">The text of the label that indicates an issue has been imported</param>
+/// <param name="removeLinkItemText">The text of the label that indicates an issue should be removed</param>
 /// <param name="parentNodes">A dictionary of label / parent ID pairs.</param>
 /// <remarks>
 /// The OAuth token takes precedence over the GitHub token, if both are 
@@ -36,6 +38,7 @@ public class QuestGitHubService(
     string areaPath,
     string importTriggerLabelText,
     string importedLabelText,
+    string removeLinkItemText,
     List<ParentForLabel> parentNodes,
     IEnumerable<LabelToTagMap> tagMap) : IDisposable
 {
@@ -46,6 +49,7 @@ public class QuestGitHubService(
 
     private GitHubLabel? _importTriggerLabel;
     private GitHubLabel? _importedLabel;
+    private GitHubLabel? _removeLinkedItemLabel;
     private QuestIteration[]? _allIterations;
 
     /// <summary>
@@ -57,7 +61,7 @@ public class QuestGitHubService(
     /// <returns></returns>
     public async Task ProcessIssues(string organization, string repository, int duration)
     {
-        if (_importTriggerLabel is null || _importedLabel is null)
+        if (_importTriggerLabel is null || _importedLabel is null  || _removeLinkedItemLabel is null)
         {
             await RetrieveLabelIdsAsync(organization, repository);
         }
@@ -97,23 +101,26 @@ public class QuestGitHubService(
         {
             await foreach (QuestIssueOrPullRequest item in items)
             {
-                if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id)))
+                if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id) || (l.Id == _removeLinkedItemLabel?.Id)))
                 {
+                    bool request = item.Labels.Any(l => l.Id == _importTriggerLabel?.Id);
+                    bool sequestered = item.Labels.Any(l => l.Id == _importedLabel?.Id);
+                    bool vanquished = item.Labels.Any(l => l.Id == _removeLinkedItemLabel?.Id);
+                    // Only query AzDo if needed:
+                    QuestWorkItem? questItem = (request || sequestered || vanquished)
+                        ? await FindLinkedWorkItemAsync(item)
+                        : null;
                     var issueProperties = new WorkItemProperties(item, _allIterations, tagMap, parentNodes);
 
                     Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
-                    // Console.WriteLine(item);
-                    QuestWorkItem? questItem = await FindLinkedWorkItemAsync(item);
-                    if (questItem != null)
+                    Task workDone = (request, sequestered, vanquished, questItem) switch
                     {
-                        await QuestWorkItem.UpdateWorkItemAsync(questItem, item, _azdoClient, _ospoClient, issueProperties);
-                    }
-                    else
-                    {
-                        questItem = await LinkIssueAsync(item, issueProperties);
-                        // Because some fields can't be set in the initial creation, update the item.
-                        await QuestWorkItem.UpdateWorkItemAsync(questItem, item, _azdoClient, _ospoClient, issueProperties);
-                    }
+                        (false, false, false, _) => Task.CompletedTask, // No labels. Do nothing.
+                        (_, _, true, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
+                        (_, _, false, null) => LinkIssueAsync(item, issueProperties), // No link, but one of the link labels was applied.
+                        (_, _, true, not null) => questItem.RemoveWorkItem(item, _azdoClient, issueProperties), // Unlink.
+                        (_, _, false, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, issueProperties), // update
+                    };
                     totalImport++;
                 }
                 else
@@ -157,7 +164,7 @@ public class QuestGitHubService(
     /// <returns>A task representing the current operation</returns>
     public async Task ProcessIssue(string gitHubOrganization, string gitHubRepository, int issueNumber)
     {
-        if (_importTriggerLabel is null || _importedLabel is null)
+        if (_importTriggerLabel is null || _importedLabel is null || _removeLinkedItemLabel is null)
         {
             await RetrieveLabelIdsAsync(gitHubOrganization, gitHubRepository);
         }
@@ -183,41 +190,23 @@ public class QuestGitHubService(
         // Evaluate the labels to determine the right action.
         bool request = ghIssue.Labels.Any(l => l.Id == _importTriggerLabel?.Id);
         bool sequestered = ghIssue.Labels.Any(l => l.Id == _importedLabel?.Id);
+        bool vanquished = ghIssue.Labels.Any(l => l.Id == _removeLinkedItemLabel?.Id);
         // Only query AzDo if needed:
-        QuestWorkItem? questItem = (request || sequestered)
+        QuestWorkItem? questItem = (request || sequestered || vanquished)
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
         var issueProperties = new WorkItemProperties(ghIssue, _allIterations, tagMap, parentNodes);
 
-        // The order here is important to avoid a race condition that causes
-        // an issue to be triggered multiple times.
-        // First, if an issue is open and the trigger label is added, link or 
-        // update. Update is safe, because it will only update the quest issue's
-        // state or assigned field. That can't trigger a new GH action run.
-        if (request)
+        Task workDone = (request, sequestered, vanquished, questItem) switch
         {
-            if (questItem is null)
-            {
-                questItem = await LinkIssueAsync(ghIssue, issueProperties);
-            }
-            else if (questItem is not null)
-            {
-                // This allows a human to force a manual update: just add the trigger label.
-                // Note that it updates even if the item is closed.
-                await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, issueProperties);
-
-            }
-            // Next, if the item is already linked, consider any updates.
-            // It's important that adding the linked label is the last
-            // mutation done in the linking process. That way, the GH Action
-            // does get triggered again. The second trigger will check for any updates
-            // a human made to assigned or state while the initial run was taking place.
-        }
-        else if (sequestered && questItem is not null)
-        {
-            await QuestWorkItem.UpdateWorkItemAsync(questItem, ghIssue, _azdoClient, _ospoClient, issueProperties);
-        }
+            (false, false, false,        _) => Task.CompletedTask, // No labels. Do nothing.
+            (    _,     _,  true,     null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
+            (    _,     _, false,     null) => LinkIssueAsync(ghIssue, issueProperties), // No link, but one of the link labels was applied.
+            (    _,     _,  true, not null) => questItem.RemoveWorkItem(ghIssue, _azdoClient, issueProperties), // Unlink.
+            (    _,     _, false, not null) => questItem.UpdateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, issueProperties), // update
+        };
+        await workDone;
     }
 
     /// <summary>
@@ -322,6 +311,9 @@ public class QuestGitHubService(
                 var prMutation = new Mutation<SequesteredPullRequestMutation, SequesterVariables>(ghClient);
                 await prMutation.PerformMutation(new SequesterVariables(pr.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
             }
+
+            // Because some fields can't be set when an item is created, go through an update cycle:
+            await questItem.UpdateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, issueProperties);
             return questItem;
         }
         else
@@ -338,6 +330,7 @@ public class QuestGitHubService(
         {
             if (label.Name == importTriggerLabelText) _importTriggerLabel = label;
             if (label.Name == importedLabelText) _importedLabel = label;
+            if (label.Name == removeLinkItemText) _removeLinkedItemLabel = label;
         }
     }
 

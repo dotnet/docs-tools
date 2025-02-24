@@ -255,7 +255,7 @@ public abstract record QuestIssueOrPullRequest : Issue
         UpdatedAt = ResponseExtractors.GetUpdatedAtValueOrNow(issueNode);
 
         Assignees = [ ..ResponseExtractors.GetChildArrayElements(issueNode, "assignees", item =>
-            Actor.FromJsonElement(item)).Where(actor => actor is not null)];
+            Actor.FromJsonElement(item)).Where(actor => actor is not null)!];
  
         Labels = ResponseExtractors.GetChildArrayElements(issueNode, "labels", item => GitHubLabel.FromJsonElement(item, default)!); 
         Comments = [.. ResponseExtractors.GetChildArrayElements(issueNode, "comments", item =>
@@ -268,7 +268,7 @@ public abstract record QuestIssueOrPullRequest : Issue
 
         StoryPointSize?[] points = ResponseExtractors.GetChildArrayElements(issueNode, "projectItems", item =>
             StoryPointSize.OptionalFromJsonElement(item));
-        ProjectStoryPoints = [ ..points.Where(p => p is not null).ToArray()];
+        ProjectStoryPoints = [ ..points.Where(p => p is not null).ToArray()!];
 
         // check state. If re-opened, don't reference the (not correct) closing PR
         if (includeTimeLine)
