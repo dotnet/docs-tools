@@ -59,6 +59,7 @@ internal static class PlatformPackageDefinition
         "System.Formats.Asn1",
         "System.Formats.Cbor",
         "System.Formats.Nrbf",
+        "System.Linq.AsyncEnumerable",
         "System.Net.ServerSentEvents",
         "System.Numerics.Tensors",
         "System.Runtime.Serialization.Schema"
