@@ -167,11 +167,11 @@ public static class DotnetPackageIndex
             if (usePreviewVersions)
             {
                 // TODO - this seems clunky.
-                // Make sure it's a .NET 9 preview version.
+                // Make sure it's a .NET 10 preview version.
                 if (latestPrerelease != default &&
-                    (latestPrerelease.packageId.Version.Major == 9 ||
-                    // Special case for major version (0) of Microsoft.Extensions.AI.Evaluation.
-                    latestPrerelease.packageId.Id.StartsWith("Microsoft.Extensions.AI.Evaluation")))
+                    (latestPrerelease.packageId.Version.Major == 10 ||
+                    // Special case for major version (9) of Microsoft.Extensions.AI*.
+                    latestPrerelease.packageId.Id.StartsWith("Microsoft.Extensions.AI")))
                     result.Add(latestPrerelease.packageId);
             }
         }
