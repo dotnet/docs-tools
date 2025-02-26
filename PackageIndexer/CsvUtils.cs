@@ -18,6 +18,7 @@ internal class CsvUtils
             { "net7.0", "net-7.0-pp" },
             { "net8.0", "net-8.0-pp" },
             { "net9.0", "net-9.0-pp" },
+            { "net10.0", "net-10.0-pp" },
             { "netstandard2.0", "netstandard-2.0-pp" },
             { "netstandard2.1", "netstandard-2.1-pp" }
         };
@@ -29,8 +30,8 @@ internal class CsvUtils
         // For each package XML file
         //   For each framework
         //     Map it to a known framework name
-        //     Generate a collection of that version + later versions of that framework
-        //     (e.g. add 4.7, 4.7.1, 4.7.2, 4.8, 4.8.1 for net462; add 7.0, 8.0, 9.0 for net6.0)
+        //     Generate a collection of that version + compatible versions (e.g. add 4.7, 4.7.1, 4.7.2, 4.8, 4.8.1 for net462).
+        //       - Note that some compatible versions might also be explicitly targeted by the package, so we need to dedupe in that case.
         //     Create a dictionary or add to an existing dictionary *for that version* that will become the CSV file -
         //       pac<num>,[tfm=<tfm>;includeXml=false]<package name>,<package version>
         //       Example: pac01,[tfm=net9.0;includeXml=false]Microsoft.Extensions.Caching.Abstractions,9.0.0-preview.2.24128.5
@@ -107,6 +108,11 @@ internal class CsvUtils
                         goto case "net9.0";
                     case "net9.0":
                         framework = "net9.0";
+                        opsMoniker = s_tfmToOpsMoniker[framework];
+                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
+                        goto case "net10.0";
+                    case "net10.0":
+                        framework = "net10.0";
                         opsMoniker = s_tfmToOpsMoniker[framework];
                         AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
                         break;
@@ -188,7 +194,10 @@ internal class CsvUtils
                 string.Concat(squareBrackets, packageEntry.Name),
                 packageEntry.Version
                 );
-            csvDictionary[opsMoniker].Add(entry);
+            // Duplicates can arise for computed/compatible frameworks that
+            // package also targets explicitly.
+            if (!csvDictionary[opsMoniker].Contains(entry))
+                csvDictionary[opsMoniker].Add(entry);
         }
     }
 }
