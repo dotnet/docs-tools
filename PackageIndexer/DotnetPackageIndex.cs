@@ -119,6 +119,7 @@ public static class DotnetPackageIndex
         return identities.ToArray();
     }
 
+    // Only includes the latest version
     private static IReadOnlyList<PackageIdentity> GetLatestVersions(
         IReadOnlyList<(PackageIdentity packageId, bool isDeprecated)> identities,
         bool usePreviewVersions
@@ -146,32 +147,32 @@ public static class DotnetPackageIndex
             if (latestPrerelease.isDeprecated)
                 latestPrerelease = default;
 
-            // If the latest stable version is newer than the latest
-            // prerelease version, don't include the prerelease version.
-            if (latestStable != default && latestPrerelease != default)
-            {
-                bool stableIsNewer = VersionComparer.VersionReleaseMetadata.Compare(
-                    latestPrerelease.packageId.Version,
-                    latestStable.packageId.Version
-                    ) <= 0;
-                if (stableIsNewer)
-                    latestPrerelease = default;
-            }
-
-            // Comment this out for preview-only versions.
-            if (latestStable != default)
+            if (!usePreviewVersions && latestStable != default)
             {
                 result.Add(latestStable.packageId);
+                continue;
             }
 
             if (usePreviewVersions)
             {
-                // TODO - this seems clunky.
-                // Make sure it's a .NET 9/10 preview version.
-                // Some preview packages like Microsoft.Extensions.Options.Contextual still use major version 9.
-                if (latestPrerelease != default &&
-                    (latestPrerelease.packageId.Version.Major == 9 || latestPrerelease.packageId.Version.Major == 10))
+                // Use whichever version (stable or prerelease) is newer.
+                if (latestStable != default && latestPrerelease != default)
+                {
+                    bool stableIsNewer = VersionComparer.VersionReleaseMetadata.Compare(
+                        latestPrerelease.packageId.Version,
+                        latestStable.packageId.Version
+                        ) <= 0;
+
+                    if (stableIsNewer)
+                        result.Add(latestStable.packageId);
+                    else
+                        result.Add(latestPrerelease.packageId);
+                }
+                else if (latestStable != default)
+                    result.Add(latestStable.packageId);
+                else if (latestPrerelease != default)
                     result.Add(latestPrerelease.packageId);
+                // else don't add the package at all.
             }
         }
 
