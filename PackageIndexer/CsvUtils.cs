@@ -170,11 +170,10 @@ internal class CsvUtils
             bool includeXml = reposToIncludeXmlComments.Contains(packageEntry.Repository);
 
             // Except don't include XML file for Microsoft.Extensions.Diagnostics.ResourceMonitoring
-            // See https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787.
-            if (string.Equals(
-                    packageEntry.Name,
-                    "Microsoft.Extensions.Diagnostics.ResourceMonitoring",
-                    StringComparison.InvariantCultureIgnoreCase))
+            // (see https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787)
+            // or Microsoft.Extensions.HttpClient.SocketHandling (deprecated package with docs that cause warnings).
+            if (string.Equals(packageEntry.Name, "Microsoft.Extensions.Diagnostics.ResourceMonitoring", StringComparison.InvariantCultureIgnoreCase) ||
+                    string.Equals(packageEntry.Name, "Microsoft.Extensions.Diagnostics.ResourceMonitoring", StringComparison.InvariantCultureIgnoreCase))
             {
                 includeXml = false;
             }
