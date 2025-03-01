@@ -43,8 +43,8 @@ internal class CsvUtils
         // For each package XML file
         //   For each framework
         //     Map it to a known framework name
-        //     Generate a collection of that version + compatible versions (e.g. add 4.7, 4.7.1, 4.7.2, 4.8, 4.8.1 for net462).
-        //       - Note that some compatible versions might also be explicitly targeted by the package, so we need to dedupe in that case.
+        //     Generate a collection of that version + compatible versions (e.g. also add to net9.0 moniker for net8.0 assets,
+        //     *if* net9.0 isn't already explicitly targeted).
         //     Create a dictionary or add to an existing dictionary *for that version* that will become the CSV file -
         //       pac<num>,[tfm=<tfm>;includeXml=false]<package name>,<package version>
         //       Example: pac01,[tfm=net9.0;includeXml=false]Microsoft.Extensions.Caching.Abstractions,9.0.0-preview.2.24128.5
