@@ -11,7 +11,7 @@ public sealed class PackageIndexer(NuGetStore store)
     {
         string repo;
         var dependencies = new Dictionary<string, PackageArchiveReader>();
-        var frameworkEntries = new List<FrameworkEntry>();
+        var frameworkEntries = new List<string>();
         try
         {
             using (PackageArchiveReader root = await _store.GetPackageAsync(id, version))
@@ -30,7 +30,7 @@ public sealed class PackageIndexer(NuGetStore store)
 
                 foreach (NuGetFramework target in targets)
                 {
-                    frameworkEntries.Add(FrameworkEntry.Create(target.GetShortFolderName()));
+                    frameworkEntries.Add(target.GetShortFolderName());
                 }
             }
 

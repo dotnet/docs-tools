@@ -6,6 +6,9 @@ namespace PackageIndexer;
 
 internal class CsvUtils
 {
+    Dictionary<string, IList<CsvEntry>> _csvDictionary = [];
+    Dictionary<string, int> _packageCounter = []; // Used for "pac" number in CSV file.
+
     static readonly Dictionary<string, string> s_tfmToOpsMoniker = new()
         {
             { "net462", "netframework-4.6.2-pp" },
@@ -18,31 +21,34 @@ internal class CsvUtils
             { "net7.0", "net-7.0-pp" },
             { "net8.0", "net-8.0-pp" },
             { "net9.0", "net-9.0-pp" },
+            { "net10.0", "net-10.0-pp" },
             { "netstandard2.0", "netstandard-2.0-pp" },
             { "netstandard2.1", "netstandard-2.1-pp" }
         };
 
-    internal static void GenerateCSVFiles(string indexPackagesPath, string csvPath)
+    internal CsvUtils()
+    {
+        // Initialize the two dictionaries.
+        foreach (string moniker in s_tfmToOpsMoniker.Values)
+        {
+            _csvDictionary.Add(moniker, []);
+            _packageCounter.Add(moniker, 1);
+        }
+    }
+
+    internal void GenerateCSVFiles(string indexPackagesPath, string csvPath)
     {
         Console.WriteLine("Generating CSV files from package index.");
 
         // For each package XML file
         //   For each framework
         //     Map it to a known framework name
-        //     Generate a collection of that version + later versions of that framework
-        //     (e.g. add 4.7, 4.7.1, 4.7.2, 4.8, 4.8.1 for net462; add 7.0, 8.0, 9.0 for net6.0)
+        //     Generate a collection of that version + compatible versions (e.g. also add to net9.0 moniker for net8.0 assets,
+        //     *if* net9.0 isn't already explicitly targeted).
         //     Create a dictionary or add to an existing dictionary *for that version* that will become the CSV file -
         //       pac<num>,[tfm=<tfm>;includeXml=false]<package name>,<package version>
         //       Example: pac01,[tfm=net9.0;includeXml=false]Microsoft.Extensions.Caching.Abstractions,9.0.0-preview.2.24128.5
         // Generate a CSV file from each dictionary
-
-        Dictionary<string, IList<CsvEntry>> csvDictionary = [];
-        Dictionary<string, int> packageCounter = []; // Used for "pac" number in CSV file.
-        foreach (string moniker in s_tfmToOpsMoniker.Values)
-        {
-            csvDictionary.Add(moniker, []);
-            packageCounter.Add(moniker, 1);
-        }
 
         // Get all XML files (ignores disabled indexes).
         IEnumerable<string> packageIndexFiles = Directory.EnumerateFiles(indexPackagesPath, "*.xml");
@@ -54,69 +60,69 @@ internal class CsvUtils
             Console.WriteLine($"Creating CSV entries for package {packageEntry.Name}.");
 
             // Add to each applicable CSV file.
-            foreach (FrameworkEntry frameworkEntry in packageEntry.FrameworkEntries)
+            foreach (string targetFramework in packageEntry.Frameworks)
             {
-                string framework = frameworkEntry.FrameworkName;
                 string opsMoniker;
-                switch (framework)
+                string? fellThroughFromVersion = null;
+                switch (targetFramework)
                 {
-                    case "net462":
-                        framework = "net462";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        goto case "net47";
-                    case "net47":
-                        framework = "net47";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        goto case "net471";
-                    case "net471":
-                        framework = "net471";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        goto case "net472";
-                    case "net472":
-                        framework = "net472";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        goto case "net48";
-                    case "net48":
-                        framework = "net48";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        goto case "net481";
-                    case "net481":
-                        framework = "net481";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        break;
                     case "net6.0":
-                        framework = "net6.0";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        goto case "net7.0";
-                    case "net7.0":
-                        framework = "net7.0";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        goto case "net8.0";
-                    case "net8.0":
-                        framework = "net8.0";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
-                        goto case "net9.0";
-                    case "net9.0":
-                        framework = "net9.0";
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
+                        opsMoniker = s_tfmToOpsMoniker["net6.0"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, "net6.0");
+                        if (!packageEntry.Frameworks.Contains("net7.0"))
+                        {
+                            // Add to net7.0 moniker since this is a compatible framework.
+                            fellThroughFromVersion = "net6.0";
+                            goto case "net7.0";
+                        }
                         break;
+                    case "net7.0":
+                        opsMoniker = s_tfmToOpsMoniker["net7.0"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net7.0");
+                        if (!packageEntry.Frameworks.Contains("net8.0"))
+                        {
+                            // Add to net8.0 moniker since this is a compatible framework.
+                            fellThroughFromVersion = fellThroughFromVersion ?? "net7.0";
+                            goto case "net8.0";
+                        }
+                        break;
+                    case "net8.0":
+                        opsMoniker = s_tfmToOpsMoniker["net8.0"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net8.0");
+                        if (!packageEntry.Frameworks.Contains("net9.0"))
+                        {
+                            // Add to net9.0 moniker since this is a compatible framework.
+                            fellThroughFromVersion = fellThroughFromVersion ?? "net8.0";
+                            goto case "net9.0";
+                        }
+                        break;
+                    case "net9.0":
+                        opsMoniker = s_tfmToOpsMoniker["net9.0"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net9.0");
+                        if (!packageEntry.Frameworks.Contains("net10.0"))
+                        {
+                            // Add to net10.0 moniker since this is a compatible framework.
+                            fellThroughFromVersion = fellThroughFromVersion ?? "net9.0";
+                            goto case "net10.0";
+                        }
+                        break;
+                    case "net10.0":
+                        opsMoniker = s_tfmToOpsMoniker["net10.0"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net10.0");
+                        break;
+                    case "net462":
+                    case "net47":
+                    case "net471":
+                    case "net472":
+                    case "net48":
+                    case "net481":
                     case "netstandard2.0":
                     case "netstandard2.1":
-                        opsMoniker = s_tfmToOpsMoniker[framework];
-                        AddCsvEntryToDict(opsMoniker, csvDictionary, packageCounter, packageEntry, framework);
+                        opsMoniker = s_tfmToOpsMoniker[targetFramework];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, targetFramework);
                         break;
                     default:
-                        Console.WriteLine($"Ignoring target framework {framework}.");
+                        Console.WriteLine($"Ignoring target framework {targetFramework}.");
                         break;
                 }
             }
@@ -125,7 +131,7 @@ internal class CsvUtils
         // Create the directory.
         Directory.CreateDirectory(csvPath);
 
-        foreach (KeyValuePair<string, IList<CsvEntry>> tfm in csvDictionary)
+        foreach (KeyValuePair<string, IList<CsvEntry>> tfm in _csvDictionary)
         {
             // CSV file names must match the folder name in the "binaries" repo:
             // e.g. netframework-4.6.2-pp, netstandard-2.0-pp, net-8.0-pp.
@@ -148,12 +154,10 @@ internal class CsvUtils
             csv.WriteRecords(tfm.Value);
         }
 
-        static void AddCsvEntryToDict(
+        void AddCsvEntryToDict(
             string opsMoniker,
-            Dictionary<string, IList<CsvEntry>> csvDictionary,
-            Dictionary<string, int> packageCounter,
             PackageEntry packageEntry,
-            string frameworkName
+            string targetFramework
             )
         {
             // Special case for packages from dotnet/extensions repo - include XML files.
@@ -166,29 +170,31 @@ internal class CsvUtils
             bool includeXml = reposToIncludeXmlComments.Contains(packageEntry.Repository);
 
             // Except don't include XML file for Microsoft.Extensions.Diagnostics.ResourceMonitoring
-            // See https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787.
-            if (string.Equals(
-                packageEntry.Name,
-                "Microsoft.Extensions.Diagnostics.ResourceMonitoring",
-                StringComparison.InvariantCultureIgnoreCase))
+            // (see https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787)
+            // or Microsoft.Extensions.HttpClient.SocketHandling (deprecated package with docs that cause warnings).
+            if (string.Equals(packageEntry.Name, "Microsoft.Extensions.Diagnostics.ResourceMonitoring", StringComparison.InvariantCultureIgnoreCase) ||
+                    string.Equals(packageEntry.Name, "Microsoft.Extensions.Diagnostics.ResourceMonitoring", StringComparison.InvariantCultureIgnoreCase))
+            {
                 includeXml = false;
+            }
 
             // Special case for newer assemblies - include XML documentation files.
             if (PlatformPackageDefinition.PackagesWithTruthDocs.Contains(packageEntry.Name))
                 includeXml = true;
 
-            string squareBrackets = $"[tfm={frameworkName};includeXml={includeXml}]";
+            string squareBrackets = $"[tfm={targetFramework};includeXml={includeXml}]";
 
             // Special case for System.ServiceModel.Primitives - use reference assemblies.
             if (string.Equals(packageEntry.Name, "System.ServiceModel.Primitives", StringComparison.InvariantCultureIgnoreCase))
-                squareBrackets = $"[tfm={frameworkName};includeXml={includeXml};libpath=ref]";
+                squareBrackets = $"[tfm={targetFramework};includeXml={includeXml};libpath=ref]";
 
             CsvEntry entry = CsvEntry.Create(
-                string.Concat("pac", packageCounter[opsMoniker]++),
+                string.Concat("pac", _packageCounter[opsMoniker]++),
                 string.Concat(squareBrackets, packageEntry.Name),
                 packageEntry.Version
                 );
-            csvDictionary[opsMoniker].Add(entry);
+
+            _csvDictionary[opsMoniker].Add(entry);
         }
     }
 }

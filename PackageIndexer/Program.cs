@@ -8,7 +8,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 0130", "preview"];
+        args = [@"c:\users\gewarren\desktop\Package Index 0227", "preview"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -56,7 +56,8 @@ internal static class Program
         await DownloadDotnetPackageListAsync(packageListPath, usePreviewVersions);
         await GeneratePackageIndexAsync(packageListPath, packagesPath, indexPackagesPath);
 
-        CsvUtils.GenerateCSVFiles(indexPackagesPath, csvPath);
+        var csvUtils = new CsvUtils();
+        csvUtils.GenerateCSVFiles(indexPackagesPath, csvPath);
 
         Console.WriteLine($"Completed in {stopwatch.Elapsed}");
         Console.WriteLine($"Peak working set: {Process.GetCurrentProcess().PeakWorkingSet64 / (1024 * 1024):N2} MB");

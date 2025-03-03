@@ -4,10 +4,10 @@ namespace PackageIndexer;
 
 internal static class XmlEntryFormat
 {
-    public static void WriteFrameworkEntry(Stream stream, FrameworkEntry frameworkEntry)
+    public static void WriteFrameworkEntry(Stream stream, string framework)
     {
         var document = new XDocument();
-        var root = new XElement("framework", new XAttribute("name", frameworkEntry.FrameworkName));
+        var root = new XElement("framework", new XAttribute("name", framework));
         document.Add(root);
 
         document.Save(stream);
@@ -23,9 +23,9 @@ internal static class XmlEntryFormat
         );
         document.Add(root);
 
-        foreach (FrameworkEntry fx in packageEntry.FrameworkEntries)
+        foreach (string fx in packageEntry.Frameworks)
         {
-            root.Add(new XElement("framework", fx.FrameworkName));
+            root.Add(new XElement("framework", fx));
         }
 
         document.Save(stream);
@@ -43,10 +43,10 @@ internal static class XmlEntryFormat
 
         IEnumerable<XElement> frameworkElements = packageElement.Elements("framework");
 
-        IList<FrameworkEntry> frameworks = [];
+        IList<string> frameworks = [];
         foreach (XElement frameworkElement in frameworkElements) 
         {
-            frameworks.Add(FrameworkEntry.Create(frameworkElement.Value));
+            frameworks.Add(frameworkElement.Value);
         }
 
         return PackageEntry.Create(id, version, repo, frameworks);
