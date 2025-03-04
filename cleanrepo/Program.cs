@@ -1142,7 +1142,8 @@ class Program
             string.Compare(file.Name, "toc.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "toc.yml", StringComparison.InvariantCultureIgnoreCase) != 0 &&
-            string.Compare(file.Name, "index.yml", StringComparison.InvariantCultureIgnoreCase) != 0;
+            string.Compare(file.Name, "index.yml", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "zone-pivot-groups.yml", StringComparison.InvariantCultureIgnoreCase) != 0;
 
         List<FileInfo> orphanedFiles = [];
 
