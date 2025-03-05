@@ -124,7 +124,6 @@ public class QuestWorkItem
     /// </summary>
     /// <param name="issue">The GitHub issue.</param>
     /// <param name="questClient">The quest client.</param>
-    /// <param name="ospoClient">the MS open source programs office client.</param>
     /// <param name="path">The path component for the area path.</param>
     /// <param name="requestLabelNodeId">The ID of the request label</param>
     /// <returns>The newly created linked Quest work item.</returns>
@@ -136,7 +135,6 @@ public class QuestWorkItem
     /// </remarks>
     public static async Task<QuestWorkItem> CreateWorkItemAsync(QuestIssueOrPullRequest issue,
         QuestClient questClient,
-        OspoClient? ospoClient,
         string path,
         string? requestLabelNodeId,
         WorkItemProperties issueProperties)
@@ -185,21 +183,6 @@ public class QuestWorkItem
             });
         }
 
-        // Query if the GitHub ID maps to an FTE id, add that one:
-        string? assigneeEmail = await issue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
-        AzDoIdentity? assigneeID = default;
-        if (assigneeEmail?.EndsWith("@microsoft.com") == true)
-        {
-            assigneeID = await questClient.GetIDFromEmail(assigneeEmail);
-        }
-        var assignPatch = new JsonPatchDocument
-        {
-            Operation = Op.Add,
-            Path = "/fields/System.AssignedTo",
-            From = default,
-            Value = assigneeID
-        };
-        patchDocument.Add(assignPatch);
         patchDocument.Add(new JsonPatchDocument
         {
             Operation = Op.Add,
@@ -252,24 +235,8 @@ public class QuestWorkItem
 
         JsonElement result = default;
         QuestWorkItem? newItem;
-        try
-        {
-            result = await questClient.CreateWorkItem(patchDocument);
-            newItem = WorkItemFromJson(result);
-        }
-        catch (InvalidOperationException)
-        {
-            Console.WriteLine(result.ToString());
-            // This will happen when the assignee IS a Microsoft FTE,
-            // but that person isn't onboarded in Quest. (Likely a product team member, or CSE)
-
-            // So, remove the node with the Assigned to and try again:
-            patchDocument.Remove(assignPatch);
-
-            // Yes, this could throw again. IF so, it's a new error.
-            result = await questClient.CreateWorkItem(patchDocument);
-            newItem = WorkItemFromJson(result);
-        }
+        result = await questClient.CreateWorkItem(patchDocument);
+        newItem = WorkItemFromJson(result);
         return newItem;
     }
 
