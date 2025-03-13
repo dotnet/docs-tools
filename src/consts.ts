@@ -82,7 +82,7 @@ export function getBreakingChangePrompt(issue: Issue, issueUrl: string): string 
     
     "${issue.body}"
 
-    The document should be in Markdown format. All headings and titles should be in sentence case. Rephrase all content to be clear and concise using correct grammar and spelling. Use active voice. Always describe previous behavior in past tense and new behavior in present tense. Do not use "we" or "our". Avoid colloquial language and try to sound professional.
+    The document should be in Markdown format. All headings and titles should be in sentence case. Rephrase all content to be clear and concise using correct grammar and spelling. Use active voice. Always describe previous behavior in past tense and new behavior in present tense. Do not use "we" or "our". Refer to the user in the second person (e.g., "you/your"). Avoid colloquial language and try to sound professional.
 
     The document should start with the following header, including --- characters. Replace placeholders denoted by parentheses with the appropriate content from the issue.
 
