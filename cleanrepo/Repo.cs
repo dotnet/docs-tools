@@ -75,17 +75,6 @@ class DocFxRepo(string startDirectory, string urlBasePath)
             return _opsConfigFile;
         }
     }
-    private List<string>? _redirectionFiles;
-    internal List<string> RedirectionFiles
-    {
-        get
-        {
-            if (_redirectionFiles == null)
-                _redirectionFiles = GetRedirectionFiles();
-
-            return _redirectionFiles;
-        }
-    }
 
     #region Constructors
     #endregion
@@ -318,16 +307,10 @@ class DocFxRepo(string startDirectory, string urlBasePath)
     {
         // Gather all the redirects.
         List<Redirect> allRedirects = [];
-        foreach (string redirectionFile in RedirectionFiles)
+        List<FileInfo> redirectionFiles = HelperMethods.GetRedirectionFiles(OpsConfigFile.DirectoryName!);
+        foreach (FileInfo redirectionFile in redirectionFiles)
         {
-            FileInfo redirectsFile = new(Path.Combine(OpsConfigFile.DirectoryName!, redirectionFile));
-            if (redirectsFile == null)
-            {
-                Console.WriteLine($"\nCould not find redirection file '{redirectionFile}'.");
-                continue;
-            }
-
-            IList<Redirect>? redirectsFromOneFile = GetAllRedirectedFiles(redirectsFile, OpsConfigFile.DirectoryName!);
+            IList<Redirect>? redirectsFromOneFile = GetAllRedirectedFiles(redirectionFile, OpsConfigFile.DirectoryName!);
             if (redirectsFromOneFile is not null)
                 allRedirects.AddRange(redirectsFromOneFile);
         }
@@ -587,33 +570,18 @@ class DocFxRepo(string startDirectory, string urlBasePath)
 
     #region Redirected files
 
-    public List<string> GetRedirectionFiles()
-    {
-        // Deserialize the OPS config file.
-        OPSConfig? config = LoadOPSJson();
-        if (config == null || config.redirection_files == null)
-            return [".openpublishing.redirection.json"];
-        else
-            return config.redirection_files;
-    }
-
-    internal void RemoveAllRedirectHops()
+    internal void RemoveAllRedirectHops(string directory)
     {
         // Get all docsets for the OPS config file.
         Dictionary<string, string>? docsets = GetDocsetInfo();
 
-        // Remove hops within each file.
-        foreach (string redirectionFile in RedirectionFiles)
-        {
-            FileInfo redirectsFile = new(Path.Combine(OpsConfigFile.DirectoryName!, redirectionFile));
-            if (redirectsFile == null)
-            {
-                Console.WriteLine($"\nCould not find redirection file '{redirectionFile}'.");
-                continue;
-            }
+        List<FileInfo> redirectionFiles = HelperMethods.GetRedirectionFiles(directory);
 
+        // Remove hops within each file.
+        foreach (FileInfo redirectionFile in redirectionFiles)
+        {
             Console.WriteLine($"\nRemoving hops from the '{redirectionFile}' redirection file.");
-            RemoveRedirectHopsFromFile(redirectsFile, docsets, OpsConfigFile.DirectoryName!);
+            RemoveRedirectHopsFromFile(redirectionFile, docsets, OpsConfigFile.DirectoryName!);
         }
     }
 
