@@ -105,7 +105,11 @@ export function getBreakingChangePrompt(issue: Issue, issueUrl: string): string 
     - h2: New behavior
       (A brief description of the behavior after the change, including an example code snippet if applicable.)
     - h2: Type of breaking change
-      (The following sentence: "This is a []() change." where the link text is the type of breaking change from the issue. The link should point to ../../categories.md and add the appropriate bookmark from this list: #behavioral-change #binary-compatibility #source-compatibility)
+      (The following sentence: "This is a []() change." where the link text is the type of breaking change from the issue. The link should point to ../../categories.md and add the appropriate bookmark from this list:
+        - #behavioral-change
+        - #binary-compatibility
+        - #source-compatibility
+      If the issue lists multiple types of breaking changes, create a single sentence that links to each applicable type, such as "This is both a []() and []() change.") If there are no types of breaking changes selected, write "TODO: Add type of breaking change."
     - h2: Reason for change
       (The complete reasoning behind the change, including any relevant links.)
     - h2: Recommended action
