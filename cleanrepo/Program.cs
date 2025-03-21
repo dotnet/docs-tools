@@ -351,7 +351,7 @@ class Program
             // Remove hops/daisy chains in a redirection file.        
             case "RemoveRedirectHops":
                 {
-                    docFxRepo.RemoveAllRedirectHops();
+                    docFxRepo.RemoveAllRedirectHops(options.TargetDirectory);
 
                     Console.WriteLine("\nFinished removing redirect hops.");
                     break;
@@ -1616,6 +1616,15 @@ static class HelperMethods
 
         // We did not find this file linked in the specified file.
         return false;
+    }
+
+    /// <summary>
+    /// Gets all .openpublishing.redirection.*.json files recursively, starting in the specified directory.
+    /// </summary>
+    public static List<FileInfo> GetRedirectionFiles(string directoryPath)
+    {
+        DirectoryInfo dir = new(directoryPath);
+        return dir.EnumerateFiles(".openpublishing.redirection.*.json", SearchOption.AllDirectories).ToList();
     }
 
     /// <summary>
