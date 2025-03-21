@@ -27,18 +27,19 @@ export class ApiService {
         } else {
             // Prompt the user to select an API.
             // Create the quick pick items.
-            const apiQuickPickItems = enabledApis.map(api => {
+            type QuickPick = { label: string, description: string, apiName: string };
+            const apiQuickPickItems: QuickPick[] = enabledApis.map(api => {
                 // @ts-ignore
 
                 return {
                     // @ts-ignore
                     label: `${getSymbolIcon(api.displayName)} ${api.displayName}`,
-                    description: api.url,
-                    apiName: api.name
+                    description: api.url!,
+                    apiName: api.name!
                 };
             });
 
-            const item = await window.showQuickPick(apiQuickPickItems, {
+            const item: QuickPick | undefined = await window.showQuickPick(apiQuickPickItems, {
                 title: "✅ Select an API",
                 placeHolder: "Select an API to search"
             });
