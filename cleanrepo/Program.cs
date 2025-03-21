@@ -595,7 +595,18 @@ class Program
         DirectoryInfo? rootDirectory = null;
 
         // Get all files that could possibly link to the include files
-        List<FileInfo>? files = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
+        List<FileInfo>? mdFiles = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
+        List<FileInfo>? ymlFiles = HelperMethods.GetAllReferencingFiles("*.yml", inputDirectory, ref rootDirectory);
+
+        List<FileInfo>? files = null;
+        if (mdFiles is not null)
+            files = mdFiles;
+
+        if(ymlFiles is not null)
+            if (files is null)
+                files = ymlFiles;
+            else
+                files.AddRange(ymlFiles);
 
         if (files is null || rootDirectory is null)
             return;
