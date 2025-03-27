@@ -80,21 +80,6 @@ public class QuestGitHubService(
             QueryIssuesOrPullRequests<QuestIssue>();
         await ProcessItems(issueQueryEnumerable);
         Console.WriteLine("-----   Finished processing issues.          --------");
-        Console.WriteLine("     ----- Regenerating bearer token   ------");
-        await ghClient.RegenerateBearerToken();
-        try
-        {
-            Console.WriteLine("-----   Starting processing pull requests.   --------");
-            var prQueryEnumerable = (duration == -1) ?
-            QueryAllOpenIssuesOrPullRequests<QuestPullRequest>() :
-                QueryIssuesOrPullRequests<QuestPullRequest>();
-            await ProcessItems(prQueryEnumerable);
-            Console.WriteLine("-----   Finished processing pull requests.   --------");
-        } catch (InvalidOperationException e)
-        {
-            Console.WriteLine("Warning: GitHub query for Pull Requests failed.");
-            Console.WriteLine(e);
-        }
         Console.WriteLine($"Imported {totalImport} issues. Skipped {totalSkipped}");
 
         async Task ProcessItems(IAsyncEnumerable<QuestIssueOrPullRequest> items)

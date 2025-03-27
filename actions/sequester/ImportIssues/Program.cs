@@ -100,7 +100,7 @@ internal class Program
             : IGitHubClient.CreateGitHubClient(options.ApiKeys.GitHubToken);
 
         var ospoClient = (options.ApiKeys.AzureAccessToken is not null)
-            ? new OspoClient(options.ApiKeys.AzureAccessToken, bulkImport)
+            ? new OspoClient(options.ApiKeys.AzureAccessToken, false)
             : null;
 
         if (ospoClient is null)
