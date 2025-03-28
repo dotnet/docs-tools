@@ -607,7 +607,7 @@ class Program
 
         // Gather up all the include references and increment the count for that include file in the Dictionary.
         //foreach (var markdownFile in files)
-        Parallel.ForEach(files, markdownFile =>
+        Parallel.ForEach(allReferencingFiles, markdownFile =>
         {
             foreach (string line in File.ReadAllLines(markdownFile.FullName))
             {
