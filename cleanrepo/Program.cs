@@ -607,9 +607,9 @@ class Program
 
         // Gather up all the include references and increment the count for that include file in the Dictionary.
         //foreach (var markdownFile in files)
-        Parallel.ForEach(allReferencingFiles, markdownFile =>
+        Parallel.ForEach(allReferencingFiles, includeReferenceFile =>
         {
-            foreach (string line in File.ReadAllLines(markdownFile.FullName))
+            foreach (string line in File.ReadAllLines(includeReferenceFile.FullName))
             {
                 // Example include references:
                 // [!INCLUDE [DotNet Restore Note](../includes/dotnet-restore-note.md)]
@@ -640,7 +640,7 @@ class Program
                         else
                         {
                             // Construct the full path to the referenced INCLUDE file
-                            fullPath = Path.Combine(markdownFile.DirectoryName!, relativePath);
+                            fullPath = Path.Combine(includeReferenceFile.DirectoryName!, relativePath);
                         }
 
                         // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
