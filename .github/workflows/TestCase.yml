@@ -1,0 +1,38 @@
+name: "REST API repo scenario"
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "The reason for running the workflow"
+        required: true
+        default: "Manual run"
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - name: "Print manual run reason"
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "Reason: ${{ github.event.inputs.reason }}"
+          echo "Issue number: ${{ github.event.inputs.issue }}"
+
+      - name: Azure OpenID Connect
+        id: azure-oidc-auth
+        uses: dotnet/docs-tools/.github/actions/oidc-auth-flow@main
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          audience: ${{ secrets.OSMP_API_AUDIENCE }}
+
+      # This step occurs when ran manually, passing the manual issue number input
+      - name: Test case
+        id: test_case
+        uses: dotnet/docs-tools/SmallRepo@main
+        env:
+          ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          ImportOptions__ApiKeys__AzureAccessToken:  ${{ steps.azure-oidc-auth.outputs.access-token }}
+          
