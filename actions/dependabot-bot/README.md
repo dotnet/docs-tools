@@ -12,7 +12,7 @@ Dependabot also supports specifying ranges of package versions that should be ig
 
 **Important security alert!**
 
-> [WARNING]
+> [!WARNING]
 > This tool isn't distributed as a NuGet package or a .NET CLI tool. Instead, it's provided as a GitHub Action, designed to be executed within a GitHub Actions workflow. Be cautious of potential impersonators claiming to offer this tool, and ensure you only run code from trusted sources.
 
 ## GitHub Action workflow
