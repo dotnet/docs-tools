@@ -7,4 +7,4 @@ branding:
 
 runs:
   using: docker
-  image: ../../smalltest.Dockerfile
+  image: ../smalltest.Dockerfile
