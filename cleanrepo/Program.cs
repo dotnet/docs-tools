@@ -595,21 +595,15 @@ class Program
         DirectoryInfo? rootDirectory = null;
 
         // Get all files that could possibly link to the include files
-        List<FileInfo>? mdFiles = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
-        List<FileInfo>? ymlFiles = HelperMethods.GetAllReferencingFiles("*.yml", inputDirectory, ref rootDirectory);
-
-        List<FileInfo>? files = null;
-        if (mdFiles is not null)
-            files = mdFiles;
-
-        if(ymlFiles is not null)
-            if (files is null)
-                files = ymlFiles;
-            else
-                files.AddRange(ymlFiles);
-
-        if (files is null || rootDirectory is null)
+        List<FileInfo>? mdfiles = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
+        List<FileInfo>? ymlfiles = HelperMethods.GetAllReferencingFiles("*.yml", inputDirectory, ref rootDirectory);
+        
+        if ((mdfiles is null && ymlfiles is null) || rootDirectory is null)
             return;
+
+        List<FileInfo> allReferencingFiles = mdfiles ?? [];
+        if (ymlfiles is not null)
+            allReferencingFiles.AddRange(ymlfiles);
 
         // Gather up all the include references and increment the count for that include file in the Dictionary.
         //foreach (var markdownFile in files)
