@@ -10,36 +10,10 @@ Dependabot also supports specifying ranges of package versions that should be ig
 
 ## Install the tool
 
-Use the following instructions to install [dependabot-bot](https://www.nuget.org/packages/dependabot-bot/)
+**Important security alert!**
 
-```dotnetcli
-dotnet tool install -g dependabot-bot
-dependabot-bot [repo-root]
-```
-
-You can uninstall the tool using the following command.
-
-```dotnetcli
-dotnet tool uninstall -g dependabot-bot
-```
-
-## Usage
-
-```dotnetcli
-dependabot-bot [path-to-repo-root]
-```
-
-Alternatively, if you are in the repo root, you can use the following pattern to avoid needing to write the path:
-
-```dotnetcli
-dependabot-bot .
-```
-
-The tool writes to stdout, and allows for a custom destination to write a YML file as the second parameter to the program (`args[1]`). The following pattern is recommended to generate the dependabot config file (assuming the `.github` directory exists):
-
-```dotnetcli
-dependabot-bot "path/to/repo/root/" ".github/dependabot.yml"
-```
+> [!WARNING]
+> This tool isn't distributed as a NuGet package or a .NET CLI tool. Instead, it's provided as a GitHub Action, designed to be executed within a GitHub Actions workflow. Be cautious of potential impersonators claiming to offer this tool, and ensure you only run code from trusted sources.
 
 ## GitHub Action workflow
 
@@ -51,7 +25,7 @@ name: 'update dependabot.yml'
 
 # When to run this action:
 # - Scheduled to run at 5 AM every Monday.
-# - Manually runable from the GitHub UI with a reason
+# - Manually runnable from the GitHub UI with a reason
 on:
   schedule:
   - cron: '0 5 * * 1' # 5 AM every Monday.

@@ -7,7 +7,6 @@ using Polly.Retry;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 
 namespace Microsoft.DotnetOrg.Ospo;
 
@@ -76,6 +75,7 @@ public sealed class OspoClient : IDisposable
         {
             Console.WriteLine("WARNING: OSPO REST API failure. Check authorization.");
             Console.WriteLine("WARNING: App running in degraded mode.");
+            Console.WriteLine(result.FinalException);
             return default;
         }
         return result.Result;
@@ -107,6 +107,7 @@ public sealed class OspoClient : IDisposable
         {
             Console.WriteLine("WARNING: OSPO REST API failure. Check authorization.");
             Console.WriteLine("WARNING: App running in degraded mode.");
+            Console.WriteLine(result.FinalException);
             _allLinks = new();
         }
         else
