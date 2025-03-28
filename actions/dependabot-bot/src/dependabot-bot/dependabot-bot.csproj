@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Description>A .NET tool for generating dependabot config files for .NET.</Description>
-    <VersionPrefix>1.0.6</VersionPrefix>
+    <VersionPrefix>1.0.7</VersionPrefix>
     <Authors>Richard Lander, dapine</Authors>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
