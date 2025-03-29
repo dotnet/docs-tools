@@ -8,13 +8,13 @@
     "ImportedLabel": ":pushpin: seQUESTered",
     "ParentNodes": [
         {
-            "Semester": "Dilithium",
-            "ParentNodeId": 233488
-        },
-        {
             "Semester": "Selenium",
             "ParentNodeId": 286035
         }
+        {
+            "Semester": "Bromine",
+            "ParentNodeId": 405108
+        }
      ],
-    "DefaultParentNode": 286035
+    "DefaultParentNode": 405108
 }
