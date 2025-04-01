@@ -303,6 +303,7 @@ class Program
 
                     // Gather all the redirects.
                     List<Redirect> redirects = docFxRepo.GetAllRedirects();
+                    Console.WriteLine($"Found {redirects.Count} redirects in the repo.\n");
 
                     // Get all the markdown and YAML files.
                     List<FileInfo> linkingFiles = HelperMethods.GetMarkdownFiles(options.TargetDirectory);
