@@ -80,4 +80,31 @@ public sealed record class ImportOptions
     /// the mapped AzureDevOps item.
     /// </remarks>
     public List<LabelToTagMap> WorkItemTags { get; init; } = [];
+
+    /// <summary>
+    /// The only set of GitHub logins that we monitor
+    /// </summary>
+    /// <remarks>
+    /// This set of logins are the only set that we expect
+    /// to see for importing Azure DevOps items. Items assigned to
+    /// others won't be imported.
+    /// <p>
+    /// In time, these ids should be stored in a global config
+    /// object. In the short term, this is quicker for testing
+    /// to ensure that it avoid our rate limit issues.
+    /// </p>
+    /// </remarks>
+    public List<string> TeamGitHubLogins { get; init; } =
+        [
+        "CamSoper",
+        "BillWagner",
+        "tdykstra",
+        "IEvangelist",
+        "davidbritch",
+        "gewarren",
+        "cmastr",
+        "adegeo",
+        "Rick-Anderson",
+        "wadepickett"
+        ];
 }

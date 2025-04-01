@@ -220,19 +220,6 @@ public class QuestWorkItem
                 Value = azDoTags
             });
         }
-        /* This is ignored by Azure DevOps. It uses the PAT of the 
-         * account running the code.
-        var creator = await issue.AuthorMicrosoftPreferredName(ospoClient);
-        patchDocument.Add(
-            new JsonPatchDocument
-            {
-                Operation = Op.Add,
-                Path = "/fields/System.CreatedBy",
-                From = default,
-                Value = creator ?? "dotnet-bot"
-            });
-        */
-
         JsonElement result = default;
         QuestWorkItem? newItem;
         result = await questClient.CreateWorkItem(patchDocument);
@@ -323,14 +310,18 @@ public class QuestWorkItem
     public async Task UpdateWorkItemAsync(QuestIssueOrPullRequest ghIssue,
         QuestClient questClient,
         OspoClient? ospoClient,
+        IEnumerable<string> trackedGitHubAccounts,
         WorkItemProperties issueProperties)
     {
-        string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient);
         AzDoIdentity? questAssigneeID = default;
-
-        if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
+        if (trackedGitHubAccounts.Any(login => login == ghIssue.Assignees.First().Login))
         {
-            questAssigneeID = await questClient.GetIDFromEmail(ghAssigneeEmailAddress);
+            string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient, trackedGitHubAccounts);
+
+            if (ghAssigneeEmailAddress?.EndsWith("@microsoft.com") == true)
+            {
+                questAssigneeID = await questClient.GetIDFromEmail(ghAssigneeEmailAddress);
+            }
         }
         List<JsonPatchDocument> patchDocument = [];
         if (issueProperties.ParentNodeId != ParentWorkItemId)

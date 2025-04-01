@@ -345,21 +345,32 @@ public abstract record QuestIssueOrPullRequest : Issue
     /// <param name="ospoClient">The Open Source program office client service.</param>
     /// <returns>The email address of the assignee. Null if unassigned, or the assignee is not a 
     /// Microsoft FTE.</returns>
-    public async Task<string?> QueryAssignedMicrosoftEmailAddressAsync(OspoClient? ospoClient)
+    public async Task<string?> QueryAssignedMicrosoftEmailAddressAsync(OspoClient? ospoClient, IEnumerable<string> trackedGitHubLogins)
     {
-        if ((Assignees.Length != 0) && (ospoClient is not null))
+        string? selectedAssignee = default;
+        foreach(var account in Assignees)
         {
-            OspoLink? identity = await ospoClient.GetAsync(Assignees.First().Login);
-            // This feels like a hack, but it is necessary.
-            // The email address is the email address a person configured
-            // However, the only guaranteed way to find the person in Quest 
-            // is to use their alias as an email address. Yuck.
-            if (identity?.MicrosoftInfo?.EmailAddress?.EndsWith("@microsoft.com") == true)
-                return identity.MicrosoftInfo.Alias + "@microsoft.com";
-            else
-                return identity?.MicrosoftInfo?.EmailAddress;
+            if (trackedGitHubLogins.Any(l => string.Compare(l, account.Login, true) == 0))
+            {
+                selectedAssignee = account.Login;
+                break;
+            }
         }
-        return null;
+        OspoLink? identity = (selectedAssignee, ospoClient) switch
+        {
+            (_, null) => null,
+            (null, _) => null,
+            (_, _) => await ospoClient.GetAsync(selectedAssignee)
+        };
+
+        // This feels like a hack, but it is necessary.
+        // The email address is the email address a person configured
+        // However, the only guaranteed way to find the person in Quest 
+        // is to use their alias as an email address. Yuck.
+        if (identity?.MicrosoftInfo?.EmailAddress?.EndsWith("@microsoft.com") == true)
+            return identity.MicrosoftInfo.Alias + "@microsoft.com";
+        else
+            return identity?.MicrosoftInfo?.EmailAddress;
     }
 
     /// <summary>
