@@ -350,7 +350,7 @@ public abstract record QuestIssueOrPullRequest : Issue
         string? selectedAssignee = default;
         foreach(var account in Assignees)
         {
-            if (trackedGitHubLogins.Any(l => l == account.Login))
+            if (trackedGitHubLogins.Any(l => string.Compare(l, account.Login, true) == 0))
             {
                 selectedAssignee = account.Login;
                 break;
