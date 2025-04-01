@@ -40,7 +40,8 @@ public class QuestGitHubService(
     string importedLabelText,
     string removeLinkItemText,
     List<ParentForLabel> parentNodes,
-    IEnumerable<LabelToTagMap> tagMap) : IDisposable
+    IEnumerable<LabelToTagMap> tagMap,
+    IEnumerable<string> gitHubLogins) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
     private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
@@ -104,7 +105,7 @@ public class QuestGitHubService(
                         (_, _, true, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
                         (_, _, false, null) => LinkIssueAsync(item, issueProperties), // No link, but one of the link labels was applied.
                         (_, _, true, not null) => questItem.RemoveWorkItem(item, _azdoClient, issueProperties), // Unlink.
-                        (_, _, false, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, issueProperties), // update
+                        (_, _, false, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, gitHubLogins, issueProperties), // update
                     };
                     totalImport++;
                 }
@@ -189,7 +190,7 @@ public class QuestGitHubService(
             (    _,     _,  true,     null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
             (    _,     _, false,     null) => LinkIssueAsync(ghIssue, issueProperties), // No link, but one of the link labels was applied.
             (    _,     _,  true, not null) => questItem.RemoveWorkItem(ghIssue, _azdoClient, issueProperties), // Unlink.
-            (    _,     _, false, not null) => questItem.UpdateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, issueProperties), // update
+            (    _,     _, false, not null) => questItem.UpdateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, gitHubLogins, issueProperties), // update
         };
         await workDone;
     }
@@ -298,7 +299,7 @@ public class QuestGitHubService(
             }
 
             // Because some fields can't be set when an item is created, go through an update cycle:
-            await questItem.UpdateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, issueProperties);
+            await questItem.UpdateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, gitHubLogins, issueProperties);
             return questItem;
         }
         else
