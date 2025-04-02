@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -302,6 +303,7 @@ class Program
 
                     // Gather all the redirects.
                     List<Redirect> redirects = docFxRepo.GetAllRedirects();
+                    Console.WriteLine($"Found {redirects.Count} redirects in the repo.\n");
 
                     // Get all the markdown and YAML files.
                     List<FileInfo> linkingFiles = HelperMethods.GetMarkdownFiles(options.TargetDirectory);
@@ -351,7 +353,14 @@ class Program
             // Remove hops/daisy chains in a redirection file.        
             case "RemoveRedirectHops":
                 {
-                    docFxRepo.RemoveAllRedirectHops(options.TargetDirectory);
+                    List<FileInfo> redirectionFiles = HelperMethods.GetRedirectionFiles(options.TargetDirectory);
+                    if (redirectionFiles.Count == 0)
+                    {
+                        Console.WriteLine("\nNo redirection files found.");
+                        break;
+                    }
+
+                    docFxRepo.RemoveAllRedirectHops(redirectionFiles);
 
                     Console.WriteLine("\nFinished removing redirect hops.");
                     break;

@@ -570,12 +570,10 @@ class DocFxRepo(string startDirectory, string urlBasePath)
 
     #region Redirected files
 
-    internal void RemoveAllRedirectHops(string directory)
+    internal void RemoveAllRedirectHops(List<FileInfo> redirectionFiles)
     {
         // Get all docsets for the OPS config file.
         Dictionary<string, string>? docsets = GetDocsetInfo();
-
-        List<FileInfo> redirectionFiles = HelperMethods.GetRedirectionFiles(directory);
 
         // Remove hops within each file.
         foreach (FileInfo redirectionFile in redirectionFiles)
