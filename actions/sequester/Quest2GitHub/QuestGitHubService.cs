@@ -108,6 +108,7 @@ public class QuestGitHubService(
                         (_, _, false, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, gitHubLogins, issueProperties), // update
                     };
                     totalImport++;
+                    await workDone;
                 }
                 else
                 {
