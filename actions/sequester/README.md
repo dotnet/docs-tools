@@ -37,6 +37,20 @@ To install the GitHub actions:
 
 > **Note**: You may need to configure GitHub Actions in your repository settings. For more information, see [Managing GitHub Actions settings for a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository).
 
+## Staggering times
+
+To minimize having all the runs hit REST APIs at the same time, the action configs in different repositories are staggered as follows:
+
+| Repository      | Time (UTC)  |
+|-----------------|-------------|
+| docs-maui       | 02:00       |
+| docs-aspire     | 04:00       |
+| docs-tools      | 05:30       |
+| docs            | 07:00       |
+| docs-desktop    | 09:00       |
+| dotnet-api-docs | 10:30       |
+| AspNetCore.Docs | 12:30       |
+
 ## Suggestions for future releases
 
 - [ ] Populate the "GitHub Repo" field in Azure DevOps to make reporting by repository easier.
