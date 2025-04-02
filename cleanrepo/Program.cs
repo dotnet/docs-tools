@@ -305,9 +305,11 @@ class Program
                     List<Redirect> redirects = docFxRepo.GetAllRedirects();
                     Console.WriteLine($"Found {redirects.Count} redirects in the repo.\n");
 
-                    // Get all the markdown and YAML files.
+                    // Get all the Markdown and YAML files.
                     List<FileInfo> linkingFiles = HelperMethods.GetMarkdownFiles(options.TargetDirectory);
                     linkingFiles.AddRange(HelperMethods.GetYAMLFiles(options.TargetDirectory));
+
+                    Console.WriteLine($"Checking {linkingFiles.Count} files for redirected links...\n");
 
                     // Check all links, including in toc.yml, to files in the redirects list.
                     // Replace links to redirected files.
