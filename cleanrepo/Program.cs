@@ -574,7 +574,6 @@ class Program
             // This can happen if files from a different repo map to the same docset.
             // For example, the C# language specification:
             // [C# Language Specification](/dotnet/csharp/language-reference/language-specification/introduction)
-            Console.WriteLine($"\nThe file '{absolutePath}' doesn't exist in this repo.");
             return;
         }
 
