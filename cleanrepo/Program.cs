@@ -330,21 +330,25 @@ class Program
                         return;
                     }
 
+                    // Get appropriate path for the file system
+                    // (e.g. with backslashes or forward slashes).
+                    string targetDirectory = Path.GetFullPath(options.TargetDirectory);
+
                     // Get the absolute path to the base directory for this docset.
-                    string? rootDirectory = docFxRepo.GetDocsetAbsolutePath(options.TargetDirectory);
+                    string? rootDirectory = docFxRepo.GetDocsetAbsolutePath(targetDirectory);
 
                     if (rootDirectory is null)
                     {
-                        Console.WriteLine($"\nThe docfx.json file for {options.TargetDirectory} is invalid.");
+                        Console.WriteLine($"\nCould not determine the root directory for the docset from the docfx.json file.");
                         return;
                     }
 
                     // Get all the markdown and YAML files in the search directory.
-                    List<FileInfo> linkingFiles = HelperMethods.GetMarkdownFiles(options.TargetDirectory);
-                    linkingFiles.AddRange(HelperMethods.GetYAMLFiles(options.TargetDirectory));
+                    List<FileInfo> linkingFiles = HelperMethods.GetMarkdownFiles(targetDirectory);
+                    linkingFiles.AddRange(HelperMethods.GetYAMLFiles(targetDirectory));
 
                     Console.WriteLine($"Checking {linkingFiles.Count} files in the " +
-                        $"'{options.TargetDirectory}' directory for site-relative links to '{docFxRepo.UrlBasePath}.'...\n");
+                        $"'{targetDirectory}' directory for site-relative links to '{docFxRepo.UrlBasePath}.'...\n");
 
                     // Check all links in these files.
                     ReplaceLinks(linkingFiles, docFxRepo.UrlBasePath, rootDirectory);
