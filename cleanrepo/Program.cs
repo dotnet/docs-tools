@@ -339,12 +339,12 @@ class Program
                         return;
                     }
 
-                    Console.WriteLine($"\nReplacing site-relative links to '{docFxRepo.UrlBasePath}/' in " +
-                        $"the '{options.TargetDirectory}' directory with file-relative links.\n");
-
                     // Get all the markdown and YAML files in the search directory.
                     List<FileInfo> linkingFiles = HelperMethods.GetMarkdownFiles(options.TargetDirectory);
                     linkingFiles.AddRange(HelperMethods.GetYAMLFiles(options.TargetDirectory));
+
+                    Console.WriteLine($"Checking {linkingFiles.Count} files in the " +
+                        $"'{options.TargetDirectory}' directory for site-relative links to '{docFxRepo.UrlBasePath}.'...\n");
 
                     // Check all links in these files.
                     ReplaceLinks(linkingFiles, docFxRepo.UrlBasePath, rootDirectory);
@@ -553,6 +553,13 @@ class Program
         // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
         absolutePath = Path.GetFullPath(absolutePath);
 
+        // Special case for index files.
+        if (absolutePath.EndsWith('\\') || absolutePath.EndsWith('/'))
+        {
+            // Try finding a file named index.md or index.yml.
+            absolutePath = Path.Combine(absolutePath, "index");
+        }
+
         // Get the actual casing of the file on the file system.
         try
         {
@@ -561,7 +568,9 @@ class Program
         catch (FileNotFoundException)
         {
             // This can happen if files from a different repo map to the same docset.
-            // For example, the C# language specification: [C# Language Specification](/dotnet/csharp/language-reference/language-specification/introduction)
+            // For example, the C# language specification:
+            // [C# Language Specification](/dotnet/csharp/language-reference/language-specification/introduction)
+            Console.WriteLine($"\nThe file '{absolutePath}' doesn't exist in this repo.");
             return;
         }
 
@@ -573,24 +582,28 @@ class Program
             // Replace any backslashes with forward slashes.
             fileRelativePath = fileRelativePath.Replace('\\', '/');
 
-            if (fileRelativePath != null)
+            if (fileRelativePath is null)
             {
-                // Add the bookmark back onto the end, if there is one.
-                if (!string.IsNullOrEmpty(bookmark))
-                {
-                    fileRelativePath += bookmark;
-                }
-
-                string newText = originalMatch.Replace(originalLink, fileRelativePath);
-
-                // Replace the link.
-                Console.WriteLine($"Replacing '{originalMatch}' with '{newText}' in file '{linkingFile.FullName}'.");
-
-                // If a previous link was found and replaced, the text may have changed, so reread the file.
-                string currentFileText = File.ReadAllText(linkingFile.FullName);
-
-                File.WriteAllText(linkingFile.FullName, currentFileText.Replace(originalMatch, newText));
+                Console.WriteLine($"\nCould not determine file-relative path " +
+                    $"for {absolutePath} from the {linkingFile.DirectoryName!} directory.");
+                return;
             }
+
+            // Add the bookmark back onto the end, if there is one.
+            if (!string.IsNullOrEmpty(bookmark))
+            {
+                fileRelativePath += bookmark;
+            }
+
+            string newText = originalMatch.Replace(originalLink, fileRelativePath);
+
+            // Replace the link.
+            Console.WriteLine($"Replacing '{originalMatch}' with '{newText}' in file '{linkingFile.FullName}'.");
+
+            // If a previous link was found and replaced, the text may have changed, so reread the file.
+            string currentFileText = File.ReadAllText(linkingFile.FullName);
+
+            File.WriteAllText(linkingFile.FullName, currentFileText.Replace(originalMatch, newText));
         }
     }
     #endregion
@@ -1407,7 +1420,8 @@ class Program
 static class HelperMethods
 {
     /// <summary>
-    /// Gets the actual (case-sensitive) file path on the file system for a specified case-insensitive file path.
+    /// Gets the actual (case-sensitive) file path on the
+    /// file system for a specified case-insensitive file path.
     /// </summary>
     public static string GetActualCaseForFilePath(string pathAndFileName)
     {

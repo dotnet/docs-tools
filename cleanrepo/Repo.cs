@@ -771,8 +771,6 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         // Matches link with optional #bookmark on the end.
         string ymlRegex = @"href:(.*\.md)(#[\w-]+)?";
 
-        int count = 0;
-
         // For each file...
         foreach (FileInfo linkingFile in linkingFiles)
         {
@@ -794,8 +792,6 @@ class DocFxRepo(string startDirectory, string urlBasePath)
 
             if (foundOldLink)
                 Console.WriteLine(output.ToString());
-
-            Console.WriteLine($"Finished processing file no. {++count}");
         }
     }
 
