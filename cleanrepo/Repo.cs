@@ -342,11 +342,11 @@ class DocFxRepo(string startDirectory, string urlBasePath)
 
                 // Check that it's a parent (or the same) directory as the input directory.
                 if (startDirectory.StartsWith(docsetPath))
-                    break;
+                    return docsetPath;
             }
         }
 
-        return docsetPath;
+        return null;
     }
 
     private string? GetAbsolutePath(string path, FileInfo linkingFile)
@@ -570,12 +570,10 @@ class DocFxRepo(string startDirectory, string urlBasePath)
 
     #region Redirected files
 
-    internal void RemoveAllRedirectHops(string directory)
+    internal void RemoveAllRedirectHops(List<FileInfo> redirectionFiles)
     {
         // Get all docsets for the OPS config file.
         Dictionary<string, string>? docsets = GetDocsetInfo();
-
-        List<FileInfo> redirectionFiles = HelperMethods.GetRedirectionFiles(directory);
 
         // Remove hops within each file.
         foreach (FileInfo redirectionFile in redirectionFiles)
@@ -847,7 +845,7 @@ class DocFxRepo(string startDirectory, string urlBasePath)
             }
             catch (NotSupportedException)
             {
-                //Console.WriteLine($"Found a possibly malformed link '{match.Groups[0].Value}' in '{linkingFile.FullName}'.\n");
+                Console.WriteLine($"Found a possibly malformed link '{match.Groups[0].Value}' in '{linkingFile.FullName}'.\n");
                 break;
             }
 
