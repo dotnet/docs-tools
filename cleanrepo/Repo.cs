@@ -342,11 +342,11 @@ class DocFxRepo(string startDirectory, string urlBasePath)
 
                 // Check that it's a parent (or the same) directory as the input directory.
                 if (startDirectory.StartsWith(docsetPath))
-                    break;
+                    return docsetPath;
             }
         }
 
-        return docsetPath;
+        return null;
     }
 
     private string? GetAbsolutePath(string path, FileInfo linkingFile)
@@ -845,7 +845,7 @@ class DocFxRepo(string startDirectory, string urlBasePath)
             }
             catch (NotSupportedException)
             {
-                //Console.WriteLine($"Found a possibly malformed link '{match.Groups[0].Value}' in '{linkingFile.FullName}'.\n");
+                Console.WriteLine($"Found a possibly malformed link '{match.Groups[0].Value}' in '{linkingFile.FullName}'.\n");
                 break;
             }
 
