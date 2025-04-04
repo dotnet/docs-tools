@@ -622,16 +622,21 @@ class Program
         DirectoryInfo? rootDirectory = null;
 
         // Get all files that could possibly link to the include files
-        List<FileInfo>? files = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
-
-        if (files is null || rootDirectory is null)
+        List<FileInfo>? mdfiles = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
+        List<FileInfo>? ymlfiles = HelperMethods.GetAllReferencingFiles("*.yml", inputDirectory, ref rootDirectory);
+        
+        if ((mdfiles is null && ymlfiles is null) || rootDirectory is null)
             return;
+
+        List<FileInfo> allReferencingFiles = mdfiles ?? [];
+        if (ymlfiles is not null)
+            allReferencingFiles.AddRange(ymlfiles);
 
         // Gather up all the include references and increment the count for that include file in the Dictionary.
         //foreach (var markdownFile in files)
-        Parallel.ForEach(files, markdownFile =>
+        Parallel.ForEach(allReferencingFiles, referencingFile =>
         {
-            foreach (string line in File.ReadAllLines(markdownFile.FullName))
+            foreach (string line in File.ReadAllLines(referencingFile.FullName))
             {
                 // Example include references:
                 // [!INCLUDE [DotNet Restore Note](../includes/dotnet-restore-note.md)]
@@ -662,7 +667,7 @@ class Program
                         else
                         {
                             // Construct the full path to the referenced INCLUDE file
-                            fullPath = Path.Combine(markdownFile.DirectoryName!, relativePath);
+                            fullPath = Path.Combine(referencingFile.DirectoryName!, relativePath);
                         }
 
                         // Clean up the path by replacing forward slashes with back slashes, removing extra dots, etc.
