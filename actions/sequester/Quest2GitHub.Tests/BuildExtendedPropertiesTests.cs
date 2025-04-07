@@ -9,18 +9,18 @@ public class BuildExtendedPropertiesTests
     private static QuestIteration[] _allIterations =
     [
         new() { Id =  1, Identifier = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Future", Path = """Content\Future""" },
-        new() { Id =  2, Identifier = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "04 Apr", Path = """Content\Dilithium\FY24Q4\04 Apr""" },
-        new() { Id =  3, Identifier = Guid.Parse("33333333-3333-3333-3333-333333333333"), Name = "05 May", Path = """Content\Dilithium\FY24Q4\05 May""" },
-        new() { Id =  4, Identifier = Guid.Parse("44444444-4444-4444-4444-444444444444"), Name = "06 Jun", Path = """Content\Dilithium\FY24Q4\06 Jun""" },
-        new() { Id =  5, Identifier = Guid.Parse("55555555-5555-5555-5555-555555555555"), Name = "07 Jul", Path = """Content\Dilithium\FY25Q1\07 Jul""" },
-        new() { Id =  6, Identifier = Guid.Parse("66666666-6666-6666-6666-666666666666"), Name = "08 Aug", Path = """Content\Dilithium\FY25Q1\08 Aug""" },
-        new() { Id =  7, Identifier = Guid.Parse("77777777-7777-7777-7777-777777777777"), Name = "09 Sep", Path = """Content\Dilithium\FY25Q1\09 Sep""" },
         new() { Id =  8, Identifier = Guid.Parse("88888888-8888-8888-8888-888888888888"), Name = "10 Oct", Path = """Content\Selenium\FY25Q2\10 Oct""" },
         new() { Id =  9, Identifier = Guid.Parse("99999999-9999-9999-9999-999999999999"), Name = "11 Nov", Path = """Content\Selenium\FY25Q2\11 Nov""" },
         new() { Id = 10, Identifier = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), Name = "12 Dev", Path = """Content\Selenium\FY25Q2\12 Dec""" },
         new() { Id = 11, Identifier = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"), Name = "01 Jan", Path = """Content\Selenium\FY25Q3\01 Jan""" },
         new() { Id = 12, Identifier = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"), Name = "02 Feb", Path = """Content\Selenium\FY25Q3\02 Feb""" },
-        new() { Id = 13, Identifier = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"), Name = "03 Mar", Path = """Content\Selenium\FY25Q3\03 Mar""" }
+        new() { Id = 13, Identifier = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"), Name = "03 Mar", Path = """Content\Selenium\FY25Q3\03 Mar""" },
+        new() { Id =  2, Identifier = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "04 Apr", Path = """Content\Bromine\FY25Q4\04 Apr""" },
+        new() { Id =  3, Identifier = Guid.Parse("33333333-3333-3333-3333-333333333333"), Name = "05 May", Path = """Content\Bromine\FY25Q4\05 May""" },
+        new() { Id =  4, Identifier = Guid.Parse("44444444-4444-4444-4444-444444444444"), Name = "06 Jun", Path = """Content\Bromine\FY25Q4\06 Jun""" },
+        new() { Id =  5, Identifier = Guid.Parse("55555555-5555-5555-5555-555555555555"), Name = "07 Jul", Path = """Content\Bromine\FY26Q1\07 Jul""" },
+        new() { Id =  6, Identifier = Guid.Parse("66666666-6666-6666-6666-666666666666"), Name = "08 Aug", Path = """Content\Bromine\FY26Q1\08 Aug""" },
+        new() { Id =  7, Identifier = Guid.Parse("77777777-7777-7777-7777-777777777777"), Name = "09 Sep", Path = """Content\Bromine\FY26Q1\09 Sep""" },
     ];
     private static LabelToTagMap[] _tagMap =
     [
@@ -30,10 +30,10 @@ public class BuildExtendedPropertiesTests
 
     private static ParentForLabel[] _parentMap =
     [
-        new () { Label = labelWithParent, Semester = "Selenium", ParentNodeId = 1 },
-        new () { Label = null, Semester = "Selenium", ParentNodeId = 2 },
-        new () { Label = labelWithParent, Semester = "Dilithium", ParentNodeId = 11 },
-        new () { Label = null, Semester = "Dilithium", ParentNodeId = 22 }
+        new () { Label = labelWithParent, Semester = "Selenium", ParentNodeId = 11 },
+        new () { Label = null, Semester = "Selenium", ParentNodeId = 22 },
+        new () { Label = labelWithParent, Semester = "Bromine", ParentNodeId = 1 },
+        new () { Label = null, Semester = "Bromine", ParentNodeId = 2 }
     ];
     private const int _defaultParentId = 33;
 
@@ -68,7 +68,7 @@ public class BuildExtendedPropertiesTests
             ]
         },
         "project": {
-            "title": "dotnet/docs July 2024 Sprint"
+            "title": "dotnet/docs December 2024 Sprint"
         }
       }
       """;
@@ -98,7 +98,7 @@ public class BuildExtendedPropertiesTests
             ]
         },
         "project": {
-            "title": "dotnet/docs October 2024 Sprint"
+            "title": "dotnet/docs February 2025 Sprint"
         }
       }
       """;
@@ -127,7 +127,7 @@ public class BuildExtendedPropertiesTests
             ]
         },
         "project": {
-            "title": "dotnet/docs March 2025 Sprint"
+            "title": "dotnet/docs June 2025 Sprint"
         }
       }
       """;
@@ -599,7 +599,7 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
         Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
@@ -613,7 +613,7 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
         Assert.Equal("Closed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
@@ -626,7 +626,7 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
         Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Equal(["content-curation"], extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
@@ -640,7 +640,7 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
         Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(1, extendedProperties.ParentNodeId);
@@ -654,7 +654,7 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Selenium\\FY25Q3\\03 Mar", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
         Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
@@ -682,7 +682,7 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Dilithium\\FY25Q1\\07 Jul", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Selenium\\FY25Q2\\12 Dec", extendedProperties.IterationPath);
         Assert.Equal("Closed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(11, extendedProperties.ParentNodeId);
