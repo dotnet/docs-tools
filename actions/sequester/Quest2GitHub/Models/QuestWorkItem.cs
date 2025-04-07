@@ -314,7 +314,7 @@ public class QuestWorkItem
         WorkItemProperties issueProperties)
     {
         AzDoIdentity? questAssigneeID = default;
-        if (trackedGitHubAccounts.Any(login => login == ghIssue.Assignees.First().Login))
+        if (trackedGitHubAccounts.Any(login => login == ghIssue.Assignees.FirstOrDefault()?.Login))
         {
             string? ghAssigneeEmailAddress = await ghIssue.QueryAssignedMicrosoftEmailAddressAsync(ospoClient, trackedGitHubAccounts);
 
