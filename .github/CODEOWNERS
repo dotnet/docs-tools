@@ -1,2 +1,29 @@
+
+*  @dotnet/docs
+
+actions/dependabot-bot/ @IEvangelist
 actions/docs-verifier/ @BillWagner @IEvangelist
+actions/dotnet-version-updater/ @IEvangelist
+actions/sequester/ @BillWagner
 actions/status-checker/ @gewarren
+cleanrepo/ @gewarren
+DotNet.DocsTools/ @IEvangelist @BillWagner
+DotNet.DocsToolsTests/ @IEvangelist @BillWagner
+GitHub.QuerySandbox/ @BillWagner
+GitHub.RepositoryExplorer/ @BillWagner
+GitHub.RepositoryExplorer.Client/ @BillWagner
+GitHub.RepositoryExplorer.Functions/ @BillWagner
+GitHub.RepositoryExplorer.Models/ @BillWagner
+GitHub.RepositoryExplorer.Services/ @BillWagner
+GitHub.RepositoryExplorer.WebApi/ @BillWagner 
+IssueCloser/ @BillWagner
+PackageIndexer/ @gewarren
+RepoMan/ @adegeo
+RepoManChecker/ @adegeo
+snippets5000/ @adegeo @BillWagner
+Whats-new/ @BillWagner
+WhatsNew.Cli/ @BillWagner
+WhatsNew.Infrastructure/ @BillWagner
+WhatsNew.Infrastructure.Tests/ @BillWagner
+XmlDocConflictResolver/ @gewarren
+
