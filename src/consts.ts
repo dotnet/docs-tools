@@ -80,14 +80,16 @@ export const MODEL_SELECTOR: LanguageModelChatSelector = {
 export function getBreakingChangePrompt(issue: Issue, issueUrl: string): string {
     return `Please create a "breaking changes" document from the following GitHub issue:
     
-    "${issue.body}"
+    Issue Title: ${issue.title}
+    
+    Issue Body: ${issue.body}
 
     The document should be in Markdown format. All headings and titles should be in sentence case. Rephrase all content to be clear and concise using correct grammar and spelling. Use active voice. Always describe previous behavior in past tense and new behavior in present tense. Do not use "we" or "our". Refer to the user in the second person (e.g., "you/your"). Avoid colloquial language and try to sound professional.
 
     The document should start with the following header, including --- characters. Replace placeholders denoted by parentheses with the appropriate content from the issue.
 
     ---
-    title: "Breaking change - ${issue.title}"
+    title: "Breaking change - (A concise descriptive title of the breaking change)"
     description: "Learn about the breaking change in (product/version) where (very brief description)."
     ms.date: ${new Date().toLocaleDateString('en-US')}
     ai-usage: ai-assisted
@@ -96,7 +98,7 @@ export function getBreakingChangePrompt(issue: Issue, issueUrl: string): string 
 
     After the header, include the following sections in this order. Use the description in parentheses as a guide for the content of each section.
 
-    - h1: "${issue.title}"
+    - h1: "(The same title used in the document header, sans 'Breaking Change - ')"
       (An introductory paragraph summarizing the breaking change.)
     - h2: Version introduced
       (The version in which the breaking change was introduced.)
