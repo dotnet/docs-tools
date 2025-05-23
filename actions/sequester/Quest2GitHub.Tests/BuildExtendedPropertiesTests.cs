@@ -738,7 +738,7 @@ public class BuildExtendedPropertiesTests
             issueNumber = 1111
         };
         JsonElement element = JsonDocument.Parse(jsonDocument).RootElement;
-        return new WorkItemProperties(QuestIssue.FromJsonElement(element, variables), _allIterations, _tagMap, _parentMap);
+        return new WorkItemProperties(QuestIssue.FromJsonElement(element, variables), _allIterations, _tagMap, _parentMap, "copilotTag");
     }
 
 }

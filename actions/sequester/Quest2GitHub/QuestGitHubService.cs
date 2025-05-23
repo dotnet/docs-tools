@@ -41,7 +41,8 @@ public class QuestGitHubService(
     string removeLinkItemText,
     List<ParentForLabel> parentNodes,
     IEnumerable<LabelToTagMap> tagMap,
-    IEnumerable<string> gitHubLogins) : IDisposable
+    IEnumerable<string> gitHubLogins,
+    string copilotTag) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
     private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
@@ -96,7 +97,7 @@ public class QuestGitHubService(
                     QuestWorkItem? questItem = (request || sequestered || vanquished)
                         ? await FindLinkedWorkItemAsync(item)
                         : null;
-                    var issueProperties = new WorkItemProperties(item, _allIterations, tagMap, parentNodes);
+                    var issueProperties = new WorkItemProperties(item, _allIterations, tagMap, parentNodes, copilotTag);
 
                     Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
                     Task workDone = (request, sequestered, vanquished, questItem) switch
@@ -183,7 +184,7 @@ public class QuestGitHubService(
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
-        var issueProperties = new WorkItemProperties(ghIssue, _allIterations, tagMap, parentNodes);
+        var issueProperties = new WorkItemProperties(ghIssue, _allIterations, tagMap, parentNodes, copilotTag);
 
         Task workDone = (request, sequestered, vanquished, questItem) switch
         {
