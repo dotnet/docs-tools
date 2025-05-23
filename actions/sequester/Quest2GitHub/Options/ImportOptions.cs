@@ -99,7 +99,6 @@ public sealed record class ImportOptions
         "BillWagner",
         "tdykstra",
         "IEvangelist",
-        "davidbritch",
         "gewarren",
         "cmastr",
         "adegeo",
