@@ -96,6 +96,22 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("Microsoft.Extensions.ML"),
             // Documented under .NET Aspire moniker.
             PackageFilterExpression.Parse("Microsoft.Extensions.ServiceDiscovery*"),
+            // Old R9 packages.
+            PackageFilterExpression.Parse("Microsoft.Extensions.DependencyInjection.NamedService"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.DependencyInjection.Pools"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Diagnostics.HealthChecks.Core"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.EnumStrings"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Hosting.Testing.StartupInitialization"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Http.AutoClient"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Http.Telemetry"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.HttpClient.SocketHandling"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Options.ValidateOnStart"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Options.Validation"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Telemetry.Console"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Telemetry.Testing"),
+            PackageFilterExpression.Parse("System.Cloud.DocumentDb.Abstractions"),
+            PackageFilterExpression.Parse("System.Cloud.Messaging"),
+            PackageFilterExpression.Parse("System.Cloud.Messaging.Abstractions"),
             // Suffixes.
             PackageFilterExpression.Parse("*.cs"),
             PackageFilterExpression.Parse("*.de"),
