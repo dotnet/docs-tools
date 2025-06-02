@@ -11,6 +11,7 @@ public static class GitHubObjectExtensions
     [
         "dependabot",
         "github-actions",
+        "copilot-swe-agent",
         "dotnet-bot",
         "dotnet-maestro",
         "dotnet-policy-service",
