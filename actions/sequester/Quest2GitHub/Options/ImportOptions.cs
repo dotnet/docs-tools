@@ -96,15 +96,21 @@ public sealed record class ImportOptions
     /// </remarks>
     public List<string> TeamGitHubLogins { get; init; } =
         [
-        "CamSoper",
         "BillWagner",
         "tdykstra",
         "IEvangelist",
-        "davidbritch",
         "gewarren",
         "cmastr",
         "adegeo",
-        "Rick-Anderson",
         "wadepickett"
         ];
+
+    /// <summary>
+    /// This tag is added to issues that are assigned to Copilot.
+    /// </summary>
+    /// <remarks>
+    /// The human assignee is assigned to review and prompt Copilot to perform
+    /// the toil of the work.
+    /// </remarks>
+    public string CopilotIssueTag { get; init; } = "Assignee-Copilot";
 }

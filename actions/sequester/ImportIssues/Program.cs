@@ -120,6 +120,7 @@ internal class Program
                 options.UnlinkLabel,
                 options.ParentNodes,
                 options.WorkItemTags,
-                options.TeamGitHubLogins);
+                options.TeamGitHubLogins,
+                options.CopilotIssueTag);
     }
 }

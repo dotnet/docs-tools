@@ -21,7 +21,8 @@ public class WorkItemProperties
     public WorkItemProperties (QuestIssueOrPullRequest issue,
         IEnumerable<QuestIteration> iterations,
         IEnumerable<LabelToTagMap> tags,
-        IEnumerable<ParentForLabel> parentNodes)
+        IEnumerable<ParentForLabel> parentNodes,
+        string copilotTag)
     {
         StoryPointSize? storySize = LatestStoryPointSize(issue);
         StoryPoints = QuestStoryPoint(storySize) ?? 0;
@@ -57,7 +58,7 @@ public class WorkItemProperties
             }
         }
 
-        Tags = WorkItemTagsForIssue(issue, tags);
+        Tags = WorkItemTagsForIssue(issue, tags, copilotTag);
 
         string month = storySize?.Month ?? "Unknown";
         int calendarYear = storySize?.CalendarYear ?? 0;
@@ -163,7 +164,7 @@ public class WorkItemProperties
         return default;
     }
 
-    private static IEnumerable<string> WorkItemTagsForIssue(QuestIssueOrPullRequest issue, IEnumerable<LabelToTagMap> tags)
+    private static IEnumerable<string> WorkItemTagsForIssue(QuestIssueOrPullRequest issue, IEnumerable<LabelToTagMap> tags, string copilotTag)
     {
         foreach (var label in issue.Labels)
         {
@@ -172,6 +173,11 @@ public class WorkItemProperties
             {
                 yield return tag.Tag;
             }
+        }
+        // Add custom tag if one of the assignees is "Copilot":
+        if (issue.Assignees.Any(a => (a.Login == "Copilot") && (string.IsNullOrWhiteSpace(a.Name))))
+        {
+            yield return copilotTag;
         }
     }
 }
