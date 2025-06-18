@@ -794,7 +794,7 @@ class Program
             }
         }
 
-        foreach (DirectoryInfo subDirectory in dir.EnumerateDirectories($"*", SearchOption.AllDirectories))
+        foreach (DirectoryInfo subDirectory in dir.EnumerateDirectories("*", SearchOption.AllDirectories))
         {
             // If subdirectory pattern is specified, check for this string in the directory path.
             if (!string.IsNullOrEmpty(subdirectoryPattern) &&
