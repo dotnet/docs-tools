@@ -277,9 +277,11 @@ class Program
             case "FindOrphanedSnippets":
                 {
                     Console.WriteLine($"\nSearching the '{options.TargetDirectory}' directory recursively for orphaned snippet files.");
+                    if (options.Subdirectory != null)
+                        Console.WriteLine($"Only searching subdirectories with '{options.Subdirectory}' in their path.");
 
                     // Get all snippet files.
-                    List<(string, string?)> snippetFiles = GetSnippetFiles(options.TargetDirectory);
+                    List<(string, string?)> snippetFiles = GetSnippetFiles(options.TargetDirectory, options.Subdirectory);
                     if (snippetFiles.Count == 0)
                     {
                         Console.WriteLine("\nNo files with matching extensions were found.");
@@ -777,7 +779,7 @@ class Program
     /// <summary>
     /// Returns a list of code files in the specified directory and its subdirectories.
     /// </summary>
-    private static List<(string, string?)> GetSnippetFiles(string inputDirectory)
+    private static List<(string, string?)> GetSnippetFiles(string inputDirectory, string? subdirectoryPattern)
     {
         List<string> fileExtensions = [".cs", ".vb", ".fs", ".cpp", ".xaml"];
 
@@ -792,8 +794,15 @@ class Program
             }
         }
 
-        foreach (DirectoryInfo subDirectory in dir.EnumerateDirectories("*", SearchOption.AllDirectories))
+        foreach (DirectoryInfo subDirectory in dir.EnumerateDirectories($"*", SearchOption.AllDirectories))
         {
+            // If subdirectory pattern is specified, check for this string in the directory path.
+            if (!string.IsNullOrEmpty(subdirectoryPattern) &&
+                !subDirectory.FullName.Contains(subdirectoryPattern, StringComparison.OrdinalIgnoreCase))
+            {
+                continue; // Skip this subdirectory.
+            }
+
             foreach (string extension in fileExtensions)
             {
                 foreach (FileInfo file in subDirectory.EnumerateFiles($"*{extension}"))
