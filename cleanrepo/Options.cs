@@ -4,6 +4,7 @@ class Options
 {
     public string? DocFxDirectory { get; set; }
     public string? TargetDirectory { get; set; }
+    public string? Subdirectory { get; set; }
     public string? UrlBasePath { get; set; }
     public bool Delete { get; set; } = true;
     public bool XmlSource { get; set; } = false;
