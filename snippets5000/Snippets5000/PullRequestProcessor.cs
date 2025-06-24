@@ -91,7 +91,7 @@ internal class PullRequestProcessor
             return null;
 
         // Check for the project/solution to test with was found
-        FindProjectOrSolution(rootDir, itemPath, out string? project, out int countOfSln, out int countOfProjs, out int countOfCode, out int countOfSpecial, ref projectsFound);
+        FindProjectOrSolution(rootDir, itemPath, itemWasDeleted, out string? project, out int countOfSln, out int countOfProjs, out int countOfCode, out int countOfSpecial, ref projectsFound);
 
         // If it's a solution file, check that all the projects are referenced in it:
         if (countOfSln == 1)
@@ -134,7 +134,7 @@ internal class PullRequestProcessor
         };
     }
 
-    static void FindProjectOrSolution(string rootDir, string itemDirectory, out string? project, out int countOfSln, out int countOfProjs, out int countOfCode, out int countOfSpecial, ref List<string> projectsFound)
+    static void FindProjectOrSolution(string rootDir, string itemDirectory, bool isDeleted, out string? project, out int countOfSln, out int countOfProjs, out int countOfCode, out int countOfSpecial, ref List<string> projectsFound)
     {
         project = null;
         countOfSln = 0;
@@ -146,7 +146,8 @@ internal class PullRequestProcessor
         // If a file is deleted, and no other content is there, the directory won't exist
         if (Directory.Exists(itemDirectory))
         {
-            foreach (var file in Directory.EnumerateFiles(itemDirectory, $"*.*", SearchOption.AllDirectories))
+            // If the item is deleted, we don't need to scan it, but we do need to scan the parents
+            foreach (var file in Directory.EnumerateFiles(itemDirectory, $"*.*", isDeleted ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories))
                 ScanFile(file, ref project, ref countOfSln, ref countOfProjs, ref countOfCode, ref countOfSpecial, ref projectsFound);
         }
 
