@@ -140,7 +140,7 @@ class Program
         foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_NOPROJ))
         {
             if (!first) { Log.Write(0, OUTPUT_ERROR_1_NOPROJ); first = true; }
-            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_1_NOPROJ}");
+            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_1_NOPROJ}|TriggerFile='{project.InputFile}'");
             transformedProjects.Add(new SnippetsConfigFile() { RunOutput = OUTPUT_ERROR_1_NOPROJ, RunExitCode = project.Code, RunTargetFile = project.InputFile, RunErrorIsStructural = true, RunConsideredGood = false });
         }
 
@@ -149,7 +149,7 @@ class Program
         foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_TOOMANY))
         {
             if (!first) { Log.Write(0, OUTPUT_ERROR_2_TOOMANY); first = true; }
-            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_2_TOOMANY}");
+            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_2_TOOMANY}|TriggerFile='{project.InputFile}'");
             transformedProjects.Add(new SnippetsConfigFile() { RunOutput = OUTPUT_ERROR_2_TOOMANY, RunExitCode = project.Code, RunTargetFile = project.InputFile, RunErrorIsStructural = true, RunConsideredGood = false });
         }
 
@@ -159,7 +159,7 @@ class Program
         foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_SLN_NOPROJ))
         {
             if (!first) { Log.Write(0, OUTPUT_ERROR_3_SLNNOPROJ); first = true; }
-            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_3_SLNNOPROJ}");
+            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_3_SLNNOPROJ}|TriggerFile='{project.InputFile}'");
             transformedProjects.Add(new SnippetsConfigFile() { RunOutput = OUTPUT_ERROR_3_SLNNOPROJ, RunExitCode = project.Code, RunTargetFile = project.InputFile, RunErrorIsStructural = true, RunConsideredGood = false });
         }
 
