@@ -8,7 +8,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 0227", "preview"];
+        args = [@"c:\users\gewarren\desktop\Package Index 0623", "preview"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
