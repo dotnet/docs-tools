@@ -64,6 +64,17 @@
     ]
   },
   {
+    "Name": "Delete - Stray CS file, other projects below",
+    "CountOfEmptyResults": 1,
+    "ExpectedResults": null,
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/deeper-path/codefile.cs"
+      }
+    ]
+  },
+  {
     "Name": "Create - New proj, find sln",
     "ExpectedResults": [
       {
