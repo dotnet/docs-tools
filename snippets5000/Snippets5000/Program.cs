@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using static Snippets5000.SnippetsConfigFile;
 using Log = DotNet.DocsTools.Utility.EchoLogging;
+using DotNet.DocsTools.Utility;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PullRequestSimulations")]
 
@@ -337,6 +338,7 @@ class Program
                 config.RunOutput = config.RunOutput.Trim();
                 Log.Write(2, $"Output:");
                 Log.Write(4, config.RunOutput.Replace("\n", $"\n{Log.Ind(4)}"));
+                Log.Write(4, $"Exit code: {config.RunExitCode}");
             }
 
             Log.EndGroup();
