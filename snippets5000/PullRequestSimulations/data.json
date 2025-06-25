@@ -15,6 +15,21 @@
 
   // GOOD items
   {
+    "Name": "Edit - Single file no project - Compile",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/normal/single_code_file/Now.cs"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/normal/single_code_file/Now.cs"
+      }
+    ]
+  },
+  {
     "Name": "Edit - Single file find project C#",
     "ExpectedResults": [
       {
@@ -152,6 +167,21 @@
     ]
   },
   {
+    "Name": "Delete - Single file find project C#",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/normal/csharp_project/app1.csproj"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/normal/csharp_project/DeletedFile.cs"
+      }
+    ]
+  },
+  {
     "Name": "Delete - All files, artifact remains in folder",
     "ExpectedResults": [
       {
@@ -285,7 +315,7 @@
     "Items": [
       {
         "ItemType": "Edit",
-        "Path": "snippets/bad/nullablepatternmatching/Program.cs"
+        "Path": "snippets/bad/nullablepatternmatching/childwithcode/Program.cs"
       }
     ]
   },
