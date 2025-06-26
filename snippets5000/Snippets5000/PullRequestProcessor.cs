@@ -91,7 +91,7 @@ internal class PullRequestProcessor
             return null;
 
         // Check for the project/solution to test with was found
-        FindProjectOrSolution(rootDir, itemPath, out string? project, out int countOfSln, out int countOfProjs, out int countOfCode, out int countOfSpecial, ref projectsFound);
+        FindProjectOrSolution(rootDir, itemPath, itemWasDeleted, out string? project, out int countOfSln, out int countOfProjs, out int countOfCode, out int countOfSpecial, ref projectsFound);
 
         // If it's a solution file, check that all the projects are referenced in it:
         if (countOfSln == 1)
@@ -116,25 +116,29 @@ internal class PullRequestProcessor
         if (project != null)
             project = TransformPathToUnix(rootDir, project);
 
+        // If the file is a CSharp code file and it's running on .NET 10 or greater, support single file compilation
+        bool isCSFile = item.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
+
         // Process the condition checks to see if this item is valid or not
-        return (project, countOfSln, countOfProjs, countOfCode, countOfSpecial, itemWasDeleted, allProjectsFoundInSln) switch
+        return (project, countOfSln, countOfProjs, countOfCode, countOfSpecial, itemWasDeleted, allProjectsFoundInSln, isCSFile) switch
         {
-            //                            Proj File, Sln#, Proj#, Code#, Spec#,   Del, SlnHasPrj
-            /* File del, no code/proj  */ (null,        0,     0,     0,     0,  true, _)     => null,
-            /* Too many solutions      */ (not null,  > 1,     _,     _,     _,     _, _)     => new DiscoveryResult(DiscoveryResult.RETURN_TOOMANY, item, project),
-            /* Too many projs          */ (not null,    0,   > 1,     _,     _,     _, _)     => new DiscoveryResult(DiscoveryResult.RETURN_TOOMANY, item, project),
-            /* SLN found               */ (not null,    1,   > 0,     _,     _,     _, true)  => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, project),
-            /* SLN found, missing proj */ (not null,    1,   > 0,     _,     _,     _, false) => new DiscoveryResult(DiscoveryResult.RETURN_SLN_PROJ_MISSING, item, project),
-            /* SLN found no projs      */ (not null,    1,     0,     _,     _, false, _)     => new DiscoveryResult(DiscoveryResult.RETURN_SLN_NOPROJ, item, project),
-            /* SLN found no projs, del */ (not null,    1,     0,     _,     _,  true, _)     => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, project),
-            /* Project found           */ (not null,    0,     1,     _,     _,     _, _)     => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, project),
-            /* Code no proj            */ (null,        0,     0,   > 0,     _,     _, _)     => new DiscoveryResult(DiscoveryResult.RETURN_NOPROJ, item, ""),
-            /* Code no proj            */ (null,        0,     0,     _,   > 0,     _, _)     => new DiscoveryResult(DiscoveryResult.RETURN_NOPROJ, item, ""),
-            /* catch all               */ _                                                  => new DiscoveryResult(DiscoveryResult.RETURN_NOPROJ, item, "CONDITION NOT FOUND"),
+            //                            Proj File, Sln#, Proj#, Code#, Spec#,   Del, SlnHasPrj, IsCSfile
+            /* File del, no code/proj  */ (null,        0,     0,     0,     0,  true, _,         _)    => null,
+            /* Too many solutions      */ (not null,  > 1,     _,     _,     _,     _, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_TOOMANY, item, project),
+            /* Too many projs          */ (not null,    0,   > 1,     _,     _,     _, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_TOOMANY, item, project),
+            /* SLN found               */ (not null,    1,   > 0,     _,     _,     _, true,      _)    => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, project),
+            /* SLN found, missing proj */ (not null,    1,   > 0,     _,     _,     _, false,     _)    => new DiscoveryResult(DiscoveryResult.RETURN_SLN_PROJ_MISSING, item, project),
+            /* SLN found no projs      */ (not null,    1,     0,     _,     _, false, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_SLN_NOPROJ, item, project),
+            /* SLN found no projs, del */ (not null,    1,     0,     _,     _,  true, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, project),
+            /* Project found           */ (not null,    0,     1,     _,     _,     _, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, project),
+            /* Single .cs file compile */ (null,        0,     0,     1,     _,     _, _,         true) => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, item),
+            /* Code no proj            */ (null,        0,     0,   > 0,     _,     _, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_NOPROJ, item, ""),
+            /* Code no proj            */ (null,        0,     0,     _,   > 0,     _, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_NOPROJ, item, ""),
+            /* catch all               */ _                                                             => new DiscoveryResult(DiscoveryResult.RETURN_NOPROJ, item, "CONDITION NOT FOUND"),
         };
     }
 
-    static void FindProjectOrSolution(string rootDir, string itemDirectory, out string? project, out int countOfSln, out int countOfProjs, out int countOfCode, out int countOfSpecial, ref List<string> projectsFound)
+    static void FindProjectOrSolution(string rootDir, string itemDirectory, bool isDeleted, out string? project, out int countOfSln, out int countOfProjs, out int countOfCode, out int countOfSpecial, ref List<string> projectsFound)
     {
         project = null;
         countOfSln = 0;
@@ -146,7 +150,8 @@ internal class PullRequestProcessor
         // If a file is deleted, and no other content is there, the directory won't exist
         if (Directory.Exists(itemDirectory))
         {
-            foreach (var file in Directory.EnumerateFiles(itemDirectory, $"*.*", SearchOption.AllDirectories))
+            // If the item is deleted, we don't need to scan it, but we do need to scan the parents
+            foreach (var file in Directory.EnumerateFiles(itemDirectory, $"*.*", isDeleted ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories))
                 ScanFile(file, ref project, ref countOfSln, ref countOfProjs, ref countOfCode, ref countOfSpecial, ref projectsFound);
         }
 

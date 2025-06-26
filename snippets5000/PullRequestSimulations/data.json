@@ -15,6 +15,21 @@
 
   // GOOD items
   {
+    "Name": "Edit - Single file no project - Compile",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/normal/single_code_file/Now.cs"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Edit",
+        "Path": "snippets/good/normal/single_code_file/Now.cs"
+      }
+    ]
+  },
+  {
     "Name": "Edit - Single file find project C#",
     "ExpectedResults": [
       {
@@ -60,6 +75,17 @@
       {
         "ItemType": "Delete",
         "Path": "snippets/good/solutions/lots-o-projects/set-operators/somefile.cs"
+      }
+    ]
+  },
+  {
+    "Name": "Delete - Stray CS file, other projects below",
+    "CountOfEmptyResults": 1,
+    "ExpectedResults": null,
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/deeper-path/codefile.cs"
       }
     ]
   },
@@ -137,6 +163,21 @@
       {
         "ItemType": "Edit",
         "Path": "snippets/good/deeper-path/three_projs/cpp/MyForm.cpp"
+      }
+    ]
+  },
+  {
+    "Name": "Delete - Single file find project C#",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/normal/csharp_project/app1.csproj"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/normal/csharp_project/DeletedFile.cs"
       }
     ]
   },
@@ -274,7 +315,7 @@
     "Items": [
       {
         "ItemType": "Edit",
-        "Path": "snippets/bad/nullablepatternmatching/Program.cs"
+        "Path": "snippets/bad/nullablepatternmatching/childwithcode/Program.cs"
       }
     ]
   },
