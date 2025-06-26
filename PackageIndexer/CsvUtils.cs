@@ -111,11 +111,59 @@ internal class CsvUtils
                         AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net10.0");
                         break;
                     case "net462":
+                        opsMoniker = s_tfmToOpsMoniker["net462"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, "net462");
+                        if (!packageEntry.Frameworks.Contains("net47"))
+                        {
+                            // Add to net47 moniker since this is a compatible framework.
+                            fellThroughFromVersion = "net462";
+                            goto case "net47";
+                        }
+                        break;
                     case "net47":
+                        opsMoniker = s_tfmToOpsMoniker["net47"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net47");
+                        if (!packageEntry.Frameworks.Contains("net471"))
+                        {
+                            // Add to net471 moniker since this is a compatible framework.
+                            fellThroughFromVersion = "net47";
+                            goto case "net471";
+                        }
+                        break;
                     case "net471":
+                        opsMoniker = s_tfmToOpsMoniker["net471"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net471");
+                        if (!packageEntry.Frameworks.Contains("net472"))
+                        {
+                            // Add to net472 moniker since this is a compatible framework.
+                            fellThroughFromVersion = "net471";
+                            goto case "net472";
+                        }
+                        break;
                     case "net472":
+                        opsMoniker = s_tfmToOpsMoniker["net472"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net472");
+                        if (!packageEntry.Frameworks.Contains("net48"))
+                        {
+                            // Add to net48 moniker since this is a compatible framework.
+                            fellThroughFromVersion = "net472";
+                            goto case "net48";
+                        }
+                        break;
                     case "net48":
+                        opsMoniker = s_tfmToOpsMoniker["net48"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net48");
+                        if (!packageEntry.Frameworks.Contains("net481"))
+                        {
+                            // Add to net481 moniker since this is a compatible framework.
+                            fellThroughFromVersion = "net48";
+                            goto case "net481";
+                        }
+                        break;
                     case "net481":
+                        opsMoniker = s_tfmToOpsMoniker["net481"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net481");
+                        break;
                     case "netstandard2.0":
                     case "netstandard2.1":
                         opsMoniker = s_tfmToOpsMoniker[targetFramework];
