@@ -60,6 +60,21 @@
     ]
   },
   {
+    "Name": "Delete - Single file remains no project - Compile",
+    "ExpectedResults": [
+      {
+        "ResultCode": 0,
+        "DiscoveredProject": "snippets/good/normal/single_code_file/Now.cs"
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/good/normal/single_code_file/OtherFile.cs"
+      }
+    ]
+  },
+  {
     "Name": "Delete - Files from diff projs, find sln",
     "ExpectedResults": [
       {
