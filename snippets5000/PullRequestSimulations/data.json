@@ -320,6 +320,21 @@
 
   // BAD items
   {
+    "Name": "Delete - Two code files remain no project",
+    "ExpectedResults": [
+      {
+        "ResultCode": 1,
+        "DiscoveredProject": ""
+      }
+    ],
+    "Items": [
+      {
+        "ItemType": "Delete",
+        "Path": "snippets/bad/loose-files/DeletedFile.cs"
+      }
+    ]
+  },
+  {
     "Name": "Edit - Project missing",
     "ExpectedResults": [
       {
