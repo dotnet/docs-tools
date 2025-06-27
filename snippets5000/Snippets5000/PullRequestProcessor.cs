@@ -131,7 +131,7 @@ internal class PullRequestProcessor
             /* SLN found no projs      */ (not null,    1,     0,     _,     _, false, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_SLN_NOPROJ, item, project),
             /* SLN found no projs, del */ (not null,    1,     0,     _,     _,  true, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, project),
             /* Project found           */ (not null,    0,     1,     _,     _,     _, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, project),
-            /* Single .cs file compile */ (null,        0,     0,     1,     _,     _, _,         true) => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, item),
+            /* Single .cs file compile */ (not null,    0,     0,     1,     _,     _, _,         true) => new DiscoveryResult(DiscoveryResult.RETURN_GOOD, item, project),
             /* Code no proj            */ (null,        0,     0,   > 0,     _,     _, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_NOPROJ, item, ""),
             /* Code no proj            */ (null,        0,     0,     _,   > 0,     _, _,         _)    => new DiscoveryResult(DiscoveryResult.RETURN_NOPROJ, item, ""),
             /* catch all               */ _                                                             => new DiscoveryResult(DiscoveryResult.RETURN_NOPROJ, item, "CONDITION NOT FOUND"),
@@ -231,7 +231,17 @@ internal class PullRequestProcessor
 
             // If a code file
             else if (EnvExtensionsCodeTriggers.Contains(ext, StringComparer.OrdinalIgnoreCase))
+            {
                 countOfCode++;
+
+                // Case for .NET 10 single file app
+                // No solution or projects found, process a C# file
+                if (countOfSln == 0 && countOfProjs == 0 && ext.Equals(".cs", StringComparison.OrdinalIgnoreCase))
+                {
+                    // First code file can be a project, anything else is invalid
+                    project = countOfCode == 1 ? file : null;
+                }
+            }
 
             // If a special trigger file
             else if (EnvFileTriggers.Contains(Path.GetFileName(file), StringComparer.OrdinalIgnoreCase))
