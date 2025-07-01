@@ -226,7 +226,6 @@ public class QuestGitHubService(
 
         var parentIteration = sprintPackets.Descendent("value").EnumerateArray().Single(i => i.GetProperty("structureType").GetString() == "iteration");
 
-
         return [.. ChildIterations(parentIteration)];
 
         static IEnumerable<QuestIteration> ChildIterations(JsonElement parentIteration)
@@ -240,7 +239,7 @@ public class QuestGitHubService(
                         yield return child;
                     }
                 }
-                else if (sprintElement.GetProperty("hasChildren").GetBoolean() == false)
+                else
                 {
                     var iteration = ConstructIteration(sprintElement);
                     if (iteration is not null)
