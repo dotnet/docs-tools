@@ -5,7 +5,7 @@ namespace DotNet.DocsTools.Utility;
 public static partial class ContentScrubber
 {
     private const string ImgReplacement = "<i>Image link removed to protect against security vulnerability.</i>";
-    private const string UserAssetReplacement = "<i><User asset removed to protect against security vulnerability./i>";
+    private const string UserAssetReplacement = "<i>User asset removed to protect against security vulnerability.</i>";
     
     /// <summary>
     /// Remove false security vulnerabilities from the content.
