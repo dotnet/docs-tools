@@ -5,7 +5,7 @@ namespace DotNet.DocsTools.Utility;
 public static partial class ContentScrubber
 {
     private const string ImgReplacement = "<i>Image link removed to protect against security vulnerability.</i>";
-    private const string UserAssestReplacement = "<i><User asset removed to protect against security vulnerability./i>";
+    private const string UserAssetReplacement = "<i><User asset removed to protect against security vulnerability./i>";
     
     /// <summary>
     /// Remove false security vulnerabilities from the content.
@@ -29,18 +29,18 @@ public static partial class ContentScrubber
             Console.WriteLine("Replaced linked image in content.");
         }
         
-        var postUserAssetReplacementContent = EmbeddedUserAssetRegEx().Replace(postImageReplacementContent, UserAssestReplacement);
-        if (postImageReplacementContent != postUserAssetReplacementContent)
+        var postUserAttachementReplacementContent = AttachmentAnchorRegEx().Replace(postImageReplacementContent, UserAssetReplacement);
+        if (postImageReplacementContent != postUserAttachementReplacementContent)
         {
             Console.WriteLine("Replaced linked user asset in content.");
         }
         
-        return postUserAssetReplacementContent;
+        return postUserAttachementReplacementContent;
     }
 
     [GeneratedRegex("""<a.+href="https:\/\/private-user-images\.githubusercontent\.com\/.+".+><\/a>""")]
     private static partial Regex ImageAnchorRegEx();
 
-    [GeneratedRegex("""https:\/\/github\.com\/user-attachments\/assets\/[0-9a-fA-F\-]+""")]
-    private static partial Regex EmbeddedUserAssetRegEx();
+    [GeneratedRegex("""<a.+href="https:\/\/github\.com\/user-attachments\/assets\/.+".+><\/a>""")]
+    private static partial Regex AttachmentAnchorRegEx();
 }
