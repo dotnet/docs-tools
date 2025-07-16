@@ -202,7 +202,7 @@
     "@vscode/vsce": "^3.2.1",
     "cross-spawn": "^7.0.6",
     "esbuild": "^0.25.1",
-    "eslint": "^9.17.0",
+    "eslint": "^9.31.0",
     "glob": "^11.0.0",
     "mocha": "^11.0.1",
     "rimraf": "^6.0.1",
