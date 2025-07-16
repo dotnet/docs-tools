@@ -206,7 +206,7 @@
     "glob": "^11.0.0",
     "mocha": "^11.0.1",
     "rimraf": "^6.0.1",
-    "semantic-release": "^24.2.0",
+    "semantic-release": "^24.2.7",
     "semantic-release-stop-before-publish": "^1.0.0",
     "semantic-release-vsce": "^6.0.6",
     "typescript": "^5.7.2"
