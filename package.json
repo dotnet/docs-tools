@@ -194,7 +194,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.x",
     "@types/node-fetch": "^2.6.12",
-    "@types/vscode": "^1.96.0",
+    "@types/vscode": "^1.102.0",
     "@types/xml2js": "^0.4.14",
     "@typescript-eslint/eslint-plugin": "^8.23.0",
     "@typescript-eslint/parser": "^8.27.0",
