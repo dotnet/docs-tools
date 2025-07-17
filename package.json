@@ -166,6 +166,7 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "test-compile": "tsc -p ./",
+    "all": "npm run compile && npm run lint && npm run test && npm run build && npm run build:package",
     "semantic-release": "semantic-release"
   },
   "devDependencies": {
