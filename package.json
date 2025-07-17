@@ -187,7 +187,7 @@
     "esbuild": "^0.25.6",
     "eslint": "^9.31.0",
     "glob": "^11.0.0",
-    "mocha": "^11.0.1",
+    "mocha": "^11.7.1",
     "rimraf": "^6.0.1",
     "semantic-release": "^24.2.7",
     "semantic-release-stop-before-publish": "^1.0.0",
