@@ -196,7 +196,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@octokit/rest": "^21.0.2",
+    "@octokit/rest": "^22.0.0",
     "node-fetch": "^3.3.2",
     "xml2js": "^0.6.2",
     "yaml": "^2.8.0"
