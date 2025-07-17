@@ -175,7 +175,7 @@
     "@semantic-release/release-notes-generator": "^14.0.3",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^22.x",
+    "@types/node": "^24.x",
     "@types/node-fetch": "^2.6.12",
     "@types/vscode": "^1.102.0",
     "@types/xml2js": "^0.4.14",
