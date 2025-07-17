@@ -89,7 +89,7 @@ export function searchTermInputValidation(text: string): InputBoxValidationMessa
     const openingAngles = (text.match(/</g) ?? []).length;
     const closingAngles = (text.match(/>/g) ?? []).length;
 
-    if (openingAngles != closingAngles) {
+    if (openingAngles !== closingAngles) {
         return {
             message: `Your search must include pairs of opening and closing angle brackets.`,
             severity: InputBoxValidationSeverity.Error

@@ -23,7 +23,7 @@ export async function getIssue(url: string): Promise<Issue | undefined> {
     const issue = await octokit.issues.get({
         owner,
         repo,
-        issue_number: parseInt(issueNumber)
+        ['issue_number']: parseInt(issueNumber)
     });
 
     return {
