@@ -3,7 +3,7 @@
   "description": "A Visual Studio Code extension to help you quickly insert API reference (xref) links.",
   "version": "1.0.27",
   "engines": {
-    "vscode": "^1.96.0"
+    "vscode": "^1.102.0"
   },
   "publisher": "IEvangelist",
   "categories": [
@@ -157,6 +157,7 @@
     "vscode:prepublish": "npm run esbuild-base -- --minify",
     "esbuild-base": "rimraf out && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "build": "npm run esbuild",
+    "build:package": "vsce package -o ./dist/xref-helper.vsix",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "compile": "tsc -p ./",
@@ -165,8 +166,7 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "test-compile": "tsc -p ./",
-    "semantic-release": "semantic-release",
-    "build-package": "vsce package -o ./dist/xref-helper.vsix"
+    "semantic-release": "semantic-release"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
