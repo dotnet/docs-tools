@@ -86,8 +86,8 @@ export function searchTermInputValidation(text: string): InputBoxValidationMessa
     }
 
     // Angle bracket count must be the same...
-    const openingAngles = text.match(/</g || [])?.length ?? 0;
-    const closingAngles = text.match(/>/g || [])?.length ?? 0;
+    const openingAngles = (text.match(/</g) ?? []).length;
+    const closingAngles = (text.match(/>/g) ?? []).length;
 
     if (openingAngles != closingAngles) {
         return {

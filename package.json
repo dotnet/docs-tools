@@ -17,28 +17,11 @@
   "preview": true,
   "activationEvents": [
     "onLanguage:markdown",
-    "onLanguage:xml",
-    "onChatParticipant:participantId:learn"
+    "onLanguage:xml"
   ],
   "icon": "images/icon.png",
   "main": "./out/extension.js",
-  "contributes": {
-    "chatParticipants": [
-      {
-        "id": "learn",
-        "name": "learn",
-        "fullName": "Microsoft Learn",
-        "description": "The Microsoft Learn for quickly generating documentation.",
-        "isSticky": true,
-        "commands": [
-          {
-            "name": "breaking-changes",
-            "isSticky": true,
-            "description": "Provide a GitHub issue URL and `@learn` will generate a breaking-change article based on it."
-          }
-        ]
-      }
-    ],
+  "contributes": {    
     "commands": [
       {
         "command": "xrefHelper.insertXrefLink",
@@ -165,7 +148,7 @@
         "xrefHelper.allowGitHubSession": {
           "type": "boolean",
           "description": "Whether to prompt the user for GitHub auth to allow the GitHub session to be used for API requests. Enables scenarios where XREF metadata is in a private GitHub repo.",
-          "default": false
+          "default": true
         }
       }
     }

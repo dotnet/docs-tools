@@ -36,13 +36,17 @@ export async function insertLink(linkType: LinkType, options: SearchOptions | un
     if (options) {
         options.apiName = searchResults.apiName;
     } else {
-        options = options || {
+        options = {
             skipBrackets: false, // @ts-ignore
             skipDisplayStyle: ApiName[searchResults.apiName!] === ApiName.dotnet ? false : true,
             hideCustomDisplayStyle: false,
+            replaceXrefAndBrackets: false,
             apiName: searchResults.apiName,
         };
     }
+
+    // At this point, options is guaranteed to be defined
+    const definedOptions: SearchOptions = options;
 
     // Create a quick pick to display the search results, allowing the user to select a type or member.
     const quickPick = window.createQuickPick<SearchResultQuickPickItem | QuickPickItem>();
@@ -80,7 +84,7 @@ export async function insertLink(linkType: LinkType, options: SearchOptions | un
                     UrlFormat.customName,
                     searchResultSelection,
                     quickPick,
-                    options,
+                    definedOptions,
                     true);
 
                 return;
@@ -92,13 +96,13 @@ export async function insertLink(linkType: LinkType, options: SearchOptions | un
             // Constructors do not have a display property style.
             if (searchResultSelection.itemType === ItemType.namespace ||
                 searchResultSelection.itemType === ItemType.constructor ||
-                (options && options.skipDisplayStyle === true)) {
+                (definedOptions && definedOptions.skipDisplayStyle === true)) {
                 await createAndInsertLink(
                     linkType,
                     UrlFormat.default,
                     searchResultSelection,
                     quickPick,
-                    options);
+                    definedOptions);
 
                 return;
             }
@@ -110,13 +114,13 @@ export async function insertLink(linkType: LinkType, options: SearchOptions | un
                     UrlFormat.customName,
                     searchResultSelection,
                     quickPick,
-                    options);
+                    definedOptions);
 
                 return;
             }
 
             // If we make it here, the user will now be prompted to select the URL format.
-            quickPick.items = options && options.hideCustomDisplayStyle === true
+            quickPick.items = definedOptions && definedOptions.hideCustomDisplayStyle === true
                 ? urlFormatQuickPickItems
                 : allUrlFormatQuickPickItems;
 
@@ -136,7 +140,7 @@ export async function insertLink(linkType: LinkType, options: SearchOptions | un
                 urlFormat,
                 searchResultSelection!,
                 quickPick,
-                options);
+                definedOptions);
         }
     });
 

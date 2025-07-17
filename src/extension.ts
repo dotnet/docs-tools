@@ -8,7 +8,6 @@ import { xrefStarterAutoComplete, xrefDisplayTypeAutoComplete, xrefInlineAutoCom
 import { SearchOptions } from './commands/types/SearchOptions';
 import { transformXrefToOther } from './commands/transform';
 import { DisplayPropertyChanger } from './commands/quickaction';
-import { chatRequestHandler } from './commands/chathandler';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -18,13 +17,6 @@ export function activate(context: vscode.ExtensionContext) {
   console.log(
     `🤓 The "${toolName}" extension is now active.`
   );
-
-  const aiHelper = vscode.chat.createChatParticipant(
-    'learn', chatRequestHandler);
-
-  aiHelper.onDidReceiveFeedback(feedback => {
-    console.log(`Received feedback: ${feedback}`);
-  });
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
