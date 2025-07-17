@@ -184,7 +184,7 @@
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.6.0",
     "cross-spawn": "^7.0.6",
-    "esbuild": "^0.25.1",
+    "esbuild": "^0.25.6",
     "eslint": "^9.31.0",
     "glob": "^11.0.0",
     "mocha": "^11.0.1",
