@@ -180,26 +180,26 @@
     "@types/node-fetch": "^2.6.12",
     "@types/vscode": "^1.102.0",
     "@types/xml2js": "^0.4.14",
-    "@typescript-eslint/eslint-plugin": "^8.23.0",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.27.0",
-    "@vscode/test-electron": "^2.4.1",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.6.0",
     "cross-spawn": "^7.0.6",
     "esbuild": "^0.25.6",
     "eslint": "^9.31.0",
-    "glob": "^11.0.0",
+    "glob": "^11.0.3",
     "mocha": "^11.7.1",
     "rimraf": "^6.0.1",
     "semantic-release": "^24.2.7",
     "semantic-release-stop-before-publish": "^1.0.0",
     "semantic-release-vsce": "^6.0.11",
-    "typescript": "^5.7.2"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.2",
     "node-fetch": "^3.3.2",
     "xml2js": "^0.6.2",
-    "yaml": "^2.7.0"
+    "yaml": "^2.8.0"
   },
   "repository": {
     "type": "git",
