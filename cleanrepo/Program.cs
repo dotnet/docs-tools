@@ -277,7 +277,7 @@ class Program
             case "FindOrphanedSnippets":
                 {
                     Console.WriteLine($"\nSearching the '{options.TargetDirectory}' directory recursively for orphaned snippet files.");
-                    if (!string.IsNullOrEmpty(options.Subdirectory))
+                    if (options.Subdirectory != null)
                         Console.WriteLine($"Only searching subdirectories with '{options.Subdirectory}' in their path.");
 
                     // Get all snippet files.

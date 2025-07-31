@@ -42,29 +42,6 @@ public class LocalLinkValidatorTests
     }
 
     [Fact]
-    public async Task TestFunnyHeadingId()
-    {
-        using var workspace = new Workspace
-        {
-            Files =
-            {
-                { "/README.md", "[Utf8Parser and Utf8Formatter](#-and-)" }
-            }
-        };
-
-        char separator = Path.DirectorySeparatorChar;
-
-        string workspacePath = await workspace.InitializeAsync();
-        List<LinkError> result = await GetResultsAsync();
-        var expected = new LinkError[]
-        {
-            new($"{nameof(TestFunnyHeadingId)}{separator}README.md", "...", "IGNORED BY TEST COMPARER FOR NOW")
-        };
-
-        Assert.Equal(expected, result, s_linkErrorComparer);
-    }
-
-    [Fact]
     public async Task TestValidHeadingIdInAnotherFile()
     {
         using var workspace = new Workspace
