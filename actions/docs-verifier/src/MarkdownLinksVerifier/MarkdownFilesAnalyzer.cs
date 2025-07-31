@@ -39,7 +39,10 @@ public static class MarkdownFilesAnalyzer
                 string url = link.Url!;
                 LinkClassification classification = Classifier.Classify(url);
                 ILinkValidator validator = LinkValidatorCreator.Create(classification, directory);
-                if (!IsLinkExcluded(config, url) && validator.Validate(url, file) is { State: not ValidationState.Valid, AbsolutePathWithoutHeading: var absolutePath })
+                if (!IsLinkExcluded(config, url)
+                    && validator.Validate(url, file) is { 
+                        State: not ValidationState.Valid, 
+                        AbsolutePathWithoutHeading: var absolutePath })
                 {
                     result.Add(new LinkError(
                         Path.GetRelativePath(
