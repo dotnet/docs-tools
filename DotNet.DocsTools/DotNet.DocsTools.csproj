@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,10 +6,9 @@
     <AssemblyVersion>2.2.0.0</AssemblyVersion>
     <FileVersion>2.2.0.0</FileVersion>
   </PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="GitHubJwt" Version="0.0.6" />
-		<PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
-		<PackageReference Include="Polly.Extensions.Http" Version="3.0.0" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="GitHubJwt" />
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" />
+    <PackageReference Include="Polly.Extensions.Http" />
+  </ItemGroup>
 </Project>

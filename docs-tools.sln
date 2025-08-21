@@ -38,16 +38,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhatsNew.Infrastructure", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhatsNew.Infrastructure.Tests", "WhatsNew.Infrastructure.Tests\WhatsNew.Infrastructure.Tests.csproj", "{1FE286F4-8231-4658-BB6A-E63AF22DDBB4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub.RepositoryExplorer.Client", "GitHub.RepositoryExplorer.Client\GitHub.RepositoryExplorer.Client.csproj", "{13527A21-56DC-4570-B08B-26015A1CB6B1}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub.RepositoryExplorer.Functions", "GitHub.RepositoryExplorer.Functions\GitHub.RepositoryExplorer.Functions.csproj", "{DE4D1404-DB61-4BB5-89F2-E8B9B1084D22}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub.RepositoryExplorer.Models", "GitHub.RepositoryExplorer.Models\GitHub.RepositoryExplorer.Models.csproj", "{2A660674-ADED-402E-8F6D-984BA4DB6DA8}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub.RepositoryExplorer.WebApi", "GitHub.RepositoryExplorer.WebApi\GitHub.RepositoryExplorer.WebApi.csproj", "{D518610F-EA3B-4A6E-BED9-7B335205A2F4}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHub.RepositoryExplorer.Services", "GitHub.RepositoryExplorer.Services\GitHub.RepositoryExplorer.Services.csproj", "{BDE90AD5-6085-431C-B2E2-5A75F498BEA2}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotnetDocsTools.Tests", "DotnetDocsToolsTests\DotnetDocsTools.Tests.csproj", "{DCA6CCA3-423E-43A8-8D41-A54837E63F48}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AB0D9824-FE64-4EC3-8F0B-950B68D135C4}"
@@ -69,6 +59,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		sequester.Dockerfile = sequester.Dockerfile
 		ThirdPartyNotices.md = ThirdPartyNotices.md
 		whatsnew.Dockerfile = whatsnew.Dockerfile
+		Directory.Packages.props = Directory.Packages.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snippets5000", "snippets5000\Snippets5000\Snippets5000.csproj", "{713E0DB5-FF4C-415A-A3CC-42FCDC5BB307}"
@@ -76,8 +67,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlDocConflictResolver", "XmlDocConflictResolver\XmlDocConflictResolver.csproj", "{4F9B7B45-50B4-45F0-AE6A-960907D12C49}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoManCheckerCLI", "RepoManChecker\RepoManCheckerCLI.csproj", "{1C59182B-9266-43FB-8398-86AE0F5012D6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sandbox", "Sandbox\Sandbox.csproj", "{C93AB0B6-1B1A-4172-909B-81249CDAFC6D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -117,10 +106,6 @@ Global
 		{BCDD57DA-6C08-49CA-8F03-D4FC4FF2ABCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCDD57DA-6C08-49CA-8F03-D4FC4FF2ABCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCDD57DA-6C08-49CA-8F03-D4FC4FF2ABCC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C93AB0B6-1B1A-4172-909B-81249CDAFC6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C93AB0B6-1B1A-4172-909B-81249CDAFC6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C93AB0B6-1B1A-4172-909B-81249CDAFC6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C93AB0B6-1B1A-4172-909B-81249CDAFC6D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D9BB2E16-F28E-4BA7-98F9-4303891C3C34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D9BB2E16-F28E-4BA7-98F9-4303891C3C34}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9BB2E16-F28E-4BA7-98F9-4303891C3C34}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -161,26 +146,6 @@ Global
 		{1FE286F4-8231-4658-BB6A-E63AF22DDBB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1FE286F4-8231-4658-BB6A-E63AF22DDBB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1FE286F4-8231-4658-BB6A-E63AF22DDBB4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{13527A21-56DC-4570-B08B-26015A1CB6B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{13527A21-56DC-4570-B08B-26015A1CB6B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{13527A21-56DC-4570-B08B-26015A1CB6B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{13527A21-56DC-4570-B08B-26015A1CB6B1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE4D1404-DB61-4BB5-89F2-E8B9B1084D22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE4D1404-DB61-4BB5-89F2-E8B9B1084D22}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DE4D1404-DB61-4BB5-89F2-E8B9B1084D22}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DE4D1404-DB61-4BB5-89F2-E8B9B1084D22}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2A660674-ADED-402E-8F6D-984BA4DB6DA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2A660674-ADED-402E-8F6D-984BA4DB6DA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2A660674-ADED-402E-8F6D-984BA4DB6DA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2A660674-ADED-402E-8F6D-984BA4DB6DA8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D518610F-EA3B-4A6E-BED9-7B335205A2F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D518610F-EA3B-4A6E-BED9-7B335205A2F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D518610F-EA3B-4A6E-BED9-7B335205A2F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D518610F-EA3B-4A6E-BED9-7B335205A2F4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BDE90AD5-6085-431C-B2E2-5A75F498BEA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BDE90AD5-6085-431C-B2E2-5A75F498BEA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BDE90AD5-6085-431C-B2E2-5A75F498BEA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BDE90AD5-6085-431C-B2E2-5A75F498BEA2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DCA6CCA3-423E-43A8-8D41-A54837E63F48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DCA6CCA3-423E-43A8-8D41-A54837E63F48}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCA6CCA3-423E-43A8-8D41-A54837E63F48}.Release|Any CPU.ActiveCfg = Release|Any CPU
