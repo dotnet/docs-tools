@@ -127,7 +127,7 @@ public class BuildExtendedPropertiesTests
             ]
         },
         "project": {
-            "title": "dotnet/docs June 2025 Sprint"
+            "title": "dotnet/docs September 2025 Sprint"
         }
       }
       """;
@@ -599,7 +599,7 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY26Q1\\09 Sep", extendedProperties.IterationPath);
         Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
@@ -613,7 +613,7 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY26Q1\\09 Sep", extendedProperties.IterationPath);
         Assert.Equal("Closed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
@@ -626,7 +626,7 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY26Q1\\09 Sep", extendedProperties.IterationPath);
         Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Equal(["content-curation"], extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
@@ -640,21 +640,21 @@ public class BuildExtendedPropertiesTests
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY26Q1\\09 Sep", extendedProperties.IterationPath);
         Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(1, extendedProperties.ParentNodeId);
     }
 
     [Fact]
-    public static void BuildExtensionForMultipleFutureProject()
+     public static void BuildExtensionForMultipleFutureProject()
     {
         var extendedProperties = CreateIssueObject(MultipleFutureProjects);
 
         // Check each property:
         Assert.Equal(5, extendedProperties.StoryPoints);
         Assert.Equal(2, extendedProperties.Priority);
-        Assert.Equal("Content\\Bromine\\FY25Q4\\06 Jun", extendedProperties.IterationPath);
+        Assert.Equal("Content\\Bromine\\FY26Q1\\09 Sep", extendedProperties.IterationPath);
         Assert.Equal("Committed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
         Assert.Equal(2, extendedProperties.ParentNodeId);
