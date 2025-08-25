@@ -4,8 +4,9 @@ namespace DotNet.DocsTools.Utility;
 
 public static partial class ContentScrubber
 {
-    private const string Replacement = "<i>Image link removed to protect against security vulnerability.</i>";
-
+    private const string ImgReplacement = "<i>Image link removed to protect against security vulnerability.</i>";
+    private const string UserAssetReplacement = "<i>User asset removed to protect against security vulnerability.</i>";
+    
     /// <summary>
     /// Remove false security vulnerabilities from the content.
     /// </summary>
@@ -22,9 +23,24 @@ public static partial class ContentScrubber
     /// </remarks>
     public static string ScrubContent(this string content)
     {
-        return ImageAnchorRegEx().Replace(content, Replacement);
+        var postImageReplacementContent = ImageAnchorRegEx().Replace(content, ImgReplacement);
+        if (content != postImageReplacementContent)
+        {
+            Console.WriteLine("Replaced linked image in content.");
+        }
+        
+        var postUserAttachementReplacementContent = AttachmentAnchorRegEx().Replace(postImageReplacementContent, UserAssetReplacement);
+        if (postImageReplacementContent != postUserAttachementReplacementContent)
+        {
+            Console.WriteLine("Replaced linked user asset in content.");
+        }
+        
+        return postUserAttachementReplacementContent;
     }
 
     [GeneratedRegex("""<a.+href="https:\/\/private-user-images\.githubusercontent\.com\/.+".+><\/a>""")]
     private static partial Regex ImageAnchorRegEx();
+
+    [GeneratedRegex("""<a.+href="https:\/\/github\.com\/user-attachments\/assets\/.+".+><\/a>""")]
+    private static partial Regex AttachmentAnchorRegEx();
 }
