@@ -1,6 +1,5 @@
 ﻿using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.VisualBasic.FileIO;
 using Octokit;
 using Spectre.Console;
 
