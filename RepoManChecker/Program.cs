@@ -1,8 +1,7 @@
-﻿using Octokit;
-using Spectre.Console;
-using System.CommandLine;
-using System.CommandLine.Parsing;
+﻿using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
+using Octokit;
+using Spectre.Console;
 
 namespace RepoMan;
 
@@ -12,123 +11,143 @@ internal class Program
     {
         bool runApp = false;
 
-        Argument<string?> inputFile = new(
-                                        name: "file",
-                                        description: "Path to the RepoMan config file to process. Can be a local file or URL.",
-                                        isDefault: false,
-                                        parse: result => {
-                                            if (result.Tokens.Count == 0)
-                                            {
-                                                result.ErrorMessage = "Invalid value passed to input parameter";
-                                                return default;
-                                            }
+        Argument<string?> inputFile = new("file")
+        {
+            Description = "Path to the RepoMan config file to process. Can be a local file or URL.",
+            CustomParser = result =>
+            {
+                if (result.Tokens.Count == 0)
+                {
+                    result.AddError("Invalid value passed to input parameter");
+                    return default;
+                }
 
-                                            string value = result.Tokens.Single().Value;
+                string value = result.Tokens.Single().Value;
 
-                                            if (Path.Exists(value))
-                                                return value;
+                if (Path.Exists(value))
+                    return value;
 
-                                            result.ErrorMessage = $"Path is invalid: {value}";
+                result.AddError($"Path is invalid: {value}");
 
-                                            return null;
-                                        });
+                return null;
+            }
+        };
 
-        Argument<Uri?> httpLink = new(
-                                    name: "httpLink",
-                                    description: "A URL to a rules file.",
-                                    isDefault: false,
-                                    parse: result => {
-                                        if (result.Tokens.Count == 0)
-                                        {
-                                            result.ErrorMessage = "Invalid value passed to httpLink parameter";
-                                            return null;
-                                        }
+        Argument<Uri?> httpLink = new("httpLink")
+        {
+            Description = "A URL to a rules file.",
+            CustomParser = result =>
+            {
+                if (result.Tokens.Count == 0)
+                {
+                    result.AddError("Invalid value passed to httpLink parameter");
+                    return null;
+                }
 
-                                        string value = result.Tokens.Single().Value;
+                string value = result.Tokens.Single().Value;
 
-                                        if (Uri.TryCreate(value, UriKind.Absolute, out Uri? webUri))
-                                            return webUri;
+                if (Uri.TryCreate(value, UriKind.Absolute, out Uri? webUri))
+                    return webUri;
 
-                                        result.ErrorMessage = $"URL is invalid: {value}";
+                result.AddError($"URL is invalid: {value}");
 
-                                        return null;
-                                    });
+                return null;
+            }
+        };
 
-        Argument<string?> githubRepo = new(
-                                    name: "repository",
-                                    description: "The name of a GitHub repository.",
-                                    isDefault: false,
-                                    parse: result => {
-                                        if (result.Tokens.Count == 0)
-                                        {
-                                            result.ErrorMessage = "Invalid value passed to repository parameter";
-                                            return null;
-                                        }
+        Argument<string?> githubRepo = new("repository")
+        {
+            Description = "The name of a GitHub repository.",
+            CustomParser = result =>
+            {
+                if (result.Tokens.Count == 0)
+                {
+                    result.AddError("Invalid value passed to repository parameter");
+                    return null;
+                }
 
-                                        string value = result.Tokens.Single().Value.Trim();
+                string value = result.Tokens.Single().Value.Trim();
 
-                                        if (!string.IsNullOrEmpty(value))
-                                            return value;
+                if (!string.IsNullOrEmpty(value))
+                    return value;
 
-                                        result.ErrorMessage = $"Repository is invalid: {value}";
+                result.AddError($"Repository is invalid: {value}");
 
-                                        return null;
-                                    });
+                return null;
+            }
+        };
 
-        Argument<string?> githubOwner = new(
-                                    name: "owner",
-                                    description: "The owner name of the GitHub repository.",
-                                    isDefault: false,
-                                    parse: result => {
-                                        if (result.Tokens.Count == 0)
-                                        {
-                                            result.ErrorMessage = "Invalid value passed to owner parameter";
-                                            return null;
-                                        }
+        Argument<string?> githubOwner = new("owner")
+        {
+            Description = "The owner name of the GitHub repository.",
+            CustomParser = result =>
+            {
+                if (result.Tokens.Count == 0)
+                {
+                    result.AddError("Invalid value passed to owner parameter");
+                    return null;
+                }
 
-                                        string value = result.Tokens.Single().Value.Trim();
+                string value = result.Tokens.Single().Value.Trim();
 
-                                        if (!string.IsNullOrEmpty(value))
-                                            return value;
+                if (!string.IsNullOrEmpty(value))
+                    return value;
 
-                                        result.ErrorMessage = $"Owner is invalid: {value}";
+                result.AddError($"Owner is invalid: {value}");
 
-                                        return null;
-                                    });
+                return null;
+            }
+        };
 
         RootCommand rootCommand = new("Tests and validates RepoMan config files.");
 
         // CHECK command
         Command checkCommand = new("check", "Validates a RepoMan config file");
-        checkCommand.AddAlias("validate");
+        checkCommand.Aliases.Add("validate");
 
         Command checkFileCommand = new("file", "Loads the config from a local file.");
-        checkFileCommand.AddArgument(inputFile);
-        checkFileCommand.SetHandler(CommandCheck.HandlerFile, inputFile);
-        checkCommand.AddCommand(checkFileCommand);
+        checkFileCommand.Arguments.Add(inputFile);
+        checkFileCommand.SetAction((ParseResult parseResult, CancellationToken token) =>
+        {
+            CommandCheck.HandlerFile(parseResult.GetValue(inputFile));
+            return Task.CompletedTask;
+        });
+        checkCommand.Subcommands.Add(checkFileCommand);
 
         Command checkHttpCommand = new("http", "Loads the config from a URL.");
-        checkHttpCommand.AddArgument(httpLink);
-        checkHttpCommand.SetHandler(CommandCheck.HandlerHttp, httpLink);
-        checkCommand.AddCommand(checkHttpCommand);
+        checkHttpCommand.Arguments.Add(httpLink);
+        checkHttpCommand.SetAction((ParseResult parseResult, CancellationToken token) =>
+        {
+            CommandCheck.HandlerHttp(parseResult.GetValue(httpLink));
+            return Task.CompletedTask;
+        });
+        checkCommand.Subcommands.Add(checkHttpCommand);
 
         Command checkGithubCommand = new("github", "Loads the config from a GitHub repository.");
-        checkGithubCommand.AddArgument(githubOwner);
-        checkGithubCommand.AddArgument(githubRepo);
-        checkGithubCommand.SetHandler(CommandCheck.HandlerGithub, githubOwner, githubRepo);
-        checkCommand.AddCommand(checkGithubCommand);
+        checkGithubCommand.Arguments.Add(githubOwner);
+        checkGithubCommand.Arguments.Add(githubRepo);
+        checkGithubCommand.SetAction((ParseResult parseResult, CancellationToken token) =>
+        {
+            CommandCheck.HandlerGithub(parseResult.GetValue(githubOwner), parseResult.GetValue(githubRepo));
+            return Task.CompletedTask;
+        });
+        checkCommand.Subcommands.Add(checkGithubCommand);
 
-        rootCommand.AddCommand(checkCommand);
+        rootCommand.Subcommands.Add(checkCommand);
 
         // RUN command
         Command runCommand = new("run", "Processes a RepoMan config file in GitHub and simulate an action.");
-        runCommand.AddArgument(githubRepo);
-        runCommand.AddArgument(githubOwner);
-        runCommand.SetHandler(CommandRun.HandlerGithub, githubRepo, githubOwner);
+        runCommand.Arguments.Add(githubRepo);
+        runCommand.Arguments.Add(githubOwner);
+        runCommand.SetAction((ParseResult parseResult, CancellationToken token) =>
+        {
+            CommandRun.HandlerGithub(parseResult.GetValue(githubRepo), parseResult.GetValue(githubOwner));
+            return Task.CompletedTask;
+        });
 
-        rootCommand.AddCommand(runCommand);
+        rootCommand.Subcommands.Add(runCommand);
 
-        return await rootCommand.InvokeAsync(args);
+        return await rootCommand.Parse(args).InvokeAsync();
     }
 
     internal static bool TryReadGithubContent(string owner, string repository, State state, [NotNullWhen(true)] out string? content)
