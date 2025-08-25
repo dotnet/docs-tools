@@ -9,10 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="9.0.8" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\DotNet.DocsTools\DotNet.DocsTools.csproj" />
     <ProjectReference Include="..\GitHub.RepositoryExplorer.Models\GitHub.RepositoryExplorer.Models.csproj" />
   </ItemGroup>
