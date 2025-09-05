@@ -31,9 +31,9 @@ This handy-dandy extension helps content developers quickly insert and edit [cro
 
 ## Get started
 
-To install the extension, download the [latest _xref-helper.vsix_](https://github.com/IEvangelist/xref-helper/blob/main/dist/xref-helper.vsix) file from the _.dist/_ folder, and from Visual Studio Code, right-click the file and select _Install Extension VSIX_.
+To install the extension, download the latest _xref-helper.vsix_ file from the _.dist/_ folder, and from Visual Studio Code, right-click the file and select _Install Extension VSIX_.
 
-Alternatively, to install the VSIX extension, open the command palette <kbd>F1</kbd> and select **Extensions: Install from VSIX...**. Then, browse to the downloaded _xref-helper.vsix_ file and select it.
+Alternatively, to install the VSIX extension, open the command palette <kbd>F1</kbd> and select **Extensions: Install from VSIX**. Then, browse to the downloaded _xref-helper.vsix_ file and select it.
 
 > [!TIP]
 > Since this extension isn't published to the Visual Studio Code Marketplace, you'll need to download the VSIX file from the GitHub repository every time an update is made available and manually reinstall it.
@@ -42,8 +42,8 @@ Alternatively, to install the VSIX extension, open the command palette <kbd>F1</
 
 The following URL formats are supported, given the example `System.String.Format` method when selecting the [overloads option](#overloads-option) and **Method overloads** search result:
 
-| Format | Resulting Markdown | Example HTML |
-|--|--|--|
+| Format  | Resulting Markdown             | Example HTML |
+|---------|--------------------------------|--------------|
 | Default | `<xref:System.String.Format*>` | `<a href="https://learn.microsoft.com/dotnet/api/system.string.format">Format</a>` |
 | Name with type | `<xref:System.String.Format*?displayProperty=nameWithType>` | `<a href="https://learn.microsoft.com/dotnet/api/system.string.format">String.Format</a>` |
 | Full name | `<xref:System.String.Format*?displayProperty=fullName>` | `<a href="https://learn.microsoft.com/dotnet/api/system.string.format">System.String.Format</a>` |
@@ -84,10 +84,10 @@ If an opening bracket is specified (i.e. if you're looking for a generic API), t
 
 ## Extension settings
 
-In Visual Studio Code settings, search for `"XREF Helper"` (or paste this filter into the search bar `@ext:ievangelist.xref-helper`). You can configure the following settings:
+In Visual Studio Code settings, search for `"XREF Helper"`. You can configure the following settings:
 
 | Setting | Description | Default |
-|--|--|--|
+|---------|-------------|---------|
 | **Xref Helper: Allow Git Hub Session** <br/> `xref-helper.allowGitHubSession` | Whether to prompt the user for GitHub auth to allow the GitHub session to be used for API requests. Enables scenarios where XREF metadata is in a private GitHub repo. | `false` |
 | **Xref Helper: Apis** <br/> `xref-helper.apis` | The APIs to search for xref links. | [See defaults below](#api-defaults). |
 | <a name="overloads-option" />**Xref Helper: Append Overloads** <br/> `xref-helper.appendOverloads` | Whether to append overloads to the search results. Applies to methods and constructors. | `true` |
