@@ -89,13 +89,13 @@ In Visual Studio Code settings, search for `"XREF Helper"`. You can configure th
 | Setting | Description | Default |
 |---------|-------------|---------|
 | **Xref Helper: Allow Git Hub Session** <br/> `xref-helper.allowGitHubSession` | Whether to prompt the user for GitHub auth to allow the GitHub session to be used for API requests. Enables scenarios where XREF metadata is in a private GitHub repo. | `false` |
-| **Xref Helper: Apis** <br/> `xref-helper.apis` | The APIs to search for xref links. | [See defaults below](#api-defaults). |
+| **Xref Helper: Apis** <br/> `xref-helper.apis` | The APIs to search for xref links. | See **API defaults** section. |
 | <a name="overloads-option" />**Xref Helper: Append Overloads** <br/> `xref-helper.appendOverloads` | Whether to append overloads to the search results. Applies to methods and constructors. | `true` |
 
 ![Settings Screenshot](images/settings.png)
 
 <details>
-<summary id="api-defaults">API defaults</summary>
+<summary>API defaults</summary>
 
 By default, only .NET is enabled. To enable other APIs, update the `xref-helper.apis` setting JSON:
 
