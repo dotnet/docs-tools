@@ -1,0 +1,211 @@
+{
+  "name": "xref-helper",
+  "description": "A Visual Studio Code extension to help you quickly insert API reference (xref) links.",
+  "version": "1.0.29",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "publisher": "IEvangelist",
+  "categories": [
+    "Other",
+    "Extension Packs",
+    "Formatters",
+    "AI",
+    "Chat",
+    "Programming Languages"
+  ],
+  "preview": true,
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:xml"
+  ],
+  "icon": "images/icon.png",
+  "main": "./out/extension.js",
+  "contributes": {    
+    "commands": [
+      {
+        "command": "xrefHelper.insertXrefLink",
+        "title": "Insert XREF Link",
+        "shortTitle": "Link to XREF",
+        "enablement": "(editorLangId == markdown || editorLangId == xml) && !editorReadonly"
+      },
+      {
+        "command": "xrefHelper.insertApiReferenceLink",
+        "title": "Insert API Reference Link",
+        "shortTitle": "Link to API",
+        "enablement": "(editorLangId == markdown || editorLangId == xml) && !editorReadonly"
+      },
+      {
+        "command": "xrefHelper.transformXrefToOther",
+        "title": "Convert XREF link between [](xref:) and <xref:>",
+        "shortTitle": "(xref:…) <=> <xref:…>",
+        "enablement": "(editorLangId == markdown || editorLangId == xml) && editorHasSelection && !editorReadonly"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorFocus && !editorReadonly && (editorLangId == markdown || editorLangId == xml) && editorHasSelection",
+          "command": "xrefHelper.transformXrefToOther",
+          "group": "xref-helper"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "XREF Helper",
+      "properties": {
+        "xrefHelper.apis": {
+          "type": "array",
+          "description": "The APIs to search for xref links.",
+          "default": [
+            {
+              "name": "dotnet",
+              "displayName": ".NET",
+              "enabled": true,
+              "url": "https://learn.microsoft.com/api/apibrowser/dotnet/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
+            },
+            {
+              "name": "java",
+              "displayName": "Java",
+              "enabled": false,
+              "url": "https://learn.microsoft.com/api/apibrowser/java/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
+            },
+            {
+              "name": "javascript",
+              "displayName": "JavaScript",
+              "enabled": false,
+              "url": "https://learn.microsoft.com/api/apibrowser/javascript/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
+            },
+            {
+              "name": "python",
+              "displayName": "Python",
+              "enabled": false,
+              "url": "https://learn.microsoft.com/api/apibrowser/python/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
+            },
+            {
+              "name": "powershell",
+              "displayName": "PowerShell",
+              "enabled": false,
+              "url": "https://learn.microsoft.com/api/apibrowser/powershell/search",
+              "queryStringParameters": [
+                {
+                  "name": "api-version",
+                  "value": "0.2"
+                },
+                {
+                  "name": "locale",
+                  "value": "en-us"
+                }
+              ]
+            }
+          ]
+        },
+        "xrefHelper.appendOverloads": {
+          "type": "boolean",
+          "description": "Whether to append overloads to the search results.",
+          "default": true
+        },
+        "xrefHelper.allowGitHubSession": {
+          "type": "boolean",
+          "description": "Whether to prompt the user for GitHub auth to allow the GitHub session to be used for API requests. Enables scenarios where XREF metadata is in a private GitHub repo.",
+          "default": true
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "rimraf out && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "build": "npm run esbuild",
+    "build:package": "vsce package -o ./dist/xref-helper.vsix",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "test-compile": "tsc -p ./",
+    "all": "npm i && npm run compile && npm run lint && npm run test && npm run build && npm run build:package",
+    "semantic-release": "semantic-release"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/release-notes-generator": "^14.0.3",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.x",
+    "@types/node-fetch": "^2.6.12",
+    "@types/vscode": "^1.102.0",
+    "@types/xml2js": "^0.4.14",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.27.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.6.0",
+    "cross-spawn": "^7.0.6",
+    "esbuild": "^0.25.6",
+    "eslint": "^9.31.0",
+    "glob": "^11.0.3",
+    "mocha": "^11.7.1",
+    "rimraf": "^6.0.1",
+    "semantic-release": "^24.2.7",
+    "semantic-release-stop-before-publish": "^1.0.0",
+    "semantic-release-vsce": "^6.0.11",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@octokit/rest": "^22.0.0",
+    "node-fetch": "^3.3.2",
+    "xml2js": "^0.6.2",
+    "yaml": "^2.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IEvangelist/xref-helper.git"
+  },
+  "vsce": {
+    "pre-release": true
+  }
+}
