@@ -51,6 +51,9 @@ public static class DotnetPackageIndex
 
         IReadOnlyList<PackageIdentity> latestVersions = GetLatestVersions(packages, usePreviewVersions);
 
+        // For ASP.NET.
+        //IReadOnlyList<PackageIdentity> latestVersions = GetLatestVersions(packages, usePreviewVersions, 10);
+
         Console.WriteLine($"Found {latestVersions.Count:N0} latest package versions.");
 
         return latestVersions;
@@ -122,7 +125,8 @@ public static class DotnetPackageIndex
     // Only includes the latest version
     private static IReadOnlyList<PackageIdentity> GetLatestVersions(
         IReadOnlyList<(PackageIdentity packageId, bool isDeprecated)> identities,
-        bool usePreviewVersions
+        bool usePreviewVersions,
+        int prereleaseVersionPrefix = -1
         )
     {
         var result = new List<PackageIdentity>();
@@ -138,14 +142,25 @@ public static class DotnetPackageIndex
 
             (PackageIdentity packageId, bool isDeprecated) latestStable =
                 versions.FirstOrDefault(i => !i.packageId.Version.IsPrerelease);
-            (PackageIdentity packageId, bool isDeprecated) latestPrerelease =
-                versions.FirstOrDefault(i => i.packageId.Version.IsPrerelease);
+
+            (PackageIdentity packageId, bool isDeprecated) latestPrerelease;
+            if (prereleaseVersionPrefix != -1)
+            {
+                // Filter out prerelease versions that don't match the prefix.
+                latestPrerelease = versions.FirstOrDefault(i => i.packageId.Version.IsPrerelease &&
+                                        i.packageId.Version.Major == prereleaseVersionPrefix);
+            }
+            else
+                latestPrerelease = versions.FirstOrDefault(i => i.packageId.Version.IsPrerelease);
 
             // If the latest version is deprecated, don't include any version.
             if (latestStable.isDeprecated)
                 latestStable = default;
             if (latestPrerelease.isDeprecated)
                 latestPrerelease = default;
+
+            // Set to default for ASP.NET only.
+            //latestStable = default;
 
             if (!usePreviewVersions && latestStable != default)
             {

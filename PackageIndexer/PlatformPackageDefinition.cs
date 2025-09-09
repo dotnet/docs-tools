@@ -11,11 +11,6 @@ internal static class PlatformPackageDefinition
         // Don't include docs from Microsoft.Bcl* packages.
         // For example, Ms.Bcl.Memory includes the System types Index and Range,
         // and some very bad docs for these types. (Convo with Carlos 11/18/24.)
-        //"Microsoft.Bcl.AsyncInterfaces",
-        //"Microsoft.Bcl.Cryptography",
-        //"Microsoft.Bcl.Memory",
-        //"Microsoft.Bcl.Numerics",
-        //"Microsoft.Bcl.TimeProvider",
         "Microsoft.Extensions.Caching.Abstractions",
         "Microsoft.Extensions.Caching.Memory",
         "Microsoft.Extensions.Configuration",
@@ -71,6 +66,12 @@ internal static class PlatformPackageDefinition
         "dotnetframework"
     ], StringComparer.OrdinalIgnoreCase);
 
+    // For ASP.NET.
+    //public static FrozenSet<string> Owners = FrozenSet.ToFrozenSet(
+    //[
+    //    "aspnet"
+    //], StringComparer.OrdinalIgnoreCase);
+
     public static PackageFilter Filter { get; } = new(
         includes:
         [
@@ -112,6 +113,8 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("System.Cloud.DocumentDb.Abstractions"),
             PackageFilterExpression.Parse("System.Cloud.Messaging"),
             PackageFilterExpression.Parse("System.Cloud.Messaging.Abstractions"),
+            // Test APIs.
+            PackageFilterExpression.Parse("Microsoft.Extensions.DependencyInjection.Specification.Tests"),
             // Suffixes.
             PackageFilterExpression.Parse("*.cs"),
             PackageFilterExpression.Parse("*.de"),
@@ -128,4 +131,14 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("*.zh-Hant"),
         ]
     );
+
+    // For ASP.NET, include these packages:
+    //        PackageFilterExpression.Parse("Microsoft.AspNetCore*"),
+    //        PackageFilterExpression.Parse("Microsoft.Authentication.WebAssembly.Msal"),
+    //        PackageFilterExpression.Parse("Microsoft.JSInterop*"),
+    //        PackageFilterExpression.Parse("Microsoft.Net.Http.Headers"),
+    //        PackageFilterExpression.Parse("Microsoft.Extensions.ApiDescription.Server"),
+    //        PackageFilterExpression.Parse("Microsoft.Extensions.Features"),
+    //        PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Core"),
+    //        PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Stores")
 }
