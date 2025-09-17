@@ -24,7 +24,7 @@
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
     <PackageReference Include="JmesPath.Net" Version="1.0.330" />
-    <PackageReference Include="Markdig" Version="0.41.3" />
+    <PackageReference Include="Markdig" Version="0.42.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNet.DocsTools\DotNet.DocsTools.csproj" />
