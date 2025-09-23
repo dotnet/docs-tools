@@ -671,7 +671,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Content\\Future", extendedProperties.IterationPath);
         Assert.Equal("New", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
-        Assert.Equal(0, extendedProperties.ParentNodeId);
+        Assert.Equal(33, extendedProperties.ParentNodeId);
     }
 
     [Fact]
@@ -698,7 +698,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Content\\Future", extendedProperties.IterationPath);
         Assert.Equal("New", extendedProperties.WorkItemState);
         Assert.Equal(["content-curation"], extendedProperties.Tags);
-        Assert.Equal(0, extendedProperties.ParentNodeId);
+        Assert.Equal(33, extendedProperties.ParentNodeId);
     }
 
     [Fact]
@@ -712,7 +712,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Content\\Future", extendedProperties.IterationPath);
         Assert.Equal("New", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
-        Assert.Equal(0, extendedProperties.ParentNodeId);
+        Assert.Equal(33, extendedProperties.ParentNodeId);
     }
 
     [Fact]
@@ -726,7 +726,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal("Content\\Future", extendedProperties.IterationPath);
         Assert.Equal("Closed", extendedProperties.WorkItemState);
         Assert.Empty(extendedProperties.Tags);
-        Assert.Equal(0, extendedProperties.ParentNodeId);
+        Assert.Equal(33, extendedProperties.ParentNodeId);
     }
 
     private static WorkItemProperties CreateIssueObject(string jsonDocument)
@@ -738,7 +738,7 @@ public class BuildExtendedPropertiesTests
             issueNumber = 1111
         };
         JsonElement element = JsonDocument.Parse(jsonDocument).RootElement;
-        return new WorkItemProperties(QuestIssue.FromJsonElement(element, variables), _allIterations, _tagMap, _parentMap, "copilotTag");
+        return new WorkItemProperties(QuestIssue.FromJsonElement(element, variables), _allIterations, _tagMap, _parentMap, _defaultParentId, "copilotTag");
     }
 
 }

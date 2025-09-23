@@ -73,6 +73,11 @@ public sealed record class ImportOptions
     public List<ParentForLabel> ParentNodes { get; init; } = [];
 
     /// <summary>
+    /// The default parent node ID to use when no other parent has been configured.
+    /// </summary>
+    public int DefaultParentNode { get; init; } = 0;
+
+    /// <summary>
     /// A map of GitHub labels to Azure DevOps tags.
     /// </summary>
     /// <remarks>

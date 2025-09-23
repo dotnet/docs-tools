@@ -119,6 +119,7 @@ internal class Program
                 options.ImportedLabel,
                 options.UnlinkLabel,
                 options.ParentNodes,
+                options.DefaultParentNode,
                 options.WorkItemTags,
                 options.TeamGitHubLogins,
                 options.CopilotIssueTag);

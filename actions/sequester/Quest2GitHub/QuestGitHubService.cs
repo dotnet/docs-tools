@@ -40,6 +40,7 @@ public class QuestGitHubService(
     string importedLabelText,
     string removeLinkItemText,
     List<ParentForLabel> parentNodes,
+    int defaultParentNodeId,
     IEnumerable<LabelToTagMap> tagMap,
     IEnumerable<string> gitHubLogins,
     string copilotTag) : IDisposable
@@ -97,7 +98,7 @@ public class QuestGitHubService(
                     QuestWorkItem? questItem = (request || sequestered || vanquished)
                         ? await FindLinkedWorkItemAsync(item)
                         : null;
-                    var issueProperties = new WorkItemProperties(item, _allIterations, tagMap, parentNodes, copilotTag);
+                    var issueProperties = new WorkItemProperties(item, _allIterations, tagMap, parentNodes, defaultParentNodeId, copilotTag);
 
                     Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
                     Task workDone = (request, sequestered, vanquished, questItem) switch
@@ -184,7 +185,7 @@ public class QuestGitHubService(
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
-        var issueProperties = new WorkItemProperties(ghIssue, _allIterations, tagMap, parentNodes, copilotTag);
+        var issueProperties = new WorkItemProperties(ghIssue, _allIterations, tagMap, parentNodes, defaultParentNodeId, copilotTag);
 
         Task workDone = (request, sequestered, vanquished, questItem) switch
         {

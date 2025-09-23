@@ -22,6 +22,7 @@ public class WorkItemProperties
         IEnumerable<QuestIteration> iterations,
         IEnumerable<LabelToTagMap> tags,
         IEnumerable<ParentForLabel> parentNodes,
+        int defaultParentNodeId,
         string copilotTag)
     {
         StoryPointSize? storySize = LatestStoryPointSize(issue);
@@ -41,7 +42,7 @@ public class WorkItemProperties
         };
         IterationPath = latestIteration.Path;
 
-        ParentNodeId = 0;
+        ParentNodeId = defaultParentNodeId;
 
         if (WorkItemState is not "New")
         {
