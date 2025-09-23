@@ -6,15 +6,5 @@
     },
     "ImportTriggerLabel": ":world_map: reQUEST",
     "ImportedLabel": ":pushpin: seQUESTered",
-    "ParentNodes": [
-        {
-            "Semester": "Selenium",
-            "ParentNodeId": 286035
-        },
-        {
-            "Semester": "Bromine",
-            "ParentNodeId": 405108
-        }
-     ],
     "DefaultParentNode": 405108
 }
