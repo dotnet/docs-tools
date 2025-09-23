@@ -105,6 +105,7 @@ public sealed record class ImportOptions
         "tdykstra",
         "IEvangelist",
         "gewarren",
+        "meaghanlewis",
         "cmastr",
         "adegeo",
         "wadepickett"
