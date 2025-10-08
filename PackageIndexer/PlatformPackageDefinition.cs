@@ -6,6 +6,9 @@ internal static class PlatformPackageDefinition
 {
     private static FrozenSet<string> s_packageIds;
 
+    // If the package comes from a repo that's not in the 
+    // reposToIncludeXmlComments array in AddCsvEntryToDict(),
+    // then its docs won't be imported unless it's listed here.
     public static readonly List<string> PackagesWithTruthDocs =
     [
         // Don't include docs from Microsoft.Bcl* packages.
@@ -90,6 +93,7 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("System.ClientModel"),
             // Documented under ASP.NET Core moniker.
             PackageFilterExpression.Parse("System.Threading.RateLimiting"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Caching.Hybrid"),
             PackageFilterExpression.Parse("Microsoft.Extensions.Features"),
             PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Core"),
             PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Stores"),
