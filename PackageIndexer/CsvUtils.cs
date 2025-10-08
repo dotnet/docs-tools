@@ -208,8 +208,9 @@ internal class CsvUtils
             string targetFramework
             )
         {
-            // Special case for packages from dotnet/extensions repo - include XML files.
+            // Special case for packages from non-runtime repos - include XML files.
             string[] reposToIncludeXmlComments = [
+                "https://github.com/dotnet/aspnetcore",
                 "https://github.com/dotnet/extensions",
                 "https://github.com/microsoft/semantic-kernel",
                 "https://devdiv.visualstudio.com/DevDiv/_git/AITestingTools"
