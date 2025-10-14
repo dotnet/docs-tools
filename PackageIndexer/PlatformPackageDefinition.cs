@@ -6,61 +6,48 @@ internal static class PlatformPackageDefinition
 {
     private static FrozenSet<string> s_packageIds;
 
-    // If the package comes from a repo that's not in the 
-    // reposToIncludeXmlComments array in AddCsvEntryToDict(),
-    // then its docs won't be imported unless it's listed here.
-    public static readonly List<string> PackagesWithTruthDocs =
+    public static readonly List<string> packagesWithoutDocs =
     [
-        // Don't include docs from Microsoft.Bcl* packages.
-        // For example, Ms.Bcl.Memory includes the System types Index and Range,
-        // and some very bad docs for these types. (Convo with Carlos 11/18/24.)
-        "Microsoft.Extensions.Caching.Abstractions",
-        "Microsoft.Extensions.Caching.Memory",
-        "Microsoft.Extensions.Configuration",
-        "Microsoft.Extensions.Configuration.Abstractions",
-        "Microsoft.Extensions.Configuration.Binder",
-        "Microsoft.Extensions.Configuration.CommandLine",
-        "Microsoft.Extensions.Configuration.EnvironmentVariables",
-        "Microsoft.Extensions.Configuration.FileExtensions",
-        "Microsoft.Extensions.Configuration.Ini",
-        "Microsoft.Extensions.Configuration.Json",
-        "Microsoft.Extensions.Configuration.UserSecrets",
-        "Microsoft.Extensions.Configuration.Xml",
-        "Microsoft.Extensions.DependencyInjection",
-        "Microsoft.Extensions.DependencyInjection.Abstractions",
-        "Microsoft.Extensions.DependencyInjection.Specification.Tests",
-        "Microsoft.Extensions.Diagnostics",
-        "Microsoft.Extensions.Diagnostics.Abstractions",
-        "Microsoft.Extensions.FileProviders.Abstractions",
-        "Microsoft.Extensions.FileProviders.Composite",
-        "Microsoft.Extensions.FileProviders.Physical",
-        "Microsoft.Extensions.HostFactoryResolver.Sources",
-        "Microsoft.Extensions.Hosting",
-        "Microsoft.Extensions.Hosting.Abstractions",
-        "Microsoft.Extensions.Hosting.Systemd",
-        "Microsoft.Extensions.Hosting.WindowsServices",
-        "Microsoft.Extensions.Http",
-        "Microsoft.Extensions.Logging",
-        "Microsoft.Extensions.Logging.Abstractions",
-        "Microsoft.Extensions.Logging.Configuration",
-        "Microsoft.Extensions.Logging.Console",
-        "Microsoft.Extensions.Logging.Debug",
-        "Microsoft.Extensions.Logging.EventLog",
-        "Microsoft.Extensions.Logging.EventSource",
-        "Microsoft.Extensions.Logging.TraceSource",
-        "Microsoft.Extensions.Options",
-        "Microsoft.Extensions.Options.ConfigurationExtensions",
-        "Microsoft.Extensions.Options.DataAnnotations",
-        "Microsoft.Extensions.Primitives",
-        "System.Composition",
-        "System.Diagnostics.EventLog.Messages",
-        "System.Formats.Asn1",
-        "System.Formats.Cbor",
-        "System.Formats.Nrbf",
-        "System.Linq.AsyncEnumerable",
-        "System.Net.ServerSentEvents",
-        "System.Numerics.Tensors",
-        "System.Runtime.Serialization.Schema"
+        "Microsoft.Extensions.DependencyModel",
+        "Microsoft.Extensions.FileSystemGlobbing",
+        "Microsoft.NETCore.Platforms",
+        "Microsoft.Win32.Registry.AccessControl",
+        "Microsoft.Win32.SystemEvents",
+        "System.CodeDom",
+        "System.ComponentModel.Composition",
+        "System.ComponentModel.Composition.Registration",
+        "System.Composition.AttributedModel",
+        "System.Composition.Convention",
+        "System.Composition.Hosting",
+        "System.Composition.Runtime",
+        "System.Composition.TypedParts",
+        "System.Configuration.ConfigurationManager",
+        "System.Data.Odbc",
+        "System.Data.OleDb",
+        "System.Diagnostics.EventLog",
+        "System.Diagnostics.PerformanceCounter",
+        "System.DirectoryServices",
+        "System.DirectoryServices.AccountManagement",
+        "System.DirectoryServices.Protocols",
+        "System.IO.Hashing",
+        "System.IO.Packaging",
+        "System.IO.Ports",
+        "System.Management",
+        "System.Memory.Data",
+        "System.Net.Http.WinHttpHandler",
+        "System.Reflection.Context",
+        "System.Reflection.MetadataLoadContext",
+        "System.Resources.Extensions",
+        "System.Runtime.Caching",
+        "System.Security.Cryptography.Cose",
+        "System.Security.Cryptography.Pkcs",
+        "System.Security.Cryptography.ProtectedData",
+        "System.Security.Cryptography.Xml",
+        "System.Security.Permissions",
+        "System.ServiceModel.Syndication",
+        "System.ServiceProcess.ServiceController",
+        "System.Speech",
+        "System.Windows.Extensions"
     ];
 
     public static FrozenSet<string> Owners = FrozenSet.ToFrozenSet(
@@ -68,12 +55,6 @@ internal static class PlatformPackageDefinition
         "aspnet",
         "dotnetframework"
     ], StringComparer.OrdinalIgnoreCase);
-
-    // For ASP.NET.
-    //public static FrozenSet<string> Owners = FrozenSet.ToFrozenSet(
-    //[
-    //    "aspnet"
-    //], StringComparer.OrdinalIgnoreCase);
 
     public static PackageFilter Filter { get; } = new(
         includes:

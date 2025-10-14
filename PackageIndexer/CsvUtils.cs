@@ -57,6 +57,10 @@ internal class CsvUtils
             // Read XML file to get each listed framework.
             PackageEntry packageEntry = XmlEntryFormat.ReadPackageEntry(packageIndexFile);
 
+            // These packages cause an error in the pipeline build
+            // when included in the netframework CSV files.
+            string[] toExcludeFromFramework = ["System.Data.Odbc", "System.Data.OleDb", "System.Data.SqlClient", "System.IO.Ports"];
+
             Console.WriteLine($"Creating CSV entries for package {packageEntry.Name}.");
 
             // Add to each applicable CSV file.
@@ -112,6 +116,13 @@ internal class CsvUtils
                         break;
                     case "net462":
                         opsMoniker = s_tfmToOpsMoniker["net462"];
+
+                        if (toExcludeFromFramework.Contains(packageEntry.Name, StringComparer.InvariantCultureIgnoreCase))
+                        {
+                            Console.WriteLine($"Excluding {packageEntry.Name} from {opsMoniker} CSV.");
+                            break;
+                        }
+
                         AddCsvEntryToDict(opsMoniker, packageEntry, "net462");
                         if (!packageEntry.Frameworks.Contains("net47"))
                         {
@@ -122,6 +133,13 @@ internal class CsvUtils
                         break;
                     case "net47":
                         opsMoniker = s_tfmToOpsMoniker["net47"];
+
+                        if (toExcludeFromFramework.Contains(packageEntry.Name, StringComparer.InvariantCultureIgnoreCase))
+                        {
+                            Console.WriteLine($"Excluding {packageEntry.Name} from {opsMoniker} CSV.");
+                            break;
+                        }
+
                         AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net47");
                         if (!packageEntry.Frameworks.Contains("net471"))
                         {
@@ -132,6 +150,13 @@ internal class CsvUtils
                         break;
                     case "net471":
                         opsMoniker = s_tfmToOpsMoniker["net471"];
+
+                        if (toExcludeFromFramework.Contains(packageEntry.Name, StringComparer.InvariantCultureIgnoreCase))
+                        {
+                            Console.WriteLine($"Excluding {packageEntry.Name} from {opsMoniker} CSV.");
+                            break;
+                        }
+
                         AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net471");
                         if (!packageEntry.Frameworks.Contains("net472"))
                         {
@@ -142,6 +167,13 @@ internal class CsvUtils
                         break;
                     case "net472":
                         opsMoniker = s_tfmToOpsMoniker["net472"];
+
+                        if (toExcludeFromFramework.Contains(packageEntry.Name, StringComparer.InvariantCultureIgnoreCase))
+                        {
+                            Console.WriteLine($"Excluding {packageEntry.Name} from {opsMoniker} CSV.");
+                            break;
+                        }
+
                         AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net472");
                         if (!packageEntry.Frameworks.Contains("net48"))
                         {
@@ -152,6 +184,13 @@ internal class CsvUtils
                         break;
                     case "net48":
                         opsMoniker = s_tfmToOpsMoniker["net48"];
+
+                        if (toExcludeFromFramework.Contains(packageEntry.Name, StringComparer.InvariantCultureIgnoreCase))
+                        {
+                            Console.WriteLine($"Excluding {packageEntry.Name} from {opsMoniker} CSV.");
+                            break;
+                        }
+
                         AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net48");
                         if (!packageEntry.Frameworks.Contains("net481"))
                         {
@@ -162,6 +201,13 @@ internal class CsvUtils
                         break;
                     case "net481":
                         opsMoniker = s_tfmToOpsMoniker["net481"];
+
+                        if (toExcludeFromFramework.Contains(packageEntry.Name, StringComparer.InvariantCultureIgnoreCase))
+                        {
+                            Console.WriteLine($"Excluding {packageEntry.Name} from {opsMoniker} CSV.");
+                            break;
+                        }
+
                         AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net481");
                         break;
                     case "netstandard2.0":
@@ -208,17 +254,12 @@ internal class CsvUtils
             string targetFramework
             )
         {
-            // Special case for packages from non-runtime repos - include XML files.
-            string[] reposToIncludeXmlComments = [
-                "https://github.com/dotnet/aspnetcore",
-                "https://github.com/dotnet/extensions",
-                "https://github.com/microsoft/semantic-kernel",
-                "https://devdiv.visualstudio.com/DevDiv/_git/AITestingTools"
-                ];
+            bool includeXml = true;
 
-            bool includeXml = reposToIncludeXmlComments.Contains(packageEntry.Repository);
+            if (PlatformPackageDefinition.packagesWithoutDocs.Contains(packageEntry.Name))
+                includeXml = false;
 
-            // Except don't include XML file for Microsoft.Extensions.Diagnostics.ResourceMonitoring
+            // And don't include XML file for Microsoft.Extensions.Diagnostics.ResourceMonitoring
             // (see https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787).
             if (string.Equals(
                 packageEntry.Name,
@@ -228,9 +269,9 @@ internal class CsvUtils
                 includeXml = false;
             }
 
-            // Special case for newer assemblies - include XML documentation files.
-            if (PlatformPackageDefinition.PackagesWithTruthDocs.Contains(packageEntry.Name))
-                includeXml = true;
+            // And don't include XMl files for Microsoft.Bcl.* packages.
+            if (packageEntry.Name.StartsWith("Microsoft.Bcl.", StringComparison.InvariantCultureIgnoreCase))
+                includeXml = false;
 
             string squareBrackets = $"[tfm={targetFramework};includeXml={includeXml}]";
 
