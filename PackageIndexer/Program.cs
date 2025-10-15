@@ -8,7 +8,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 0227", "preview"];
+        args = [@"c:\users\gewarren\desktop\Package Index 1015", "preview"];
 #endif
 
         if ((args.Length == 0) || (args.Length > 2))
@@ -124,6 +124,12 @@ internal static class Program
                     {
                         Console.WriteLine($"Not a library package.");
                         File.WriteAllText(disabledPath, string.Empty);
+                        nugetStore.DeleteFromCache(id, version);
+                    }
+                    else if (PlatformPackageDefinition.IsRepositoryExcluded(packageEntry.Repository))
+                    {
+                        Console.WriteLine($"Excluding due to repository: {packageEntry.Repository}");
+                        File.WriteAllText(disabledPath, $"Excluded repository: {packageEntry.Repository}");
                         nugetStore.DeleteFromCache(id, version);
                     }
                     else

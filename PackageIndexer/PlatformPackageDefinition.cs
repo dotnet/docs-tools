@@ -56,6 +56,12 @@ internal static class PlatformPackageDefinition
         "dotnetframework"
     ], StringComparer.OrdinalIgnoreCase);
 
+    // Repository URLs to exclude
+    public static readonly FrozenSet<string> ExcludedRepositories = FrozenSet.ToFrozenSet(
+    [
+        "https://github.com/dotnet/maintenance-packages"
+    ], StringComparer.OrdinalIgnoreCase);
+
     public static PackageFilter Filter { get; } = new(
         includes:
         [
@@ -117,13 +123,9 @@ internal static class PlatformPackageDefinition
         ]
     );
 
-    // For ASP.NET, include these packages:
-    //        PackageFilterExpression.Parse("Microsoft.AspNetCore*"),
-    //        PackageFilterExpression.Parse("Microsoft.Authentication.WebAssembly.Msal"),
-    //        PackageFilterExpression.Parse("Microsoft.JSInterop*"),
-    //        PackageFilterExpression.Parse("Microsoft.Net.Http.Headers"),
-    //        PackageFilterExpression.Parse("Microsoft.Extensions.ApiDescription.Server"),
-    //        PackageFilterExpression.Parse("Microsoft.Extensions.Features"),
-    //        PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Core"),
-    //        PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Stores")
+    public static bool IsRepositoryExcluded(string? repositoryUrl)
+    {
+        return !string.IsNullOrEmpty(repositoryUrl) &&
+               ExcludedRepositories.Contains(repositoryUrl);
+    }
 }
