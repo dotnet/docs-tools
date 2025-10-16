@@ -125,7 +125,7 @@ internal static class PlatformPackageDefinition
 
     public static bool IsRepositoryExcluded(string? repositoryUrl)
     {
-        return !string.IsNullOrEmpty(repositoryUrl) &&
+        return !string.IsNullOrWhitespace(repositoryUrl) &&
                ExcludedRepositories.Contains(repositoryUrl);
     }
 }
