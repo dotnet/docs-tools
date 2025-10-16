@@ -86,7 +86,7 @@ public static class DotnetPackageIndex
 
         var connectionString = new KustoConnectionStringBuilder(cluster).WithAadUserPromptAuthentication();
         using var queryProvider = KustoClientFactory.CreateCslQueryProvider(connectionString);
-        using var reader = queryProvider.ExecuteQuery(databaseName, query, null);
+        using System.Data.IDataReader reader = queryProvider.ExecuteQuery(databaseName, query, null);
 
         List<string> packageIds = [];
 

@@ -256,18 +256,9 @@ internal class CsvUtils
         {
             bool includeXml = true;
 
-            if (PlatformPackageDefinition.packagesWithoutDocs.Contains(packageEntry.Name))
+            if (PlatformPackageDefinition.runtimePackagesWithoutDocs.Contains(packageEntry.Name) ||
+                PlatformPackageDefinition.otherPackagesWithoutDocs.Contains(packageEntry.Name))
                 includeXml = false;
-
-            // And don't include XML file for Microsoft.Extensions.Diagnostics.ResourceMonitoring
-            // (see https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787).
-            if (string.Equals(
-                packageEntry.Name,
-                "Microsoft.Extensions.Diagnostics.ResourceMonitoring",
-                StringComparison.InvariantCultureIgnoreCase))
-            {
-                includeXml = false;
-            }
 
             // And don't include XMl files for Microsoft.Bcl.* packages.
             if (packageEntry.Name.StartsWith("Microsoft.Bcl.", StringComparison.InvariantCultureIgnoreCase))

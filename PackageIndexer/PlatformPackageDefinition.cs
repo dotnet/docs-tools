@@ -6,7 +6,22 @@ internal static class PlatformPackageDefinition
 {
     private static FrozenSet<string> s_packageIds;
 
-    public static readonly List<string> packagesWithoutDocs =
+    public static readonly List<string> otherPackagesWithoutDocs =
+    [
+        // Overlap with framework - no docs needed and might overwrite good docs.
+        "System.Collections.Immutable",
+        "System.Diagnostics.DiagnosticSource",
+        "System.Threading.AccessControl",
+        "System.Text.Json",
+        // See https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787.
+        "Microsoft.Extensions.Diagnostics.ResourceMonitoring",
+        // From WinForms and doesn't use compiler-generated XML docs.
+        "System.Drawing.Common",
+        // WCF
+        "System.ServiceModel.Federation"
+    ];
+
+    public static readonly List<string> runtimePackagesWithoutDocs =
     [
         "Microsoft.Extensions.DependencyModel",
         "Microsoft.Extensions.FileSystemGlobbing",
@@ -106,6 +121,28 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("System.Cloud.Messaging.Abstractions"),
             // Test APIs.
             PackageFilterExpression.Parse("Microsoft.Extensions.DependencyInjection.Specification.Tests"),
+            // Explicit exclusion - unsupported package.
+            PackageFilterExpression.Parse("System.Runtime.Serialization.Formatters"),
+            // No longer built in runtime repo.
+            PackageFilterExpression.Parse("System.Reflection.Emit"),
+            PackageFilterExpression.Parse("System.ComponentModel.Annotations"),
+            PackageFilterExpression.Parse("System.Data.DataSetExtensions"),
+            PackageFilterExpression.Parse("System.Security.AccessControl"),
+            PackageFilterExpression.Parse("System.Security.Cryptography.Cng"),
+            PackageFilterExpression.Parse("System.Security.Principal.Windows"),
+            // Maintenance packages.
+            PackageFilterExpression.Parse("Microsoft.IO.Redist"),
+            PackageFilterExpression.Parse("System.Buffers"),
+            PackageFilterExpression.Parse("System.Data.SqlClient"),
+            PackageFilterExpression.Parse("System.Json"),
+            PackageFilterExpression.Parse("System.Memory"),
+            PackageFilterExpression.Parse("System.Net.WebSockets.WebSocketProtocol"),
+            PackageFilterExpression.Parse("System.Numerics.Vectors"),
+            PackageFilterExpression.Parse("System.Reflection.DispatchProxy"),
+            PackageFilterExpression.Parse("System.Runtime.CompilerServices.Unsafe"),
+            PackageFilterExpression.Parse("System.Threading.Tasks.Extensions"),
+            PackageFilterExpression.Parse("System.ValueTuple"),
+            PackageFilterExpression.Parse("System.Xml.XPath.XmlDocument"),
             // Suffixes.
             PackageFilterExpression.Parse("*.cs"),
             PackageFilterExpression.Parse("*.de"),
@@ -125,7 +162,9 @@ internal static class PlatformPackageDefinition
 
     public static bool IsRepositoryExcluded(string? repositoryUrl)
     {
-        return !string.IsNullOrWhitespace(repositoryUrl) &&
-               ExcludedRepositories.Contains(repositoryUrl);
+        // Exclude package if the repository URL is missing,
+        // or if the repo is in the excluded list.
+        return (string.IsNullOrWhiteSpace(repositoryUrl) ||
+               ExcludedRepositories.Contains(repositoryUrl));
     }
 }
