@@ -64,8 +64,8 @@ public sealed class PackageFilterExpression
 
 public sealed class PackageFilter(IEnumerable<PackageFilterExpression> includes, IEnumerable<PackageFilterExpression> excludes)
 {
-    public ImmutableArray<PackageFilterExpression> Includes { get; } = includes.ToImmutableArray();
-    public ImmutableArray<PackageFilterExpression> Excludes { get; } = excludes.ToImmutableArray();
+    public ImmutableArray<PackageFilterExpression> Includes { get; } = [.. includes];
+    public ImmutableArray<PackageFilterExpression> Excludes { get; } = [.. excludes];
 
     public bool IsMatch(string packageId)
     {
