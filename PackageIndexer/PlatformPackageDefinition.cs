@@ -8,11 +8,6 @@ internal static class PlatformPackageDefinition
 
     public static readonly List<string> otherPackagesWithoutDocs =
     [
-        // Overlap with framework - no docs needed and might overwrite good docs.
-        "System.Collections.Immutable",
-        "System.Diagnostics.DiagnosticSource",
-        "System.Threading.AccessControl",
-        "System.Text.Json",
         // See https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787.
         "Microsoft.Extensions.Diagnostics.ResourceMonitoring",
         // From WinForms and doesn't use compiler-generated XML docs.
@@ -29,6 +24,7 @@ internal static class PlatformPackageDefinition
         "Microsoft.Win32.Registry.AccessControl",
         "Microsoft.Win32.SystemEvents",
         "System.CodeDom",
+        "System.Collections.Immutable",
         "System.ComponentModel.Composition",
         "System.ComponentModel.Composition.Registration",
         "System.Composition.AttributedModel",
@@ -39,21 +35,26 @@ internal static class PlatformPackageDefinition
         "System.Configuration.ConfigurationManager",
         "System.Data.Odbc",
         "System.Data.OleDb",
+        "System.Diagnostics.DiagnosticSource",
         "System.Diagnostics.EventLog",
         "System.Diagnostics.PerformanceCounter",
-        "System.DirectoryServices",
         "System.DirectoryServices.AccountManagement",
+        "System.DirectoryServices",
         "System.DirectoryServices.Protocols",
         "System.IO.Hashing",
         "System.IO.Packaging",
+        "System.IO.Pipelines",
         "System.IO.Ports",
         "System.Management",
         "System.Memory.Data",
+        "System.Net.Http.Json",
         "System.Net.Http.WinHttpHandler",
         "System.Reflection.Context",
+        "System.Reflection.Metadata",
         "System.Reflection.MetadataLoadContext",
         "System.Resources.Extensions",
         "System.Runtime.Caching",
+        "System.Runtime.Serialization.Formatters",
         "System.Security.Cryptography.Cose",
         "System.Security.Cryptography.Pkcs",
         "System.Security.Cryptography.ProtectedData",
@@ -62,6 +63,12 @@ internal static class PlatformPackageDefinition
         "System.ServiceModel.Syndication",
         "System.ServiceProcess.ServiceController",
         "System.Speech",
+        "System.Text.Encoding.CodePages",
+        "System.Text.Encodings.Web",
+        "System.Text.Json",
+        "System.Threading.AccessControl",
+        "System.Threading.Channels",
+        "System.Threading.Tasks.Dataflow",
         "System.Windows.Extensions"
     ];
 
@@ -121,8 +128,6 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("System.Cloud.Messaging.Abstractions"),
             // Test APIs.
             PackageFilterExpression.Parse("Microsoft.Extensions.DependencyInjection.Specification.Tests"),
-            // Explicit exclusion - unsupported package.
-            PackageFilterExpression.Parse("System.Runtime.Serialization.Formatters"),
             // No longer built in runtime repo.
             PackageFilterExpression.Parse("System.Reflection.Emit"),
             PackageFilterExpression.Parse("System.ComponentModel.Annotations"),
