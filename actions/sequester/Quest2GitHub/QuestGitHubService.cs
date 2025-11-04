@@ -17,14 +17,7 @@ namespace Quest2GitHub;
 /// </remarks>
 /// <param name="ghClient">GitHub client</param>
 /// <param name="ospoClient">MS Open Source Programs Office client</param>
-/// <param name="azdoKey">Azure Dev Ops personal access token</param>
-/// <param name="questOrg">The Azure Dev ops organization</param>
-/// <param name="questProject">The Azure Dev ops project</param>
-/// <param name="areaPath">The area path for work items from this repo</param>
-/// <param name="importTriggerLabelText">The text of the label that triggers an import</param>
-/// <param name="importedLabelText">The text of the label that indicates an issue has been imported</param>
-/// <param name="removeLinkItemText">The text of the label that indicates an issue should be removed</param>
-/// <param name="parentNodes">A dictionary of label / parent ID pairs.</param>
+/// <param name="importOptions">A structure with the options for this run.</param>
 /// <remarks>
 /// The OAuth token takes precedence over the GitHub token, if both are 
 /// present.
@@ -32,23 +25,12 @@ namespace Quest2GitHub;
 public class QuestGitHubService(
     IGitHubClient ghClient,
     OspoClient? ospoClient,
-    string azdoKey,
-    string questOrg,
-    string questProject,
-    string areaPath,
-    string importTriggerLabelText,
-    string importedLabelText,
-    string removeLinkItemText,
-    List<ParentForLabel> parentNodes,
-    int defaultParentNodeId,
-    IEnumerable<LabelToTagMap> tagMap,
-    IEnumerable<string> gitHubLogins,
-    string copilotTag) : IDisposable
+    ImportOptions importOptions) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
-    private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
+    private readonly QuestClient _azdoClient = new(importOptions.ApiKeys.QuestKey, importOptions.AzureDevOps.Org, importOptions.AzureDevOps.Project);
     private readonly OspoClient? _ospoClient = ospoClient;
-    private readonly string _questLinkString = $"https://dev.azure.com/{questOrg}/{questProject}/_workitems/edit/";
+    private readonly string _questLinkString = $"https://dev.azure.com/{importOptions.AzureDevOps.Org}/{importOptions.AzureDevOps.Project}/_workitems/edit/";
 
     private GitHubLabel? _importTriggerLabel;
     private GitHubLabel? _importedLabel;
@@ -98,7 +80,7 @@ public class QuestGitHubService(
                     QuestWorkItem? questItem = (request || sequestered || vanquished)
                         ? await FindLinkedWorkItemAsync(item)
                         : null;
-                    var issueProperties = new WorkItemProperties(item, _allIterations, tagMap, parentNodes, defaultParentNodeId, copilotTag);
+                    var issueProperties = new WorkItemProperties(item, _allIterations, importOptions.WorkItemTags, importOptions.ParentNodes, importOptions.DefaultParentNode, importOptions.CopilotIssueTag);
 
                     Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
                     Task workDone = (request, sequestered, vanquished, questItem) switch
@@ -107,7 +89,7 @@ public class QuestGitHubService(
                         (_, _, true, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
                         (_, _, false, null) => LinkIssueAsync(item, issueProperties), // No link, but one of the link labels was applied.
                         (_, _, true, not null) => questItem.RemoveWorkItem(item, _azdoClient, issueProperties), // Unlink.
-                        (_, _, false, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, gitHubLogins, issueProperties), // update
+                        (_, _, false, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties), // update
                     };
                     totalImport++;
                     await workDone;
@@ -123,7 +105,7 @@ public class QuestGitHubService(
         async IAsyncEnumerable<QuestIssueOrPullRequest> QueryIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
         {
             var query = new EnumerationQuery<T, QuestIssueOrPullRequestVariables>(ghClient);
-            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, [], importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText));
+            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, [], importTriggerLabelText: importOptions.ImportTriggerLabel, importedLabelText: importOptions.ImportedLabel));
             await foreach (QuestIssueOrPullRequest item in queryEnumerable)
             {
                 if (item.UpdatedAt < historyThreshold)
@@ -136,7 +118,7 @@ public class QuestGitHubService(
         async IAsyncEnumerable<QuestIssueOrPullRequest> QueryAllOpenIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
         {
             var query = new EnumerationQuery<T, QuestIssueOrPullRequestVariables>(ghClient);
-            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, ["OPEN"], importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText));
+            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, ["OPEN"], importTriggerLabelText: importOptions.ImportTriggerLabel, importedLabelText: importOptions.ImportedLabel));
             await foreach (QuestIssueOrPullRequest item in queryEnumerable)
             {
                 yield return item;
@@ -185,7 +167,7 @@ public class QuestGitHubService(
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
-        var issueProperties = new WorkItemProperties(ghIssue, _allIterations, tagMap, parentNodes, defaultParentNodeId, copilotTag);
+        var issueProperties = new WorkItemProperties(ghIssue, _allIterations, importOptions.WorkItemTags, importOptions.ParentNodes, importOptions.DefaultParentNode, importOptions.CopilotIssueTag);
 
         Task workDone = (request, sequestered, vanquished, questItem) switch
         {
@@ -193,7 +175,7 @@ public class QuestGitHubService(
             (    _,     _,  true,     null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
             (    _,     _, false,     null) => LinkIssueAsync(ghIssue, issueProperties), // No link, but one of the link labels was applied.
             (    _,     _,  true, not null) => questItem.RemoveWorkItem(ghIssue, _azdoClient, issueProperties), // Unlink.
-            (    _,     _, false, not null) => questItem.UpdateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, gitHubLogins, issueProperties), // update
+            (    _,     _, false, not null) => questItem.UpdateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties), // update
         };
         await workDone;
     }
@@ -278,7 +260,7 @@ public class QuestGitHubService(
         if (workItem is null)
         {
             // Create work item:
-            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, areaPath,
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, importOptions.AzureDevOps.AreaPath,
                 _importTriggerLabel?.Id, issueProperties);
 
             string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
@@ -301,7 +283,7 @@ public class QuestGitHubService(
             }
 
             // Because some fields can't be set when an item is created, go through an update cycle:
-            await questItem.UpdateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, gitHubLogins, issueProperties);
+            await questItem.UpdateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties);
             return questItem;
         }
         else
@@ -316,9 +298,9 @@ public class QuestGitHubService(
             
         await foreach (GitHubLabel label in labelQuery.PerformQuery(new FindLabelQueryVariables(org, repo, "")))
         {
-            if (label.Name == importTriggerLabelText) _importTriggerLabel = label;
-            if (label.Name == importedLabelText) _importedLabel = label;
-            if (label.Name == removeLinkItemText) _removeLinkedItemLabel = label;
+            if (label.Name == importOptions.ImportTriggerLabel) _importTriggerLabel = label;
+            if (label.Name == importOptions.ImportedLabel) _importedLabel = label;
+            if (label.Name == importOptions.UnlinkLabel) _removeLinkedItemLabel = label;
         }
     }
 
