@@ -12,8 +12,17 @@ internal static class PlatformPackageDefinition
         "Microsoft.Extensions.Diagnostics.ResourceMonitoring",
         // From WinForms and doesn't use compiler-generated XML docs.
         "System.Drawing.Common",
-        // WCF
-        "System.ServiceModel.Federation"
+        // WCF (packages have no XML docs).
+        "System.ServiceModel.Duplex",
+        "System.ServiceModel.Federation",
+        "System.ServiceModel.Http",
+        "System.ServiceModel.NetFramingBase",
+        "System.ServiceModel.NetFramingPipe",
+        "System.ServiceModel.NetTcp",
+        "System.ServiceModel.Primitives",
+        "System.ServiceModel.Security",
+        "System.ServiceModel.Syndication",
+        "System.ServiceModel.UnixDomainSocket"
     ];
 
     public static readonly List<string> runtimePackagesWithoutDocs =
@@ -148,6 +157,9 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("System.Threading.Tasks.Extensions"),
             PackageFilterExpression.Parse("System.ValueTuple"),
             PackageFilterExpression.Parse("System.Xml.XPath.XmlDocument"),
+            // Not refreshed in a few years.
+            PackageFilterExpression.Parse("System.Runtime.Experimental"),
+            PackageFilterExpression.Parse("System.Runtime.InteropServices.NFloat.Internal"),
             // Suffixes.
             PackageFilterExpression.Parse("*.cs"),
             PackageFilterExpression.Parse("*.de"),
