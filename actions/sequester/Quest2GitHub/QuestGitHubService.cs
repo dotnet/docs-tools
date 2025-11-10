@@ -33,6 +33,7 @@ public class QuestGitHubService(
     IGitHubClient ghClient,
     OspoClient? ospoClient,
     string azdoKey,
+    bool useBearerToken,
     string questOrg,
     string questProject,
     string areaPath,
@@ -46,7 +47,7 @@ public class QuestGitHubService(
     string copilotTag) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
-    private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
+    private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject, useBearerToken);
     private readonly OspoClient? _ospoClient = ospoClient;
     private readonly string _questLinkString = $"https://dev.azure.com/{questOrg}/{questProject}/_workitems/edit/";
 

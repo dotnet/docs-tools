@@ -107,11 +107,30 @@ internal class Program
         {
             Console.WriteLine("Warning: Imported work items won't be assigned based on GitHub assignee.");
         }
+        string? token = options.ApiKeys.QuestAccessToken
+            ?? options.ApiKeys.QuestKey;
+        bool useBearerToken = options.ApiKeys.QuestAccessToken is not null;
 
+        Console.WriteLine($"Using Azure DevOps token: {token.Length}, {token.Substring(0,6)}");
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new InvalidOperationException("Azure DevOps token is missing.");
+        }
+
+        if (useBearerToken)
+        {
+            Console.WriteLine("Using secretless for Azure DevOps.");
+        }
+        else
+        {
+            Console.WriteLine("Using PAT for Azure DevOps.");
+        }
         return new QuestGitHubService(
                 gitHubClient,
                 ospoClient,
-                options.ApiKeys.QuestKey,
+                token,
+                useBearerToken,
                 options.AzureDevOps.Org,
                 options.AzureDevOps.Project,
                 options.AzureDevOps.AreaPath,
