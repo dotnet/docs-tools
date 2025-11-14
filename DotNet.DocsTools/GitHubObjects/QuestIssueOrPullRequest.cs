@@ -17,13 +17,18 @@ namespace DotNet.DocsTools.GitHubObjects;
 /// <param name="issueNumber">The issue number. Only used for scalar queries</param>
 /// <param name="importTriggerLabelText">The trigger label text. Only used for enumerations</param>
 /// <param name="importedLabelText">The imported label text. Only used for enumerations.</param>
+/// <param name="removeLabelText">The remove label text. Only used for enumerations.</param>
+/// <param name="localizationLabelText">The localization label text. Only used for enumerations.</param>
 public readonly record struct QuestIssueOrPullRequestVariables(
     string Organization, 
     string Repository,
     string[] states,
     int? issueNumber = null, 
     string? importTriggerLabelText = null, 
-    string? importedLabelText = null);
+    string? importedLabelText = null,
+    string? removeLabelText = null,
+    string? localizationLabelText = null
+);
 
 /// <summary>
 /// Model for a GitHub issue

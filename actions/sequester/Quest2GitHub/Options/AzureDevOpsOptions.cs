@@ -37,4 +37,16 @@ public sealed record class AzureDevOpsOptions
     /// </code>
     /// </remarks>
     public string AreaPath { get; init; } = null!;
+
+    /// <summary>
+    /// Gets the path that identifies the localization area for imported issues.
+    /// </summary>
+    /// <remarks>
+    /// Assign this from an environment variable with the following key, <c>ImportOptions__AzureDevOps__LocalizationAreaPath</c>:
+    /// <code>
+    /// env:
+    ///   ImportOptions__AzureDevOps__AreaPath: 'Localization'
+    /// </code>
+    /// </remarks>
+    public string LocalizationAreaPath { get; init; } = "Localization";
 }

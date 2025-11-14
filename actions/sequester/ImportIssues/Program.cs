@@ -111,17 +111,6 @@ internal class Program
         return new QuestGitHubService(
                 gitHubClient,
                 ospoClient,
-                options.ApiKeys.QuestKey,
-                options.AzureDevOps.Org,
-                options.AzureDevOps.Project,
-                options.AzureDevOps.AreaPath,
-                options.ImportTriggerLabel,
-                options.ImportedLabel,
-                options.UnlinkLabel,
-                options.ParentNodes,
-                options.DefaultParentNode,
-                options.WorkItemTags,
-                options.TeamGitHubLogins,
-                options.CopilotIssueTag);
+                options);
     }
 }
