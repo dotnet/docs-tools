@@ -9,12 +9,12 @@ namespace DotNet.DocsTools.GitHubObjects;
 /// <param name="NodeID">The node ID for the issue to close.</param>
 /// <param name="LabelID">The label ID (typically for a "won't fix" label) to add before closing.</param>
 /// <param name="CommentText">The comment text to add to the issue as a close message.</param>
-public readonly record struct CloseBankruptcyIssueVariables(string NodeID, string LabelID, string CommentText);
+public readonly record struct CloseIssueVariables(string NodeID, string? LabelID, string CommentText);
 
 /// <summary>
 /// Mutation to close an issue.
 /// </summary>
-public class CloseBankruptyIssueMutation : IGitHubMutation<CloseBankruptyIssueMutation, CloseBankruptcyIssueVariables>
+public class CloseIssueMutation : IGitHubMutation<CloseIssueMutation, CloseIssueVariables>
 {
     private const string mutationPacketText = """
         mutation AddLabels($nodeID: ID!, $labelIDs: [ID!]!, $commentText: String!) {
@@ -49,14 +49,14 @@ public class CloseBankruptyIssueMutation : IGitHubMutation<CloseBankruptyIssueMu
     /// </summary>
     /// <param name="variables">The variables that determines which issue to close.</param>
     /// <returns>The GraphQL packet object.</returns>
-    public static GraphQLPacket GetMutationPacket(CloseBankruptcyIssueVariables variables) =>
+    public static GraphQLPacket GetMutationPacket(CloseIssueVariables variables) =>
         new()
         {
             query = mutationPacketText,
             variables = 
             {
                 ["nodeID"] = variables.NodeID,
-                ["labelIDs"] = new[] { variables.LabelID },
+                ["labelIDs"] = variables.LabelID is not null ? [variables.LabelID] : Array.Empty<string>(),
                 ["commentText"] = variables.CommentText
             }
         };

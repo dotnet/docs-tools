@@ -183,12 +183,15 @@ public class QuestWorkItem
             });
         }
 
-        patchDocument.Add(new JsonPatchDocument
+        if (issueProperties.IterationPath != null)
         {
-            Operation = Op.Add,
-            Path = "/fields/System.IterationPath",
-            Value = issueProperties.IterationPath,
-        });
+            patchDocument.Add(new JsonPatchDocument
+            {
+                Operation = Op.Add,
+                Path = "/fields/System.IterationPath",
+                Value = issueProperties.IterationPath,
+            });
+        }
         if (issueProperties.StoryPoints != 0)
         {
             patchDocument.Add(new JsonPatchDocument
@@ -220,10 +223,8 @@ public class QuestWorkItem
                 Value = azDoTags
             });
         }
-        JsonElement result = default;
-        QuestWorkItem? newItem;
-        result = await questClient.CreateWorkItem(patchDocument);
-        newItem = WorkItemFromJson(result);
+        JsonElement result = await questClient.CreateWorkItem(patchDocument);
+        QuestWorkItem? newItem= WorkItemFromJson(result);
         return newItem;
     }
 

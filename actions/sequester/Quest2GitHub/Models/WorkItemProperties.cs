@@ -67,6 +67,21 @@ public class WorkItemProperties
         IssueLogString = $"GH sprint: {month}-{calendarYear}, size: {gitHubSize}, Iteration: {IterationPath}, State: {WorkItemState}";
     }
 
+    public WorkItemProperties(QuestIssueOrPullRequest issue, string localizationTag)
+    {
+        StoryPoints = 0;
+        Priority = -1;
+
+        WorkItemState = "New";
+        IterationPath = null;
+
+        ParentNodeId = 0;
+
+        Tags = [localizationTag];
+
+        IssueLogString = $"LocalizationIssue";
+    }
+
     /// <summary>
     /// The story points for the work item. 0 is not set.
     /// </summary>
@@ -98,7 +113,7 @@ public class WorkItemProperties
     /// <summary>
     /// The path to the iteration for this work item.
     /// </summary>
-    public string IterationPath { get; }
+    public string? IterationPath { get; }
 
     /// <summary>
     /// The parent node ID for this work item. 0 means no parent
