@@ -1,4 +1,5 @@
-﻿using System.Xml.XPath;
+﻿using System.Reflection.Emit;
+using System.Xml.XPath;
 using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
 using Org.BouncyCastle.Asn1.Ocsp;
@@ -82,7 +83,9 @@ public class QuestGitHubService(
                     QuestWorkItem? questItem = (request || sequestered || vanquished || localization)
                         ? await FindLinkedWorkItemAsync(item)
                         : null;
-                    var issueProperties = new WorkItemProperties(item, _allIterations, importOptions.WorkItemTags, importOptions.ParentNodes, importOptions.DefaultParentNode, importOptions.CopilotIssueTag);
+                    var issueProperties = (localization)
+                        ? new WorkItemProperties(item, importOptions.LocalizationTag)
+                        : new WorkItemProperties(item, _allIterations, importOptions.WorkItemTags, importOptions.ParentNodes, importOptions.DefaultParentNode, importOptions.CopilotIssueTag);
 
                     Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
                     Task workDone = (request, sequestered, vanquished, localization, questItem) switch
@@ -180,7 +183,9 @@ public class QuestGitHubService(
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
-        var issueProperties = new WorkItemProperties(ghIssue, _allIterations, importOptions.WorkItemTags, importOptions.ParentNodes, importOptions.DefaultParentNode, importOptions.CopilotIssueTag);
+        var issueProperties = (localization)
+                ? new WorkItemProperties(ghIssue, importOptions.LocalizationTag)
+                : new WorkItemProperties(ghIssue, _allIterations, importOptions.WorkItemTags, importOptions.ParentNodes, importOptions.DefaultParentNode, importOptions.CopilotIssueTag);
 
         Task workDone = (request, sequestered, vanquished, localization, questItem) switch
         {
@@ -308,34 +313,24 @@ public class QuestGitHubService(
 
     private async Task<QuestWorkItem> ImportLocalizationItemAsync(QuestIssueOrPullRequest issueOrPullRequest, WorkItemProperties issueProperties)
     {
+        // 6. Close the issue on GitHub side.
         int? workItem = LinkedQuestId(issueOrPullRequest);
         if (workItem is null)
         {
             // Create work item:
-            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, importOptions.AzureDevOps.AreaPath,
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, importOptions.AzureDevOps.LocalizationAreaPath,
                 _importTriggerLabel?.Id, issueProperties);
 
             string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
-            string updatedBody = $"""
-               {issueOrPullRequest.Body}
-
-               ---
+            string closingComment = $"""
+               This issue has been imported to the global localization team here:
                {linkText}
+
+               Closing this issue because it's been imported into the global localization system. The fix is not in this repository.
                """;
 
-            if (issueOrPullRequest is QuestIssue issue)
-            {
-                var issueMutation = new Mutation<SequesteredIssueMutation, SequesterVariables>(ghClient);
-                await issueMutation.PerformMutation(new SequesterVariables(issue.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
-            }
-            else if (issueOrPullRequest is QuestPullRequest pr)
-            {
-                var prMutation = new Mutation<SequesteredPullRequestMutation, SequesterVariables>(ghClient);
-                await prMutation.PerformMutation(new SequesterVariables(pr.Id, _importTriggerLabel?.Id ?? "", _importedLabel?.Id ?? "", updatedBody));
-            }
-
-            // Because some fields can't be set when an item is created, go through an update cycle:
-            await questItem.UpdateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties);
+            var closeIssueMutation = new Mutation<CloseIssueMutation, CloseIssueVariables>(ghClient);
+            await closeIssueMutation.PerformMutation(new CloseIssueVariables(issueOrPullRequest.Id, null, closingComment));
             return questItem;
         }
         else
