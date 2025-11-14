@@ -48,5 +48,5 @@ public sealed record class AzureDevOpsOptions
     ///   ImportOptions__AzureDevOps__AreaPath: 'Localization'
     /// </code>
     /// </remarks>
-    public string LocalizationAreaPath { get; init; } = null!;
+    public string LocalizationAreaPath { get; init; } = "Localization";
 }
