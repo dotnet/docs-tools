@@ -90,7 +90,7 @@ public class QuestGitHubService(
                     Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
                     Task workDone = (request, sequestered, vanquished, localization, questItem) switch
                     {
-                        (_, _, _, true, null) => ImportLocalizationItemAsync(item, issueProperties), // No link, but one of the link labels was applied.
+                        (_, _, _, true, null) => ImportLocalizationItemAsync(item, issueProperties),
                         (false, false, false, _,  _) => Task.CompletedTask, // No labels. Do nothing.
                         (_, _, true, _, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
                         (_, _, false, _, null) => LinkIssueAsync(item, issueProperties), // No link, but one of the link labels was applied.
