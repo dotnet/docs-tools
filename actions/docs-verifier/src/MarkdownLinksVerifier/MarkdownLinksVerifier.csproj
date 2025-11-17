@@ -1,21 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="Markdig" Version="0.43.0" />
+    <PackageReference Include="Markdig" />
   </ItemGroup>
-
   <ItemGroup>
     <InternalsVisibleTo Include="MarkdownLinksVerifier.UnitTests" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\BuildVerifier.IO.Abstractions\BuildVerifier.IO.Abstractions.csproj" />
   </ItemGroup>
-
 </Project>

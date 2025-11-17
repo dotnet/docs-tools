@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
@@ -7,7 +6,6 @@
     <Nullable>enable</Nullable>
     <RootNamespace>RepoMan</RootNamespace>
   </PropertyGroup>
-
   <!--
   <ItemGroup>
     <None Include="..\RepoMan\.repoman.yml" Link=".repoman.yml">
@@ -15,26 +13,23 @@
     </None>
   </ItemGroup>
   -->
-  
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
-    <PackageReference Include="Spectre.Console" Version="0.53.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0" />
-    <PackageReference Include="Octokit" Version="14.0.0" />
-    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Octokit" />
+    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="YamlDotNet" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\RepoMan\RepoMan.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update="state-issues-opened.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>
