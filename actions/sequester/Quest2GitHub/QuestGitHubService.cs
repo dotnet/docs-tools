@@ -90,12 +90,13 @@ public class QuestGitHubService(
                     Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
                     Task workDone = (request, sequestered, vanquished, localization, questItem) switch
                     {
-                        (_, _, _, true, null) => ImportLocalizationItemAsync(item, issueProperties),
-                        (false, false, false, _,  _) => Task.CompletedTask, // No labels. Do nothing.
-                        (_, _, true, _, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
-                        (_, _, false, _, null) => LinkIssueAsync(item, issueProperties), // No link, but one of the link labels was applied.
-                        (_, _, true, _, not null) => questItem.RemoveWorkItem(item, _azdoClient, issueProperties), // Unlink.
-                        (_, _, false, _, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties), // update
+                        (_,     _,     _,     true,  null) => ImportLocalizationItemAsync(item, issueProperties),
+                        (_,     _,     _,     true,  not null) => Task.CompletedTask, // Localization issue already linked. Do nothing.
+                        (false, false, false, false, _) => Task.CompletedTask, // No labels. Do nothing.
+                        (_,     _,     true,  false, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
+                        (_,     _,     false, false, null) => LinkIssueAsync(item, issueProperties), // No link, but one of the link labels was applied.
+                        (_,     _,     true,  false, not null) => questItem.RemoveWorkItem(item, _azdoClient, issueProperties), // Unlink.
+                        (_,     _,     false, false, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties), // update
                     };
                     totalImport++;
                     await workDone;
@@ -179,7 +180,7 @@ public class QuestGitHubService(
         bool vanquished = ghIssue.Labels.Any(l => l.Id == _removeLinkedItemLabel?.Id);
         bool localization = ghIssue.Labels.Any(l => l.Id == _locItemLabel?.Id);
         // Only query AzDo if needed:
-        QuestWorkItem? questItem = (request || sequestered || vanquished)
+        QuestWorkItem? questItem = (request || sequestered || vanquished || localization)
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
@@ -189,12 +190,13 @@ public class QuestGitHubService(
 
         Task workDone = (request, sequestered, vanquished, localization, questItem) switch
         {
-            (_, _, _, true, null) => ImportLocalizationItemAsync(ghIssue, issueProperties), // Localization issue
-            (false, false, false, _, _) => Task.CompletedTask, // No labels. Do nothing.
-            (    _,     _,  true, _, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
-            (    _,     _, false, _, null) => LinkIssueAsync(ghIssue, issueProperties), // No link, but one of the link labels was applied.
-            (    _,     _,  true, _, not null) => questItem.RemoveWorkItem(ghIssue, _azdoClient, issueProperties), // Unlink.
-            (    _,     _, false, _, not null) => questItem.UpdateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties), // update
+            (_,         _,     _, true,  null) => ImportLocalizationItemAsync(ghIssue, issueProperties), // Localization issue
+            (_,         _,     _, true,  not null) => Task.CompletedTask, // Localization issue already linked. Do nothing.
+            (false, false, false, false, _) => Task.CompletedTask, // No labels. Do nothing.
+            (    _,     _,  true, false, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
+            (    _,     _, false, false, null) => LinkIssueAsync(ghIssue, issueProperties), // No link, but one of the link labels was applied.
+            (    _,     _,  true, false, not null) => questItem.RemoveWorkItem(ghIssue, _azdoClient, issueProperties), // Unlink.
+            (    _,     _, false, false, not null) => questItem.UpdateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties), // update
         };
         await workDone;
     }
@@ -371,6 +373,20 @@ public class QuestGitHubService(
             int endIndex = issue.BodyHtml.IndexOf('<', startIndex);
             string idStr = issue.BodyHtml[startIndex..endIndex];
             return int.Parse(idStr);
+        }
+        foreach(var comment in issue.Comments)
+        {
+            if (comment.bodyHTML.Contains(LinkedWorkItemComment))
+            {
+                int startIndex = comment.bodyHTML.IndexOf(LinkedWorkItemComment) + LinkedWorkItemComment.Length;
+                int endIndex = comment.bodyHTML.IndexOf('<', startIndex);
+                if (endIndex == -1)
+                {
+                    endIndex = comment.bodyHTML.Length;
+                }
+                string idStr = comment.bodyHTML[startIndex..endIndex];
+                return int.Parse(idStr);
+            }
         }
         return null;
     }
