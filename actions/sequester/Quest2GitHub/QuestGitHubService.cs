@@ -1,4 +1,5 @@
-﻿using System.Xml.XPath;
+﻿using System.Reflection.Emit;
+using System.Xml.XPath;
 using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
 using Org.BouncyCastle.Asn1.Ocsp;
@@ -17,14 +18,7 @@ namespace Quest2GitHub;
 /// </remarks>
 /// <param name="ghClient">GitHub client</param>
 /// <param name="ospoClient">MS Open Source Programs Office client</param>
-/// <param name="azdoKey">Azure Dev Ops personal access token</param>
-/// <param name="questOrg">The Azure Dev ops organization</param>
-/// <param name="questProject">The Azure Dev ops project</param>
-/// <param name="areaPath">The area path for work items from this repo</param>
-/// <param name="importTriggerLabelText">The text of the label that triggers an import</param>
-/// <param name="importedLabelText">The text of the label that indicates an issue has been imported</param>
-/// <param name="removeLinkItemText">The text of the label that indicates an issue should be removed</param>
-/// <param name="parentNodes">A dictionary of label / parent ID pairs.</param>
+/// <param name="importOptions">A structure with the options for this run.</param>
 /// <remarks>
 /// The OAuth token takes precedence over the GitHub token, if both are 
 /// present.
@@ -32,27 +26,17 @@ namespace Quest2GitHub;
 public class QuestGitHubService(
     IGitHubClient ghClient,
     OspoClient? ospoClient,
-    string azdoKey,
-    string questOrg,
-    string questProject,
-    string areaPath,
-    string importTriggerLabelText,
-    string importedLabelText,
-    string removeLinkItemText,
-    List<ParentForLabel> parentNodes,
-    int defaultParentNodeId,
-    IEnumerable<LabelToTagMap> tagMap,
-    IEnumerable<string> gitHubLogins,
-    string copilotTag) : IDisposable
+    ImportOptions importOptions) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
-    private readonly QuestClient _azdoClient = new(azdoKey, questOrg, questProject);
+    private readonly QuestClient _azdoClient = new(importOptions.ApiKeys.QuestKey, importOptions.AzureDevOps.Org, importOptions.AzureDevOps.Project);
     private readonly OspoClient? _ospoClient = ospoClient;
-    private readonly string _questLinkString = $"https://dev.azure.com/{questOrg}/{questProject}/_workitems/edit/";
+    private readonly string _questLinkString = $"https://dev.azure.com/{importOptions.AzureDevOps.Org}/{importOptions.AzureDevOps.Project}/_workitems/edit/";
 
     private GitHubLabel? _importTriggerLabel;
     private GitHubLabel? _importedLabel;
     private GitHubLabel? _removeLinkedItemLabel;
+    private GitHubLabel? _locItemLabel;
     private QuestIteration[]? _allIterations;
 
     /// <summary>
@@ -64,7 +48,7 @@ public class QuestGitHubService(
     /// <returns></returns>
     public async Task ProcessIssues(string organization, string repository, int duration)
     {
-        if (_importTriggerLabel is null || _importedLabel is null  || _removeLinkedItemLabel is null)
+        if (_importTriggerLabel is null || _importedLabel is null  || _removeLinkedItemLabel is null || _locItemLabel is null)
         {
             await RetrieveLabelIdsAsync(organization, repository);
         }
@@ -94,20 +78,25 @@ public class QuestGitHubService(
                     bool request = item.Labels.Any(l => l.Id == _importTriggerLabel?.Id);
                     bool sequestered = item.Labels.Any(l => l.Id == _importedLabel?.Id);
                     bool vanquished = item.Labels.Any(l => l.Id == _removeLinkedItemLabel?.Id);
+                    bool localization = item.Labels.Any(l => l.Id == _locItemLabel?.Id);
                     // Only query AzDo if needed:
-                    QuestWorkItem? questItem = (request || sequestered || vanquished)
+                    QuestWorkItem? questItem = (request || sequestered || vanquished || localization)
                         ? await FindLinkedWorkItemAsync(item)
                         : null;
-                    var issueProperties = new WorkItemProperties(item, _allIterations, tagMap, parentNodes, defaultParentNodeId, copilotTag);
+                    var issueProperties = (localization)
+                        ? new WorkItemProperties(item, importOptions.LocalizationTag)
+                        : new WorkItemProperties(item, _allIterations, importOptions.WorkItemTags, importOptions.ParentNodes, importOptions.DefaultParentNode, importOptions.CopilotIssueTag);
 
                     Console.WriteLine($"{item.Number}: {item.Title}, {issueProperties.IssueLogString}");
-                    Task workDone = (request, sequestered, vanquished, questItem) switch
+                    Task workDone = (request, sequestered, vanquished, localization, questItem) switch
                     {
-                        (false, false, false, _) => Task.CompletedTask, // No labels. Do nothing.
-                        (_, _, true, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
-                        (_, _, false, null) => LinkIssueAsync(item, issueProperties), // No link, but one of the link labels was applied.
-                        (_, _, true, not null) => questItem.RemoveWorkItem(item, _azdoClient, issueProperties), // Unlink.
-                        (_, _, false, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, gitHubLogins, issueProperties), // update
+                        (_,     _,     _,     true,  null) => ImportLocalizationItemAsync(item, issueProperties),
+                        (_,     _,     _,     true,  not null) => Task.CompletedTask, // Localization issue already linked. Do nothing.
+                        (false, false, false, false, _) => Task.CompletedTask, // No labels. Do nothing.
+                        (_,     _,     true,  false, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
+                        (_,     _,     false, false, null) => LinkIssueAsync(item, issueProperties), // No link, but one of the link labels was applied.
+                        (_,     _,     true,  false, not null) => questItem.RemoveWorkItem(item, _azdoClient, issueProperties), // Unlink.
+                        (_,     _,     false, false, not null) => questItem.UpdateWorkItemAsync(item, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties), // update
                     };
                     totalImport++;
                     await workDone;
@@ -123,7 +112,12 @@ public class QuestGitHubService(
         async IAsyncEnumerable<QuestIssueOrPullRequest> QueryIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
         {
             var query = new EnumerationQuery<T, QuestIssueOrPullRequestVariables>(ghClient);
-            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, [], importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText));
+            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(
+                organization, repository, [],
+                importTriggerLabelText: importOptions.ImportTriggerLabel,
+                importedLabelText: importOptions.ImportedLabel,
+                removeLabelText:  importOptions.UnlinkLabel,
+                localizationLabelText: importOptions.LocalizationLabel));
             await foreach (QuestIssueOrPullRequest item in queryEnumerable)
             {
                 if (item.UpdatedAt < historyThreshold)
@@ -136,7 +130,11 @@ public class QuestGitHubService(
         async IAsyncEnumerable<QuestIssueOrPullRequest> QueryAllOpenIssuesOrPullRequests<T>() where T : QuestIssueOrPullRequest, IGitHubQueryResult<T, QuestIssueOrPullRequestVariables>
         {
             var query = new EnumerationQuery<T, QuestIssueOrPullRequestVariables>(ghClient);
-            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, ["OPEN"], importTriggerLabelText: importTriggerLabelText, importedLabelText: importedLabelText));
+            var queryEnumerable = query.PerformQuery(new QuestIssueOrPullRequestVariables(organization, repository, ["OPEN"],
+                importTriggerLabelText: importOptions.ImportTriggerLabel,
+                importedLabelText: importOptions.ImportedLabel,
+                removeLabelText: importOptions.UnlinkLabel,
+                localizationLabelText: importOptions.LocalizationLabel));
             await foreach (QuestIssueOrPullRequest item in queryEnumerable)
             {
                 yield return item;
@@ -180,20 +178,25 @@ public class QuestGitHubService(
         bool request = ghIssue.Labels.Any(l => l.Id == _importTriggerLabel?.Id);
         bool sequestered = ghIssue.Labels.Any(l => l.Id == _importedLabel?.Id);
         bool vanquished = ghIssue.Labels.Any(l => l.Id == _removeLinkedItemLabel?.Id);
+        bool localization = ghIssue.Labels.Any(l => l.Id == _locItemLabel?.Id);
         // Only query AzDo if needed:
-        QuestWorkItem? questItem = (request || sequestered || vanquished)
+        QuestWorkItem? questItem = (request || sequestered || vanquished || localization)
             ? await FindLinkedWorkItemAsync(ghIssue)
             : null;
 
-        var issueProperties = new WorkItemProperties(ghIssue, _allIterations, tagMap, parentNodes, defaultParentNodeId, copilotTag);
+        var issueProperties = (localization)
+                ? new WorkItemProperties(ghIssue, importOptions.LocalizationTag)
+                : new WorkItemProperties(ghIssue, _allIterations, importOptions.WorkItemTags, importOptions.ParentNodes, importOptions.DefaultParentNode, importOptions.CopilotIssueTag);
 
-        Task workDone = (request, sequestered, vanquished, questItem) switch
+        Task workDone = (request, sequestered, vanquished, localization, questItem) switch
         {
-            (false, false, false,        _) => Task.CompletedTask, // No labels. Do nothing.
-            (    _,     _,  true,     null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
-            (    _,     _, false,     null) => LinkIssueAsync(ghIssue, issueProperties), // No link, but one of the link labels was applied.
-            (    _,     _,  true, not null) => questItem.RemoveWorkItem(ghIssue, _azdoClient, issueProperties), // Unlink.
-            (    _,     _, false, not null) => questItem.UpdateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, gitHubLogins, issueProperties), // update
+            (_,         _,     _, true,  null) => ImportLocalizationItemAsync(ghIssue, issueProperties), // Localization issue
+            (_,         _,     _, true,  not null) => Task.CompletedTask, // Localization issue already linked. Do nothing.
+            (false, false, false, false, _) => Task.CompletedTask, // No labels. Do nothing.
+            (    _,     _,  true, false, null) => Task.CompletedTask, // Unlink, but no link. Do nothing.
+            (    _,     _, false, false, null) => LinkIssueAsync(ghIssue, issueProperties), // No link, but one of the link labels was applied.
+            (    _,     _,  true, false, not null) => questItem.RemoveWorkItem(ghIssue, _azdoClient, issueProperties), // Unlink.
+            (    _,     _, false, false, not null) => questItem.UpdateWorkItemAsync(ghIssue, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties), // update
         };
         await workDone;
     }
@@ -278,7 +281,7 @@ public class QuestGitHubService(
         if (workItem is null)
         {
             // Create work item:
-            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, areaPath,
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, importOptions.AzureDevOps.AreaPath,
                 _importTriggerLabel?.Id, issueProperties);
 
             string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
@@ -301,7 +304,7 @@ public class QuestGitHubService(
             }
 
             // Because some fields can't be set when an item is created, go through an update cycle:
-            await questItem.UpdateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, gitHubLogins, issueProperties);
+            await questItem.UpdateWorkItemAsync(issueOrPullRequest, _azdoClient, _ospoClient, importOptions.TeamGitHubLogins, issueProperties);
             return questItem;
         }
         else
@@ -310,15 +313,43 @@ public class QuestGitHubService(
         }
     }
 
+    private async Task<QuestWorkItem> ImportLocalizationItemAsync(QuestIssueOrPullRequest issueOrPullRequest, WorkItemProperties issueProperties)
+    {
+        // 6. Close the issue on GitHub side.
+        int? workItem = LinkedQuestId(issueOrPullRequest);
+        if (workItem is null)
+        {
+            // Create work item:
+            QuestWorkItem questItem = await QuestWorkItem.CreateWorkItemAsync(issueOrPullRequest, _azdoClient, importOptions.AzureDevOps.LocalizationAreaPath,
+                _importTriggerLabel?.Id, issueProperties);
+
+            string linkText = $"[{LinkedWorkItemComment}{questItem.Id}]({_questLinkString}{questItem.Id})";
+            string closingComment = $"""
+               This issue has been imported to the global localization team here:
+               {linkText}
+
+               Closing this issue because it's been imported into the global localization system. The fix is not in this repository.
+               """;
+
+            var closeIssueMutation = new Mutation<CloseIssueMutation, CloseIssueVariables>(ghClient);
+            await closeIssueMutation.PerformMutation(new CloseIssueVariables(issueOrPullRequest.Id, null, closingComment));
+            return questItem;
+        }
+        else
+        {
+            throw new InvalidOperationException("Issue already linked");
+        }
+    }
     private async Task RetrieveLabelIdsAsync(string org, string repo)
     {
         var labelQuery = new EnumerationQuery<GitHubLabel, FindLabelQueryVariables>(ghClient);
             
         await foreach (GitHubLabel label in labelQuery.PerformQuery(new FindLabelQueryVariables(org, repo, "")))
         {
-            if (label.Name == importTriggerLabelText) _importTriggerLabel = label;
-            if (label.Name == importedLabelText) _importedLabel = label;
-            if (label.Name == removeLinkItemText) _removeLinkedItemLabel = label;
+            if (label.Name == importOptions.ImportTriggerLabel) _importTriggerLabel = label;
+            if (label.Name == importOptions.ImportedLabel) _importedLabel = label;
+            if (label.Name == importOptions.UnlinkLabel) _removeLinkedItemLabel = label;
+            if (label.Name == importOptions.LocalizationLabel) _locItemLabel = label;
         }
     }
 
@@ -342,6 +373,20 @@ public class QuestGitHubService(
             int endIndex = issue.BodyHtml.IndexOf('<', startIndex);
             string idStr = issue.BodyHtml[startIndex..endIndex];
             return int.Parse(idStr);
+        }
+        foreach(var comment in issue.Comments)
+        {
+            if (comment.bodyHTML.Contains(LinkedWorkItemComment))
+            {
+                int startIndex = comment.bodyHTML.IndexOf(LinkedWorkItemComment) + LinkedWorkItemComment.Length;
+                int endIndex = comment.bodyHTML.IndexOf('<', startIndex);
+                if (endIndex == -1)
+                {
+                    endIndex = comment.bodyHTML.Length;
+                }
+                string idStr = comment.bodyHTML[startIndex..endIndex];
+                return int.Parse(idStr);
+            }
         }
         return null;
     }

@@ -593,6 +593,41 @@ public class BuildExtendedPropertiesTests
     }        
     """;
 
+    private const string LocalizationIssue = $$"""
+    {
+      "id": "I_kwDOFn2dfM6YkX0J",
+      "number": 1111,
+      "title": "This is an issue",
+      "state": "OPEN",
+      "author": {
+        "login": "BillWagner",
+        "name": "Bill Wagner"
+      },
+      "timelineItems": {
+        "nodes": []
+      },
+      "projectItems": {
+        "nodes": []
+      },
+      "bodyHTML": "<p dir=\"auto\">This is a bad, bad, translation.</p>",
+      "body": "This is a bad, bad, translation.",
+      "assignees": {
+        "nodes": []
+      },
+      "labels": {
+        "nodes": [
+          {
+            "name": "loc",
+            "id": "LO_kwDOFn2dfM8AAAABK0cMjA"
+          }
+        ]
+      },
+      "comments": {
+        "nodes": []
+      }
+    }        
+    """;
+
     [Fact]
     public static void BuildExtensionForFutureProject()
     {
@@ -731,7 +766,20 @@ public class BuildExtendedPropertiesTests
         Assert.Equal(11 , extendedProperties.ParentNodeId);
     }
 
-    private static WorkItemProperties CreateIssueObject(string jsonDocument)
+    [Fact]
+    public static void BuildExtensionForLocalizationIssue()
+    {
+        var extendedProperties = CreateIssueObject(LocalizationIssue, true);
+
+        // Check each property:
+        Assert.Equal(0, extendedProperties.StoryPoints);
+        Assert.Equal(-1, extendedProperties.Priority);
+        Assert.Null(extendedProperties.IterationPath);
+        Assert.Equal("New", extendedProperties.WorkItemState);
+        Assert.Equal(0, extendedProperties.ParentNodeId);
+    }
+
+    private static WorkItemProperties CreateIssueObject(string jsonDocument, bool isLocalization = false)
     {
         var variables = new QuestIssueOrPullRequestVariables
         {
@@ -740,7 +788,9 @@ public class BuildExtendedPropertiesTests
             issueNumber = 1111
         };
         JsonElement element = JsonDocument.Parse(jsonDocument).RootElement;
-        return new WorkItemProperties(QuestIssue.FromJsonElement(element, variables), _allIterations, _tagMap, _parentMap, _defaultParentId, "copilotTag");
+        return (isLocalization)
+            ? new WorkItemProperties(QuestIssue.FromJsonElement(element, variables), "loc")
+            : new WorkItemProperties(QuestIssue.FromJsonElement(element, variables), _allIterations, _tagMap, _parentMap, _defaultParentId, "copilotTag");
     }
 
 }

@@ -15,7 +15,7 @@ public sealed record class ImportOptions
     /// The various API keys required to perform the import 
     /// operation from GitHub to the Quest (Azure DevOps).
     /// </summary>
-    public ApiKeys? ApiKeys { get; init; }
+    public ApiKeys ApiKeys { get; init; } = null!;
 
     /// <summary>
     /// The label used to query for issues that need to be imported. 
@@ -51,6 +51,7 @@ public sealed record class ImportOptions
     /// The label used to indicate that a previously linked issue should be removed
     /// from Azure Devops.  Defaults to <c>💣 vanQUEST</c>.
     /// </summary>
+    /// <remarks>
     /// Assign this from an environment variable with the following key, <c>ImportOptions__UnlinkLabel</c>:
     /// <code>
     /// env:  # Defaults to '💣 vanQUEST'
@@ -60,6 +61,21 @@ public sealed record class ImportOptions
     /// <a href="https://github.com/ikatyang/emoji-cheat-sheet"></a>
     /// </remarks>
     public string UnlinkLabel { get; init; } = ":bomb: vanQUEST";
+
+    /// <summary>
+    /// The label used to indicate that this issue is a localization issue and
+    /// should be imported into the localization area path. Defaults to <c>loc</c>.
+    /// </summary>
+    /// <remarks>
+    /// Assign this from an environment variable with the following key, <c>ImportOptions__LocalizationLabel</c>:
+    /// <code>
+    /// env:  # Defaults to 'loc'
+    ///   ImportOptions__LocalizationLabel: 'loc'
+    /// </code>
+    /// If your label has an emoji in it, you must specify this using the GitHub emoji colon syntax:
+    /// <a href="https://github.com/ikatyang/emoji-cheat-sheet"></a>
+    /// </remarks>
+    public string LocalizationLabel { get; init; } = "loc";
 
     /// <summary>
     /// The set of labels where specific parent nodes should be used.
@@ -119,4 +135,9 @@ public sealed record class ImportOptions
     /// the toil of the work.
     /// </remarks>
     public string CopilotIssueTag { get; init; } = "Assignee-Copilot";
+
+    /// <summary>
+    /// This tag is added to issues that are localization issues.
+    /// </summary>
+    public string LocalizationTag {  get; init; } = "Localization";
 }

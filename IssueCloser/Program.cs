@@ -12,10 +12,10 @@ class Program
 {
     private const string ConfigFile = "bulkcloseconfig.json";
     // shoag, rpetrusha worked with us, but have retired:
-    private static readonly string[] teamAuthors = new string[] { "shoag", "rpetrusha" };
+    private static readonly string[] teamAuthors = ["shoag", "rpetrusha"];
 
     // The text of the comment to add:
-    private static string commentText =
+    private const string commentText =
 @"This issue has been closed as part of the issue backlog grooming process outlined in #22351.
 
 That automated process may have closed some issues that should be addressed. If you think this is one of them, reopen it with a comment explaining why. Tag the `@dotnet/docs` team for visibility.";
@@ -122,8 +122,8 @@ That automated process may have closed some issues that should be addressed. If 
         Console.WriteLine($"\tAdding [won't fix] label.");
         Console.WriteLine($"\tAdding Closing comment.");
         Console.WriteLine($"\tClosing issue.");
-        var closeIssueMutation = new Mutation<CloseBankruptyIssueMutation, CloseBankruptcyIssueVariables>(client);
-        await closeIssueMutation.PerformMutation(new CloseBankruptcyIssueVariables(issueID, labelID, commentText));
+        var closeIssueMutation = new Mutation<CloseIssueMutation, CloseIssueVariables>(client);
+        await closeIssueMutation.PerformMutation(new CloseIssueVariables(issueID, labelID, commentText));
     }
 
     private static async Task<Dictionary<CloseCriteria, IssueSet>> BuildStatsMapAsync()
