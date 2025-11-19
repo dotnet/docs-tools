@@ -14,7 +14,11 @@ Once installed, this workflow does the following:
 To install the GitHub actions:
 
 1. ***Add the trigger labels***
-   - You'll need to add two labels: one that informs the action to import an issue from GitHub to Quest. The second informs you that an issue has been imported.
+   - You'll need to add four labels:
+     - The first informs the action to import an issue from GitHub to Quest, typically "reQuest".
+     - The second informs you that an issue has been imported, typically "seQuestered.
+     - The third informs the action that an imported issues should be removed, typically "vanQuished".
+     - The fourth identifies an issue as a translation bug, typically "loc".
 1. ***Add a `quest-config.json` file***
    - In the root folder of your repo, create a config file that contains the keys shown [later in this document](#configure-consuming-github-action-workflow). In most cases, you'll modify the Azure DevOps area path, and trigger labels.
 1. ***Add the `quest.yml` and `quest-bulk.yml` action workflow files***
@@ -43,7 +47,6 @@ To minimize having all the runs hit REST APIs at the same time, the action confi
 
 | Repository      | Time (UTC)  |
 |-----------------|-------------|
-| docs-maui       | 02:00       |
 | docs-aspire     | 04:00       |
 | docs-tools      | 05:30       |
 | docs            | 07:00       |
@@ -68,56 +71,31 @@ The consuming repository would ideally define the config file. As an example, it
 
 ```json
 {
-  "AzureDevOps": {
-    "Org": "msft-skilling",
-    "Project": "Content",
-    "AreaPath": "Production\\Digital and App Innovation\\DotNet and more\\dotnet"
-  },
-  "ImportTriggerLabel": ":world_map: reQUEST",
-  "ImportedLabel": ":pushpin: seQUESTered",
-  "ParentNodes": [
-    {
-      "Semester": "Selenium",
-      "Label": "okr-freshness",
-      "ParentNodeId": 286034
+    "AzureDevOps": {
+        "Org": "msft-skilling",
+        "Project": "Content",
+        "AreaPath": "Production\\Core AI\\DotNet and more\\dotnet"
     },
-    {
-      "Semester": "Selenium",
-      "ParentNodeId": 308199
-    },
-    {
-      "Semester": "Dilithium",
-       "Label": "okr-freshness",
-       "ParentNodeId": 237266
-    },
-    {
-      "Semester": "Dilithium",
-      "ParentNodeId": 227485
-    }
-  ],
-  "DefaultParentNode": 308199,
-  "WorkItemTags": [
-    {
-      "Label": ":checkered_flag: Release: .NET 9",
-      "Tag": "new-feature"
-    },
-    {
-      "Label": ":checkered_flag: Release: .NET 9",
-      "Tag": "major-updates"
-    },
-    {
-     "Label": "okr-curation",
-      "Tag": "content-curation"
-    },
-    {
-      "Label": ":world_map: reQUEST",
-      "Tag" : "GitHub"
-    },
-    {
-      "Label": ":pushpin: seQUESTered",
-      "Tag" : "GitHub"
-    }
-  ]
+    "ImportTriggerLabel": ":world_map: reQUEST",
+    "ImportedLabel": ":pushpin: seQUESTered",
+    "LocalizationLabel" : "loc",
+    "ParentNodes": [
+        {
+            "Label": "dotnet-csharp/svc",
+            "ParentNodeId": 410745
+        }
+    ],
+    "DefaultParentNode": 410746,
+    "WorkItemTags": [
+        {
+            "Label": ":checkered_flag: Release: .NET 10",
+            "Tag": "new-feature"
+        },
+        {
+            "Label": "okr-curation",
+            "Tag": "content-curation"
+        }
+    ]
 }
 ```
 
