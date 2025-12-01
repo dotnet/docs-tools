@@ -9,7 +9,7 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="GitHubJwt" Version="0.0.6" />
     <PackageVersion Include="JmesPath.Net" Version="1.0.330" />
-    <PackageVersion Include="Markdig" Version="0.43.0" />
+    <PackageVersion Include="Markdig" Version="0.44.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.WorkerService" Version="2.23.0" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker" Version="2.51.0" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="2.50.0" />
