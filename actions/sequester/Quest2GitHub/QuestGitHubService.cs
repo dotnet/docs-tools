@@ -73,7 +73,9 @@ public class QuestGitHubService(
         {
             await foreach (QuestIssueOrPullRequest item in items)
             {
-                if (item.Labels.Any(l => (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id) || (l.Id == _removeLinkedItemLabel?.Id)))
+                if (item.Labels.Any(l =>
+                (l.Id == _importTriggerLabel?.Id) || (l.Id == _importedLabel?.Id) ||
+                (l.Id == _removeLinkedItemLabel?.Id) || l.Id == _locItemLabel?.Id))
                 {
                     bool request = item.Labels.Any(l => l.Id == _importTriggerLabel?.Id);
                     bool sequestered = item.Labels.Any(l => l.Id == _importedLabel?.Id);

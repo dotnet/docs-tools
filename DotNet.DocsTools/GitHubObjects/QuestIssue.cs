@@ -32,7 +32,9 @@ public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssu
                     ["questlabels"] = new string[]
                     {
                         variables.importTriggerLabelText ?? throw new ArgumentException("The import trigger label can't be null"),
-                        variables.importedLabelText ?? throw new ArgumentException("The imported label can't be null")
+                        variables.importedLabelText ?? throw new ArgumentException("The imported label can't be null"),
+                        variables.removeLabelText ?? throw new ArgumentException("The remove label can't be null"),
+                        variables.localizationLabelText ?? throw new ArgumentException("The localization label can't be null")
                     }
                 }
         };
