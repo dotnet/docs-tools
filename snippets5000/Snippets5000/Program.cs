@@ -228,7 +228,7 @@ class Program
             }
 
             // Config not found, try and peek at the project to see if it's framework
-            else if (!projectPath.EndsWith("sln", StringComparison.OrdinalIgnoreCase)) // Not doing slnx here because you can't fell from that type of file
+            else if (!projectPath.EndsWith("sln", StringComparison.OrdinalIgnoreCase)) // Not doing slnx here because you can't tell from that type of file
             {
                 string firstLine = File.ReadLines(projectPath).First();
 
