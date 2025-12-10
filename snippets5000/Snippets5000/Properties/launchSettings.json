@@ -4,20 +4,20 @@
       "commandName": "Project",
       "commandLineArgs": "--sourcepath C:\\Users\\adegeo\\code\\dotnet-api-docs --owner dotnet --repo dotnet-api-docs --pullrequest 11502",
       "environmentVariables": {
-        "ExtensionsProjs": ".csproj;.fsproj;.vbproj;.vcxproj;.sln",
+            "ExtensionsProjs": ".csproj;.fsproj;.vbproj;.vcxproj;.sln;.slnx",
         "ExtensionsCodeTriggers": ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml",
         "FileTriggers": "global.json;snippets.5000.json",
-        "VS_DEVCMD": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat"
+            "VS_DEVCMD": "C:\\Program Files\\Microsoft Visual Studio\\2026\\Community\\Common7\\Tools\\VsDevCmd.bat"
       }
     },
     "Test via Local Tests": {
       "commandName": "Project",
-      "commandLineArgs": "--dryrun-test-id \"Edit - Solution found, no project\" --sourcepath C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations --owner nah --repo nah --pullrequest 1 --dryrun-test-data-file C:\\code\\Work\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations\\data.json",
+        "commandLineArgs": "--dryrun-test-id \"Edit - Solution found, no project\" --sourcepath C:\\Users\\adegeo\\code\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations --owner nah --repo nah --pullrequest 1 --dryrun-test-data-file C:\\Users\\adegeo\\code\\dotnet\\docs-tools\\snippets5000\\PullRequestSimulations\\data.json",
       "environmentVariables": {
-        "ExtensionsProjs": ".csproj;.fsproj;.vbproj;.vcxproj;.sln",
+            "ExtensionsProjs": ".csproj;.fsproj;.vbproj;.vcxproj;.sln;slnx",
         "ExtensionsCodeTriggers": ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml",
         "FileTriggers": "global.json;snippets.5000.json",
-        "VS_DEVCMD": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat"
+            "VS_DEVCMD": "C:\\Program Files\\Microsoft Visual Studio\\2026\\Community\\Common7\\Tools\\VsDevCmd.bat"
       }
     }
   }

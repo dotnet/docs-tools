@@ -8,7 +8,7 @@ internal class FullBuildProjectList
 
     internal IEnumerable<string> GenerateBuildList()
     {
-        var solutions = findBuildProjects(_rootDir, "*.sln");
+        var solutions = findBuildProjects(_rootDir, "*.sln").Concat(findBuildProjects(_rootDir, "*.slnx"));
         foreach (var solution in solutions)
             yield return solution;
 
