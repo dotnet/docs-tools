@@ -87,8 +87,12 @@ internal class PullRequestProcessor
         List<string> projectsFound = new List<string>();
 
         // Special exit for solution deleted. Any artifacts left over should be caught by the other checks
-        if (itemWasDeleted && Path.GetExtension(itemFileName).Equals(".sln", StringComparison.OrdinalIgnoreCase))
+        if (itemWasDeleted
+            && (Path.GetExtension(itemFileName).Equals(".sln", StringComparison.OrdinalIgnoreCase)
+                || Path.GetExtension(itemFileName).Equals(".slnx", StringComparison.OrdinalIgnoreCase)))
+        {
             return null;
+        }
 
         // Check for the project/solution to test with was found
         FindProjectOrSolution(rootDir, itemPath, itemWasDeleted, out string? project, out int countOfSln, out int countOfProjs, out int countOfCode, out int countOfSpecial, ref projectsFound);
@@ -175,7 +179,7 @@ internal class PullRequestProcessor
         {
             // If project is solution, we need to discover any other projects under it, since this is file
             // overrides a project file.
-            if (project.EndsWith(".sln"))
+            if (project.EndsWith(".sln") || project.EndsWith(".slnx"))
             {
                 itemDirectory = Path.GetDirectoryName(project)!;
                 string? discardString = "";
@@ -208,7 +212,7 @@ internal class PullRequestProcessor
             string ext = Path.GetExtension(file);
 
             // If solution file
-            if (ext.Equals(".sln", StringComparison.OrdinalIgnoreCase))
+            if (ext.Equals(".sln", StringComparison.OrdinalIgnoreCase) || ext.Equals(".slnx", StringComparison.OrdinalIgnoreCase))
             {
                 countOfSln++;
 

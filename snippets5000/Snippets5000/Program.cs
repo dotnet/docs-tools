@@ -31,8 +31,8 @@ class Program
     public const string ENV_EXTENSIONS_CODE_TRIGGERS_NAME = "ExtensionsCodeTriggers";
     public const string ENV_FILE_TRIGGERS_NAME = "FileTriggers";
 
-    public const string ENV_EXTENSIONS_PROJECTS_DEFAULT = ".sln;.csproj;.fsproj;.vbproj;.vcxproj;.proj";
-    public const string ENV_EXTENSIONS_CODE_TRIGGERS_DEFAULT = ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml;.sln;.csproj;.fsproj;.vbproj;.vcxproj;.proj";
+    public const string ENV_EXTENSIONS_PROJECTS_DEFAULT = ".sln;.slnx;.csproj;.fsproj;.vbproj;.vcxproj;.proj";
+    public const string ENV_EXTENSIONS_CODE_TRIGGERS_DEFAULT = ".cs;.vb;.fs;.cpp;.h;.xaml;.razor;.cshtml;.vbhtml;.sln;.slnx;.csproj;.fsproj;.vbproj;.vcxproj;.proj";
     public const string ENV_FILE_TRIGGERS_DEFAULT = "global.json;snippets.5000.json";
 
     /// <summary>
@@ -228,7 +228,7 @@ class Program
             }
 
             // Config not found, try and peek at the project to see if it's framework
-            else if (!projectPath.EndsWith("sln", StringComparison.OrdinalIgnoreCase))
+            else if (!projectPath.EndsWith("sln", StringComparison.OrdinalIgnoreCase)) // Not doing slnx here because you can't tell from that type of file
             {
                 string firstLine = File.ReadLines(projectPath).First();
 
@@ -271,7 +271,7 @@ class Program
                     foreach (var key in expansionVariables.Keys)
                         config.Command = config.Command.Replace($"{{{key}}}", expansionVariables[key]);
 
-                    await File.WriteAllTextAsync(FANCY_BATCH_FILENAME, $"dotnet build \"{projectPath}\"");
+                    await File.WriteAllTextAsync(FANCY_BATCH_FILENAME, config.Command);
                 }
                 else
                 {
