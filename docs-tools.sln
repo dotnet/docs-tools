@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.4.33205.214
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11312.151 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanRepo", "cleanrepo\CleanRepo.csproj", "{2BBD8090-3B66-4B57-807E-3A5BC41CC5A9}"
 EndProject
@@ -32,12 +32,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IssueCloser", "IssueCloser\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoMan", "RepoMan\RepoMan.csproj", "{009B6BA3-57A5-4CED-8922-96E469A5D247}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhatsNew.Cli", "WhatsNew.Cli\WhatsNew.Cli.csproj", "{D8BFE1AD-8E06-4E7D-A401-C1A08BC7B3D3}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhatsNew.Infrastructure", "WhatsNew.Infrastructure\WhatsNew.Infrastructure.csproj", "{32475754-07EC-4D83-9094-90907BF715B4}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WhatsNew.Infrastructure.Tests", "WhatsNew.Infrastructure.Tests\WhatsNew.Infrastructure.Tests.csproj", "{1FE286F4-8231-4658-BB6A-E63AF22DDBB4}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotnetDocsTools.Tests", "DotnetDocsToolsTests\DotnetDocsTools.Tests.csproj", "{DCA6CCA3-423E-43A8-8D41-A54837E63F48}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AB0D9824-FE64-4EC3-8F0B-950B68D135C4}"
@@ -47,6 +41,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.github\workflows\build-docs-verifier.yml = .github\workflows\build-docs-verifier.yml
 		CODE-OF-CONDUCT.md = CODE-OF-CONDUCT.md
 		.github\workflows\codeql-analysis.yml = .github\workflows\codeql-analysis.yml
+		Directory.Packages.props = Directory.Packages.props
 		.github\workflows\dogfood.yml = .github\workflows\dogfood.yml
 		.github\workflows\dotnet-build-validation.yml = .github\workflows\dotnet-build-validation.yml
 		LICENSE = LICENSE
@@ -59,7 +54,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		sequester.Dockerfile = sequester.Dockerfile
 		ThirdPartyNotices.md = ThirdPartyNotices.md
 		whatsnew.Dockerfile = whatsnew.Dockerfile
-		Directory.Packages.props = Directory.Packages.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snippets5000", "snippets5000\Snippets5000\Snippets5000.csproj", "{713E0DB5-FF4C-415A-A3CC-42FCDC5BB307}"
@@ -134,18 +128,6 @@ Global
 		{009B6BA3-57A5-4CED-8922-96E469A5D247}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{009B6BA3-57A5-4CED-8922-96E469A5D247}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{009B6BA3-57A5-4CED-8922-96E469A5D247}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D8BFE1AD-8E06-4E7D-A401-C1A08BC7B3D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D8BFE1AD-8E06-4E7D-A401-C1A08BC7B3D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D8BFE1AD-8E06-4E7D-A401-C1A08BC7B3D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D8BFE1AD-8E06-4E7D-A401-C1A08BC7B3D3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{32475754-07EC-4D83-9094-90907BF715B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{32475754-07EC-4D83-9094-90907BF715B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{32475754-07EC-4D83-9094-90907BF715B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{32475754-07EC-4D83-9094-90907BF715B4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1FE286F4-8231-4658-BB6A-E63AF22DDBB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1FE286F4-8231-4658-BB6A-E63AF22DDBB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1FE286F4-8231-4658-BB6A-E63AF22DDBB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1FE286F4-8231-4658-BB6A-E63AF22DDBB4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DCA6CCA3-423E-43A8-8D41-A54837E63F48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DCA6CCA3-423E-43A8-8D41-A54837E63F48}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCA6CCA3-423E-43A8-8D41-A54837E63F48}.Release|Any CPU.ActiveCfg = Release|Any CPU
