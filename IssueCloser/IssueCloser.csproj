@@ -16,7 +16,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.CommandLine.DragonFruit" />
+    <PackageReference Include="System.CommandLine" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNet.DocsTools\DotNet.DocsTools.csproj" />

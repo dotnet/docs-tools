@@ -1,10 +1,12 @@
-﻿using DotNetDocs.Tools.Utility;
+﻿using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using DotNet.DocsTools.Utility;
+using DotNetDocs.Tools.Utility;
 using static Snippets5000.SnippetsConfigFile;
 using Log = DotNet.DocsTools.Utility.EchoLogging;
-using DotNet.DocsTools.Utility;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("PullRequestSimulations")]
 
@@ -38,15 +40,11 @@ class Program
     /// <summary>
     /// LocateProjects: Find all projects and solutions requiring a build.
     /// </summary>
-    /// <param name="sourcepath">The directory containing the local source tree.</param>
-    /// <param name="pullrequest">If available, the number of the pull request being built.</param>
-    /// <param name="owner">If available, the owner organization of the repository.</param>
-    /// <param name="repo">If available, the name of the repository.</param>
-    /// <param name="dryrunTestId">The test id from data.json to simulate a pull request.</param>
-    /// <param name="dryrunTestDataFile">The json file defining all the tests that can be referenced by <paramref name="dryrunTestId"/>. Usually data.json.</param>
     /// <returns>0 on success. Otherwise, a non-zero error code.</returns>
-    static async Task<int> Main(string sourcepath, int? pullrequest = default, string? owner=default, string? repo=default, string? dryrunTestId=default, string? dryrunTestDataFile=default)
+    static async Task<int> Main(string[] args)
     {
+        var (sourcepath, pullrequest, owner, repo, dryrunTestId, dryrunTestDataFile) = ParseArguments(args);
+
         int exitCode = EXITCODE_GOOD;
         string appStartupFolder = Directory.GetCurrentDirectory();
 
@@ -70,7 +68,7 @@ class Program
 
             // NOT a normal github PR and instead is a test
             else if (string.IsNullOrEmpty(dryrunTestDataFile))
-                throw new ArgumentNullException(nameof(dryrunTestDataFile), "The dryrun Test DataFile must be set");
+                throw new InvalidOperationException($"{nameof(dryrunTestDataFile)}: The dryrun Test DataFile must be set");
             else
                 projects = new TestingProjectList(dryrunTestId, dryrunTestDataFile, sourcepath).GenerateBuildList().ToList();
 
@@ -458,5 +456,63 @@ class Program
                 config.RunConsideredGood = errorsSkipped == config.DetectedBuildErrors.Count;
             }
         }
+    }
+
+    private static (string sourcepath, int? pullrequest, string? owner, string? repo, string? dryrunTestId, string? dryrunTestDataFile) ParseArguments(string[] args)
+    {
+        Option<string> sourcePathOption = new("--sourcepath")
+        {
+            Description = "The directory containing the local source tree."
+        };
+        Option<int?> pullrequestOption = new("--pullrequest")
+        {
+            Description = "If available, the number of the pull request being built.",
+            DefaultValueFactory = parseResult => null
+        };
+        Option<string?> ownerOption = new("--owner")
+        {
+            Description = "If available, the owner organization of the repository.",
+            DefaultValueFactory = parseResult => null
+        };
+        Option<string?> repoOption = new("--repo")
+        {
+            Description = "If available, the name of the repository.",
+            DefaultValueFactory = parseResult => null
+        };
+        Option<string?> dryrunTestIdOption = new("--dryrun-test-id")
+        {
+            Description = "The test id from data.json to simulate a pull request.",
+            DefaultValueFactory = parseResult => null
+        };
+        Option<string?> dryrunTestDataFileOption = new("--dryrun-test-data-file")
+        {
+            Description = "The json file defining all the tests that can be referenced by `dryrunTestId`. Usually data.json.",
+            DefaultValueFactory = parseResult => null
+        };
+        RootCommand rootCommand = new("Snippets5000 CI build application.");
+
+        rootCommand.Options.Add(sourcePathOption);
+        rootCommand.Options.Add(pullrequestOption);
+        rootCommand.Options.Add(ownerOption);
+        rootCommand.Options.Add(repoOption);
+        rootCommand.Options.Add(dryrunTestIdOption);
+        rootCommand.Options.Add(dryrunTestDataFileOption);
+
+        ParseResult result = rootCommand.Parse(args);
+        foreach (ParseError parseError in result.Errors)
+        {
+            Console.Error.WriteLine(parseError.Message);
+        }
+        if (result.Errors.Count > 0)
+        {
+            throw new InvalidOperationException("Invalid command line.");
+        }
+        var sourcepath = result.GetValue(sourcePathOption) ?? throw new InvalidOperationException("organization is null");
+        var pullrequest = result.GetValue(pullrequestOption);
+        var owner = result.GetValue(ownerOption);
+        var repo = result.GetValue(repoOption);
+        var dryrunTestId = result.GetValue(dryrunTestIdOption);
+        var dryrunTestDataFile = result.GetValue(dryrunTestDataFileOption);
+        return (sourcepath, pullrequest, owner, repo, dryrunTestId, dryrunTestDataFile);
     }
 }
