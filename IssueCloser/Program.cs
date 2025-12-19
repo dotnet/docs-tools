@@ -17,39 +17,7 @@ const string commentText =
 
 That automated process may have closed some issues that should be addressed. If you think this is one of them, reopen it with a comment explaining why. Tag the `@dotnet/docs` team for visibility.";
 
-Option<string> organizationOption = new ("--organization")
-{
-    Description = "The GitHub organization for the target repository.",
-    DefaultValueFactory = parseResult => "dotnet"
-};
-Option<string> repositoryOption = new ("--repository")
-{
-    Description = "The GitHub target repository.",
-    DefaultValueFactory = parseResult => "docs"
-};
-Option<bool> dryRunOption = new("--dryRun")
-{
-    Description = "Flag to specify a dry run (no issues will be closed).",
-    DefaultValueFactory = parseResult => false
-};
-RootCommand rootCommand = new("Issue Closer application.");
-
-rootCommand.Options.Add(organizationOption);
-rootCommand.Options.Add(repositoryOption);
-rootCommand.Options.Add(dryRunOption);
-
-ParseResult result = rootCommand.Parse(args);
-foreach (ParseError parseError in result.Errors)
-{
-    Console.Error.WriteLine(parseError.Message);
-}
-if (result.Errors.Count > 0)
-{
-    return 1;
-}
-var organization = result.GetValue(repositoryOption) ?? throw new InvalidOperationException("organization is null");
-var repository = result.GetValue(repositoryOption) ?? throw new InvalidOperationException("repository is null");
-var dryRun = result.GetValue(dryRunOption);
+var (organization, repository, dryRun) = ParseArguments(args);
 
 var key = CommandLineUtility.GetEnvVariable("GitHubBotKey",
 "You must store the bot's GitHub key in the 'GitHubBotKey' environment variable",
@@ -185,4 +153,42 @@ static bool IsDocsIssue(string? body)
     return (body != null) && body.Contains(header1) &&
         body.Contains(header2) &&
         body.Contains(header3);
+}
+
+static (string organization, string repository, bool dryRun) ParseArguments(string[] args)
+{
+    Option<string> organizationOption = new("--organization")
+    {
+        Description = "The GitHub organization for the target repository.",
+        DefaultValueFactory = parseResult => "dotnet"
+    };
+    Option<string> repositoryOption = new("--repository")
+    {
+        Description = "The GitHub target repository.",
+        DefaultValueFactory = parseResult => "docs"
+    };
+    Option<bool> dryRunOption = new("--dryRun")
+    {
+        Description = "Flag to specify a dry run (no issues will be closed).",
+        DefaultValueFactory = parseResult => false
+    };
+    RootCommand rootCommand = new("Issue Closer application.");
+
+    rootCommand.Options.Add(organizationOption);
+    rootCommand.Options.Add(repositoryOption);
+    rootCommand.Options.Add(dryRunOption);
+
+    ParseResult result = rootCommand.Parse(args);
+    foreach (ParseError parseError in result.Errors)
+    {
+        Console.Error.WriteLine(parseError.Message);
+    }
+    if (result.Errors.Count > 0)
+    {
+        throw new InvalidOperationException("Invalid command line.");
+    }
+    var organization = result.GetValue(repositoryOption) ?? throw new InvalidOperationException("organization is null");
+    var repository = result.GetValue(repositoryOption) ?? throw new InvalidOperationException("repository is null");
+    var dryRun = result.GetValue(dryRunOption);
+    return (organization, repository, dryRun);
 }
