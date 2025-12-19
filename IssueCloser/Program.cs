@@ -187,7 +187,7 @@ static (string organization, string repository, bool dryRun) ParseArguments(stri
     {
         throw new InvalidOperationException("Invalid command line.");
     }
-    var organization = result.GetValue(repositoryOption) ?? throw new InvalidOperationException("organization is null");
+    var organization = result.GetValue(organizationOption) ?? throw new InvalidOperationException("organization is null");
     var repository = result.GetValue(repositoryOption) ?? throw new InvalidOperationException("repository is null");
     var dryRun = result.GetValue(dryRunOption);
     return (organization, repository, dryRun);
