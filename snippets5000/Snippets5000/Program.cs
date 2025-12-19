@@ -44,6 +44,7 @@ class Program
     static async Task<int> Main(string[] args)
     {
         var (sourcepath, pullrequest, owner, repo, dryrunTestId, dryrunTestDataFile) = ParseArguments(args);
+
         int exitCode = EXITCODE_GOOD;
         string appStartupFolder = Directory.GetCurrentDirectory();
 
@@ -478,12 +479,12 @@ class Program
             Description = "If available, the name of the repository.",
             DefaultValueFactory = parseResult => null
         };
-        Option<string?> dryrunTestIdOption = new("--dryrunTestId")
+        Option<string?> dryrunTestIdOption = new("--dryrun-test-id")
         {
             Description = "The test id from data.json to simulate a pull request.",
             DefaultValueFactory = parseResult => null
         };
-        Option<string?> dryrunTestDataFileOption = new("--dryrunTestDataFile")
+        Option<string?> dryrunTestDataFileOption = new("--dryrun-test-data-file")
         {
             Description = "The json file defining all the tests that can be referenced by `dryrunTestId`. Usually data.json.",
             DefaultValueFactory = parseResult => null
@@ -506,12 +507,12 @@ class Program
         {
             throw new InvalidOperationException("Invalid command line.");
         }
-        var sourcePath = result.GetValue(sourcePathOption) ?? throw new InvalidOperationException("organization is null");
+        var sourcepath = result.GetValue(sourcePathOption) ?? throw new InvalidOperationException("organization is null");
         var pullrequest = result.GetValue(pullrequestOption);
         var owner = result.GetValue(ownerOption);
         var repo = result.GetValue(repoOption);
         var dryrunTestId = result.GetValue(dryrunTestIdOption);
         var dryrunTestDataFile = result.GetValue(dryrunTestDataFileOption);
-        return (sourcePath, pullrequest, owner, repo, dryrunTestId, dryrunTestDataFile);
+        return (sourcepath, pullrequest, owner, repo, dryrunTestId, dryrunTestDataFile);
     }
 }
