@@ -20,11 +20,11 @@ That automated process may have closed some issues that should be addressed. If 
 var (organization, repository, dryRun) = ParseArguments(args);
 
 var key = CommandLineUtility.GetEnvVariable("GitHubBotKey",
-"You must store the bot's GitHub key in the 'GitHubBotKey' environment variable",
-"");
+    "You must store the bot's GitHub key in the 'GitHubBotKey' environment variable",
+    "");
 var ospoKey = CommandLineUtility.GetEnvVariable("OspoKey",
-"You must store your OSPO key in the 'OspoKey' environment variable",
-"");
+    "You must store your OSPO key in the 'OspoKey' environment variable",
+    "");
 
 var client = IGitHubClient.CreateGitHubClient(key);
 var ospoClient = new OspoClient(ospoKey, true);

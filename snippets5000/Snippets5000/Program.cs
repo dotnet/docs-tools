@@ -483,6 +483,11 @@ class Program
             Description = "The test id from data.json to simulate a pull request.",
             DefaultValueFactory = parseResult => null
         };
+        Option<string?> dryrunTestDataFileOption = new("--dryrunTestDataFile")
+        {
+            Description = "The json file defining all the tests that can be referenced by `dryrunTestId`. Usually data.json.",
+            DefaultValueFactory = parseResult => null
+        };
         RootCommand rootCommand = new("Snippets5000 CI build application.");
 
         rootCommand.Options.Add(sourcePathOption);
@@ -490,6 +495,7 @@ class Program
         rootCommand.Options.Add(ownerOption);
         rootCommand.Options.Add(repoOption);
         rootCommand.Options.Add(dryrunTestIdOption);
+        rootCommand.Options.Add(dryrunTestDataFileOption);
 
         ParseResult result = rootCommand.Parse(args);
         foreach (ParseError parseError in result.Errors)
@@ -503,9 +509,9 @@ class Program
         var sourcePath = result.GetValue(sourcePathOption) ?? throw new InvalidOperationException("organization is null");
         var pullrequest = result.GetValue(pullrequestOption);
         var owner = result.GetValue(ownerOption);
-        var repo = result.GetValue(ownerOption);
-        var dryrunTestId = result.GetValue(ownerOption);
-        var dryrunTestDataFile = result.GetValue(dryrunTestIdOption);
+        var repo = result.GetValue(repoOption);
+        var dryrunTestId = result.GetValue(dryrunTestIdOption);
+        var dryrunTestDataFile = result.GetValue(dryrunTestDataFileOption);
         return (sourcePath, pullrequest, owner, repo, dryrunTestId, dryrunTestDataFile);
     }
 }
