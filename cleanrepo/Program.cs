@@ -277,7 +277,7 @@ class Program
             case "FindOrphanedSnippets":
                 {
                     Console.WriteLine($"\nSearching the '{options.TargetDirectory}' directory recursively for orphaned snippet files.");
-                    if (options.Subdirectory != null)
+                    if (!string.IsNullOrEmpty(options.Subdirectory))
                         Console.WriteLine($"Only searching subdirectories with '{options.Subdirectory}' in their path.");
 
                     // Get all snippet files.
@@ -1180,10 +1180,11 @@ class Program
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}misc{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}mermaidjs{Path.DirectorySeparatorChar}") &&
-            string.Compare(file.Name, "toc.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "agents.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
-            string.Compare(file.Name, "toc.yml", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "index.yml", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "toc.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "toc.yml", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "zone-pivot-groups.yml", StringComparison.InvariantCultureIgnoreCase) != 0;
 
         List<FileInfo> orphanedFiles = [];
@@ -1675,7 +1676,7 @@ static class HelperMethods
     public static List<FileInfo> GetMarkdownFiles(string directoryPath, params string[] dirsToIgnore)
     {
         DirectoryInfo dir = new(directoryPath);
-        IEnumerable<FileInfo> files = dir.EnumerateFiles("*.md", SearchOption.AllDirectories).ToList();
+        IEnumerable<FileInfo> files = dir.EnumerateFiles("*.md", SearchOption.AllDirectories);
 
         if (dirsToIgnore.Length > 0)
         {
@@ -1695,7 +1696,7 @@ static class HelperMethods
     public static List<FileInfo> GetYAMLFiles(string directoryPath, params string[] dirsToIgnore)
     {
         DirectoryInfo dir = new(directoryPath);
-        IEnumerable<FileInfo> files = dir.EnumerateFiles("*.yml", SearchOption.AllDirectories).ToList();
+        IEnumerable<FileInfo> files = dir.EnumerateFiles("*.yml", SearchOption.AllDirectories);
 
         if (dirsToIgnore.Length > 0)
         {
