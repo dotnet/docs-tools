@@ -23,8 +23,20 @@ class Program
 
         rootCommand.SetAction(parseResult =>
         {
-            DirectoryInfo intelliSenseDir = parseResult.GetValue<DirectoryInfo>("--isenseDir");
-            DirectoryInfo ecmaxmlDir = parseResult.GetValue<DirectoryInfo>("--ecmaxmlDir");
+            DirectoryInfo? intelliSenseDir = parseResult.GetValue<DirectoryInfo>("--isenseDir");
+            DirectoryInfo? ecmaxmlDir = parseResult.GetValue<DirectoryInfo>("--ecmaxmlDir");
+
+            if (intelliSenseDir == null || !intelliSenseDir.Exists)
+            {
+                Log.Error("The IntelliSense XML directory path is invalid or does not exist.");
+                return;
+            }
+
+            if (ecmaxmlDir == null || !ecmaxmlDir.Exists)
+            {
+                Log.Error("The ECMAXML directory path is invalid or does not exist.");
+                return;
+            }
 
             MergeAndAnnotate(intelliSenseDir, ecmaxmlDir);
         });
@@ -34,7 +46,7 @@ class Program
 
     static void MergeAndAnnotate(DirectoryInfo iXmlDir, DirectoryInfo ecmaxmlDir)
     {
-        // Load all files
+        // Load all files.
         // For each member in the IntelliSense XML, see if there's non-empty text in ECMAXML.
         // If so, save both versions of the text in the IntelliSense XML object.
         // After the for each loop, write new XML for any namespaces

@@ -64,7 +64,7 @@ internal class XmlHelper
 
         element.Value = string.Empty;
 
-        var attributes = element.Attributes();
+        IEnumerable<XAttribute> attributes = element.Attributes();
 
         // Workaround: <x> will ensure XElement does not complain about having an invalid xml object inside. Those tags will be removed by replacing the nodes.
         XElement parsedElement;
