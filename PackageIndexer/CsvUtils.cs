@@ -279,4 +279,22 @@ internal class CsvUtils
             _csvDictionary[opsMoniker].Add(entry);
         }
     }
+
+    internal static void CopyCSVFiles(string csvPath, string ciSourceRepoPath)
+    {
+        Console.WriteLine("Copying CSV files to CI source repo.");
+        // Get all CSV files.
+        IEnumerable<string> csvFiles = Directory.EnumerateFiles(csvPath, "*.csv");
+        foreach (string csvFile in csvFiles)
+        {
+            string fileName = Path.GetFileName(csvFile);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(csvFile);
+            string destFilePath = Path.Combine(
+                ciSourceRepoPath.ToString()!,
+                fileNameWithoutExtension,
+                fileName);
+            // Copy the file.
+            File.Copy(csvFile, destFilePath, true);
+        }
+    }
 }
