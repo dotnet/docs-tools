@@ -112,11 +112,11 @@ internal static class Program
 
         string lowerCasePackageName = packageName.ToLowerInvariant();
 
-        // Download the NuGet package
+        // Download the NuGet package.
         using HttpClient client = new();
         client.DefaultRequestHeaders.UserAgent.ParseAdd("AssemblyCopier/1.0");
 
-        // Query NuGet API for the package versions
+        // Query NuGet API for the package versions.
         string nugetApiUrl = $"https://api.nuget.org/v3-flatcontainer/{lowerCasePackageName}/index.json";
         NuGetVersionsResponse? versionResponse = await client.GetFromJsonAsync<NuGetVersionsResponse>(nugetApiUrl);
 
@@ -125,33 +125,33 @@ internal static class Program
             throw new Exception("Failed to retrieve package versions from NuGet.");
         }
 
-        // Find the latest version matching the major version
+        // Find the latest version matching the major version.
         string? latestVersion = versionResponse.Versions
             .Where(v => v.StartsWith($"{version}."))
             .OrderByDescending(v => v)
-            .FirstOrDefault() ?? throw new Exception($"No package version found matching {version}.*");
+            .First(); // Throws InvalidOperationException if none found.
         Console.WriteLine($"Found version: {latestVersion}");
 
-        // Download the package
+        // Download the package.
         string packageUrl = $"https://api.nuget.org/v3-flatcontainer/{lowerCasePackageName}/{latestVersion}/{lowerCasePackageName}.{latestVersion}.nupkg";
         Console.WriteLine($"Downloading package from {packageUrl}...");
 
         byte[] packageData = await client.GetByteArrayAsync(packageUrl);
 
-        // Create temporary directory for extraction
+        // Create temporary directory for extraction.
         string tempDir = Path.Combine(Path.GetTempPath(), $"{packageName}-{Guid.NewGuid()}");
         Directory.CreateDirectory(tempDir);
 
         try
         {
-            // Save and extract the package (it's a ZIP file)
+            // Save and extract the package (it's a ZIP file).
             string packagePath = Path.Combine(tempDir, "package.zip");
             await File.WriteAllBytesAsync(packagePath, packageData);
 
             Console.WriteLine("Extracting package...");
             ZipFile.ExtractToDirectory(packagePath, tempDir);
 
-            // Find the ref folder with the version
+            // Find the ref folder with the version.
             string refFolder = Path.Combine(tempDir, "ref", $"net{version}");
             if (!Directory.Exists(refFolder))
             {
@@ -160,7 +160,7 @@ internal static class Program
 
             Console.WriteLine($"Found reference folder: {refFolder}");
 
-            // Prepare destination directory
+            // Prepare destination directory.
             string destinationDir = Path.Combine(rootPath, $"{destDirRootName}-{version}");
 
             if (Directory.Exists(destinationDir))
@@ -172,7 +172,7 @@ internal static class Program
             Directory.CreateDirectory(destinationDir);
             Console.WriteLine($"Created destination directory: {destinationDir}");
 
-            // Copy DLL files (excluding the ones in the exclusion list)
+            // Copy DLL files (excluding the ones in the exclusion list).
             string[] allDlls = Directory.GetFiles(refFolder, "*.dll");
             int copiedCount = 0;
             int excludedCount = 0;
@@ -221,15 +221,8 @@ internal static class Program
         }
         finally
         {
-            // Clean up temporary directory
-            try
-            {
-                Directory.Delete(tempDir, true);
-            }
-            catch
-            {
-                // Ignore cleanup errors
-            }
+            // Clean up temporary directory.
+            Directory.Delete(tempDir, true);
         }
     }
 
