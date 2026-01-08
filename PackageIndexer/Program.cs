@@ -8,23 +8,27 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
 #if DEBUG
-        args = [@"c:\users\gewarren\desktop\Package Index 1015", "preview"];
+        args = [
+            @"c:\users\gewarren\desktop\Package Index 0101",
+            @"c:\users\gewarren\binaries\dotnet",
+            "preview"];
 #endif
 
-        if ((args.Length == 0) || (args.Length > 2))
+        if ((args.Length == 0) || (args.Length > 3))
         {
             string exeName = Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location);
-            Console.Error.Write("error: incorrect number of arguments");
-            Console.Error.Write($"usage: {exeName} <download-directory> [preview]");
+            Console.Error.Write("Error: Incorrect number of arguments");
+            Console.Error.Write($"\nUsage: {exeName} <download-directory> <ci-source-repo-directory> [preview]");
             return -1;
         }
 
         string rootPath = args[0];
+        string ciSourceRepoPath = args[1];
 
         bool usePreviewVersions = false;
-        if (args.Length > 1)
+        if (args.Length > 2)
         {
-            if (string.Equals(args[1], "preview", StringComparison.InvariantCultureIgnoreCase))
+            if (string.Equals(args[2], "preview", StringComparison.InvariantCultureIgnoreCase))
                 usePreviewVersions = true;
         }
 
@@ -32,7 +36,7 @@ internal static class Program
 
         try
         {
-            await RunAsync(rootPath, usePreviewVersions);
+            await RunAsync(rootPath, ciSourceRepoPath, usePreviewVersions);
         }
         catch (Exception ex)
         {
@@ -43,7 +47,7 @@ internal static class Program
         return success ? 0 : -1;
     }
 
-    private static async Task RunAsync(string rootPath, bool usePreviewVersions)
+    private static async Task RunAsync(string rootPath, string ciSourceRepoPath, bool usePreviewVersions)
     {
         string packagesPath = Path.Combine(rootPath, "packages");
         string packageListPath = Path.Combine(packagesPath, "packages.xml");
@@ -58,6 +62,7 @@ internal static class Program
 
         var csvUtils = new CsvUtils();
         csvUtils.GenerateCSVFiles(indexPackagesPath, csvPath);
+        CsvUtils.CopyCSVFiles(csvPath, ciSourceRepoPath);
 
         Console.WriteLine($"Completed in {stopwatch.Elapsed}");
         Console.WriteLine($"Peak working set: {Process.GetCurrentProcess().PeakWorkingSet64 / (1024 * 1024):N2} MB");

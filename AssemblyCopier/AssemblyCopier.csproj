@@ -7,11 +7,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CsvHelper" />
-    <PackageReference Include="NuGet.Packaging" />
-    <PackageReference Include="NuGet.Protocol" />
-    <PackageReference Include="Microsoft.Azure.Kusto.Data" />
-  </ItemGroup>
-
 </Project>
