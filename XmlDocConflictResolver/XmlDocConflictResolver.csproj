@@ -8,6 +8,5 @@
   <ItemGroup>
     <PackageReference Include="Cake.Powershell" />
     <PackageReference Include="System.CommandLine" />
-    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 </Project>
