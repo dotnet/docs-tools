@@ -144,7 +144,7 @@ internal class CsvUtils
                         if (!packageEntry.Frameworks.Contains("net471"))
                         {
                             // Add to net471 moniker since this is a compatible framework.
-                            fellThroughFromVersion = "net47";
+                            fellThroughFromVersion ??= "net47";
                             goto case "net471";
                         }
                         break;
@@ -161,7 +161,7 @@ internal class CsvUtils
                         if (!packageEntry.Frameworks.Contains("net472"))
                         {
                             // Add to net472 moniker since this is a compatible framework.
-                            fellThroughFromVersion = "net471";
+                            fellThroughFromVersion ??= "net471";
                             goto case "net472";
                         }
                         break;
@@ -178,7 +178,7 @@ internal class CsvUtils
                         if (!packageEntry.Frameworks.Contains("net48"))
                         {
                             // Add to net48 moniker since this is a compatible framework.
-                            fellThroughFromVersion = "net472";
+                            fellThroughFromVersion ??= "net472";
                             goto case "net48";
                         }
                         break;
@@ -195,7 +195,7 @@ internal class CsvUtils
                         if (!packageEntry.Frameworks.Contains("net481"))
                         {
                             // Add to net481 moniker since this is a compatible framework.
-                            fellThroughFromVersion = "net48";
+                            fellThroughFromVersion ??= "net48";
                             goto case "net481";
                         }
                         break;

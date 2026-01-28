@@ -9,7 +9,7 @@ internal static class Program
     {
 #if DEBUG
         args = [
-            @"c:\users\gewarren\desktop\Package Index 0101",
+            @"c:\users\gewarren\desktop\Package Index 0127",
             @"c:\users\gewarren\binaries\dotnet",
             "preview"];
 #endif
