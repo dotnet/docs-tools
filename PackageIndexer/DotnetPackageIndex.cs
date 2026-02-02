@@ -122,7 +122,7 @@ public static class DotnetPackageIndex
         return identities.ToArray();
     }
 
-    // Only includes the latest version
+    // Only includes the latest version.
     private static IReadOnlyList<PackageIdentity> GetLatestVersions(
         IReadOnlyList<(PackageIdentity packageId, bool isDeprecated)> identities,
         bool usePreviewVersions,
@@ -158,9 +158,6 @@ public static class DotnetPackageIndex
                 latestStable = default;
             if (latestPrerelease.isDeprecated)
                 latestPrerelease = default;
-
-            // Set to default for ASP.NET only.
-            //latestStable = default;
 
             if (!usePreviewVersions && latestStable != default)
             {
