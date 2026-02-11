@@ -300,10 +300,16 @@ internal class CsvUtils
         {
             string fileName = Path.GetFileName(csvFile);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(csvFile);
-            string destFilePath = Path.Combine(
-                ciSourceRepoPath.ToString()!,
-                fileNameWithoutExtension,
-                fileName);
+
+            string destDirectoryPath = Path.Combine(ciSourceRepoPath.ToString()!, fileNameWithoutExtension);
+            string destFilePath = Path.Combine(destDirectoryPath, fileName);
+
+            // If the destination directory doesn't exist, create it.
+            if (!Directory.Exists(destDirectoryPath))
+            {
+                Directory.CreateDirectory(destDirectoryPath);
+            }
+
             // Copy the file.
             File.Copy(csvFile, destFilePath, true);
         }
