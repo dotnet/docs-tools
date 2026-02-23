@@ -22,6 +22,7 @@ internal class CsvUtils
             { "net8.0", "net-8.0-pp" },
             { "net9.0", "net-9.0-pp" },
             { "net10.0", "net-10.0-pp" },
+            { "net11.0", "net-11.0-pp" },
             { "netstandard2.0", "netstandard-2.0-pp" },
             { "netstandard2.1", "netstandard-2.1-pp" }
         };
@@ -113,6 +114,16 @@ internal class CsvUtils
                     case "net10.0":
                         opsMoniker = s_tfmToOpsMoniker["net10.0"];
                         AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net10.0");
+                        if (!packageEntry.Frameworks.Contains("net11.0"))
+                        {
+                            // Add to net11.0 moniker since this is a compatible framework.
+                            fellThroughFromVersion = fellThroughFromVersion ?? "net10.0";
+                            goto case "net11.0";
+                        }
+                        break;
+                    case "net11.0":
+                        opsMoniker = s_tfmToOpsMoniker["net11.0"];
+                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net11.0");
                         break;
                     case "net462":
                         opsMoniker = s_tfmToOpsMoniker["net462"];
@@ -289,10 +300,16 @@ internal class CsvUtils
         {
             string fileName = Path.GetFileName(csvFile);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(csvFile);
-            string destFilePath = Path.Combine(
-                ciSourceRepoPath.ToString()!,
-                fileNameWithoutExtension,
-                fileName);
+
+            string destDirectoryPath = Path.Combine(ciSourceRepoPath.ToString()!, fileNameWithoutExtension);
+            string destFilePath = Path.Combine(destDirectoryPath, fileName);
+
+            // If the destination directory doesn't exist, create it.
+            if (!Directory.Exists(destDirectoryPath))
+            {
+                Directory.CreateDirectory(destDirectoryPath);
+            }
+
             // Copy the file.
             File.Copy(csvFile, destFilePath, true);
         }
