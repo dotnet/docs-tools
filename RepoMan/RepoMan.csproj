@@ -20,9 +20,7 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" />
     <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" />
-    <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Octokit" />
-    <PackageReference Include="System.Text.RegularExpressions" />
     <PackageReference Include="YamlDotNet" />
     <PackageReference Include="JmesPath.Net" />
     <PackageReference Include="Markdig" />
