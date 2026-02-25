@@ -79,7 +79,8 @@ internal static class Program
         {
             "System.Formats.Asn1.xml",
             "System.Linq.AsyncEnumerable.xml",
-            "System.Net.ServerSentEvents.xml"
+            "System.Net.ServerSentEvents.xml",
+            "System.Reflection.DispatchProxy.xml"
         };
 
         await CopyDlls(
