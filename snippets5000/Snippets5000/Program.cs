@@ -41,30 +41,28 @@ class Program
     /// <returns>0 on success. Otherwise, a non-zero error code.</returns>
     static async Task<int> Main(string[] args)
     {
+        // Shared option for all commands
         Option<string> sourcePathOption = new("--sourcepath")
         {
             Description = "The directory containing the local source tree.",
             Required = true
         };
-        Option<int?> pullrequestOption = new("--pullrequest")
+
+        // Root command options (PR mode - default)
+        Option<int> pullrequestOption = new("--pullrequest")
         {
-            Description = "If available, the number of the pull request being built."
+            Description = "The number of the pull request being built.",
+            Required = true
         };
-        Option<string?> ownerOption = new("--owner")
+        Option<string> ownerOption = new("--owner")
         {
-            Description = "If available, the owner organization of the repository."
+            Description = "The owner organization of the repository.",
+            Required = true
         };
-        Option<string?> repoOption = new("--repo")
+        Option<string> repoOption = new("--repo")
         {
-            Description = "If available, the name of the repository."
-        };
-        Option<string?> dryrunTestIdOption = new("--dryrun-test-id")
-        {
-            Description = "The test id from data.json to simulate a pull request."
-        };
-        Option<string?> dryrunTestDataFileOption = new("--dryrun-test-data-file")
-        {
-            Description = "The json file defining all the tests that can be referenced by `dryrunTestId`. Usually data.json."
+            Description = "The name of the repository.",
+            Required = true
         };
 
         RootCommand rootCommand = new("Snippets5000 CI build application.")
@@ -72,115 +70,164 @@ class Program
             sourcePathOption,
             pullrequestOption,
             ownerOption,
-            repoOption,
-            dryrunTestIdOption,
-            dryrunTestDataFileOption
+            repoOption
         };
 
         rootCommand.SetAction(async (parseResult, cancellationToken) =>
         {
             var sourcepath = parseResult.GetValue(sourcePathOption)!;
             var pullrequest = parseResult.GetValue(pullrequestOption);
-            var owner = parseResult.GetValue(ownerOption);
-            var repo = parseResult.GetValue(repoOption);
-            var dryrunTestId = parseResult.GetValue(dryrunTestIdOption);
-            var dryrunTestDataFile = parseResult.GetValue(dryrunTestDataFileOption);
+            var owner = parseResult.GetValue(ownerOption)!;
+            var repo = parseResult.GetValue(repoOption)!;
 
             Console.WriteLine($"Processing source path: {sourcepath}");
+            Console.WriteLine($"Processing PR #{pullrequest} from {owner}/{repo}");
 
-            return await RunAsync(sourcepath, pullrequest, owner, repo, dryrunTestId, dryrunTestDataFile);
+            return await RunPullRequestAsync(sourcepath, pullrequest, owner, repo);
         });
+
+        // Dryrun subcommand - simulates a PR using local test data
+        Option<string> testIdOption = new("--test-id")
+        {
+            Description = "The test id from the test data file to simulate a pull request.",
+            Required = true
+        };
+        Option<string> testDataFileOption = new("--test-data-file")
+        {
+            Description = "The json file defining all the tests that can be referenced by test-id. Usually data.json.",
+            Required = true
+        };
+
+        Command dryrunCommand = new("dryrun", "Simulate a pull request using local test data.")
+        {
+            sourcePathOption,
+            testIdOption,
+            testDataFileOption
+        };
+
+        dryrunCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var sourcepath = parseResult.GetValue(sourcePathOption)!;
+            var testId = parseResult.GetValue(testIdOption)!;
+            var testDataFile = parseResult.GetValue(testDataFileOption)!;
+
+            Console.WriteLine($"Processing source path: {sourcepath}");
+            Console.WriteLine($"Running dryrun test: {testId}");
+
+            return await RunDryrunAsync(sourcepath, testId, testDataFile);
+        });
+
+        rootCommand.Subcommands.Add(dryrunCommand);
+
+        // Build-all subcommand - builds the entire repository
+        Command buildAllCommand = new("build-all", "Build all projects in the repository.")
+        {
+            sourcePathOption
+        };
+
+        buildAllCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var sourcepath = parseResult.GetValue(sourcePathOption)!;
+
+            Console.WriteLine($"Processing source path: {sourcepath}");
+            Console.WriteLine("Building all projects in repository...");
+
+            return await RunBuildAllAsync(sourcepath);
+        });
+
+        rootCommand.Subcommands.Add(buildAllCommand);
 
         return await rootCommand.Parse(args).InvokeAsync();
     }
 
-    private static async Task<int> RunAsync(
-        string sourcepath,
-        int? pullrequest,
-        string? owner,
-        string? repo,
-        string? dryrunTestId,
-        string? dryrunTestDataFile)
+    /// <summary>
+    /// Process a GitHub pull request.
+    /// </summary>
+    private static async Task<int> RunPullRequestAsync(string sourcepath, int pullrequest, string owner, string repo)
     {
+        var key = CommandLineUtility.GetEnvVariable("GitHubKey", "You must store your GitHub key in the 'GitHubKey' environment variable", null);
 
+        List<DiscoveryResult> projects = [];
+        await foreach (var item in new PullRequestProcessor(owner, repo, pullrequest, sourcepath).GenerateBuildList(key))
+            projects.Add(item);
+
+        return await ProcessAndCompileProjectsAsync(sourcepath, repo, projects);
+    }
+
+    /// <summary>
+    /// Simulate a pull request using local test data.
+    /// </summary>
+    private static async Task<int> RunDryrunAsync(string sourcepath, string testId, string testDataFile)
+    {
+        List<DiscoveryResult> projects = new TestingProjectList(testId, testDataFile, sourcepath)
+            .GenerateBuildList()
+            .ToList();
+
+        // Use a placeholder repo name for error path processing
+        return await ProcessAndCompileProjectsAsync(sourcepath, "dryrun", projects);
+    }
+
+    /// <summary>
+    /// Build all projects in the repository.
+    /// </summary>
+    private static Task<int> RunBuildAllAsync(string sourcepath)
+    {
+        // TODO: Implement full build with compile step
+        var fullBuild = new FullBuildProjectList(sourcepath);
+        foreach (var path in fullBuild.GenerateBuildList())
+            Log.Write(0, path);
+
+        return Task.FromResult(EXITCODE_GOOD);
+    }
+
+    /// <summary>
+    /// Shared logic for processing and compiling discovered projects.
+    /// </summary>
+    private static async Task<int> ProcessAndCompileProjectsAsync(string sourcepath, string repo, List<DiscoveryResult> projects)
+    {
         int exitCode = EXITCODE_GOOD;
         string appStartupFolder = Directory.GetCurrentDirectory();
 
-        if ((pullrequest.HasValue) &&
-            !string.IsNullOrEmpty(owner) &&
-            !string.IsNullOrEmpty(repo))
+        Log.Write(0, $"{projects.Count} items found.");
+        Log.Write(0, "\r\nOutput all items found, grouped by status...");
+
+        // Start processing all of the discovered projects
+        ProcessDiscoveredProjects(projects, out List<SnippetsConfigFile> transformedProjects, out string[] projectsToCompile);
+
+        // Compile each project
+        await CompileProjects(sourcepath, projectsToCompile, transformedProjects);
+
+        // Clear any known errors from the failed projects
+        ProcessFailedProjects(repo, transformedProjects.Where(p => p.RunExitCode != 0));
+
+        // Final results. List the projects/files that have failed
+        bool first = false;
+        var finalFailedProjects = transformedProjects.Where(p => !p.RunConsideredGood).ToArray();
+        foreach (var item in finalFailedProjects)
         {
-            List<DiscoveryResult> projects;
-
-            // Normal github PR
-            if (string.IsNullOrEmpty(dryrunTestId))
+            if (!first)
             {
-                var key = CommandLineUtility.GetEnvVariable("GitHubKey", "You must store your GitHub key in the 'GitHubKey' environment variable", null);
-
-                List<DiscoveryResult> localResults = new();
-                await foreach (var item in new PullRequestProcessor(owner, repo, pullrequest.Value, sourcepath).GenerateBuildList(key))
-                    localResults.Add(item);
-
-                projects = localResults;
+                Log.Write(0, "\r\n😭 Compile targets with unresolved issues:");
+                first = true;
             }
-
-            // NOT a normal github PR and instead is a test
-            else if (string.IsNullOrEmpty(dryrunTestDataFile))
-                throw new InvalidOperationException($"{nameof(dryrunTestDataFile)}: The dryrun Test DataFile must be set");
-            else
-                projects = new TestingProjectList(dryrunTestId, dryrunTestDataFile, sourcepath).GenerateBuildList().ToList();
-
-            Log.Write(0, $"{projects.Count} items found.");
-            Log.Write(0, "\r\nOutput all items found, grouped by status...");
-
-            // Start processing all of the discovered projects
-            ProcessDiscoveredProjects(projects, out List<SnippetsConfigFile> transformedProjects, out string[] projectsToCompile);
-
-            // Compile each project
-            await CompileProjects(sourcepath, projectsToCompile, transformedProjects);
-
-            // Clear any known errors from the failed projects
-            ProcessFailedProjects(repo, transformedProjects.Where(p => p.RunExitCode != 0));
-
-            // Final results. List the projects/files that have failed
-            bool first = false;
-            var finalFailedProjects = transformedProjects.Where(p => !p.RunConsideredGood).ToArray();
-            foreach (var item in finalFailedProjects)
-            {
-                if (!first)
-                {
-                    Log.Write(0, "\r\n😭 Compile targets with unresolved issues:");
-                    first = true;
-                }
-                Log.Write(2, item.RunTargetFile);
-                exitCode = EXITCODE_BAD;
-            }
-
-            // Generate output file
-            if (finalFailedProjects.Length != 0)
-            {
-                Directory.SetCurrentDirectory(appStartupFolder);
-                JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true, ReadCommentHandling = JsonCommentHandling.Skip };
-                using FileStream file = File.Open("output.json", FileMode.Create);
-                JsonSerializer.Serialize(file, finalFailedProjects, options);
-            }
-
-            // There were no errors, log it!
-            if (exitCode == 0)
-                Log.Write(0, "\r\n😀 All builds passing! 😀");
-
-            return exitCode;
+            Log.Write(2, item.RunTargetFile);
+            exitCode = EXITCODE_BAD;
         }
 
-        // TODO: building the whole repository
-        else
+        // Generate output file
+        if (finalFailedProjects.Length != 0)
         {
-            var fullBuild = new FullBuildProjectList(sourcepath);
-            foreach (var path in fullBuild.GenerateBuildList())
-                Log.Write(0, path);
+            Directory.SetCurrentDirectory(appStartupFolder);
+            JsonSerializerOptions options = new() { WriteIndented = true, ReadCommentHandling = JsonCommentHandling.Skip };
+            using FileStream file = File.Open("output.json", FileMode.Create);
+            JsonSerializer.Serialize(file, finalFailedProjects, options);
         }
 
-        return EXITCODE_GOOD;
+        // There were no errors, log it!
+        if (exitCode == 0)
+            Log.Write(0, "\r\n😀 All builds passing! 😀");
+
+        return exitCode;
     }
 
     // Takes the discovery results from scanning the files in the PR and checks their status. The projects
@@ -254,7 +301,7 @@ class Program
         foreach (var item in projectsToCompile)
         {
             expansionVariables.Clear();
-
+            
             Directory.SetCurrentDirectory(sourcePath);
             Log.CreateGroup($"Compile: {counter}/{projectsToCompile.Length} {item}");
 
