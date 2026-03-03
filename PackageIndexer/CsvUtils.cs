@@ -265,21 +265,11 @@ internal class CsvUtils
             string targetFramework
             )
         {
-            bool includeXml = true;
-
-            if (PlatformPackageDefinition.runtimePackagesWithoutDocs.Contains(packageEntry.Name) ||
-                PlatformPackageDefinition.otherPackagesWithoutDocs.Contains(packageEntry.Name))
-                includeXml = false;
-
-            // And don't include XMl files for Microsoft.Bcl.* packages.
-            if (packageEntry.Name.StartsWith("Microsoft.Bcl.", StringComparison.InvariantCultureIgnoreCase))
-                includeXml = false;
-
-            string squareBrackets = $"[tfm={targetFramework};includeXml={includeXml}]";
+            string squareBrackets = $"[tfm={targetFramework};includeXml={packageEntry.IncludeXmlDocs}]";
 
             // Special case for System.ServiceModel.Primitives - use reference assemblies.
             if (string.Equals(packageEntry.Name, "System.ServiceModel.Primitives", StringComparison.InvariantCultureIgnoreCase))
-                squareBrackets = $"[tfm={targetFramework};includeXml={includeXml};libpath=ref]";
+                squareBrackets = $"[tfm={targetFramework};includeXml={packageEntry.IncludeXmlDocs};libpath=ref]";
 
             CsvEntry entry = CsvEntry.Create(
                 string.Concat("pac", _packageCounter[opsMoniker]++),

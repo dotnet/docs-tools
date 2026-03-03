@@ -49,6 +49,15 @@ internal static class XmlEntryFormat
             frameworks.Add(frameworkElement.Value);
         }
 
-        return PackageEntry.Create(id, version, repo, frameworks);
+        bool includeXmlDocs = true;
+
+        if (PlatformPackageDefinition.runtimePackagesWithoutDocs.Contains(id) ||
+            PlatformPackageDefinition.otherPackagesWithoutDocs.Contains(id))
+            includeXmlDocs = false;
+
+        if (id.StartsWith("Microsoft.Bcl.", StringComparison.InvariantCultureIgnoreCase))
+            includeXmlDocs = false;
+
+        return PackageEntry.Create(id, version, repo, frameworks, includeXmlDocs);
     }
 }
