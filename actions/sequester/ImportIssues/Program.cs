@@ -51,10 +51,6 @@ try
     {
         throw new InvalidOperationException("Azure DevOps token is missing.");
     }
-    if (string.IsNullOrWhiteSpace(token))
-    {
-        throw new InvalidOperationException("Azure DevOps token is missing.");
-    }
 
     if (useBearerToken)
     {
@@ -117,14 +113,6 @@ static async Task<QuestGitHubService> CreateService(ImportOptions options, bool 
         throw new InvalidOperationException("Azure DevOps token is missing.");
     }
 
-    if (useBearerToken)
-    {
-        Console.WriteLine("Using secretless for Azure DevOps.");
-    }
-    else
-    {
-        Console.WriteLine("Using PAT for Azure DevOps.");
-    }
     return new QuestGitHubService(
             gitHubClient,
             ospoClient,
