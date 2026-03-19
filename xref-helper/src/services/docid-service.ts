@@ -38,7 +38,7 @@ export class DocIdService {
         }
 
         const text = await response.text();
-        const textType = gitUrl.split('.').pop();
+        const textType = gitUrl.split('#')[0].split('.').pop();
 
         let parserFactory: ParserFactory | undefined;
         switch (textType) {
@@ -172,17 +172,16 @@ async function parseXml(text: string, displayName: string, apiType: ItemType, gi
         apiType === ItemType.event || apiType === ItemType.attachedEvent ||
         apiType === ItemType.field) {
 
-        // Special case for "Item" property (which is actually
-        // an indexer, not a property. Go figure.)
-        // The displayName is "Item[String]" or "Item[Int32]" etc.,
-        // but in the ECMAXML, the MemberName is just "Item".
-        // And, this "property" also has parameter(s)!
-        if (memberName.split('[')[0] === "Item") {
+        // Special case for indexer properties (e.g. "Item[String]", "Chars[Int32]").
+        // The displayName includes parameters in square brackets,
+        // but in the ECMAXML, the MemberName doesn't include the brackets/params.
+        if (memberName.includes('[')) {
+            const baseName = memberName.split('[')[0];
             const paramList = memberName.split('[')[1].slice(0, -1);
             const paramTypes = paramList.length > 0 ? paramList.split(',').map(x => x.trim().split(' ')[0]) : [];
 
             const candidates = xml.Type.Members[0].Member?.filter((x: any) =>
-                x.$.MemberName === "Item" &&
+                x.$.MemberName === baseName &&
                 x.MemberType[0] === memberType &&
                 x.Parameters[0].Parameter?.length === paramTypes.length
             );
