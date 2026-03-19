@@ -26,10 +26,11 @@ namespace Quest2GitHub;
 public class QuestGitHubService(
     IGitHubClient ghClient,
     OspoClient? ospoClient,
-    ImportOptions importOptions) : IDisposable
+    ImportOptions importOptions,
+    bool useBearerToken) : IDisposable
 {
     private const string LinkedWorkItemComment = "Associated WorkItem - ";
-    private readonly QuestClient _azdoClient = new(importOptions.ApiKeys.QuestKey, importOptions.AzureDevOps.Org, importOptions.AzureDevOps.Project);
+    private readonly QuestClient _azdoClient = new(importOptions.ApiKeys.QuestKey, importOptions.AzureDevOps.Org, importOptions.AzureDevOps.Project, useBearerToken);
     private readonly OspoClient? _ospoClient = ospoClient;
     private readonly string _questLinkString = $"https://dev.azure.com/{importOptions.AzureDevOps.Org}/{importOptions.AzureDevOps.Project}/_workitems/edit/";
 
