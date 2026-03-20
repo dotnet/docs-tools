@@ -16,7 +16,8 @@ internal class LocalLinkValidator : ILinkValidator
     // private static readonly Regex s_incRegex = new Regex(@"^\[!INCLUDE\+?\s*\[((?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*)\]\(\s*<?([^)]*?)>?(?:\s+(['""])([\s\S]*?)\3)?\s*\)\]\s*(\n|$)", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromSeconds(10));
 
     // https://github.com/dotnet/docfx/blob/1f9cbcea04556f5bfd1cfdeae8d17e48545553de/src/Microsoft.DocAsCode.Dfm/Rules/DfmIncludeInlineRule.cs#L14
-    private static readonly Regex s_inlineIncludeRegex = new(@"^\[!INCLUDE\s*\-?\s*\[((?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*)\]\(\s*<?([^)]*?)>?(?:\s+(['""])([\s\S]*?)\3)?\s*\)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline, TimeSpan.FromSeconds(10));
+    private static readonly Regex s_inlineIncludeRegex = 
+        new(@"^\[!INCLUDE\s*\-?\s*\[((?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*)\]\(\s*<?([^)]*?)>?(?:\s+(['""])([\s\S]*?)\3)?\s*\)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline, TimeSpan.FromSeconds(10));
 
 
     public LocalLinkValidator(string baseDirectory) => _baseDirectory = baseDirectory;
@@ -48,14 +49,14 @@ internal class LocalLinkValidator : ILinkValidator
             // TODO: Add a warning if headingIdWithoutHash is empty here?
             // e.g: [Text](file.md#)
             headingIdWithoutHash = link[(lastIndex + 1)..];
-            link = link.Substring(0, lastIndex);
+            link = link[..lastIndex];
         }
 
         // Remove query parameters.
         lastIndex = link.LastIndexOf('?');
         if (lastIndex != -1)
         {
-            link = link.Substring(0, lastIndex);
+            link = link[..lastIndex];
         }
 
         if (headingIdWithoutHash is null)
@@ -119,9 +120,19 @@ internal class LocalLinkValidator : ILinkValidator
         // TODO: PERF: Optimize reading files from disk and parsing markdown. These should be cached.
         string fileContents = File.ReadAllText(path);
 
-        // Files that may contain the heading we're looking for.
-        // TODO: Revisist suppression.
-        IEnumerable<string> potentialFiles = new[] { path }.Concat(GetIncludes(fileContents, Path.GetDirectoryName(path)!));
+        // If the file contains any includes starting with ~, they could be from a separate repo.
+        // In that case, we can't validate the heading, so return true.
+        if (s_inlineIncludeRegex
+            .Matches(fileContents)
+            .Any(m => m.Groups[2].Value.StartsWith('~')))
+        {
+            return true;
+        }
+
+        // Files that might contain the heading we're looking for.
+        // TODO: Revisit suppression.
+        IEnumerable<string> potentialFiles = 
+            new[] { path }.Concat(GetIncludes(fileContents, Path.GetDirectoryName(path)!));
         foreach (string potentialFile in potentialFiles)
         {
             if (!File.Exists(potentialFile))
@@ -141,14 +152,17 @@ internal class LocalLinkValidator : ILinkValidator
         return false;
 
         // Hacky approach!
-        static bool IsValidHtml(string tag, string headingIdWithoutHawsh)
+        static bool IsValidHtml(string tag, string headingIdWithoutHash)
         {
-            return Regex.Match(tag, @"^<(a|span)\s+?(name|id)\s*?=\s*?""(.+?)""").Groups[3].Value == headingIdWithoutHawsh;
+            return Regex.Match(tag, @"^<(a|span)\s+?(name|id)\s*?=\s*?""(.+?)""")
+                .Groups[3].Value == headingIdWithoutHash;
         }
     }
 
     private static IEnumerable<string> GetIncludes(string fileContents, string baseDirectory)
     {
-        return s_inlineIncludeRegex.Matches(fileContents).Select(m => AdjustLinkPath(m.Groups[2].Value, baseDirectory));
+        return s_inlineIncludeRegex
+            .Matches(fileContents)
+            .Select(m => AdjustLinkPath(m.Groups[2].Value, baseDirectory));
     }
 }
