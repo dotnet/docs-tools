@@ -38,7 +38,7 @@ export class DocIdService {
         }
 
         const text = await response.text();
-        const textType = gitUrl.split('#')[0].split('.').pop();
+        const textType = gitUrl.split('.').pop();
 
         let parserFactory: ParserFactory | undefined;
         switch (textType) {
