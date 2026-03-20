@@ -309,6 +309,9 @@ Obsolete members and compatibility switches in ASP.NET Core 2.2 were removed.
         Assert.Empty(result);
     }
 
+    /* Commenting out since if an INCLUDE file link starts with ~,
+     * we have to assume the bookmark link is valid 
+     * since it might be in a different repo.
     [Fact]
     public async Task TestHeadingReference_Includes_InvalidLink()
     {
@@ -339,5 +342,6 @@ Obsolete members and compatibility switches in ASP.NET Core 2.2 were removed.
 
         Assert.Equal(expected, result, s_linkErrorComparer);
     }
+    */
     #endregion
 }
