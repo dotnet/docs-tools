@@ -503,7 +503,7 @@ class Program
                 @"\[.*\]:[ ]*(/" + urlBasePath + @"/(.*\.(png|gif|jpg|svg)))",                      // [0]: /azure/mydocs/media/pic1.png
                 @"imageSrc:[ ]*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))",                 // imageSrc: /azure/mydocs/media/pic1.png
                 @":::image[^:]*source=""(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))""[^:]*:::", // :::image type="complex" source="/azure/mydocs/media/pic1.png" alt-text="Screenshot.":::
-                @"imageUrl:[ ]*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))"                // imageUrl: /azure/mydocs/media/pic1.png                
+                @"imageUrl:[ ]*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))"                  // imageUrl: /azure/mydocs/media/pic1.png                
             ];
 
         foreach (FileInfo linkingFile in linkingFiles)
