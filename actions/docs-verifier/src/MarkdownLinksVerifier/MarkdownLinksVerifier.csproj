@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Markdig" Version="1.1.1" />
+    <PackageReference Include="Markdig" Version="1.1.2" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="MarkdownLinksVerifier.UnitTests" />
