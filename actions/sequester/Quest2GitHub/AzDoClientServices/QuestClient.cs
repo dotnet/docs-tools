@@ -1,4 +1,5 @@
-﻿using Polly;
+﻿using System.Net.Http;
+using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Retry;
 
@@ -35,14 +36,16 @@ public sealed class QuestClient : IDisposable
     /// <param name="token">The personal access token</param>
     /// <param name="org">The Azure DevOps organization</param>
     /// <param name="project">The Azure DevOps project</param>
-    public QuestClient(string token, string org, string project)
+    /// <param name="useBearerToken">True to use a just in time bearer token, false assumes PAT</param>
+    public QuestClient(string token, string org, string project, bool useBearerToken)
     {
         QuestOrg = org;
         QuestProject = project;
         _client = new HttpClient();
         _client.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue(MediaTypeNames.Application.Json));
-        _client.DefaultRequestHeaders.Authorization =
+        _client.DefaultRequestHeaders.Authorization = useBearerToken ?
+            new AuthenticationHeaderValue("Bearer", token) :
             new AuthenticationHeaderValue("Basic",
                 Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
 
@@ -153,6 +156,10 @@ public sealed class QuestClient : IDisposable
     {
         if (response.IsSuccessStatusCode)
         {
+            // Temporary debugging code:
+
+            string packet = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Response: {packet}");
             JsonDocument jsonDocument = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
             return jsonDocument.RootElement;
         }

@@ -2,6 +2,7 @@
 using System.CommandLine.Parsing;
 using DotNetDocs.Tools.GitHubCommunications;
 using Microsoft.DotnetOrg.Ospo;
+using Microsoft.Extensions.Options;
 
 (string org, string repo, int? issue, int? duration, string? questConfigPath, string? branch) = ParseArguments(args);
 
@@ -41,8 +42,25 @@ try
         throw new ApplicationException(
             $"Unable to load Quest import configuration options.");
     }
+    bool useBearerToken = (importOptions.ApiKeys.QuestAccessToken is not null);
+    string? token = useBearerToken ?
+        importOptions.ApiKeys.QuestAccessToken :
+        importOptions.ApiKeys.QuestKey;
 
-    using QuestGitHubService serviceWorker = await CreateService(importOptions, !singleIssue);
+    if (string.IsNullOrWhiteSpace(token))
+    {
+        throw new InvalidOperationException("Azure DevOps token is missing.");
+    }
+
+    if (useBearerToken)
+    {
+        Console.WriteLine("Using Bearer token for Azure DevOps.");
+    }
+    else
+    {
+        Console.WriteLine("Using PAT token for Azure DevOps.");
+    }
+    using QuestGitHubService serviceWorker = await CreateService(importOptions, !singleIssue, useBearerToken);
 
     if (singleIssue)
     {
@@ -70,7 +88,7 @@ catch (Exception ex)
 }
 return 0;
 
-static async Task<QuestGitHubService> CreateService(ImportOptions options, bool bulkImport)
+static async Task<QuestGitHubService> CreateService(ImportOptions options, bool bulkImport, bool useBearerToken)
 {
     ArgumentNullException.ThrowIfNull(options.ApiKeys, nameof(options));
 
@@ -87,10 +105,19 @@ static async Task<QuestGitHubService> CreateService(ImportOptions options, bool 
         Console.WriteLine("Warning: Imported work items won't be assigned based on GitHub assignee.");
     }
 
+    string? token = options.ApiKeys.QuestAccessToken
+        ?? options.ApiKeys.QuestKey;
+
+    if (string.IsNullOrWhiteSpace(token))
+    {
+        throw new InvalidOperationException("Azure DevOps token is missing.");
+    }
+
     return new QuestGitHubService(
             gitHubClient,
             ospoClient,
-            options);
+            options,
+            useBearerToken);
 }
 
 static (string org, string repo, int? issue, int? duration, string? questConfigPath, string? branch) ParseArguments(string[] args)
