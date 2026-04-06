@@ -443,7 +443,7 @@ class DocFxRepo(string startDirectory, string urlBasePath)
     }
 
     /// <summary>
-    /// Pulls docset information, including URL base path, from the OPS config and docfx.json files.
+    /// Pulls docset information from the OPS config and docfx.json files.
     /// </summary>
     internal Dictionary<string, string>? GetDocsetInfo()
     {
@@ -464,7 +464,14 @@ class DocFxRepo(string startDirectory, string urlBasePath)
                 if (sourceFolder.build_source_folder is null)
                     continue;
 
-                string docfxFilePath = Path.Combine(OpsConfigFile.DirectoryName!, sourceFolder.build_source_folder, "docfx.json");
+                string docfxFilePath = Path.GetFullPath(Path.Combine(OpsConfigFile.DirectoryName!, sourceFolder.build_source_folder, "docfx.json"));
+
+                if (!string.Equals(docfxFilePath, Path.Combine(DocFxDirectory!.FullName, "docfx.json"), StringComparison.InvariantCultureIgnoreCase))
+                {
+                    // This is a different docset in the same repo. Ignore it.
+                    continue;
+                }
+
                 DocFx? docfx = LoadDocfxFile(docfxFilePath);
                 if (docfx == null)
                     continue;
@@ -497,10 +504,10 @@ class DocFxRepo(string startDirectory, string urlBasePath)
                                         docsetFilePath = string.Concat(docsetFilePath, "/", item.src);
                                 }
                             }
-
-                            if (!mappingInfo.ContainsKey(docsetFilePath))
-                                mappingInfo.Add(docsetFilePath, UrlBasePath);
                         }
+
+                        if (!mappingInfo.ContainsKey(docsetFilePath))
+                            mappingInfo.Add(docsetFilePath, UrlBasePath);
                     }
                 }
             }
@@ -641,18 +648,28 @@ class DocFxRepo(string startDirectory, string urlBasePath)
             if (redirect.source_path != null)
             {
                 // Construct the full path to the redirected file
-                fullPath = Path.Combine(redirectsFile.DirectoryName!, redirect.source_path);
+                fullPath = Path.GetFullPath(Path.Combine(redirectsFile.DirectoryName!, redirect.source_path));
             }
             else if (redirect.source_path_from_root != null)
             {
                 // Construct the full path to the redirected file
-                fullPath = Path.Combine(rootPath, redirect.source_path_from_root.Substring(1));
+                fullPath = Path.GetFullPath(Path.Combine(rootPath, redirect.source_path_from_root.Substring(1)));
             }
 
             // Path.GetFullPath doesn't require the file or directory to exist,
             // so this works on case-sensitive file systems too.
             if (redirect.redirect_url is not null)
-                redirectsLookup.Add(Path.GetFullPath(fullPath!), redirect.redirect_url);
+            {
+                try
+                {
+                    redirectsLookup.Add(fullPath!, redirect.redirect_url);
+                }
+                catch (ArgumentException)
+                {
+                    Console.WriteLine($"WARNING: The source path '{fullPath}' appears more than once in the redirection file. " +
+                        $"Please remove duplicates to ensure that all hops are removed.\n");
+                }
+            }
         }
 
         foreach (KeyValuePair<string, string> redirectPair in redirectsLookup)
