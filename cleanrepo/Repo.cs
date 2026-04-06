@@ -462,7 +462,7 @@ class DocFxRepo(string startDirectory, string urlBasePath)
                 if (sourceFolder.build_source_folder is null)
                     continue;
 
-                string docfxFilePath = Path.Combine(OpsConfigFile.DirectoryName!, sourceFolder.build_source_folder, "docfx.json");
+                string docfxFilePath = Path.GetFullPath(Path.Combine(OpsConfigFile.DirectoryName!, sourceFolder.build_source_folder, "docfx.json"));
 
                 if (!string.Equals(docfxFilePath, Path.Combine(DocFxDirectory!.FullName, "docfx.json"), StringComparison.InvariantCultureIgnoreCase))
                 {
