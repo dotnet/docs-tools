@@ -196,14 +196,16 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         if (ocrImages)
         {
             WriteOcrImageRefsToFile();
-        } else if (ocrImages && filteredOcrImage)
+        }
+        else if (ocrImages && filteredOcrImage)
         {
             WriteFilteredOcrImageRefsToFile();
-        } else
+        }
+        else
         {
             WriteImageRefsToFile();
         }
-            
+
     }
 
     /// <summary>
@@ -327,17 +329,13 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         if (docfx == null)
             return null;
 
-        string? docsetPath = null;
-
-        // If there's more than one docset, choose the one that includes the input directory.
         if (docfx.build?.content is not null)
         {
             foreach (Content entry in docfx.build.content)
             {
-                if (entry.src == null)
-                    continue;
+                string? docsetPath;
 
-                if (entry.src.TrimEnd('/') == ".")
+                if (entry.src == null || entry.src.TrimEnd('/') == ".")
                     docsetPath = DocFxDirectory!.FullName;
                 else
                     docsetPath = Path.GetFullPath(entry.src, DocFxDirectory!.FullName);
