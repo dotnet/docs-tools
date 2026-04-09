@@ -58,7 +58,6 @@ internal static class PlatformPackageDefinition
         "System.Memory.Data",
         "System.Net.Http.Json",
         "System.Net.Http.WinHttpHandler",
-        "System.Reflection.Context",
         "System.Reflection.Metadata",
         "System.Reflection.MetadataLoadContext",
         "System.Resources.Extensions",
