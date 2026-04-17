@@ -73,7 +73,6 @@ internal static class PlatformPackageDefinition
         "System.Speech",
         "System.Text.Encoding.CodePages",
         "System.Text.Encodings.Web",
-        "System.Text.Json",
         "System.Threading.AccessControl",
         "System.Threading.Channels",
         "System.Threading.Tasks.Dataflow",
