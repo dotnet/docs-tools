@@ -16,7 +16,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.CommandLine" Version="2.0.6" />
+    <PackageReference Include="System.CommandLine" Version="2.0.7" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNet.DocsTools\DotNet.DocsTools.csproj" />
