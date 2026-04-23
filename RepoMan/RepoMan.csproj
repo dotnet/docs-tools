@@ -13,7 +13,7 @@
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.51.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.52.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.3.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="2.1.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Abstractions" Version="1.3.0" />
@@ -23,7 +23,7 @@
     <PackageReference Include="Octokit" Version="14.0.0" />
     <PackageReference Include="YamlDotNet" Version="17.0.1" />
     <PackageReference Include="JmesPath.Net" Version="1.1.0" />
-    <PackageReference Include="Markdig" Version="1.1.2" />
+    <PackageReference Include="Markdig" Version="1.1.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNet.DocsTools\DotNet.DocsTools.csproj" />
