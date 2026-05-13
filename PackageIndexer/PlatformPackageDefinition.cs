@@ -118,6 +118,10 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("Microsoft.Extensions.ML"),
             // Documented under .NET Aspire moniker.
             PackageFilterExpression.Parse("Microsoft.Extensions.ServiceDiscovery*"),
+            // Caused failure on 5/12/26 - see https://apidrop.visualstudio.com/6fb8cb7d-5623-420c-946b-ca74e63ac8ba/_apis/build/builds/607248/logs/34
+            PackageFilterExpression.Parse("Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore"),
+            // Tests package - checking with Shay R. 5/12/26
+            PackageFilterExpression.Parse("Microsoft.Extensions.VectorData.ConformanceTests"),
             // Old R9 packages.
             PackageFilterExpression.Parse("Microsoft.Extensions.DependencyInjection.NamedService"),
             PackageFilterExpression.Parse("Microsoft.Extensions.DependencyInjection.Pools"),
