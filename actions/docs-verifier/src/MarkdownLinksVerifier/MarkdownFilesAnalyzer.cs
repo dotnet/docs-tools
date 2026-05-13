@@ -26,11 +26,8 @@ public static class MarkdownFilesAnalyzer
         var result = new List<LinkError>();
         foreach (string file in Directory.EnumerateFiles(Directory.GetCurrentDirectory(), "*.md", SearchOption.AllDirectories))
         {
-            string? directory = Path.GetDirectoryName(file);
-            if (directory is null)
-            {
+            string? directory = Path.GetDirectoryName(file) ??
                 throw new InvalidOperationException($"Cannot get directory for '{file}'.");
-            }
 
             MarkdownDocument document = Markdown.Parse(await File.ReadAllTextAsync(file), s_pipeline);
             foreach (LinkInline link in

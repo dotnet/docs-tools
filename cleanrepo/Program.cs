@@ -1,6 +1,5 @@
 ﻿using System.Data;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -55,26 +54,26 @@ class Program
 
     static async Task RunOptions(Options options)
     {
-        if (String.IsNullOrEmpty(options.Function))
+        if (string.IsNullOrEmpty(options.Function))
         {
             Console.WriteLine($"\nYou didn't specify which function to perform, " +
                 $"such as {s_functions[0]}, {s_functions[1]}, {s_functions[2]}, or {s_functions[3]}.");
             return;
         }
 
-        if (String.IsNullOrEmpty(options.DocFxDirectory))
+        if (string.IsNullOrEmpty(options.DocFxDirectory))
         {
             Console.WriteLine("\nYou didn't specify the directory that contains the docfx.json file.");
             return;
         }
 
-        if (String.IsNullOrEmpty(options.TargetDirectory))
+        if (string.IsNullOrEmpty(options.TargetDirectory))
         {
             Console.WriteLine("\nYou didn't specify the directory to search/clean.");
             return;
         }
 
-        if (String.IsNullOrEmpty(options.UrlBasePath))
+        if (string.IsNullOrEmpty(options.UrlBasePath))
         {
             Console.WriteLine("\nYou didn't specify the URL base path, such as /dotnet or /windows/uwp.");
             return;
@@ -232,8 +231,7 @@ class Program
                     docFxRepo._imageLinkRegExes.Add($"social_image_url: ?\"?(?<path>{docFxRepo.UrlBasePath}.*?(\\.(png|jpg|gif|svg))+)");
 
                     // Gather media file names.
-                    if (docFxRepo._imageRefs is null)
-                        docFxRepo._imageRefs = HelperMethods.GetMediaFiles(options.TargetDirectory);
+                    docFxRepo._imageRefs ??= HelperMethods.GetMediaFiles(options.TargetDirectory);
 
                     Console.WriteLine($"\nCataloging '{docFxRepo._imageRefs.Count}' images (recursively) " +
                         $"in the '{options.TargetDirectory}' directory...\n");
@@ -501,8 +499,9 @@ class Program
                 @"\]:\s(/" + urlBasePath + @"/([^\s]*))",                                           // [ref link]: /basepath/some other text
                 "<img[^>]*?src[ ]*=[ ]*\"(/" + urlBasePath + "/([^>]*?.(png|gif|jpg|svg)))[ ]*\"",  // <img src="/azure/mydocs/media/pic3.png">
                 @"\[.*\]:[ ]*(/" + urlBasePath + @"/(.*\.(png|gif|jpg|svg)))",                      // [0]: /azure/mydocs/media/pic1.png
-                @"imageSrc:[ ]*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))",                 // imageSrc: /azure/mydocs/media/pic1.png
+                @"image(?:Src|Url):\s*(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))",          // imageSrc: /azure/mydocs/media/pic1.png or imageUrl: /azure/mydocs/media/pic1.png 
                 @":::image[^:]*source=""(/" + urlBasePath + @"/([^:]*\.(png|gif|jpg|svg)))""[^:]*:::" // :::image type="complex" source="/azure/mydocs/media/pic1.png" alt-text="Screenshot.":::
+        
             ];
 
         foreach (FileInfo linkingFile in linkingFiles)
@@ -1667,7 +1666,11 @@ static class HelperMethods
     public static List<FileInfo> GetRedirectionFiles(string directoryPath)
     {
         DirectoryInfo dir = new(directoryPath);
-        return dir.EnumerateFiles(".openpublishing.redirection.*.json", SearchOption.AllDirectories).ToList();
+        return
+        [
+            .. dir.EnumerateFiles(".openpublishing.redirection.json", SearchOption.AllDirectories),
+            .. dir.EnumerateFiles(".openpublishing.redirection.*.json", SearchOption.AllDirectories)
+        ];
     }
 
     /// <summary>
