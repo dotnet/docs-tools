@@ -104,16 +104,17 @@ internal static class PlatformPackageDefinition
         excludes:
         [
             PackageFilterExpression.Parse("System.Private.ServiceModel"),
+            // Windows Runtime.
             PackageFilterExpression.Parse("System.Runtime.WindowsRuntime"),
             PackageFilterExpression.Parse("System.Runtime.WindowsRuntime.UI.Xaml"),
             // Documented under Azure SDK for .NET moniker.
             PackageFilterExpression.Parse("System.ClientModel"),
             // Documented under ASP.NET Core moniker.
             PackageFilterExpression.Parse("System.Threading.RateLimiting"),
-            PackageFilterExpression.Parse("Microsoft.Extensions.Caching.Hybrid"),
-            PackageFilterExpression.Parse("Microsoft.Extensions.Features"),
-            PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Core"),
-            PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Stores"),
+            PackageFilterExpression.Parse("Microsoft.Extensions.Caching.Hybrid"), // NS is M.E.Caching.Hybrid, and is shared with M.E.Caching.Abstractions package. Types such as M.E.Caching.Hybrid.HybridCacheOptions.
+            PackageFilterExpression.Parse("Microsoft.Extensions.Features"), // NS is Microsoft.AspNetCore.Http.Features.
+            PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Core"), // NS is Microsoft.AspNetCore.Identity.
+            PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Stores"), // NS is Microsoft.AspNetCore.Identity.
             // Documented under ML.NET moniker.
             PackageFilterExpression.Parse("Microsoft.Extensions.ML"),
             // Documented under .NET Aspire moniker.
