@@ -38,6 +38,8 @@ string gitHubActions = """
         interval: "weekly"
         day: "wednesday"
       open-pull-requests-limit: 10
+      cooldown:
+       default-days: 7
   """;
 
 buffer.WriteLineToBufferAndOutput(gitHubActions, updateNodeCount++ >= UpdateNodeLimit);
@@ -52,6 +54,8 @@ buffer.WriteLineToBufferAndOutput(gitHubActions, updateNodeCount++ >= UpdateNode
       interval: ""weekly""
       day: ""wednesday""
   open-pull-requests-limit: 5
+  cooldown:
+    default-days: 7
   groups:
     # Group .NET updates together
     dotnet:
@@ -83,6 +87,8 @@ foreach (var solution in result.Solutions.OrderBy(static sln => sln.FullPath))
                   interval: "weekly"
                   day: "wednesday"
                 open-pull-requests-limit: 5
+                cooldown:
+                  default-days: 7
                 groups:
                   # Group .NET updates together for solutions.
                   dotnet:
@@ -135,6 +141,8 @@ foreach (var fileInfo in result.StandaloneProjects.Select(static p => new FileIn
                   interval: "weekly"
                   day: "wednesday"
                 open-pull-requests-limit: 5
+                cooldown:
+                  default-days: 7
                 groups:
                   # Group .NET updates together for projects.
                   dotnet:
