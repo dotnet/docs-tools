@@ -115,8 +115,6 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Stores"), // NS is Microsoft.AspNetCore.Identity.
             // Documented under ML.NET moniker.
             PackageFilterExpression.Parse("Microsoft.Extensions.ML"),
-            // Documented under .NET Aspire moniker.
-            PackageFilterExpression.Parse("Microsoft.Extensions.ServiceDiscovery*"),
             // Public pkg but purely meant as a provider-facing helper.
             PackageFilterExpression.Parse("Microsoft.Extensions.VectorData.ConformanceTests"),
             // Old R9 packages.
