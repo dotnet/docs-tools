@@ -70,7 +70,7 @@ Arrange article content in this specific order:
 - Remove `f1_keywords` and `ms.assetid` metadata from the front matter
 - Keep `helpviewer_keywords` if it exists
 - Ensure `ai-usage: ai-assisted` is present in the front matter
-- Update `ms.date` to the current date in `MM/DD/YYYY` format, with the year 2025.
+- Update `ms.date` to the current date in `MM/DD/YYYY` format.
 
 ## Quality Standards
 
