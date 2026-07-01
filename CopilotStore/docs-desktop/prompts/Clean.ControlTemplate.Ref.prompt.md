@@ -51,7 +51,7 @@ Arrange article content in this specific order:
 - There should be a control reference file in `.github/projects/xaml/control-reference/` that contains the information about the control
 - If the control reference file says there is no parts or visual states, include a brief note about that under the section.
 - If template parts or visual states exist, include them as subsections under `## Styles and templates`:
-  - `### Content property` and detail what contnent property is used and its purpose. If none, state "This control does not define a content property."
+  - `### Content property` and detail what content property is used and its purpose. If none, state "This control does not define a content property."
   - `### Parts` for template parts (sort table and add xref links)
   - `### Visual states` for visual states
   - If there are subcontrols, such as a data grid row, continue to include those as subsections under `## Styles and templates`
