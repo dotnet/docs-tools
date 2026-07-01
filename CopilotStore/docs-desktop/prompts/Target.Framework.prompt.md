@@ -1,7 +1,7 @@
 ---
 model: Claude Haiku 4.5 (copilot)
 agent: agent
-description: "Migrate metadata service from dotnet-framework to dotnet-desktop for article."
+description: "Migrate metadata service from dotnet-desktop to dotnet-framework for article."
 ---
 
 There are two lifecycles for articles: dotnet-framework and dotnet-desktop:
