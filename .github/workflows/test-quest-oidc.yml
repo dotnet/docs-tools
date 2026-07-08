@@ -37,11 +37,15 @@ jobs:
         env:
           AZDO_TOKEN: ${{ steps.quest-auth.outputs.access-token }}
         run: |
-          curl -sS -D headers.txt \
+          set -euo pipefail
+
+          status_code=$(curl -sS -w '%{http_code}' -D headers.txt \
             -H "Authorization: Bearer $AZDO_TOKEN" \
             -H "Content-Type: application/json" \
             "https://dev.azure.com/msft-skilling/_apis/projects?api-version=7.1" \
-            -o body.json
+            -o body.json)
+
+          echo "HTTP status: $status_code"
 
           echo "HTTP response headers:"
           cat headers.txt
@@ -49,3 +53,8 @@ jobs:
           echo ""
           echo "Response body:"
           cat body.json
+
+          if [[ ! "$status_code" =~ ^2 ]]; then
+            echo "Azure DevOps API probe failed."
+            exit 1
+          fi
