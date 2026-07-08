@@ -17,8 +17,6 @@ internal class CsvUtils
             { "net472", "netframework-4.7.2-pp" },
             { "net48", "netframework-4.8-pp" },
             { "net481", "netframework-4.8.1-pp" },
-            { "net6.0", "net-6.0-pp" },
-            { "net7.0", "net-7.0-pp" },
             { "net8.0", "net-8.0-pp" },
             { "net9.0", "net-9.0-pp" },
             { "net10.0", "net-10.0-pp" },
@@ -71,26 +69,6 @@ internal class CsvUtils
                 string? fellThroughFromVersion = null;
                 switch (targetFramework)
                 {
-                    case "net6.0":
-                        opsMoniker = s_tfmToOpsMoniker["net6.0"];
-                        AddCsvEntryToDict(opsMoniker, packageEntry, "net6.0");
-                        if (!packageEntry.Frameworks.Contains("net7.0"))
-                        {
-                            // Add to net7.0 moniker since this is a compatible framework.
-                            fellThroughFromVersion = "net6.0";
-                            goto case "net7.0";
-                        }
-                        break;
-                    case "net7.0":
-                        opsMoniker = s_tfmToOpsMoniker["net7.0"];
-                        AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net7.0");
-                        if (!packageEntry.Frameworks.Contains("net8.0"))
-                        {
-                            // Add to net8.0 moniker since this is a compatible framework.
-                            fellThroughFromVersion = fellThroughFromVersion ?? "net7.0";
-                            goto case "net8.0";
-                        }
-                        break;
                     case "net8.0":
                         opsMoniker = s_tfmToOpsMoniker["net8.0"];
                         AddCsvEntryToDict(opsMoniker, packageEntry, fellThroughFromVersion ?? "net8.0");
