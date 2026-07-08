@@ -9,8 +9,12 @@ inputs:
     description: "The Azure AD tenant ID"
     required: true
   audience:
-    description: "The audience for the access token"
+    description: "The target resource audience for the access token"
     required: true
+  oidc-audience:
+    description: "The GitHub OIDC audience used for Azure login"
+    required: false
+    default: "api://AzureADTokenExchange"
 
 outputs:
   access-token:
@@ -25,7 +29,7 @@ runs:
       with:
         client-id: ${{ inputs.client-id }}
         tenant-id: ${{ inputs.tenant-id }}
-        audience: ${{ inputs.audience }}
+        audience: ${{ inputs.oidc-audience }}
         allow-no-subscriptions: true
 
     - name: OSMP API access
