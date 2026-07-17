@@ -96,7 +96,7 @@ jobs:
           client-id: ${{ secrets.QUEST_CLIENT_ID_TEST }}
           tenant-id: ${{ secrets.TENANT_ID_TEST }}
           oidc-audience: api://AzureADTokenExchange
-          audience: ${{ secrets.QUEST_AUDIENCE }}
+          audience: ${{ secrets.QUEST_AUDIENCE_TEST }}
 
       - name: Confirm token was returned
         shell: bash
