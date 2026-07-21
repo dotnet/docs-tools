@@ -11,7 +11,7 @@ async function run(): Promise<void> {
         await wait(60000);
         console.log("Waited 60 seconds.");
 
-        // When the status is passed, try to update the PR body.
+        // Wait for success/fail status of the build.
         const isSuccess = await isSuccessStatus(token);
         if (isSuccess) {
             console.log("✅ Build status is good...");

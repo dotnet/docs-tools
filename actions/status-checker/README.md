@@ -4,8 +4,6 @@ This action checks for Open Publishing Build system build warnings.:rocket:
 
 Whether or not there are build warnings, you'll see a status check for this action in your pull request. If it passes, it means it ran without error and there are not build warnings or errors. If it fails, it means there are build warnings or errors, or there's a bug in this action.
 
-Preview link generation now lives in the `preview-link-generator` action.
-
 ## Usage
 
 Add a new YAML file to your repo in the *.github/workflows* folder. The only required input is the GitHub OAuth token.

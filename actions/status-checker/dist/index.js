@@ -120,38 +120,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.workflowInput = exports.WorkflowInput = void 0;
 const core_1 = __nccwpck_require__(2186);
 class WorkflowInput {
-    get collapsibleAfter() {
-        const val = parseInt((0, core_1.getInput)("collapsible_after", { required: false }) || "10");
-        return val || 10;
-    }
-    get docsPath() {
-        const val = (0, core_1.getInput)("docs_path", { required: true });
-        return val || "docs";
-    }
-    get urlBasePath() {
-        const val = (0, core_1.getInput)("url_base_path", { required: true });
-        return val || "dotnet";
-    }
     get repoToken() {
         const val = (0, core_1.getInput)("repo_token", { required: true });
         return val;
-    }
-    get maxRowCount() {
-        const val = (0, core_1.getInput)("max_row_count");
-        return parseInt(val || "30");
-    }
-    get opaqueLeadingUrlSegments() {
-        const val = (0, core_1.getInput)("opaque_leading_url_segments");
-        if (val) {
-            const map = new Map();
-            const pairs = val.split(",");
-            pairs.forEach((pair) => {
-                const [key, value] = pair.split(":");
-                map.set(key.trim(), value.trim());
-            });
-            return map;
-        }
-        return new Map();
     }
     constructor() { }
 }
@@ -2062,6 +2033,7 @@ class Context {
         this.action = process.env.GITHUB_ACTION;
         this.actor = process.env.GITHUB_ACTOR;
         this.job = process.env.GITHUB_JOB;
+        this.runAttempt = parseInt(process.env.GITHUB_RUN_ATTEMPT, 10);
         this.runNumber = parseInt(process.env.GITHUB_RUN_NUMBER, 10);
         this.runId = parseInt(process.env.GITHUB_RUN_ID, 10);
         this.apiUrl = (_a = process.env.GITHUB_API_URL) !== null && _a !== void 0 ? _a : `https://api.github.com`;
@@ -32023,7 +31995,7 @@ async function run() {
         // Wait 60 seconds before checking status check result.
         await (0, wait_1.wait)(60000);
         console.log("Waited 60 seconds.");
-        // When the status is passed, try to update the PR body.
+        // Wait for success/fail status of the build.
         const isSuccess = await (0, status_checker_1.isSuccessStatus)(token);
         if (isSuccess) {
             console.log("✅ Build status is good...");
