@@ -5,10 +5,12 @@ on:
     branches: [ main ]
     paths:
     - 'actions/status-checker/**' # Only run for TypeScript action updates
+    - 'actions/preview-link-generator/**' # Only run for TypeScript action updates
   pull_request:
     branches: [ main ]
     paths:
     - 'actions/status-checker/**' # Only run for TypeScript action updates
+    - 'actions/preview-link-generator/**' # Only run for TypeScript action updates
 
 jobs:
   build:

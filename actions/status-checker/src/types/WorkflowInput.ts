@@ -1,5 +1,4 @@
 import { getInput } from "@actions/core";
-import { Mode } from "./Mode";
 
 export class WorkflowInput {
     get collapsibleAfter(): number {
@@ -27,11 +26,6 @@ export class WorkflowInput {
     get maxRowCount(): number {
         const val = getInput("max_row_count");
         return parseInt(val || "30");
-    }
-
-    get mode(): Mode {
-        const val = getInput("mode");
-        return val === "warning" ? "warning" : "preview";
     }
 
     get opaqueLeadingUrlSegments(): Map<string, string> {

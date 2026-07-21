@@ -1,7 +1,6 @@
 import { wait } from "./wait";
 import { isSuccessStatus } from "./status-checker";
 import { setFailed } from "@actions/core";
-import { tryUpdatePullRequestBody } from "./pull-updater";
 import { workflowInput } from "./types/WorkflowInput";
 
 async function run(): Promise<void> {
@@ -18,9 +17,6 @@ async function run(): Promise<void> {
             console.log("✅ Build status is good...");
         } else {
             console.log("❌ Build status has warnings or errors!");
-        }
-        if (workflowInput.mode === "preview") {
-            await tryUpdatePullRequestBody(token);
         }
     } catch (error: unknown) {
         const e = error as Error;
