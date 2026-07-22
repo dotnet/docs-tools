@@ -1,7 +1,6 @@
 import { wait } from "./wait";
 import { isSuccessStatus } from "./status-checker";
 import { setFailed } from "@actions/core";
-import { tryUpdatePullRequestBody } from "./pull-updater";
 import { workflowInput } from "./types/WorkflowInput";
 
 async function run(): Promise<void> {
@@ -12,15 +11,12 @@ async function run(): Promise<void> {
         await wait(60000);
         console.log("Waited 60 seconds.");
 
-        // When the status is passed, try to update the PR body.
+        // Wait for success/fail status of the build.
         const isSuccess = await isSuccessStatus(token);
         if (isSuccess) {
             console.log("✅ Build status is good...");
         } else {
             console.log("❌ Build status has warnings or errors!");
-        }
-        if (workflowInput.mode === "preview") {
-            await tryUpdatePullRequestBody(token);
         }
     } catch (error: unknown) {
         const e = error as Error;
