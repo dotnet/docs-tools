@@ -213,7 +213,7 @@ jobs:
             -H "Authorization: Bearer $AZDO_TOKEN" \
             -H "Content-Type: application/json-patch+json" \
             --data @patch.json \
-            "https://dev.azure.com/msft-skilling/Content/_apis/wit/workitems/$TEST_WORK_ITEM_ID?api-version=7.1&suppressNotifications=true" \
+            "https://dev.azure.com/msft-skilling/Content/_apis/wit/workitems/$TEST_WORK_ITEM_ID?api-version=7.1" \
             -o body.json)
 
           echo "HTTP status: $status_code"
