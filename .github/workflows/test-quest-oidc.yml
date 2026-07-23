@@ -1,0 +1,60 @@
+name: Test Quest OIDC
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-auth:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run existing Azure DevOps OIDC action
+        id: quest-auth
+        uses: ./.github/actions/oidc-auth-flow
+        with:
+          client-id: ${{ secrets.QUEST_CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          audience: ${{ secrets.QUEST_AUDIENCE }}
+
+      - name: Confirm token was returned
+        shell: bash
+        run: |
+          if [ -z "${{ steps.quest-auth.outputs.access-token }}" ]; then
+            echo "No access token returned."
+            exit 1
+          fi
+          echo "Access token was returned."
+
+      - name: Probe Azure DevOps projects API
+        shell: bash
+        env:
+          AZDO_TOKEN: ${{ steps.quest-auth.outputs.access-token }}
+        run: |
+          set -euo pipefail
+
+          status_code=$(curl -sS -w '%{http_code}' -D headers.txt \
+            -H "Authorization: Bearer $AZDO_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://dev.azure.com/msft-skilling/_apis/projects?api-version=7.1" \
+            -o body.json)
+
+          echo "HTTP status: $status_code"
+
+          echo "HTTP response headers:"
+          cat headers.txt
+
+          echo ""
+          echo "Response body:"
+          cat body.json
+
+          if [[ ! "$status_code" =~ ^2 ]]; then
+            echo "Azure DevOps API probe failed."
+            exit 1
+          fi
