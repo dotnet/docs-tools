@@ -345,14 +345,6 @@ class WorkflowInput {
         const val = parseInt((0, core_1.getInput)("collapsible_after", { required: false }) || "10");
         return val || 10;
     }
-    get docsPath() {
-        const val = (0, core_1.getInput)("docs_path", { required: true });
-        return val || "docs";
-    }
-    get urlBasePath() {
-        const val = (0, core_1.getInput)("url_base_path", { required: true });
-        return val || "dotnet";
-    }
     get repoToken() {
         const val = (0, core_1.getInput)("repo_token", { required: true });
         return val;
@@ -360,19 +352,6 @@ class WorkflowInput {
     get maxRowCount() {
         const val = (0, core_1.getInput)("max_row_count");
         return parseInt(val || "30");
-    }
-    get opaqueLeadingUrlSegments() {
-        const val = (0, core_1.getInput)("opaque_leading_url_segments");
-        if (val) {
-            const map = new Map();
-            const pairs = val.split(",");
-            pairs.forEach((pair) => {
-                const [key, value] = pair.split(":");
-                map.set(key.trim(), value.trim());
-            });
-            return map;
-        }
-        return new Map();
     }
     constructor() { }
 }
