@@ -79,39 +79,15 @@ ${PREVIEW_TABLE_END}`;
 
     it("options are correctly constructed with expected values from import", () => {
         setInput("COLLAPSIBLE_AFTER", "7");
-        setInput("DOCS_PATH", "test/path");
-        setInput("URL_BASE_PATH", "foundation");
-        setInput(
-            "opaque_leading_url_segments",
-            "net:view=netdesktop-7.0,framework:view=netframeworkdesktop-4.8"
-        );
+        setInput("MAX_ROW_COUNT", "42");
+        setInput("REPO_TOKEN", "test-token");
 
         const opts: WorkflowInput = workflowInput;
 
         expect(opts).toBeDefined();
         expect(opts.collapsibleAfter).toBe(7);
-        expect(opts.docsPath).toBe("test/path");
-
-        const compareMaps = <T1, T2>(
-            expected: Map<T1, T2>,
-            actual: Map<T1, T2>
-        ) => {
-            expect(expected).toBeDefined();
-            expect(actual).toBeDefined();
-
-            expect(expected.size).toBe(actual.size);
-
-            for (let [key, value] of expected) {
-                expect(actual.has(key));
-                expect(actual.get(key)).toBe(value);
-            }
-        };
-
-        var map: Map<string, string> = new Map();
-        map.set("net", "view=netdesktop-7.0");
-        map.set("framework", "view=netframeworkdesktop-4.8");
-
-        compareMaps(map, opts.opaqueLeadingUrlSegments);
+        expect(opts.maxRowCount).toBe(42);
+        expect(opts.repoToken).toBe("test-token");
     });
     it("extractPreviewLinksFromBuildReport parses file to preview URL map", () => {
         const html = `
