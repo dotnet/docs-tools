@@ -285,7 +285,6 @@ function stripTags(input: string): string {
 function decodeHtmlEntities(input: string): string {
     return input
         .replace(/&nbsp;/g, " ")
-        .replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
         .replace(/&quot;/g, '"')
@@ -328,7 +327,7 @@ function buildMarkdownPreviewTableFromExtractedLinks(
     }
 
     if (exceedsMax) {
-        markdownTable += `\n> [!NOTE]\n> This table shows the first ${workflowInput.maxRowCount} preview links found in the OPS build report. For the full list, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
+        markdownTable += `\n> [!NOTE]\n> This table shows the first ${workflowInput.maxRowCount} preview links (sorted alphabetically by file path) found in the OPS build report. For the full list, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
     }
 
     return markdownTable;
