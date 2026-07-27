@@ -1,171 +1,101 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 3767:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getHeadingTextFrom = exports.getHeadingTextFromRaw = void 0;
-const promises_1 = __nccwpck_require__(3292);
-const h1RegExp = /^# (?<h1>.*$)/gim;
-const titleRegExp = /^title:\s*(?<title>.*)$/gim;
-async function getHeadingTextFromRaw(path, context, commitOid) {
-    try {
-        const owner = context.actor;
-        const repo = context.repo.repo;
-        const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${commitOid}/${path}`;
-        const response = await fetch(raw);
-        if (response && response.ok) {
-            const content = await response.text();
-            if (!content) {
-                console.log(`Unable to read content for '${path}'.`);
-                return null;
-            }
-            return tryGetTextFromContent(content, path);
-        }
-        else {
-            console.log(`Error reading content for '${path}'. Status: ${response.status}`);
-        }
-    }
-    catch (error) {
-        if (error) {
-            console.log(error.toString());
-        }
-        else {
-            console.log(`Unknown error reading content for '${path}'.`);
-        }
-    }
-    return null;
-}
-exports.getHeadingTextFromRaw = getHeadingTextFromRaw;
-async function getHeadingTextFrom(path) {
-    try {
-        const content = await (0, promises_1.readFile)(path, "utf-8");
-        if (!content) {
-            console.log(`Unable to read content for '${path}'.`);
-            return null;
-        }
-        return tryGetTextFromContent(content, path);
-    }
-    catch (error) {
-        if (error) {
-            console.log(error.toString());
-        }
-        else {
-            console.log(`Unknown error reading content for '${path}'.`);
-        }
-    }
-    return null;
-}
-exports.getHeadingTextFrom = getHeadingTextFrom;
-const xrefRegExp = /<xref:([^>]+)>/gim;
-function tryGetTextFromContent(content, path) {
-    var _a;
-    let result = (_a = tryGetRegExpMatch(h1RegExp, "h1", content)) !== null && _a !== void 0 ? _a : tryGetRegExpMatch(titleRegExp, "title", content);
-    console.log(`Found ${result} from '${path}' contents.`);
-    if (result && result.indexOf("<xref:") > -1) {
-        result = normalizeHeadingOrTitleText(result);
-        console.log(`  normalized as ${result}`);
-    }
-    return result;
-}
-function normalizeHeadingOrTitleText(headingText) {
-    // If contains xref markdown, extract only the text from it.
-    // Example: "<xref:System.Globalization.CompareInfo> class"
-    //       or "<xref:System.Globalization.CompareInfo /> class"
-    // Result: "`System.Globalization.CompareInfo` class"
-    const xrefMatch = xrefRegExp.exec(headingText);
-    if (xrefMatch && xrefMatch[1]) {
-        headingText = headingText.replace(xrefRegExp, `\`${xrefMatch[1]}\``);
-    }
-    return headingText;
-}
-function tryGetRegExpMatch(expression, groupName, content) {
-    var _a;
-    let result = null;
-    const match = expression.exec(content);
-    if (match && match.groups) {
-        result = ((_a = match.groups) === null || _a === void 0 ? void 0 : _a[groupName]) || null;
-    }
-    return result;
-}
-
-
-/***/ }),
-
 /***/ 8791:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.exportedForTesting = exports.tryUpdatePullRequestBody = void 0;
 const core_1 = __nccwpck_require__(2186);
 const github_1 = __nccwpck_require__(5438);
+const https = __importStar(__nccwpck_require__(5687));
 const WorkflowInput_1 = __nccwpck_require__(6741);
-const file_heading_extractor_1 = __nccwpck_require__(3767);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
+const OPS_CHECK_NAME = "OpenPublishing.Build";
+const OPS_MAX_POLL_ATTEMPTS = 40;
+const OPS_POLL_DELAY_MS = 30000;
 async function tryUpdatePullRequestBody(token) {
-    var _a, _b, _c, _d, _e;
+    var _a, _b;
     try {
         const prNumber = github_1.context.payload.number;
         (0, core_1.info)(`Update pull ${prNumber} request body.`);
-        let allFiles = [];
-        let details = await getPullRequest(token, null);
+        const details = await getPullRequest(token);
         if (!details) {
             (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
+            return;
         }
         const pullRequest = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
         if (!pullRequest) {
             (0, core_1.info)("Unable to pull request details from object-graph.");
+            return;
         }
         if (pullRequest.changedFiles === 0) {
             (0, core_1.info)("No files changed at all...");
             return;
         }
-        else {
-            try {
-                (0, core_1.startGroup)("Pull request JSON body");
-                (0, core_1.info)(JSON.stringify(pullRequest, undefined, 2));
-                (0, core_1.endGroup)();
-            }
-            catch (_f) {
-                (0, core_1.endGroup)();
-            }
+        try {
+            (0, core_1.startGroup)("Pull request JSON body");
+            (0, core_1.info)(JSON.stringify(pullRequest, undefined, 2));
+            (0, core_1.endGroup)();
         }
-        allFiles = [...pullRequest.files.edges];
-        while (details.repository.pullRequest.files.pageInfo.hasNextPage) {
-            const cursor = details.repository.pullRequest.files.pageInfo.endCursor;
-            details = await getPullRequest(token, cursor);
-            if (!details) {
-                (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
-            }
-            const moreFiles = (_d = (_c = (_b = details.repository) === null || _b === void 0 ? void 0 : _b.pullRequest) === null || _c === void 0 ? void 0 : _c.files) === null || _d === void 0 ? void 0 : _d.edges;
-            if (!moreFiles) {
-                (0, core_1.info)("Unable to pull request details from object-graph.");
-            }
-            allFiles = [...allFiles, ...moreFiles];
+        catch (_c) {
+            (0, core_1.endGroup)();
         }
-        if (isPullRequestModifyingPreviewEnabledFiles(allFiles) === false) {
-            (0, core_1.info)("No updated markdown or .yml files...");
+        const commitOid = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha;
+        if (!commitOid) {
+            (0, core_1.info)("Unable to resolve PR head commit SHA.");
             return;
         }
-        const { files, exceedsMax } = getModifiedPreviewEnabledFiles(allFiles);
-        const commitOid = (_e = github_1.context.payload.pull_request) === null || _e === void 0 ? void 0 : _e.head.sha;
-        const markdownTable = await buildMarkdownPreviewTable(prNumber, files, pullRequest.checksUrl, commitOid, exceedsMax);
-        let updatedBody = "";
-        if (pullRequest.body.includes(PREVIEW_TABLE_START) &&
-            pullRequest.body.includes(PREVIEW_TABLE_END)) {
-            // Replace existing preview table.
-            updatedBody = replaceExistingTable(pullRequest.body, markdownTable);
+        const opsCheck = await waitForStatusCheck(token, commitOid, OPS_CHECK_NAME, OPS_MAX_POLL_ATTEMPTS, OPS_POLL_DELAY_MS);
+        if (!opsCheck || !opsCheck.detailsUrl) {
+            (0, core_1.info)(`Unable to find a completed ${OPS_CHECK_NAME} status check with a build report URL.`);
+            return;
         }
-        else {
-            // Append preview table to bottom.
-            updatedBody = appendTable(pullRequest.body, markdownTable);
+        if (opsCheck.status !== "success") {
+            (0, core_1.info)(`${OPS_CHECK_NAME} completed with status '${opsCheck.status}'. Skipping preview table update.`);
+            return;
         }
+        const buildReportHtml = await downloadUrl(opsCheck.detailsUrl);
+        if (!buildReportHtml) {
+            (0, core_1.info)("Unable to download OPS build report HTML.");
+            return;
+        }
+        const previewLinks = extractPreviewLinksFromBuildReport(buildReportHtml);
+        if (previewLinks.size === 0) {
+            (0, core_1.info)("No preview links found in OPS build report.");
+            return;
+        }
+        const markdownTable = buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, pullRequest.checksUrl);
+        const updatedBody = pullRequest.body.includes(PREVIEW_TABLE_START) &&
+            pullRequest.body.includes(PREVIEW_TABLE_END)
+            ? replaceExistingTable(pullRequest.body, markdownTable)
+            : appendTable(pullRequest.body, markdownTable);
         (0, core_1.startGroup)("Proposed PR body");
         (0, core_1.info)(updatedBody);
         (0, core_1.endGroup)();
@@ -191,115 +121,182 @@ async function tryUpdatePullRequestBody(token) {
     }
 }
 exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
+async function waitForStatusCheck(token, commitSha, checkName, maxAttempts, pollDelayMs) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const check = await getSpecificStatusCheck(token, commitSha, checkName);
+        if (check) {
+            (0, core_1.info)(`Found ${checkName} status check (${check.status}) on attempt ${attempt}/${maxAttempts}.`);
+            if (check.status === "success") {
+                return check;
+            }
+            if (check.status === "failure" || check.status === "error") {
+                return check;
+            }
+        }
+        else {
+            (0, core_1.info)(`${checkName} status check not found on attempt ${attempt}/${maxAttempts}.`);
+        }
+        if (attempt < maxAttempts) {
+            await delay(pollDelayMs);
+        }
+    }
+    return null;
+}
+async function getSpecificStatusCheck(token, commitSha, checkName) {
+    const octokit = (0, github_1.getOctokit)(token);
+    const response = await octokit.rest.repos.getCombinedStatusForRef({
+        owner: github_1.context.repo.owner,
+        repo: github_1.context.repo.repo,
+        ref: commitSha,
+    });
+    const exactMatch = response.data.statuses.find((status) => status.context === checkName);
+    if (!exactMatch) {
+        return null;
+    }
+    return {
+        name: exactMatch.context,
+        status: exactMatch.state,
+        detailsUrl: exactMatch.target_url,
+    };
+}
+function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+async function downloadUrl(url) {
+    return await new Promise((resolve) => {
+        const request = https.get(url, (response) => {
+            var _a;
+            const statusCode = (_a = response.statusCode) !== null && _a !== void 0 ? _a : 0;
+            if (statusCode >= 300 &&
+                statusCode < 400 &&
+                response.headers.location) {
+                response.resume();
+                downloadUrl(response.headers.location)
+                    .then(resolve)
+                    .catch(() => resolve(""));
+                return;
+            }
+            if (statusCode < 200 || statusCode >= 300) {
+                response.resume();
+                resolve("");
+                return;
+            }
+            let data = "";
+            response.setEncoding("utf8");
+            response.on("data", (chunk) => {
+                data += chunk;
+            });
+            response.on("end", () => resolve(data));
+        });
+        request.on("error", () => resolve(""));
+    });
+}
+function extractPreviewLinksFromBuildReport(html) {
+    var _a, _b, _c, _d, _e;
+    const previewLinks = new Map();
+    if (!html) {
+        return previewLinks;
+    }
+    const tables = (_a = html.match(/<table[\s\S]*?<\/table>/gi)) !== null && _a !== void 0 ? _a : [];
+    for (const table of tables) {
+        if (!tableHasPreviewHeaders(table)) {
+            continue;
+        }
+        const rows = (_b = table.match(/<tr[\s\S]*?<\/tr>/gi)) !== null && _b !== void 0 ? _b : [];
+        for (let i = 1; i < rows.length; i++) {
+            const cells = (_c = rows[i].match(/<td[\s\S]*?<\/td>/gi)) !== null && _c !== void 0 ? _c : [];
+            if (cells.length < 3) {
+                continue;
+            }
+            const fileCell = (_d = cells[0]) !== null && _d !== void 0 ? _d : "";
+            const previewCell = (_e = cells[2]) !== null && _e !== void 0 ? _e : "";
+            const file = decodeHtmlEntities(stripTags(fileCell)).trim();
+            const previewHref = extractAnchorHref(previewCell);
+            if (file && previewHref) {
+                previewLinks.set(file, previewHref);
+            }
+        }
+        if (previewLinks.size > 0) {
+            return previewLinks;
+        }
+    }
+    return previewLinks;
+}
+function tableHasPreviewHeaders(tableHtml) {
+    var _a, _b, _c;
+    const firstRow = (_b = (_a = tableHtml.match(/<tr[\s\S]*?<\/tr>/i)) === null || _a === void 0 ? void 0 : _a[0]) !== null && _b !== void 0 ? _b : "";
+    const headerCells = (_c = firstRow.match(/<t[dh][\s\S]*?<\/t[dh]>/gi)) !== null && _c !== void 0 ? _c : [];
+    const headerValues = headerCells.map((cell) => decodeHtmlEntities(stripTags(cell)).trim().toLowerCase());
+    const hasFileHeader = headerValues.some((_) => _ === "file");
+    const hasPreviewHeader = headerValues.some((_) => _.includes("preview url"));
+    return hasFileHeader && hasPreviewHeader;
+}
+function extractAnchorHref(cellHtml) {
+    var _a, _b;
+    const hrefMatch = cellHtml.match(/<a[^>]+href=["']([^"']+)["']/i);
+    return (_b = (_a = hrefMatch === null || hrefMatch === void 0 ? void 0 : hrefMatch[1]) === null || _a === void 0 ? void 0 : _a.trim()) !== null && _b !== void 0 ? _b : "";
+}
+function stripTags(input) {
+    return input.replace(/<[^>]*>/g, " ");
+}
+function decodeHtmlEntities(input) {
+    return input
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, " ");
+}
+function buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, checksUrl) {
+    var _a;
+    let markdownTable = "#### Internal previews\n\n";
+    const isCollapsible = ((_a = WorkflowInput_1.workflowInput.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < previewLinks.size;
+    if (isCollapsible) {
+        markdownTable +=
+            "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
+    }
+    markdownTable += "| 📄 File | 🔗 Preview link |\n";
+    markdownTable += "|:--|:--|\n";
+    const sortedLinks = [...previewLinks.entries()].sort(([a], [b]) => a.localeCompare(b));
+    const exceedsMax = sortedLinks.length > WorkflowInput_1.workflowInput.maxRowCount;
+    const displayedLinks = sortedLinks.slice(0, WorkflowInput_1.workflowInput.maxRowCount);
+    for (const [file, previewUrl] of displayedLinks) {
+        const previewTitle = file.replace(".md", "").replace(".yml", "");
+        markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${previewUrl}) |\n`;
+    }
+    if (isCollapsible) {
+        markdownTable += "\n</details>\n";
+    }
+    if (exceedsMax) {
+        markdownTable += `\n> [!NOTE]\n> This table shows the first ${WorkflowInput_1.workflowInput.maxRowCount} preview links found in the OPS build report. For the full list, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
+    }
+    return markdownTable;
+}
 /**
  * Returns the {PullRequestDetails} that correspond to
  * the contextual GitHub Action workflow run.
  * @param token The GITHUB_TOKEN value to obtain an instance of octokit with.
  * @returns A {Promise} of {PullRequestDetails}.
  */
-async function getPullRequest(token, cursor = null) {
-    /*
-You can verify the query below, by running the following in the GraphQL Explorer:
-  https://docs.github.com/en/graphql/overview/explorer
- 
-1. Sign in to GitHub.
-2. Paste the query string value into the query window.
-3. Replace the $name, $owner, and $number variables with the values from your repository, or use the following JSON:
-{
-  "name": "docs",
-  "owner": "dotnet",
-  "number": 36636,
-  "cursor": null
-}
-4. Click the "Play" button.
-*/
+async function getPullRequest(token) {
     const octokit = (0, github_1.getOctokit)(token);
     return await octokit.graphql({
-        query: `query getPullRequest($name: String!, $owner: String!, $number: Int!, $cursor: String) {
+        query: `query getPullRequest($name: String!, $owner: String!, $number: Int!) {
       repository(name: $name, owner: $owner) {
         pullRequest(number: $number) {
           body
           checksUrl
           changedFiles
           state
-          files(first: 100, after: $cursor) {
-            pageInfo {
-              hasNextPage,
-              endCursor
-            },
-            edges {
-              node {
-                additions
-                changeType
-                deletions
-                path
-              }
-            }
-          }
         }
       }
     }`,
         name: github_1.context.repo.repo,
         owner: github_1.context.repo.owner,
         number: github_1.context.payload.number,
-        cursor,
     });
-}
-function isFilePreviewEnabled(_) {
-    return (_.node.path.includes("includes/") === false &&
-        _.node.path.endsWith("README.md") === false &&
-        (_.node.path.endsWith(".md") === true ||
-            _.node.path.endsWith(".yml") === true) &&
-        (_.node.changeType == "ADDED" ||
-            _.node.changeType == "CHANGED" ||
-            _.node.changeType == "MODIFIED" ||
-            _.node.changeType == "RENAMED"));
-}
-function isPullRequestModifyingPreviewEnabledFiles(files) {
-    return (files && files.length > 0 && files.some((_) => isFilePreviewEnabled(_)));
-}
-/**
- * Gets the modified markdown or YAML files using the following filtering rules:
- * -  It's a markdown or .yml file, that isn't an "include", and is considered preview-enabled.
- * -  Files are sorted by most changes in descending order, a max number of files are returned.
- * -  The remaining files are then sorted alphabetically.
- */
-function getModifiedPreviewEnabledFiles(allFiles) {
-    const modifiedFiles = allFiles
-        .filter((_) => isFilePreviewEnabled(_))
-        .map((_) => _.node);
-    const exceedsMax = modifiedFiles.length > WorkflowInput_1.workflowInput.maxRowCount;
-    const mostChanged = sortByMostChanged(modifiedFiles, true);
-    const byChangeType = sortByChangeType(mostChanged, true);
-    const sorted = sortAlphabetically(byChangeType.slice(0, WorkflowInput_1.workflowInput.maxRowCount));
-    return { files: sorted, exceedsMax };
-}
-const changeTypeOrder = [
-    "ADDED",
-    "MODIFIED",
-    "CHANGED",
-    "RENAMED",
-    "COPIED",
-    "DELETED",
-];
-function sortByChangeType(files, descending) {
-    return files.sort((a, b) => {
-        return descending
-            ? changeTypeOrder.indexOf(b.changeType) -
-                changeTypeOrder.indexOf(a.changeType)
-            : changeTypeOrder.indexOf(a.changeType) -
-                changeTypeOrder.indexOf(b.changeType);
-    });
-}
-function sortByMostChanged(files, descending) {
-    return files.sort((a, b) => {
-        const aChanges = a.additions + a.deletions;
-        const bChanges = b.additions + b.deletions;
-        return descending ? bChanges - aChanges : aChanges - bChanges;
-    });
-}
-function sortAlphabetically(files) {
-    return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 function toGitHubLink(file, commitOid) {
     const owner = github_1.context.repo.owner;
@@ -307,55 +304,6 @@ function toGitHubLink(file, commitOid) {
     return commitOid
         ? `https://github.com/${owner}/${repo}/blob/${commitOid}/${file}`
         : `_${file}_`;
-}
-function toPreviewLink(file, prNumber) {
-    const docsPath = WorkflowInput_1.workflowInput.docsPath;
-    let path = file
-        .replace(`${docsPath}/`, "")
-        .replace(".md", "")
-        .replace(".yml", "");
-    const opaqueLeadingUrlSegments = WorkflowInput_1.workflowInput.opaqueLeadingUrlSegments;
-    let queryString = "";
-    for (const [key, query] of opaqueLeadingUrlSegments) {
-        const segment = `${key}/`;
-        if (path.startsWith(segment)) {
-            path = path.replace(segment, "");
-            queryString = query;
-            break;
-        }
-    }
-    const urlBasePath = WorkflowInput_1.workflowInput.urlBasePath;
-    const qs = queryString ? `&${queryString}` : "";
-    return `https://review.learn.microsoft.com/en-us/${urlBasePath}/${path}?branch=pr-en-us-${prNumber}${qs}`;
-}
-async function buildMarkdownPreviewTable(prNumber, files, checksUrl, commitOid, exceedsMax = false, readRawGitHubFile = true) {
-    var _a;
-    const links = new Map();
-    files.forEach((file) => {
-        links.set(file.path, toPreviewLink(file.path, prNumber));
-    });
-    let markdownTable = "#### Internal previews\n\n";
-    const isCollapsible = ((_a = WorkflowInput_1.workflowInput.collapsibleAfter) !== null && _a !== void 0 ? _a : 10) < links.size;
-    if (isCollapsible) {
-        markdownTable +=
-            "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
-    }
-    markdownTable += "| 📄 File | 🔗 Preview link |\n";
-    markdownTable += "|:--|:--|\n";
-    for (const [file, link] of links) {
-        const heading = readRawGitHubFile
-            ? await (0, file_heading_extractor_1.getHeadingTextFromRaw)(file, github_1.context, commitOid)
-            : await (0, file_heading_extractor_1.getHeadingTextFrom)(file);
-        const previewTitle = heading || file.replace(".md", "").replace(".yml", "");
-        markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${link}) |\n`;
-    }
-    if (isCollapsible) {
-        markdownTable += "\n</details>\n";
-    }
-    if (exceedsMax /* include footnote when we're truncating... */) {
-        markdownTable += `\n> [!NOTE]\n> This table shows preview links for the ${WorkflowInput_1.workflowInput.maxRowCount} files with the most changes. For preview links for other files in this PR, select <strong>OpenPublishing.Build Details</strong> within [checks](${checksUrl}).\n`;
-    }
-    return markdownTable;
 }
 function replaceExistingTable(body, table) {
     const startIndex = body.indexOf(PREVIEW_TABLE_START);
@@ -368,34 +316,18 @@ function replaceExistingTable(body, table) {
     }
     const start = body.substring(0, startIndex + PREVIEW_TABLE_START.length);
     const tail = body.substring(endIndex);
-    return `${start}
-
----
-
-${table}
-
-${tail}`;
+    return `${start}\n\n---\n\n${table}\n\n${tail}`;
 }
 function appendTable(body, table) {
-    return `${body}
-
-${PREVIEW_TABLE_START}
-
----
-
-${table}
-${PREVIEW_TABLE_END}`;
+    return `${body}\n\n${PREVIEW_TABLE_START}\n\n---\n\n${table}\n${PREVIEW_TABLE_END}`;
 }
 exports.exportedForTesting = {
     appendTable,
-    buildMarkdownPreviewTable,
-    getModifiedPreviewEnabledFiles,
-    isFilePreviewEnabled,
-    isPullRequestModifyingPreviewEnabledFiles,
+    buildMarkdownPreviewTableFromExtractedLinks,
+    extractPreviewLinksFromBuildReport,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
     replaceExistingTable,
-    toPreviewLink,
 };
 
 
@@ -30435,14 +30367,6 @@ module.exports = require("events");
 
 "use strict";
 module.exports = require("fs");
-
-/***/ }),
-
-/***/ 3292:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("fs/promises");
 
 /***/ }),
 

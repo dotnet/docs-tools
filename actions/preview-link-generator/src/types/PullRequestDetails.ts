@@ -1,7 +1,10 @@
-import { Pull } from "./Pull";
-
 export type PullRequestDetails = {
     readonly repository: {
-        readonly pullRequest: Pull;
+        readonly pullRequest: {
+            readonly body: string;
+            readonly checksUrl: string;
+            readonly changedFiles: number;
+            readonly state: string;
+        };
     };
 };
