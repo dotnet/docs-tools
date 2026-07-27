@@ -257,7 +257,7 @@ function buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, ch
         markdownTable +=
             "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
     }
-    markdownTable += "| 📄 File | 🔗 Preview link |\n";
+    markdownTable += "| File | Preview link |\n";
     markdownTable += "|:--|:--|\n";
     const sortedLinks = [...previewLinks.entries()].sort(([a], [b]) => a.localeCompare(b));
     const exceedsMax = sortedLinks.length > WorkflowInput_1.workflowInput.maxRowCount;

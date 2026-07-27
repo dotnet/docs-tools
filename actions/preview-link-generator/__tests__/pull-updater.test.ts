@@ -167,7 +167,7 @@ ${PREVIEW_TABLE_END}`;
 
         expect(actual).toEqual(
             "#### Internal previews\n\n" +
-                "| 📄 File | 🔗 Preview link |\n" +
+                "| File | Preview link |\n" +
                 "|:--|:--|\n" +
                 "| [docs/a.md](https://github.com/dotnet/docs/blob/oid/docs/a.md) | [docs/a](https://review.learn.microsoft.com/en-us/dotnet/a?branch=pr-en-us-7) |\n" +
                 "| [docs/b.yml](https://github.com/dotnet/docs/blob/oid/docs/b.yml) | [docs/b](https://review.learn.microsoft.com/en-us/dotnet/b?branch=pr-en-us-7) |\n"

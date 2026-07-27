@@ -306,7 +306,7 @@ function buildMarkdownPreviewTableFromExtractedLinks(
             "<details><summary><strong>Toggle expand/collapse</strong></summary><br/>\n\n";
     }
 
-    markdownTable += "| 📄 File | 🔗 Preview link |\n";
+    markdownTable += "| File | Preview link |\n";
     markdownTable += "|:--|:--|\n";
 
     const sortedLinks = [...previewLinks.entries()].sort(([a], [b]) =>
