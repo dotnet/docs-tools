@@ -1,5 +1,5 @@
 name: 'Preview link generator'
-description: 'Generates and updates preview links for changed markdown and YAML files in a pull request.'
+description: 'Waits for OpenPublishing.Build to complete, then extracts preview links from the OPS build report and updates the pull request body.'
 author: 'Genevieve Warren'
 inputs:
   repo_token:

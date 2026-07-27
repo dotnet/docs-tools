@@ -1,6 +1,6 @@
 # Preview link generator GitHub Action
 
-This action updates a pull request body with preview links for changed markdown and YAML files.
+This action updates a pull request body with preview links extracted from the OpenPublishing.Build report after the OPS status check completes.
 
 ## Usage
 
