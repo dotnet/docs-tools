@@ -15,14 +15,14 @@ on:
         required: false
         default: "docs"
       issue:
-        description: "The issue number to manually test"
+        description: "The issue number to manually test. Ignored when auth-only is true."
         required: true
       auth-only:
         description: "Run only the Azure DevOps OIDC auth probe"
         required: false
         default: "false"
       test-work-item-id:
-        description: "Azure DevOps work item ID used by the auth-only probe"
+        description: "Azure DevOps work item ID used by the auth-only probe. Ignored unless auth-only is true."
         required: false
         default: "562440"
 
@@ -41,6 +41,9 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: "Print manual run reason"
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
