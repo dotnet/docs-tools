@@ -70,9 +70,9 @@ jobs:
         id: azure-devops-oidc-auth
         uses: ./.github/actions/oidc-auth-flow
         with:
-          client-id: ${{ secrets.QUEST_CLIENT_ID_TEST }}
-          tenant-id: ${{ secrets.TENANT_ID_TEST }}
-          audience: ${{ secrets.QUEST_AUDIENCE_TEST }}
+          client-id: ${{ secrets.QUEST_APPLICATION_ID }}
+          tenant-id: ${{ secrets.QUEST_DIRECTORY_ID }}
+          audience: ${{ secrets.QUEST_AUDIENCE_DEVOPS_ID }}
 
       - name: Azure DevOps OpenID Connect for automatic runs
         if: ${{ github.event_name != 'workflow_dispatch' }}
@@ -130,10 +130,10 @@ jobs:
         id: quest-auth
         uses: ./.github/actions/oidc-auth-flow
         with:
-          client-id: ${{ secrets.QUEST_CLIENT_ID_TEST }}
-          tenant-id: ${{ secrets.TENANT_ID_TEST }}
+          client-id: ${{ secrets.QUEST_APPLICATION_ID }}
+          tenant-id: ${{ secrets.QUEST_DIRECTORY_ID }}
           oidc-audience: api://AzureADTokenExchange
-          audience: ${{ secrets.QUEST_AUDIENCE_TEST }}
+          audience: ${{ secrets.QUEST_AUDIENCE_DEVOPS_ID }}
 
       - name: Confirm token was returned
         shell: bash
