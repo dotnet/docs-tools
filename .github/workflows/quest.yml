@@ -6,6 +6,14 @@ on:
         description: "The reason for running the workflow"
         required: true
         default: "Manual run"
+      target-org:
+        description: "The GitHub organization to target for a manual run"
+        required: false
+        default: "dotnet"
+      target-repo:
+        description: "The GitHub repository to target for a manual run"
+        required: false
+        default: "docs"
       issue:
         description: "The issue number to manually test"
         required: true
@@ -37,44 +45,66 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Reason: $REASON"
+          echo "Target org: $TARGETORG"
+          echo "Target repo: $TARGETREPO"
           echo "Issue number: $ISSUENUMBER"
         env:
+          TARGETORG: ${{ github.event.inputs.target-org || github.repository_owner }}
+          TARGETREPO: ${{ github.event.inputs.target-repo || github.event.repository.name }}
           ISSUENUMBER: ${{ github.event.inputs.issue }}
           REASON: ${{ github.event.inputs.reason }}
 
       - name: Azure OpenID Connect
         id: azure-oidc-auth
-        uses: dotnet/docs-tools/.github/actions/oidc-auth-flow@main
+        uses: ./.github/actions/oidc-auth-flow
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
           audience: ${{ secrets.OSMP_API_AUDIENCE }}
 
+      - name: Azure DevOps OpenID Connect for manual test runs
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        id: azure-devops-oidc-auth
+        uses: ./.github/actions/oidc-auth-flow
+        with:
+          client-id: ${{ secrets.QUEST_CLIENT_ID_TEST }}
+          tenant-id: ${{ secrets.TENANT_ID_TEST }}
+          audience: ${{ secrets.QUEST_AUDIENCE_TEST }}
+
+      - name: Azure DevOps OpenID Connect for automatic runs
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        id: azure-devops-oidc-auth-prod
+        uses: ./.github/actions/oidc-auth-flow
+        with:
+          client-id: ${{ secrets.QUEST_CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          audience: ${{ secrets.QUEST_AUDIENCE }}
+
       # This step occurs when ran manually, passing the manual issue number input
       - name: manual-sequester
         if: ${{ github.event_name == 'workflow_dispatch' }}
         id: manual-sequester
-        uses: dotnet/docs-tools/actions/sequester@main
+        uses: ./actions/sequester
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
           ImportOptions__ApiKeys__AzureAccessToken:  ${{ steps.azure-oidc-auth.outputs.access-token }}
-          ImportOptions__ApiKeys__QuestKey: ${{ secrets.QUEST_KEY }}
+          ImportOptions__ApiKeys__QuestAccessToken: ${{ steps.azure-devops-oidc-auth.outputs.access-token }}
           ImportOptions__ApiKeys__SequesterPrivateKey: ${{ secrets.SEQUESTER_PRIVATEKEY }}
           ImportOptions__ApiKeys__SequesterAppID: ${{ secrets.SEQUESTER_APPID }}
         with:
-          org: ${{ github.repository_owner }}
-          repo: ${{ github.repository }}
+          org: ${{ github.event.inputs.target-org || github.repository_owner }}
+          repo: ${{ github.event.inputs.target-repo || github.event.repository.name }}
           issue: ${{ github.event.inputs.issue }}
 
       # This step occurs automatically, passing the issue number from the event
       - name: auto-sequester
         if: ${{ github.event_name != 'workflow_dispatch' }}
         id: auto-sequester
-        uses: dotnet/docs-tools/actions/sequester@main
+        uses: ./actions/sequester
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
           ImportOptions__ApiKeys__AzureAccessToken: ${{ steps.azure-oidc-auth.outputs.access-token }}
-          ImportOptions__ApiKeys__QuestKey: ${{ secrets.QUEST_KEY }}
+          ImportOptions__ApiKeys__QuestAccessToken: ${{ steps.azure-devops-oidc-auth-prod.outputs.access-token }}
           ImportOptions__ApiKeys__SequesterPrivateKey: ${{ secrets.SEQUESTER_PRIVATEKEY }}
           ImportOptions__ApiKeys__SequesterAppID: ${{ secrets.SEQUESTER_APPID }}
         with:
