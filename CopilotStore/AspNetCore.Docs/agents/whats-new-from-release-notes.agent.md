@@ -59,8 +59,8 @@ provided explicit values, use them. Otherwise, auto-discover.
      a. List existing include files in `dotnet/AspNetCore.Docs` under
         `aspnetcore/release-notes/aspnetcore-{MAJOR_VERSION}/includes/`.
      b. Extract the set of preview suffixes already represented
-        (e.g., files ending in `-preview1.md` and `-preview2.md`
-        → previews 1 and 2 are covered).
+         (e.g., files ending in `-preview-1.md` and `-preview-2.md`
+         → previews 1 and 2 are covered).
      c. Compare against available previews in `dotnet/core`.
      d. If there is a preview in `dotnet/core` with NO corresponding
         include files → that is the **new preview** to process.

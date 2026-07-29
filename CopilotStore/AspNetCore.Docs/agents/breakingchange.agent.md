@@ -58,7 +58,7 @@ Summarize the breaking change.
 - If **behavioral change**:
   `This change is a [behavioral change](/dotnet/core/compatibility/categories#behavioral-change).`
 - If **source or binary incompatible**:
-  `This change can affect [source compatibility](/dotnet/core/compatibility/categories#source-compatibility) and/or [binary compatibility](/dotnet/core/compatibility/categories#source-compatibility).`
+  `This change can affect [source compatibility](/dotnet/core/compatibility/categories#source-compatibility) and/or [binary compatibility](/dotnet/core/compatibility/categories#binary-compatibility).`
 
 ### 6. Reason for change
 
