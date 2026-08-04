@@ -7,7 +7,6 @@ import { workflowInput } from "./types/WorkflowInput";
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 const OPS_CHECK_NAME = "OpenPublishing.Build";
-const OPS_MAX_POLL_ATTEMPTS = 40;
 const OPS_POLL_DELAY_MS = 30_000;
 
 type StatusCheck = {
@@ -56,7 +55,10 @@ export async function tryUpdatePullRequestBody(token: string) {
             token,
             commitOid,
             OPS_CHECK_NAME,
-            OPS_MAX_POLL_ATTEMPTS,
+            calculateMaxPollAttempts(
+                workflowInput.maxWaitTimeMinutes,
+                OPS_POLL_DELAY_MS
+            ),
             OPS_POLL_DELAY_MS
         );
 
@@ -186,6 +188,13 @@ async function getSpecificStatusCheck(
 
 function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function calculateMaxPollAttempts(
+    maxWaitTimeMinutes: number,
+    pollDelayMs: number
+): number {
+    return Math.ceil((maxWaitTimeMinutes * 60_000) / pollDelayMs);
 }
 
 async function downloadUrl(url: string): Promise<string> {
@@ -392,6 +401,7 @@ function appendTable(body: string, table: string) {
 export const exportedForTesting = {
     appendTable,
     buildMarkdownPreviewTableFromExtractedLinks,
+    calculateMaxPollAttempts,
     extractPreviewLinksFromBuildReport,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,

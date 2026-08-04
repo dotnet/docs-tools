@@ -5,6 +5,7 @@ import { WorkflowInput, workflowInput } from "../src/types/WorkflowInput";
 const {
     appendTable,
     buildMarkdownPreviewTableFromExtractedLinks,
+    calculateMaxPollAttempts,
     extractPreviewLinksFromBuildReport,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
@@ -80,6 +81,7 @@ ${PREVIEW_TABLE_END}`;
     it("options are correctly constructed with expected values from import", () => {
         setInput("COLLAPSIBLE_AFTER", "7");
         setInput("MAX_ROW_COUNT", "42");
+        setInput("MAX_WAIT_TIME_MINUTES", "15");
         setInput("REPO_TOKEN", "test-token");
 
         const opts: WorkflowInput = workflowInput;
@@ -87,8 +89,14 @@ ${PREVIEW_TABLE_END}`;
         expect(opts).toBeDefined();
         expect(opts.collapsibleAfter).toBe(7);
         expect(opts.maxRowCount).toBe(42);
+        expect(opts.maxWaitTimeMinutes).toBe(15);
         expect(opts.repoToken).toBe("test-token");
     });
+
+    it("calculates OPS poll attempts from the maximum wait time", () => {
+        expect(calculateMaxPollAttempts(15, 30_000)).toBe(30);
+    });
+
     it("extractPreviewLinksFromBuildReport parses file to preview URL map", () => {
         const html = `
 <html>
