@@ -194,7 +194,9 @@ function calculateMaxPollAttempts(
     maxWaitTimeMinutes: number,
     pollDelayMs: number
 ): number {
-    return Math.ceil((maxWaitTimeMinutes * 60_000) / pollDelayMs);
+     return pollDelayMs > 0
+         ? Math.max(1, Math.floor((maxWaitTimeMinutes * 60_000) / pollDelayMs) + 1)
+         : 1;
 }
 
 async function downloadUrl(url: string): Promise<string> {

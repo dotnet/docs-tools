@@ -94,7 +94,7 @@ ${PREVIEW_TABLE_END}`;
     });
 
     it("calculates OPS poll attempts from the maximum wait time", () => {
-        expect(calculateMaxPollAttempts(15, 30_000)).toBe(30);
+        expect(calculateMaxPollAttempts(15, 30_000)).toBe(31);
     });
 
     it("extractPreviewLinksFromBuildReport parses file to preview URL map", () => {
@@ -153,8 +153,8 @@ ${PREVIEW_TABLE_END}`;
             "#### Internal previews\n\n" +
                 "| File | Preview link |\n" +
                 "|:--|:--|\n" +
-                "| [docs/a.md](https://github.com/dotnet/docs/blob/oid/docs/a.md) | [docs/a](https://review.learn.microsoft.com/en-us/dotnet/a?branch=pr-en-us-7) |\n" +
-                "| [docs/b.yml](https://github.com/dotnet/docs/blob/oid/docs/b.yml) | [docs/b](https://review.learn.microsoft.com/en-us/dotnet/b?branch=pr-en-us-7) |\n"
+                "| [docs/a.md](https://github.com/dotnet/docs/blob/oid/docs/a.md) | [Preview published page](https://review.learn.microsoft.com/en-us/dotnet/a?branch=pr-en-us-7) |\n" +
+                "| [docs/b.yml](https://github.com/dotnet/docs/blob/oid/docs/b.yml) | [Preview published page](https://review.learn.microsoft.com/en-us/dotnet/b?branch=pr-en-us-7) |\n"
         );
     });
 

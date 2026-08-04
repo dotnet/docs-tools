@@ -162,7 +162,9 @@ function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 function calculateMaxPollAttempts(maxWaitTimeMinutes, pollDelayMs) {
-    return Math.ceil((maxWaitTimeMinutes * 60000) / pollDelayMs);
+    return pollDelayMs > 0
+        ? Math.max(1, Math.floor((maxWaitTimeMinutes * 60000) / pollDelayMs) + 1)
+        : 1;
 }
 async function downloadUrl(url) {
     return await new Promise((resolve) => {
