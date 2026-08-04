@@ -264,7 +264,7 @@ function buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, ch
     const exceedsMax = sortedLinks.length > WorkflowInput_1.workflowInput.maxRowCount;
     const displayedLinks = sortedLinks.slice(0, WorkflowInput_1.workflowInput.maxRowCount);
     for (const [file, previewUrl] of displayedLinks) {
-        const previewTitle = file.replace(".md", "").replace(".yml", "");
+        const previewTitle = "Preview published page";
         markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${previewUrl}) |\n`;
     }
     if (isCollapsible) {
