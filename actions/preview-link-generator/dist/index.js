@@ -38,7 +38,6 @@ const WorkflowInput_1 = __nccwpck_require__(6741);
 const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 const OPS_CHECK_NAME = "OpenPublishing.Build";
-const OPS_MAX_POLL_ATTEMPTS = 40;
 const OPS_POLL_DELAY_MS = 30000;
 async function tryUpdatePullRequestBody(token) {
     var _a, _b;
@@ -72,7 +71,7 @@ async function tryUpdatePullRequestBody(token) {
             (0, core_1.info)("Unable to resolve PR head commit SHA.");
             return;
         }
-        const opsCheck = await waitForStatusCheck(token, commitOid, OPS_CHECK_NAME, OPS_MAX_POLL_ATTEMPTS, OPS_POLL_DELAY_MS);
+        const opsCheck = await waitForStatusCheck(token, commitOid, OPS_CHECK_NAME, calculateMaxPollAttempts(WorkflowInput_1.workflowInput.maxWaitTimeMinutes, OPS_POLL_DELAY_MS), OPS_POLL_DELAY_MS);
         if (!opsCheck || !opsCheck.detailsUrl) {
             (0, core_1.info)(`Unable to find a completed ${OPS_CHECK_NAME} status check with a build report URL.`);
             return;
@@ -161,6 +160,11 @@ async function getSpecificStatusCheck(token, commitSha, checkName) {
 }
 function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+function calculateMaxPollAttempts(maxWaitTimeMinutes, pollDelayMs) {
+    return pollDelayMs > 0
+        ? Math.max(1, Math.floor((maxWaitTimeMinutes * 60000) / pollDelayMs) + 1)
+        : 1;
 }
 async function downloadUrl(url) {
     return await new Promise((resolve) => {
@@ -262,7 +266,7 @@ function buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, ch
     const exceedsMax = sortedLinks.length > WorkflowInput_1.workflowInput.maxRowCount;
     const displayedLinks = sortedLinks.slice(0, WorkflowInput_1.workflowInput.maxRowCount);
     for (const [file, previewUrl] of displayedLinks) {
-        const previewTitle = file.replace(".md", "").replace(".yml", "");
+        const previewTitle = "Preview published page";
         markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${previewUrl}) |\n`;
     }
     if (isCollapsible) {
@@ -323,6 +327,7 @@ function appendTable(body, table) {
 exports.exportedForTesting = {
     appendTable,
     buildMarkdownPreviewTableFromExtractedLinks,
+    calculateMaxPollAttempts,
     extractPreviewLinksFromBuildReport,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
@@ -352,6 +357,10 @@ class WorkflowInput {
     get maxRowCount() {
         const val = (0, core_1.getInput)("max_row_count");
         return parseInt(val || "30");
+    }
+    get maxWaitTimeMinutes() {
+        const val = parseInt((0, core_1.getInput)("max_wait_time_minutes") || "20");
+        return val > 0 ? val : 20;
     }
     constructor() { }
 }

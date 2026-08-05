@@ -11,6 +11,9 @@ inputs:
   max_row_count:
     description: 'The maximum number of rows to display in the automated preview table.'
     default: '30'
+  max_wait_time_minutes:
+    description: 'The maximum number of minutes to wait for the OpenPublishing.Build status check to complete.'
+    default: '20'
 runs:
   using: 'node16'
   main: 'dist/index.js'

@@ -18,6 +18,11 @@ export class WorkflowInput {
         return parseInt(val || "30");
     }
 
+    get maxWaitTimeMinutes(): number {
+        const val = parseInt(getInput("max_wait_time_minutes") || "20");
+        return val > 0 ? val : 20;
+    }
+
     constructor() {}
 }
 

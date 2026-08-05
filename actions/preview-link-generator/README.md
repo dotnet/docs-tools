@@ -14,4 +14,5 @@ jobs:
     - uses: dotnet/docs-tools/actions/preview-link-generator@main
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
+        max_wait_time_minutes: 20
 ```
