@@ -7,7 +7,7 @@ on:
         required: true
         default: "Manual run"
       issue:
-        description: "The issue number to manually test."
+        description: "The issue number to manually test"
         required: true
 
 jobs:
@@ -25,9 +25,6 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: "Print manual run reason"
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
@@ -43,7 +40,7 @@ jobs:
 
       - name: Azure OpenID Connect
         id: azure-oidc-auth
-        uses: ./.github/actions/oidc-auth-flow
+        uses: dotnet/docs-tools/.github/actions/oidc-auth-flow@main
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
@@ -51,7 +48,7 @@ jobs:
 
       - name: Azure DevOps OpenID Connect for manual test runs
         id: azure-devops-oidc-auth
-        uses: ./.github/actions/oidc-auth-flow
+        uses: dotnet/docs-tools/.github/actions/oidc-auth-flow@main
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
@@ -82,7 +79,7 @@ jobs:
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
           ImportOptions__ApiKeys__AzureAccessToken: ${{ steps.azure-oidc-auth.outputs.access-token }}
-          ImportOptions__ApiKeys__QuestAccessToken: ${{ steps.azure-devops-oidc-auth-prod.outputs.access-token }}
+          ImportOptions__ApiKeys__QuestAccessToken: ${{ steps.azure-devops-oidc-auth.outputs.access-token }}
           ImportOptions__ApiKeys__SequesterPrivateKey: ${{ secrets.SEQUESTER_PRIVATEKEY }}
           ImportOptions__ApiKeys__SequesterAppID: ${{ secrets.SEQUESTER_APPID }}
         with:
