@@ -44,26 +44,16 @@ jobs:
           audience: ${{ secrets.OSMP_API_AUDIENCE }}
 
       - name: Azure DevOps OpenID Connect
-        if: ${{ github.event_name == 'workflow_dispatch' }}
         id: azure-devops-oidc-auth
         uses: ./.github/actions/oidc-auth-flow
         with:
-          client-id: ${{ secrets.QUEST_APPLICATION_ID }}
-          tenant-id: ${{ secrets.QUEST_DIRECTORY_ID }}
-          audience: ${{ secrets.QUEST_AUDIENCE_DEVOPS_ID }}
-
-      - name: Azure DevOps OpenID Connect for scheduled runs
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        id: azure-devops-oidc-auth-prod
-        uses: ./.github/actions/oidc-auth-flow
-        with:
-          client-id: ${{ secrets.QUEST_CLIENT_ID }}
+          client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
           audience: ${{ secrets.QUEST_AUDIENCE }}
 
       - name: bulk-sequester
         id: bulk-sequester
-        uses: ./actions/sequester
+        uses: dotnet/docs-tools/actions/sequester@main
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
           ImportOptions__ApiKeys__AzureAccessToken: ${{ steps.azure-oidc-auth.outputs.access-token }}

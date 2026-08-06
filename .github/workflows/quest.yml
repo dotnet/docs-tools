@@ -6,30 +6,14 @@ on:
         description: "The reason for running the workflow"
         required: true
         default: "Manual run"
-      target-org:
-        description: "The GitHub organization to target for a manual run"
-        required: false
-        default: "dotnet"
-      target-repo:
-        description: "The GitHub repository to target for a manual run"
-        required: false
-        default: "docs-tools"
       issue:
-        description: "The issue number to manually test. Ignored when auth-only is true."
+        description: "The issue number to manually test."
         required: true
-      auth-only:
-        description: "Run only the Azure DevOps OIDC auth probe"
-        required: false
-        default: "false"
-      test-work-item-id:
-        description: "Azure DevOps work item ID used by the auth-only probe. Ignored unless auth-only is true."
-        required: false
-        default: "562440"
 
 jobs:
   import:
     if: |
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.auth-only != 'true') ||
+      github.event_name == 'workflow_dispatch' ||
       github.event.label.name == ':world_map: reQUEST' ||
       github.event.label.name == ':pushpin: seQUESTered' ||
       contains(github.event.issue.labels.*.name, ':world_map: reQUEST') ||
@@ -66,28 +50,19 @@ jobs:
           audience: ${{ secrets.OSMP_API_AUDIENCE }}
 
       - name: Azure DevOps OpenID Connect for manual test runs
-        if: ${{ github.event_name == 'workflow_dispatch' }}
         id: azure-devops-oidc-auth
         uses: ./.github/actions/oidc-auth-flow
         with:
-          client-id: ${{ secrets.QUEST_APPLICATION_ID }}
-          tenant-id: ${{ secrets.QUEST_DIRECTORY_ID }}
-          audience: ${{ secrets.QUEST_AUDIENCE_DEVOPS_ID }}
-
-      - name: Azure DevOps OpenID Connect for automatic runs
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        id: azure-devops-oidc-auth-prod
-        uses: ./.github/actions/oidc-auth-flow
-        with:
-          client-id: ${{ secrets.QUEST_CLIENT_ID }}
+          client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
           audience: ${{ secrets.QUEST_AUDIENCE }}
+
 
       # This step occurs when ran manually, passing the manual issue number input
       - name: manual-sequester
         if: ${{ github.event_name == 'workflow_dispatch' }}
         id: manual-sequester
-        uses: ./actions/sequester
+        uses: dotnet/docs-tools/actions/sequester@main
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
           ImportOptions__ApiKeys__AzureAccessToken:  ${{ steps.azure-oidc-auth.outputs.access-token }}
@@ -114,152 +89,3 @@ jobs:
           org: ${{ github.repository_owner }}
           repo: ${{ github.repository }}
           issue: ${{ github.event.issue.number }}
-
-  test-auth:
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.auth-only == 'true' }}
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run existing Azure DevOps OIDC action
-        id: quest-auth
-        uses: ./.github/actions/oidc-auth-flow
-        with:
-          client-id: ${{ secrets.QUEST_APPLICATION_ID }}
-          tenant-id: ${{ secrets.QUEST_DIRECTORY_ID }}
-          oidc-audience: api://AzureADTokenExchange
-          audience: ${{ secrets.QUEST_AUDIENCE_DEVOPS_ID }}
-
-      - name: Confirm token was returned
-        shell: bash
-        run: |
-          if [ -z "${{ steps.quest-auth.outputs.access-token }}" ]; then
-            echo "No access token returned."
-            exit 1
-          fi
-          echo "Access token was returned."
-
-      - name: Read Content work item
-        id: read-work-item
-        shell: bash
-        env:
-          AZDO_TOKEN: ${{ steps.quest-auth.outputs.access-token }}
-          TEST_WORK_ITEM_ID: ${{ github.event.inputs.test-work-item-id || '562440' }}
-        run: |
-          set -euo pipefail
-
-          work_item_url="https://dev.azure.com/msft-skilling/Content/_apis/wit/workitems/$TEST_WORK_ITEM_ID?api-version=7.1"
-
-          status_code=$(curl -sS -w '%{http_code}' -D headers.txt \
-            -H "Authorization: Bearer $AZDO_TOKEN" \
-            -H "Content-Type: application/json" \
-            "$work_item_url" \
-            -o body.json)
-
-          echo "HTTP status: $status_code"
-
-          echo "HTTP response headers:"
-          cat headers.txt
-
-          echo ""
-          echo "Response body:"
-          cat body.json
-
-          if [[ ! "$status_code" =~ ^2 ]]; then
-            echo "Azure DevOps work item read probe failed."
-            exit 1
-          fi
-
-          identity_query=$(jq -r '
-            .fields["System.AssignedTo"],
-            .fields["System.ChangedBy"],
-            .fields["System.CreatedBy"]
-            | select(. != null)
-            | if type == "object" then (.uniqueName // .displayName // .id // empty) else . end
-            ' body.json | head -n 1)
-
-          if [ -z "$identity_query" ]; then
-            echo "Unable to derive an Azure DevOps identity from work item $TEST_WORK_ITEM_ID."
-            exit 1
-          fi
-
-          echo "identity-query=$identity_query" >> "$GITHUB_OUTPUT"
-
-      - name: Probe Azure DevOps identities API
-        shell: bash
-        env:
-          AZDO_TOKEN: ${{ steps.quest-auth.outputs.access-token }}
-          IDENTITY_QUERY: ${{ steps.read-work-item.outputs.identity-query }}
-        run: |
-          set -euo pipefail
-
-          status_code=$(curl -sS -w '%{http_code}' -D headers.txt \
-            -H "Authorization: Bearer $AZDO_TOKEN" \
-            -H "Content-Type: application/json" \
-            --get \
-            --data-urlencode "searchFilter=General" \
-            --data-urlencode "filterValue=$IDENTITY_QUERY" \
-            --data-urlencode "queryMembership=None" \
-            --data-urlencode "api-version=7.1-preview.1" \
-            "https://vssps.dev.azure.com/msft-skilling/_apis/identities" \
-            -o body.json)
-
-          echo "HTTP status: $status_code"
-
-          echo "HTTP response headers:"
-          cat headers.txt
-
-          echo ""
-          echo "Response body:"
-          cat body.json
-
-          if [[ ! "$status_code" =~ ^2 ]]; then
-            echo "Azure DevOps identity read probe failed."
-            exit 1
-          fi
-
-      - name: Add work item history comment
-        shell: bash
-        env:
-          AZDO_TOKEN: ${{ steps.quest-auth.outputs.access-token }}
-          TEST_WORK_ITEM_ID: ${{ github.event.inputs.test-work-item-id || '562440' }}
-        run: |
-          set -euo pipefail
-
-          cat > patch.json <<'EOF'
-          [
-            {
-              "op": "add",
-              "path": "/fields/System.History",
-              "value": "going-secretless auth validation test"
-            }
-          ]
-          EOF
-
-          status_code=$(curl -sS -w '%{http_code}' -D headers.txt \
-            -X PATCH \
-            -H "Authorization: Bearer $AZDO_TOKEN" \
-            -H "Content-Type: application/json-patch+json" \
-            --data @patch.json \
-            "https://dev.azure.com/msft-skilling/Content/_apis/wit/workitems/$TEST_WORK_ITEM_ID?api-version=7.1" \
-            -o body.json)
-
-          echo "HTTP status: $status_code"
-
-          echo "HTTP response headers:"
-          cat headers.txt
-
-          echo ""
-          echo "Response body:"
-          cat body.json
-
-          if [[ ! "$status_code" =~ ^2 ]]; then
-            echo "Azure DevOps work item write probe failed."
-            exit 1
-          fi
-
