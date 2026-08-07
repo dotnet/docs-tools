@@ -37,6 +37,18 @@ public sealed record class ApiKeys
     public string? AzureAccessToken { get; init; }
 
     /// <summary>
+    /// The client ID for identifying this app with AzureDevOps.
+    /// </summary>
+    /// <remarks>
+    /// Assign this from an environment variable with the following key, <c>ImportOptions__ApiKeys__AzureAccessToken</c>:
+    /// <code>
+    /// env:
+    ///   ImportOptions__ApiKeys__QuestAccessToken: ${{ secrets.QUEST_ACCESS_TOKEN }}
+    /// </code>
+    /// </remarks>
+    public string? QuestAccessToken { get; init; }
+
+    /// <summary>
     /// The Azure DevOps API key.
     /// </summary>
     /// <remarks>
