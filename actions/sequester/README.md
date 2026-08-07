@@ -23,16 +23,14 @@ To install the GitHub actions:
    - In the root folder of your repo, create a config file that contains the keys shown [later in this document](#configure-consuming-github-action-workflow). In most cases, you'll modify the Azure DevOps area path, and trigger labels.
 1. ***Add the `quest.yml` and `quest-bulk.yml` action workflow files***
    - For an example, see the [`dotnet/docs` installation](https://github.com/dotnet/docs/blob/main/.github/workflows/quest.yml). You'll likely need to change the checks on the labels.
-1. ***Add secrets for Azure Dev Ops and Microsoft Open Source Programs Office*** You'll need to add three secret tokens to access the OSPO REST APIs and Quest Azure DevOps APIs.
+1. ***Add secrets for Azure DevOps and Microsoft Open Source Programs Office*** You'll need to add the following secrets to access the OSPO REST APIs and Quest Azure DevOps APIs.
 
-   - **SEQUESTER_APPID**: This is the app ID for the Sequester Action. Get this from one of the App admins (Bill or Immo).
-   - **SEQUESTER_PRIVATEKEY**: This is the private key to authorize sequester. Get this from one of the App admins (Bill or Immo).
-   - **QUEST_KEY**: Generate a PAT at [MSFT-SKILLING](https://dev.azure.com/msft-skilling/_usersSettings/tokens) with the following permissions:
-     - *Identity*: Read
-     - *WorkItems*: Read/Write
+   - **SEQUESTER_APPID**: This is the app ID for the Sequester Action. Get this from one of the App admins (Bill or Andy).
+   - **SEQUESTER_PRIVATEKEY**: This is the private key to authorize sequester. Get this from one of the App admins (Bill or Andy).
    - **CLIENT_ID**:  The client ID used for secretless authentication
    - **TENANT_ID**: The Tenant ID used for secretless authentication
-   - **OSMP_API_AUDIENCE**: The audience resource ID used for secretless authentication
+   - **OSMP_API_AUDIENCE**: The audience resource ID used for secretless authentication to OSPO
+   - **QUEST_AUDIENCE**: The audience resource ID for secretless authentication to AzureDevOps
 
   > **Note:** To configure GitHub Action secrets, see [GitHub Docs: Encrypted secrets](https://docs.github.com/actions/security-guides/encrypted-secrets).
 
@@ -47,7 +45,6 @@ To minimize having all the runs hit REST APIs at the same time, the action confi
 
 | Repository      | Time (UTC)  |
 |-----------------|-------------|
-| docs-aspire     | 04:00       |
 | docs-tools      | 05:30       |
 | docs            | 07:00       |
 | docs-desktop    | 09:00       |
