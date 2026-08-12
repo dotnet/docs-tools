@@ -13,5 +13,7 @@ From the repository root:
 dotnet run --project PackageDownloader\PackageDownloader.csproj
 ```
 
-The program deletes and recreates its target output directories, so don't run it 
+The program deletes and recreates its target output directories, so don't run it
 while files in those directories are being edited or used by another process.
+
+Note: the output location/version are currently configured in `Program.cs` (see `dotnetDir`, `versionDir`, and `windowsDesktopDir`). The tool also downloads shim exclusions from the `netfxreference.props` file in dotnet/runtime to decide which assemblies to skip.

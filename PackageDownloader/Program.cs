@@ -14,8 +14,8 @@ const string windowsDesktopDir = "windowsdesktop-11.0";
 string downloadDir = Path.Combine(Path.GetTempPath(), "ref-packages");
 
 using HttpClient httpClient = new();
+httpClient.Timeout = TimeSpan.FromMinutes(5);
 httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("PackageDownloader/1.0");
-
 ClearDirectory(downloadDir);
 
 string packageBaseAddress = await GetPackageBaseAddressAsync(httpClient);
@@ -177,13 +177,25 @@ static async Task<JsonDocument> GetJsonDocumentAsync(HttpClient httpClient, stri
 
 static string GetRefDirectory(string extractDir)
 {
-    string refDir = Path.Combine(extractDir, "ref", RefTargetFramework);
-    if (!Directory.Exists(refDir))
+    string refRoot = Path.Combine(extractDir, "ref");
+    if (!Directory.Exists(refRoot))
     {
-        throw new DirectoryNotFoundException($"The package does not contain a ref/{RefTargetFramework} directory: {extractDir}");
+        throw new DirectoryNotFoundException($"The package does not contain a ref directory: {extractDir}");
     }
 
-    return refDir;
+    string preferredRefDir = Path.Combine(refRoot, RefTargetFramework);
+    if (Directory.Exists(preferredRefDir))
+    {
+        return preferredRefDir;
+    }
+
+    string[] candidateDirs = Directory.GetDirectories(refRoot);
+    if (candidateDirs.Length == 1)
+    {
+        return candidateDirs[0];
+    }
+
+    throw new DirectoryNotFoundException($"The package does not contain a ref/{RefTargetFramework} directory (and could not infer one) under: {extractDir}");
 }
 
 static void CopyFiles(string sourceDir, string destinationDir, string searchPattern, ISet<string> excludedFileNames)
