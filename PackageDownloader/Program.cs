@@ -6,16 +6,25 @@ using NuGet.Versioning;
 const string NuGetIndexUrl = "https://packagefeedproxy.microsoft.io/nuget/v3/index.json";
 const string NetCoreRefPackageId = "Microsoft.NETCore.App.Ref";
 const string WindowsDesktopRefPackageId = "Microsoft.WindowsDesktop.App.Ref";
-const string RefTargetFramework = "net11.0";
+const string DefaultDotnetDir = @"C:\Users\gewarren\binaries\dotnet";
+const string DefaultMajorVersion = "11.0";
 const string ShimReferencesUrl = "https://raw.githubusercontent.com/dotnet/runtime/v7.0.0-preview.1.22076.8/src/libraries/shims/netfxreference.props";
-const string dotnetDir = @"C:\Users\gewarren\binaries\dotnet";
-const string versionDir = "net-11.0";
-const string windowsDesktopDir = "windowsdesktop-11.0";
-string downloadDir = Path.Combine(Path.GetTempPath(), "ref-packages");
+
+(Dictionary<string, string> options, string? error) = ParseArguments(args);
+if (error is not null)
+{
+    throw new ArgumentException(error);
+}
+
+string dotnetDir = GetOption(options, "--dotnet-dir", DefaultDotnetDir);
+string majorVersion = GetOption(options, "--version", DefaultMajorVersion);
+string refTargetFramework = $"net{majorVersion}";
 
 using HttpClient httpClient = new();
 httpClient.Timeout = TimeSpan.FromMinutes(5);
 httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("PackageDownloader/1.0");
+
+string downloadDir = Path.Combine(Path.GetTempPath(), "ref-packages");
 ClearDirectory(downloadDir);
 
 string packageBaseAddress = await GetPackageBaseAddressAsync(httpClient);
@@ -36,16 +45,21 @@ HashSet<string> xmlFilesToCopy = BuildFileNameSet(
     "System.Reflection.DispatchProxy.xml",
     "System.Text.RegularExpressions.xml");
 
+// Copy the .NET Core reference assemblies to the target directory.
 string netCoreExtractDir = await DownloadAndExtractLatestPackageAsync(httpClient, packageBaseAddress, NetCoreRefPackageId, downloadDir);
-string netCoreRefDir = GetRefDirectory(netCoreExtractDir);
-string netCoreDestination = Path.Combine(dotnetDir, versionDir);
+string netCoreRefDir = GetRefDirectory(netCoreExtractDir, refTargetFramework);
+string netCoreDestination = Path.Combine(dotnetDir, $"net-{majorVersion}");
+
 ClearDirectory(netCoreDestination);
 CopyFiles(netCoreRefDir, netCoreDestination, "*.dll", shimDllExclusions);
 CopyNamedFiles(netCoreRefDir, netCoreDestination, xmlFilesToCopy);
 
+// Copy the Windows Desktop reference assemblies to the target directory.
 string windowsDesktopExtractDir = await DownloadAndExtractLatestPackageAsync(httpClient, packageBaseAddress, WindowsDesktopRefPackageId, downloadDir);
-string windowsDesktopRefDir = GetRefDirectory(windowsDesktopExtractDir);
+string windowsDesktopRefDir = GetRefDirectory(windowsDesktopExtractDir, refTargetFramework);
+string windowsDesktopDir = $"windowsdesktop-{majorVersion}";
 string windowsDesktopDestination = Path.Combine(dotnetDir, windowsDesktopDir);
+
 ClearDirectory(windowsDesktopDestination);
 CopyFiles(
     windowsDesktopRefDir,
@@ -69,6 +83,7 @@ Directory.CreateDirectory(dependenciesDestination);
 File.Copy(cryptoSource, Path.Combine(dependenciesDestination, Path.GetFileName(cryptoSource)), overwrite: true);
 Console.WriteLine($"Copied {Path.GetFileName(cryptoSource)} to {dependenciesDestination}.");
 
+#region Helper methods
 static async Task<string> GetPackageBaseAddressAsync(HttpClient httpClient)
 {
     using JsonDocument serviceIndex = await GetJsonDocumentAsync(httpClient, NuGetIndexUrl);
@@ -175,7 +190,7 @@ static async Task<JsonDocument> GetJsonDocumentAsync(HttpClient httpClient, stri
     return await JsonDocument.ParseAsync(stream);
 }
 
-static string GetRefDirectory(string extractDir)
+static string GetRefDirectory(string extractDir, string refTargetFramework)
 {
     string refRoot = Path.Combine(extractDir, "ref");
     if (!Directory.Exists(refRoot))
@@ -183,7 +198,7 @@ static string GetRefDirectory(string extractDir)
         throw new DirectoryNotFoundException($"The package does not contain a ref directory: {extractDir}");
     }
 
-    string preferredRefDir = Path.Combine(refRoot, RefTargetFramework);
+    string preferredRefDir = Path.Combine(refRoot, refTargetFramework);
     if (Directory.Exists(preferredRefDir))
     {
         return preferredRefDir;
@@ -195,7 +210,36 @@ static string GetRefDirectory(string extractDir)
         return candidateDirs[0];
     }
 
-    throw new DirectoryNotFoundException($"The package does not contain a ref/{RefTargetFramework} directory (and could not infer one) under: {extractDir}");
+    throw new DirectoryNotFoundException($"The package does not contain a ref/{refTargetFramework} directory (and could not infer one) under: {extractDir}");
+}
+
+static (Dictionary<string, string> Options, string? Error) ParseArguments(string[] args)
+{
+    Dictionary<string, string> options = new(StringComparer.OrdinalIgnoreCase);
+    for (int index = 0; index < args.Length; index++)
+    {
+        string option = args[index];
+        if (option is not ("--dotnet-dir" or "--version"))
+        {
+            return (options, $"Unknown option '{option}'. Supported options: --dotnet-dir <path> and --version <major.minor>.");
+        }
+
+        if (index + 1 >= args.Length || args[index + 1].StartsWith("--", StringComparison.Ordinal))
+        {
+            return (options, $"Option '{option}' requires a value.");
+        }
+
+        options[option] = args[++index];
+    }
+
+    return (options, null);
+}
+
+static string GetOption(IReadOnlyDictionary<string, string> options, string name, string defaultValue)
+{
+    return options.TryGetValue(name, out string? value) && !string.IsNullOrWhiteSpace(value)
+        ? value
+        : defaultValue;
 }
 
 static void CopyFiles(string sourceDir, string destinationDir, string searchPattern, ISet<string> excludedFileNames)
@@ -262,3 +306,4 @@ static void ClearDirectory(string directory)
 
     Directory.CreateDirectory(directory);
 }
+#endregion
