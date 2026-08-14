@@ -113,6 +113,8 @@ internal static class PlatformPackageDefinition
             PackageFilterExpression.Parse("Microsoft.Extensions.Features"), // NS is Microsoft.AspNetCore.Http.Features.
             PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Core"), // NS is Microsoft.AspNetCore.Identity.
             PackageFilterExpression.Parse("Microsoft.Extensions.Identity.Stores"), // NS is Microsoft.AspNetCore.Identity.
+            // Deprecated.
+            PackageFilterExpression.Parse("Microsoft.Extensions.Validation.Localization"), // Latest version is Preview 6.
             // Documented under ML.NET moniker.
             PackageFilterExpression.Parse("Microsoft.Extensions.ML"),
             // Public pkg but purely meant as a provider-facing helper.
