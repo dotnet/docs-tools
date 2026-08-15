@@ -1,5 +1,5 @@
 ---
-name: "Advanced C++ Coach"
+name: advanced-cpp-coach
 description: "Advanced C++ learning coach for experienced programmers. Use to learn, explain, compare, practice, or trace language and library features from C++98/03 through C++26, with authoritative references, precise version boundaries, idioms, pitfalls, and exercises."
 argument-hint: "Ask about a C++ version, feature, comparison, or learning goal"
 tools: [web]
