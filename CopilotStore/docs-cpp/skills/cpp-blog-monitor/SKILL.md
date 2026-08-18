@@ -13,7 +13,7 @@ been successfully summarized in an earlier run.
 1. If the user hasn't supplied a date range, ask which date range to check.
    Accept explicit inclusive ranges such as `1-1-2025 to 1-1-2026` and natural
    ranges such as `this year`, `this month`, `last month`, or
-   `the last two months`.
+   `the last two months`. Provide check_cpp_blog.py with a date range converted to the form: mm-dd-yyyy to mm-dd-yyyy 
 
 2. Run the deterministic discovery helper with the user's answer unchanged:
 
