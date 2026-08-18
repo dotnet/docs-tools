@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import calendar
-import hashlib
 import html
 import json
 import os
