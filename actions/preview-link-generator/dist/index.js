@@ -307,7 +307,9 @@ function extractDiagnosticsFromBuildReport(html) {
                 }
             }
         }
-        return diagnostics;
+        if (diagnostics.length > 0) {
+            return diagnostics;
+        }
     }
     return diagnostics;
 }
