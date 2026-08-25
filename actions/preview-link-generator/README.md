@@ -21,4 +21,4 @@ jobs:
         annotate_file_warnings: true
 ```
 
-      When `annotate_file_warnings` is enabled, the action creates check-run annotations for build errors and warnings that occur on added lines in the pull request. Diagnostics on unchanged lines are ignored. The workflow token requires `checks: write` for this option.
+When `annotate_file_warnings` is enabled, the action creates check-run annotations for build errors and warnings that occur on added lines in the pull request. Diagnostics on unchanged lines are ignored. The workflow token requires `checks: write` for this option.

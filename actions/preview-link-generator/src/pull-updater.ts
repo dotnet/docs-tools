@@ -383,7 +383,9 @@ function extractDiagnosticsFromBuildReport(html: string): BuildDiagnostic[] {
             }
         }
 
-        return diagnostics;
+        if (diagnostics.length > 0) {
+            return diagnostics;
+        }
     }
 
     return diagnostics;
