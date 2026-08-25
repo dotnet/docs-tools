@@ -18,7 +18,7 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         max_wait_time_minutes: 20
-        mark_up_files_changed: true
+        annotate_file_warnings: true
 ```
 
-      When `mark_up_files_changed` is enabled, the action creates check-run annotations for build errors and warnings that occur on added lines in the pull request. Diagnostics on unchanged lines are ignored. The workflow token requires `checks: write` for this option.
+      When `annotate_file_warnings` is enabled, the action creates check-run annotations for build errors and warnings that occur on added lines in the pull request. Diagnostics on unchanged lines are ignored. The workflow token requires `checks: write` for this option.

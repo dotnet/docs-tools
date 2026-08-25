@@ -3,7 +3,7 @@ description: 'Waits for OpenPublishing.Build to complete, then extracts preview 
 author: 'Genevieve Warren'
 inputs:
   repo_token:
-    description: 'The GITHUB_TOKEN secret. Requires pull-requests: write and, when mark_up_files_changed is true, checks: write.'
+    description: 'The GITHUB_TOKEN secret. Requires pull-requests: write and, when annotate_file_warnings is true, checks: write.'
     required: true
   collapsible_after:
     description: 'The number at which the automated preview table defaults as collapsed but expandable, using the HTML summary and details elements.'
@@ -14,7 +14,7 @@ inputs:
   max_wait_time_minutes:
     description: 'The maximum number of minutes to wait for the OpenPublishing.Build status check to complete.'
     default: '20'
-  mark_up_files_changed:
+  annotate_file_warnings:
     description: 'Whether to annotate changed lines on the Files changed tab with errors and warnings from the build report.'
     default: 'false'
 runs:
