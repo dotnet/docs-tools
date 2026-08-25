@@ -23,6 +23,10 @@ export class WorkflowInput {
         return val > 0 ? val : 20;
     }
 
+    get annotateFiles(): boolean {
+        return getInput("annotate_file_warnings").toLowerCase() === "true";
+    }
+
     constructor() {}
 }
 

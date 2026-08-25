@@ -39,6 +39,7 @@ const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 const OPS_CHECK_NAME = "OpenPublishing.Build";
 const OPS_POLL_DELAY_MS = 30000;
+const ANNOTATION_BATCH_SIZE = 50;
 async function tryUpdatePullRequestBody(token) {
     var _a, _b;
     try {
@@ -76,13 +77,21 @@ async function tryUpdatePullRequestBody(token) {
             (0, core_1.info)(`Unable to find a completed ${OPS_CHECK_NAME} status check with a build report URL.`);
             return;
         }
-        if (opsCheck.status !== "success") {
-            (0, core_1.info)(`${OPS_CHECK_NAME} completed with status '${opsCheck.status}'. Skipping preview table update.`);
-            return;
-        }
         const buildReportHtml = await downloadUrl(opsCheck.detailsUrl);
         if (!buildReportHtml) {
             (0, core_1.info)("Unable to download OPS build report HTML.");
+            return;
+        }
+        if (WorkflowInput_1.workflowInput.annotateFiles) {
+            try {
+                await annotateChangedLines(token, prNumber, commitOid, buildReportHtml, opsCheck.detailsUrl);
+            }
+            catch (error) {
+                (0, core_1.warning)(`Unable to annotate changed files: ${error}`);
+            }
+        }
+        if (opsCheck.status !== "success") {
+            (0, core_1.info)(`${OPS_CHECK_NAME} completed with status '${opsCheck.status}'. Skipping preview table update.`);
             return;
         }
         const previewLinks = extractPreviewLinksFromBuildReport(buildReportHtml);
@@ -91,10 +100,13 @@ async function tryUpdatePullRequestBody(token) {
             return;
         }
         const markdownTable = buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, pullRequest.checksUrl);
-        const updatedBody = pullRequest.body.includes(PREVIEW_TABLE_START) &&
+        // Insert or replace the preview table in the pull request body.
+        let updatedBody = pullRequest.body.includes(PREVIEW_TABLE_START) &&
             pullRequest.body.includes(PREVIEW_TABLE_END)
             ? replaceExistingTable(pullRequest.body, markdownTable)
             : appendTable(pullRequest.body, markdownTable);
+        // Insert a link to the build report.
+        updatedBody += `\n\n[Build report](${opsCheck.detailsUrl})`;
         (0, core_1.startGroup)("Proposed PR body");
         (0, core_1.info)(updatedBody);
         (0, core_1.endGroup)();
@@ -246,11 +258,146 @@ function stripTags(input) {
 function decodeHtmlEntities(input) {
     return input
         .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
         .replace(/\s+/g, " ");
+}
+function extractDiagnosticsFromBuildReport(html) {
+    var _a, _b, _c, _d, _e;
+    const diagnostics = [];
+    const tables = (_a = html.match(/<table[\s\S]*?<\/table>/gi)) !== null && _a !== void 0 ? _a : [];
+    for (const table of tables) {
+        const rows = (_b = table.match(/<tr[\s\S]*?<\/tr>/gi)) !== null && _b !== void 0 ? _b : [];
+        if (rows.length === 0) {
+            continue;
+        }
+        const headers = extractCellText((_c = rows[0]) !== null && _c !== void 0 ? _c : "").map((header) => header.toLowerCase());
+        const fileIndex = headers.indexOf("file");
+        const statusIndex = headers.indexOf("status");
+        const detailsIndex = headers.indexOf("details");
+        if (fileIndex < 0 || statusIndex < 0 || detailsIndex < 0) {
+            continue;
+        }
+        for (const row of rows.slice(1)) {
+            const cells = extractCellText(row);
+            const path = (_d = cells[fileIndex]) === null || _d === void 0 ? void 0 : _d.trim();
+            const details = (_e = cells[detailsIndex]) !== null && _e !== void 0 ? _e : "";
+            if (!path || !cells[statusIndex]) {
+                continue;
+            }
+            const detailPattern = /Line\s+(\d+)\s*:\s*\[(Error|Warning)\]\s*([\s\S]*?)(?=\s+Line\s+\d+\s*:\s*\[(?:Error|Warning)\]|$)/gi;
+            for (const match of details.matchAll(detailPattern)) {
+                const line = Number(match[1]);
+                if (line > 0) {
+                    diagnostics.push({
+                        path,
+                        line,
+                        severity: match[2].toLowerCase() === "error"
+                            ? "Error"
+                            : "Warning",
+                        message: match[3].trim(),
+                    });
+                }
+            }
+        }
+        return diagnostics;
+    }
+    return diagnostics;
+}
+function extractCellText(rowHtml) {
+    var _a;
+    const cells = (_a = rowHtml.match(/<t[dh][\s\S]*?<\/t[dh]>/gi)) !== null && _a !== void 0 ? _a : [];
+    return cells.map((cell) => decodeHtmlEntities(stripTags(cell)).trim());
+}
+function extractChangedLinesFromPatch(patch) {
+    const changedLines = new Set();
+    let newLine = 0;
+    for (const patchLine of patch.split("\n")) {
+        const hunk = patchLine.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+        if (hunk) {
+            newLine = Number(hunk[1]);
+            continue;
+        }
+        if (patchLine.startsWith("+") && !patchLine.startsWith("+++")) {
+            changedLines.add(newLine);
+            newLine++;
+        }
+        else if (!patchLine.startsWith("-") &&
+            !patchLine.startsWith("\\ No newline") &&
+            newLine > 0) {
+            newLine++;
+        }
+    }
+    return changedLines;
+}
+function filterDiagnosticsToChangedLines(diagnostics, changedLinesByPath) {
+    return diagnostics.filter((diagnostic) => { var _a; return (_a = changedLinesByPath.get(diagnostic.path)) === null || _a === void 0 ? void 0 : _a.has(diagnostic.line); });
+}
+async function annotateChangedLines(token, pullNumber, commitOid, buildReportHtml, buildReportUrl) {
+    const diagnostics = extractDiagnosticsFromBuildReport(buildReportHtml);
+    if (diagnostics.length === 0) {
+        (0, core_1.info)("No errors or warnings with line numbers found in validated files.");
+        return;
+    }
+    const octokit = (0, github_1.getOctokit)(token);
+    const files = await octokit.paginate(octokit.rest.pulls.listFiles, {
+        owner: github_1.context.repo.owner,
+        repo: github_1.context.repo.repo,
+        pull_number: pullNumber,
+        per_page: 100,
+    });
+    const changedLinesByPath = new Map();
+    for (const file of files) {
+        if (file.patch) {
+            changedLinesByPath.set(file.filename, extractChangedLinesFromPatch(file.patch));
+        }
+    }
+    const filteredDiagnostics = filterDiagnosticsToChangedLines(diagnostics, changedLinesByPath);
+    if (filteredDiagnostics.length === 0) {
+        (0, core_1.info)("No build errors or warnings occur on changed PR lines.");
+        return;
+    }
+    const annotations = filteredDiagnostics.map((diagnostic) => ({
+        path: diagnostic.path,
+        start_line: diagnostic.line,
+        end_line: diagnostic.line,
+        annotation_level: (diagnostic.severity === "Error"
+            ? "failure"
+            : "warning"),
+        title: `OPS ${diagnostic.severity}`,
+        message: diagnostic.message,
+    }));
+    const firstBatch = annotations.slice(0, ANNOTATION_BATCH_SIZE);
+    const response = await octokit.rest.checks.create({
+        owner: github_1.context.repo.owner,
+        repo: github_1.context.repo.repo,
+        name: "OpenPublishing.Build annotations",
+        head_sha: commitOid,
+        status: "completed",
+        conclusion: "neutral",
+        details_url: buildReportUrl,
+        output: {
+            title: "OpenPublishing.Build diagnostics",
+            summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+            annotations: firstBatch,
+        },
+    });
+    for (let index = ANNOTATION_BATCH_SIZE; index < annotations.length; index += ANNOTATION_BATCH_SIZE) {
+        await octokit.rest.checks.update({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            check_run_id: response.data.id,
+            output: {
+                title: "OpenPublishing.Build diagnostics",
+                summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+                annotations: annotations.slice(index, index + ANNOTATION_BATCH_SIZE),
+            },
+        });
+    }
+    (0, core_1.info)(`Annotated ${annotations.length} changed line(s).`);
 }
 function buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, checksUrl) {
     var _a;
@@ -266,7 +413,7 @@ function buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, ch
     const exceedsMax = sortedLinks.length > WorkflowInput_1.workflowInput.maxRowCount;
     const displayedLinks = sortedLinks.slice(0, WorkflowInput_1.workflowInput.maxRowCount);
     for (const [file, previewUrl] of displayedLinks) {
-        const previewTitle = "Preview published page";
+        const previewTitle = "Learn preview";
         markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${previewUrl}) |\n`;
     }
     if (isCollapsible) {
@@ -328,7 +475,10 @@ exports.exportedForTesting = {
     appendTable,
     buildMarkdownPreviewTableFromExtractedLinks,
     calculateMaxPollAttempts,
+    extractChangedLinesFromPatch,
+    extractDiagnosticsFromBuildReport,
     extractPreviewLinksFromBuildReport,
+    filterDiagnosticsToChangedLines,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
     replaceExistingTable,
@@ -361,6 +511,9 @@ class WorkflowInput {
     get maxWaitTimeMinutes() {
         const val = parseInt((0, core_1.getInput)("max_wait_time_minutes") || "20");
         return val > 0 ? val : 20;
+    }
+    get annotateFiles() {
+        return (0, core_1.getInput)("annotate_file_warnings").toLowerCase() === "true";
     }
     constructor() { }
 }
