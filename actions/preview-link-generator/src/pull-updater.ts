@@ -15,36 +15,17 @@ type StatusCheck = {
     detailsUrl: string | null;
 };
 
+type BuildDiagnostic = {
+    path: string;
+    line: number;
+    severity: "Error" | "Warning";
+    message: string;
+};
+
+const ANNOTATION_BATCH_SIZE = 50;
+
 export async function tryUpdatePullRequestBody(token: string) {
     try {
-        const prNumber: number = context.payload.number;
-        info(`Update pull ${prNumber} request body.`);
-
-        const details = await getPullRequest(token);
-        if (!details) {
-            info("Unable to get the pull request from GitHub GraphQL");
-            return;
-        }
-
-        const pullRequest = details.repository?.pullRequest;
-        if (!pullRequest) {
-            info("Unable to pull request details from object-graph.");
-            return;
-        }
-
-        if (pullRequest.changedFiles === 0) {
-            info("No files changed at all...");
-            return;
-        }
-
-        try {
-            startGroup("Pull request JSON body");
-            info(JSON.stringify(pullRequest, undefined, 2));
-            endGroup();
-        } catch {
-            endGroup();
-        }
-
         const commitOid = context.payload.pull_request?.head.sha;
         if (!commitOid) {
             info("Unable to resolve PR head commit SHA.");
@@ -69,41 +50,75 @@ export async function tryUpdatePullRequestBody(token: string) {
             return;
         }
 
-        if (opsCheck.status !== "success") {
-            info(
-                `${OPS_CHECK_NAME} completed with status '${opsCheck.status}'. Skipping preview table update.`
-            );
-            return;
-        }
-
         const buildReportHtml = await downloadUrl(opsCheck.detailsUrl);
         if (!buildReportHtml) {
             info("Unable to download OPS build report HTML.");
             return;
         }
 
-        const previewLinks = extractPreviewLinksFromBuildReport(buildReportHtml);
+        const previewLinks =
+            extractPreviewLinksFromBuildReport(buildReportHtml);
         if (previewLinks.size === 0) {
             info("No preview links found in OPS build report.");
             return;
         }
 
+        const graphQLResponse = await getPullRequest(token);
+        if (!graphQLResponse) {
+            info("Unable to get the pull request from GitHub GraphQL");
+            return;
+        }
+
+        const prDetails = graphQLResponse.repository?.pullRequest;
+        if (!prDetails) {
+            info("Unable to pull request details from object graph.");
+            return;
+        }
+
+        const prNumber = context.payload.pull_request?.number;
+        if (prNumber === undefined) {
+            info("Unable to resolve the pull request number.");
+            return;
+        }
+        info(`Update pull ${prNumber} request body.`);
+
+        try {
+            startGroup("Pull request JSON body");
+            info(JSON.stringify(prDetails, undefined, 2));
+            endGroup();
+        } catch {
+            endGroup();
+        }
+
         const markdownTable = buildMarkdownPreviewTableFromExtractedLinks(
             previewLinks,
             commitOid,
-            pullRequest.checksUrl
+            prDetails.checksUrl
         );
 
-        const updatedBody =
-            pullRequest.body.includes(PREVIEW_TABLE_START) &&
-            pullRequest.body.includes(PREVIEW_TABLE_END)
-                ? replaceExistingTable(pullRequest.body, markdownTable)
-                : appendTable(pullRequest.body, markdownTable);
+        // Generate the updated body text.
+        let updatedBody =
+            prDetails.body.includes(PREVIEW_TABLE_START) &&
+            prDetails.body.includes(PREVIEW_TABLE_END) ?
+                replaceExistingTable(prDetails.body, markdownTable) :
+                appendTable(prDetails.body, markdownTable);
+
+        // Add or update the build report link.
+        const buildReportLinkPattern = /\[Build report\]\([^)]+\)/;
+        if (buildReportLinkPattern.test(updatedBody)) {
+            updatedBody = updatedBody.replace(
+                buildReportLinkPattern,
+                `[Build report](${opsCheck.detailsUrl})`
+            );
+        } else {
+            updatedBody += `\n\n[Build report](${opsCheck.detailsUrl})`;
+        }
 
         startGroup("Proposed PR body");
         info(updatedBody);
         endGroup();
 
+        // Update the pull request body with the new content.
         const octokit = getOctokit(token);
         const response = await octokit.rest.pulls.update({
             owner: context.repo.owner,
@@ -117,10 +132,25 @@ export async function tryUpdatePullRequestBody(token: string) {
         } else {
             info("Unable to update pull request...");
         }
+
+        // Add build warning annotations to changed lines in the PR.
+        if (workflowInput.annotateFiles) {
+            try {
+                await annotateChangedLines(
+                    token,
+                    prNumber,
+                    commitOid,
+                    buildReportHtml,
+                    opsCheck.detailsUrl
+                );
+            } catch (error) {
+                warning(`Unable to annotate changed files: ${error}`);
+            }
+        }
     } catch (error) {
-        warning(`Unable to process markdown preview: ${error}`);
+        warning(`Encountered error: ${error}`);
     } finally {
-        info("Finished attempting to generate preview.");
+        info("Finished work.");
     }
 }
 
@@ -194,9 +224,12 @@ function calculateMaxPollAttempts(
     maxWaitTimeMinutes: number,
     pollDelayMs: number
 ): number {
-     return pollDelayMs > 0
-         ? Math.max(1, Math.floor((maxWaitTimeMinutes * 60_000) / pollDelayMs) + 1)
-         : 1;
+    return pollDelayMs > 0
+        ? Math.max(
+            1,
+            Math.floor((maxWaitTimeMinutes * 60_000) / pollDelayMs) + 1
+        )
+        : 1;
 }
 
 async function downloadUrl(url: string): Promise<string> {
@@ -279,7 +312,9 @@ function tableHasPreviewHeaders(tableHtml: string): boolean {
     );
 
     const hasFileHeader = headerValues.some((_) => _ === "file");
-    const hasPreviewHeader = headerValues.some((_) => _.includes("preview url"));
+    const hasPreviewHeader = headerValues.some((_) =>
+        _.includes("preview url")
+    );
 
     return hasFileHeader && hasPreviewHeader;
 }
@@ -296,11 +331,196 @@ function stripTags(input: string): string {
 function decodeHtmlEntities(input: string): string {
     return input
         .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
         .replace(/\s+/g, " ");
+}
+
+function extractDiagnosticsFromBuildReport(html: string): BuildDiagnostic[] {
+    const diagnostics: BuildDiagnostic[] = [];
+    const tables = html.match(/<table[\s\S]*?<\/table>/gi) ?? [];
+
+    for (const table of tables) {
+        const rows = table.match(/<tr[\s\S]*?<\/tr>/gi) ?? [];
+        if (rows.length === 0) {
+            continue;
+        }
+
+        const headers = extractCellText(rows[0] ?? "").map((header) =>
+            header.toLowerCase()
+        );
+        const fileIndex = headers.indexOf("file");
+        const statusIndex = headers.indexOf("status");
+        const detailsIndex = headers.indexOf("details");
+        if (fileIndex < 0 || statusIndex < 0 || detailsIndex < 0) {
+            continue;
+        }
+
+        for (const row of rows.slice(1)) {
+            const cells = extractCellText(row);
+            const path = cells[fileIndex]?.trim();
+            const details = cells[detailsIndex] ?? "";
+            if (!path || !cells[statusIndex]) {
+                continue;
+            }
+
+            const detailPattern =
+                /Line\s+(\d+)\s*:\s*\[(Error|Warning)\]\s*([\s\S]*?)(?=\s+Line\s+\d+\s*:\s*\[(?:Error|Warning)\]|$)/gi;
+            for (const match of details.matchAll(detailPattern)) {
+                const line = Number(match[1]);
+                if (line > 0) {
+                    diagnostics.push({
+                        path,
+                        line,
+                        severity:
+                            match[2].toLowerCase() === "error"
+                                ? "Error"
+                                : "Warning",
+                        message: match[3].trim(),
+                    });
+                }
+            }
+        }
+
+        if (diagnostics.length > 0) {
+            return diagnostics;
+        }
+    }
+
+    return diagnostics;
+}
+
+function extractCellText(rowHtml: string): string[] {
+    const cells = rowHtml.match(/<t[dh][\s\S]*?<\/t[dh]>/gi) ?? [];
+    return cells.map((cell) => decodeHtmlEntities(stripTags(cell)).trim());
+}
+
+function extractChangedLinesFromPatch(patch: string): Set<number> {
+    const changedLines = new Set<number>();
+    let newLine = 0;
+
+    for (const patchLine of patch.split("\n")) {
+        const hunk = patchLine.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+        if (hunk) {
+            newLine = Number(hunk[1]);
+            continue;
+        }
+
+        if (patchLine.startsWith("+") && !patchLine.startsWith("+++")) {
+            changedLines.add(newLine);
+            newLine++;
+        } else if (
+            !patchLine.startsWith("-") &&
+            !patchLine.startsWith("\\ No newline") &&
+            newLine > 0
+        ) {
+            newLine++;
+        }
+    }
+
+    return changedLines;
+}
+
+function filterDiagnosticsToChangedLines(
+    diagnostics: BuildDiagnostic[],
+    changedLinesByPath: Map<string, Set<number>>
+): BuildDiagnostic[] {
+    return diagnostics.filter((diagnostic) =>
+        changedLinesByPath.get(diagnostic.path)?.has(diagnostic.line)
+    );
+}
+
+async function annotateChangedLines(
+    token: string,
+    pullNumber: number,
+    commitOid: string,
+    buildReportHtml: string,
+    buildReportUrl: string
+): Promise<void> {
+    const diagnostics = extractDiagnosticsFromBuildReport(buildReportHtml);
+    if (diagnostics.length === 0) {
+        info(
+            "No errors or warnings with line numbers found in validated files."
+        );
+        return;
+    }
+
+    const octokit = getOctokit(token);
+    const files = await octokit.paginate(octokit.rest.pulls.listFiles, {
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        pull_number: pullNumber,
+        per_page: 100,
+    });
+    const changedLinesByPath = new Map<string, Set<number>>();
+    for (const file of files) {
+        if (file.patch) {
+            changedLinesByPath.set(
+                file.filename,
+                extractChangedLinesFromPatch(file.patch)
+            );
+        }
+    }
+
+    const filteredDiagnostics = filterDiagnosticsToChangedLines(
+        diagnostics,
+        changedLinesByPath
+    );
+    if (filteredDiagnostics.length === 0) {
+        info("No build errors or warnings occur on changed PR lines.");
+        return;
+    }
+
+    const annotations = filteredDiagnostics.map((diagnostic) => ({
+        path: diagnostic.path,
+        start_line: diagnostic.line,
+        end_line: diagnostic.line,
+        annotation_level: (diagnostic.severity === "Error"
+            ? "failure"
+            : "warning") as "failure" | "warning",
+        title: `OPS ${diagnostic.severity}`,
+        message: diagnostic.message,
+    }));
+    const firstBatch = annotations.slice(0, ANNOTATION_BATCH_SIZE);
+    const response = await octokit.rest.checks.create({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        name: "OpenPublishing.Build annotations",
+        head_sha: commitOid,
+        status: "completed",
+        conclusion: "neutral",
+        details_url: buildReportUrl,
+        output: {
+            title: "OpenPublishing.Build diagnostics",
+            summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+            annotations: firstBatch,
+        },
+    });
+
+    for (
+        let index = ANNOTATION_BATCH_SIZE;
+        index < annotations.length;
+        index += ANNOTATION_BATCH_SIZE
+    ) {
+        await octokit.rest.checks.update({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            check_run_id: response.data.id,
+            output: {
+                title: "OpenPublishing.Build diagnostics",
+                summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+                annotations: annotations.slice(
+                    index,
+                    index + ANNOTATION_BATCH_SIZE
+                ),
+            },
+        });
+    }
+
+    info(`Annotated ${annotations.length} changed line(s).`);
 }
 
 function buildMarkdownPreviewTableFromExtractedLinks(
@@ -326,7 +546,7 @@ function buildMarkdownPreviewTableFromExtractedLinks(
     const displayedLinks = sortedLinks.slice(0, workflowInput.maxRowCount);
 
     for (const [file, previewUrl] of displayedLinks) {
-        const previewTitle = "Preview published page";
+        const previewTitle = "Learn preview";
         markdownTable += `| [${file}](${toGitHubLink(
             file,
             commitOid
@@ -404,7 +624,10 @@ export const exportedForTesting = {
     appendTable,
     buildMarkdownPreviewTableFromExtractedLinks,
     calculateMaxPollAttempts,
+    extractChangedLinesFromPatch,
+    extractDiagnosticsFromBuildReport,
     extractPreviewLinksFromBuildReport,
+    filterDiagnosticsToChangedLines,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
     replaceExistingTable,

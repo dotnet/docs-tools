@@ -39,34 +39,11 @@ const PREVIEW_TABLE_START = "<!-- PREVIEW-TABLE-START -->";
 const PREVIEW_TABLE_END = "<!-- PREVIEW-TABLE-END -->";
 const OPS_CHECK_NAME = "OpenPublishing.Build";
 const OPS_POLL_DELAY_MS = 30000;
+const ANNOTATION_BATCH_SIZE = 50;
 async function tryUpdatePullRequestBody(token) {
-    var _a, _b;
+    var _a, _b, _c;
     try {
-        const prNumber = github_1.context.payload.number;
-        (0, core_1.info)(`Update pull ${prNumber} request body.`);
-        const details = await getPullRequest(token);
-        if (!details) {
-            (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
-            return;
-        }
-        const pullRequest = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
-        if (!pullRequest) {
-            (0, core_1.info)("Unable to pull request details from object-graph.");
-            return;
-        }
-        if (pullRequest.changedFiles === 0) {
-            (0, core_1.info)("No files changed at all...");
-            return;
-        }
-        try {
-            (0, core_1.startGroup)("Pull request JSON body");
-            (0, core_1.info)(JSON.stringify(pullRequest, undefined, 2));
-            (0, core_1.endGroup)();
-        }
-        catch (_c) {
-            (0, core_1.endGroup)();
-        }
-        const commitOid = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha;
+        const commitOid = (_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha;
         if (!commitOid) {
             (0, core_1.info)("Unable to resolve PR head commit SHA.");
             return;
@@ -74,10 +51,6 @@ async function tryUpdatePullRequestBody(token) {
         const opsCheck = await waitForStatusCheck(token, commitOid, OPS_CHECK_NAME, calculateMaxPollAttempts(WorkflowInput_1.workflowInput.maxWaitTimeMinutes, OPS_POLL_DELAY_MS), OPS_POLL_DELAY_MS);
         if (!opsCheck || !opsCheck.detailsUrl) {
             (0, core_1.info)(`Unable to find a completed ${OPS_CHECK_NAME} status check with a build report URL.`);
-            return;
-        }
-        if (opsCheck.status !== "success") {
-            (0, core_1.info)(`${OPS_CHECK_NAME} completed with status '${opsCheck.status}'. Skipping preview table update.`);
             return;
         }
         const buildReportHtml = await downloadUrl(opsCheck.detailsUrl);
@@ -90,14 +63,48 @@ async function tryUpdatePullRequestBody(token) {
             (0, core_1.info)("No preview links found in OPS build report.");
             return;
         }
-        const markdownTable = buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, pullRequest.checksUrl);
-        const updatedBody = pullRequest.body.includes(PREVIEW_TABLE_START) &&
-            pullRequest.body.includes(PREVIEW_TABLE_END)
-            ? replaceExistingTable(pullRequest.body, markdownTable)
-            : appendTable(pullRequest.body, markdownTable);
+        const graphQLResponse = await getPullRequest(token);
+        if (!graphQLResponse) {
+            (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
+            return;
+        }
+        const prDetails = (_b = graphQLResponse.repository) === null || _b === void 0 ? void 0 : _b.pullRequest;
+        if (!prDetails) {
+            (0, core_1.info)("Unable to pull request details from object graph.");
+            return;
+        }
+        const prNumber = (_c = github_1.context.payload.pull_request) === null || _c === void 0 ? void 0 : _c.number;
+        if (prNumber === undefined) {
+            (0, core_1.info)("Unable to resolve the pull request number.");
+            return;
+        }
+        (0, core_1.info)(`Update pull ${prNumber} request body.`);
+        try {
+            (0, core_1.startGroup)("Pull request JSON body");
+            (0, core_1.info)(JSON.stringify(prDetails, undefined, 2));
+            (0, core_1.endGroup)();
+        }
+        catch (_d) {
+            (0, core_1.endGroup)();
+        }
+        const markdownTable = buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, prDetails.checksUrl);
+        // Generate the updated body text.
+        let updatedBody = prDetails.body.includes(PREVIEW_TABLE_START) &&
+            prDetails.body.includes(PREVIEW_TABLE_END) ?
+            replaceExistingTable(prDetails.body, markdownTable) :
+            appendTable(prDetails.body, markdownTable);
+        // Add or update the build report link.
+        const buildReportLinkPattern = /\[Build report\]\([^)]+\)/;
+        if (buildReportLinkPattern.test(updatedBody)) {
+            updatedBody = updatedBody.replace(buildReportLinkPattern, `[Build report](${opsCheck.detailsUrl})`);
+        }
+        else {
+            updatedBody += `\n\n[Build report](${opsCheck.detailsUrl})`;
+        }
         (0, core_1.startGroup)("Proposed PR body");
         (0, core_1.info)(updatedBody);
         (0, core_1.endGroup)();
+        // Update the pull request body with the new content.
         const octokit = (0, github_1.getOctokit)(token);
         const response = await octokit.rest.pulls.update({
             owner: github_1.context.repo.owner,
@@ -111,12 +118,21 @@ async function tryUpdatePullRequestBody(token) {
         else {
             (0, core_1.info)("Unable to update pull request...");
         }
+        // Add build warning annotations to changed lines in the PR.
+        if (WorkflowInput_1.workflowInput.annotateFiles) {
+            try {
+                await annotateChangedLines(token, prNumber, commitOid, buildReportHtml, opsCheck.detailsUrl);
+            }
+            catch (error) {
+                (0, core_1.warning)(`Unable to annotate changed files: ${error}`);
+            }
+        }
     }
     catch (error) {
-        (0, core_1.warning)(`Unable to process markdown preview: ${error}`);
+        (0, core_1.warning)(`Encountered error: ${error}`);
     }
     finally {
-        (0, core_1.info)("Finished attempting to generate preview.");
+        (0, core_1.info)("Finished work.");
     }
 }
 exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
@@ -246,11 +262,148 @@ function stripTags(input) {
 function decodeHtmlEntities(input) {
     return input
         .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
         .replace(/\s+/g, " ");
+}
+function extractDiagnosticsFromBuildReport(html) {
+    var _a, _b, _c, _d, _e;
+    const diagnostics = [];
+    const tables = (_a = html.match(/<table[\s\S]*?<\/table>/gi)) !== null && _a !== void 0 ? _a : [];
+    for (const table of tables) {
+        const rows = (_b = table.match(/<tr[\s\S]*?<\/tr>/gi)) !== null && _b !== void 0 ? _b : [];
+        if (rows.length === 0) {
+            continue;
+        }
+        const headers = extractCellText((_c = rows[0]) !== null && _c !== void 0 ? _c : "").map((header) => header.toLowerCase());
+        const fileIndex = headers.indexOf("file");
+        const statusIndex = headers.indexOf("status");
+        const detailsIndex = headers.indexOf("details");
+        if (fileIndex < 0 || statusIndex < 0 || detailsIndex < 0) {
+            continue;
+        }
+        for (const row of rows.slice(1)) {
+            const cells = extractCellText(row);
+            const path = (_d = cells[fileIndex]) === null || _d === void 0 ? void 0 : _d.trim();
+            const details = (_e = cells[detailsIndex]) !== null && _e !== void 0 ? _e : "";
+            if (!path || !cells[statusIndex]) {
+                continue;
+            }
+            const detailPattern = /Line\s+(\d+)\s*:\s*\[(Error|Warning)\]\s*([\s\S]*?)(?=\s+Line\s+\d+\s*:\s*\[(?:Error|Warning)\]|$)/gi;
+            for (const match of details.matchAll(detailPattern)) {
+                const line = Number(match[1]);
+                if (line > 0) {
+                    diagnostics.push({
+                        path,
+                        line,
+                        severity: match[2].toLowerCase() === "error"
+                            ? "Error"
+                            : "Warning",
+                        message: match[3].trim(),
+                    });
+                }
+            }
+        }
+        if (diagnostics.length > 0) {
+            return diagnostics;
+        }
+    }
+    return diagnostics;
+}
+function extractCellText(rowHtml) {
+    var _a;
+    const cells = (_a = rowHtml.match(/<t[dh][\s\S]*?<\/t[dh]>/gi)) !== null && _a !== void 0 ? _a : [];
+    return cells.map((cell) => decodeHtmlEntities(stripTags(cell)).trim());
+}
+function extractChangedLinesFromPatch(patch) {
+    const changedLines = new Set();
+    let newLine = 0;
+    for (const patchLine of patch.split("\n")) {
+        const hunk = patchLine.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+        if (hunk) {
+            newLine = Number(hunk[1]);
+            continue;
+        }
+        if (patchLine.startsWith("+") && !patchLine.startsWith("+++")) {
+            changedLines.add(newLine);
+            newLine++;
+        }
+        else if (!patchLine.startsWith("-") &&
+            !patchLine.startsWith("\\ No newline") &&
+            newLine > 0) {
+            newLine++;
+        }
+    }
+    return changedLines;
+}
+function filterDiagnosticsToChangedLines(diagnostics, changedLinesByPath) {
+    return diagnostics.filter((diagnostic) => { var _a; return (_a = changedLinesByPath.get(diagnostic.path)) === null || _a === void 0 ? void 0 : _a.has(diagnostic.line); });
+}
+async function annotateChangedLines(token, pullNumber, commitOid, buildReportHtml, buildReportUrl) {
+    const diagnostics = extractDiagnosticsFromBuildReport(buildReportHtml);
+    if (diagnostics.length === 0) {
+        (0, core_1.info)("No errors or warnings with line numbers found in validated files.");
+        return;
+    }
+    const octokit = (0, github_1.getOctokit)(token);
+    const files = await octokit.paginate(octokit.rest.pulls.listFiles, {
+        owner: github_1.context.repo.owner,
+        repo: github_1.context.repo.repo,
+        pull_number: pullNumber,
+        per_page: 100,
+    });
+    const changedLinesByPath = new Map();
+    for (const file of files) {
+        if (file.patch) {
+            changedLinesByPath.set(file.filename, extractChangedLinesFromPatch(file.patch));
+        }
+    }
+    const filteredDiagnostics = filterDiagnosticsToChangedLines(diagnostics, changedLinesByPath);
+    if (filteredDiagnostics.length === 0) {
+        (0, core_1.info)("No build errors or warnings occur on changed PR lines.");
+        return;
+    }
+    const annotations = filteredDiagnostics.map((diagnostic) => ({
+        path: diagnostic.path,
+        start_line: diagnostic.line,
+        end_line: diagnostic.line,
+        annotation_level: (diagnostic.severity === "Error"
+            ? "failure"
+            : "warning"),
+        title: `OPS ${diagnostic.severity}`,
+        message: diagnostic.message,
+    }));
+    const firstBatch = annotations.slice(0, ANNOTATION_BATCH_SIZE);
+    const response = await octokit.rest.checks.create({
+        owner: github_1.context.repo.owner,
+        repo: github_1.context.repo.repo,
+        name: "OpenPublishing.Build annotations",
+        head_sha: commitOid,
+        status: "completed",
+        conclusion: "neutral",
+        details_url: buildReportUrl,
+        output: {
+            title: "OpenPublishing.Build diagnostics",
+            summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+            annotations: firstBatch,
+        },
+    });
+    for (let index = ANNOTATION_BATCH_SIZE; index < annotations.length; index += ANNOTATION_BATCH_SIZE) {
+        await octokit.rest.checks.update({
+            owner: github_1.context.repo.owner,
+            repo: github_1.context.repo.repo,
+            check_run_id: response.data.id,
+            output: {
+                title: "OpenPublishing.Build diagnostics",
+                summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+                annotations: annotations.slice(index, index + ANNOTATION_BATCH_SIZE),
+            },
+        });
+    }
+    (0, core_1.info)(`Annotated ${annotations.length} changed line(s).`);
 }
 function buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, checksUrl) {
     var _a;
@@ -266,7 +419,7 @@ function buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, ch
     const exceedsMax = sortedLinks.length > WorkflowInput_1.workflowInput.maxRowCount;
     const displayedLinks = sortedLinks.slice(0, WorkflowInput_1.workflowInput.maxRowCount);
     for (const [file, previewUrl] of displayedLinks) {
-        const previewTitle = "Preview published page";
+        const previewTitle = "Learn preview";
         markdownTable += `| [${file}](${toGitHubLink(file, commitOid)}) | [${previewTitle}](${previewUrl}) |\n`;
     }
     if (isCollapsible) {
@@ -328,7 +481,10 @@ exports.exportedForTesting = {
     appendTable,
     buildMarkdownPreviewTableFromExtractedLinks,
     calculateMaxPollAttempts,
+    extractChangedLinesFromPatch,
+    extractDiagnosticsFromBuildReport,
     extractPreviewLinksFromBuildReport,
+    filterDiagnosticsToChangedLines,
     PREVIEW_TABLE_END,
     PREVIEW_TABLE_START,
     replaceExistingTable,
@@ -347,8 +503,8 @@ exports.workflowInput = exports.WorkflowInput = void 0;
 const core_1 = __nccwpck_require__(2186);
 class WorkflowInput {
     get collapsibleAfter() {
-        const val = parseInt((0, core_1.getInput)("collapsible_after", { required: false }) || "10");
-        return val || 10;
+        const val = (0, core_1.getInput)("collapsible_after", { required: false });
+        return parseInt(val);
     }
     get repoToken() {
         const val = (0, core_1.getInput)("repo_token", { required: true });
@@ -356,11 +512,14 @@ class WorkflowInput {
     }
     get maxRowCount() {
         const val = (0, core_1.getInput)("max_row_count");
-        return parseInt(val || "30");
+        return parseInt(val);
     }
     get maxWaitTimeMinutes() {
-        const val = parseInt((0, core_1.getInput)("max_wait_time_minutes") || "20");
+        const val = parseInt((0, core_1.getInput)("max_wait_time_minutes"));
         return val > 0 ? val : 20;
+    }
+    get annotateFiles() {
+        return (0, core_1.getInput)("annotate_file_warnings").toLowerCase() === "true";
     }
     constructor() { }
 }
