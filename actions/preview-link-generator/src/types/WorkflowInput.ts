@@ -2,10 +2,8 @@ import { getInput } from "@actions/core";
 
 export class WorkflowInput {
     get collapsibleAfter(): number {
-        const val = parseInt(
-            getInput("collapsible_after", { required: false }) || "10"
-        );
-        return val || 10;
+        const val = getInput("collapsible_after", { required: false });
+        return parseInt(val);
     }
 
     get repoToken(): string {
@@ -15,11 +13,11 @@ export class WorkflowInput {
 
     get maxRowCount(): number {
         const val = getInput("max_row_count");
-        return parseInt(val || "30");
+        return parseInt(val);
     }
 
     get maxWaitTimeMinutes(): number {
-        const val = parseInt(getInput("max_wait_time_minutes") || "20");
+        const val = parseInt(getInput("max_wait_time_minutes"));
         return val > 0 ? val : 20;
     }
 

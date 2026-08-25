@@ -41,33 +41,9 @@ const OPS_CHECK_NAME = "OpenPublishing.Build";
 const OPS_POLL_DELAY_MS = 30000;
 const ANNOTATION_BATCH_SIZE = 50;
 async function tryUpdatePullRequestBody(token) {
-    var _a, _b;
+    var _a, _b, _c;
     try {
-        const prNumber = github_1.context.payload.number;
-        (0, core_1.info)(`Update pull ${prNumber} request body.`);
-        const details = await getPullRequest(token);
-        if (!details) {
-            (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
-            return;
-        }
-        const pullRequest = (_a = details.repository) === null || _a === void 0 ? void 0 : _a.pullRequest;
-        if (!pullRequest) {
-            (0, core_1.info)("Unable to pull request details from object-graph.");
-            return;
-        }
-        if (pullRequest.changedFiles === 0) {
-            (0, core_1.info)("No files changed at all...");
-            return;
-        }
-        try {
-            (0, core_1.startGroup)("Pull request JSON body");
-            (0, core_1.info)(JSON.stringify(pullRequest, undefined, 2));
-            (0, core_1.endGroup)();
-        }
-        catch (_c) {
-            (0, core_1.endGroup)();
-        }
-        const commitOid = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.sha;
+        const commitOid = (_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.sha;
         if (!commitOid) {
             (0, core_1.info)("Unable to resolve PR head commit SHA.");
             return;
@@ -82,34 +58,53 @@ async function tryUpdatePullRequestBody(token) {
             (0, core_1.info)("Unable to download OPS build report HTML.");
             return;
         }
-        if (WorkflowInput_1.workflowInput.annotateFiles) {
-            try {
-                await annotateChangedLines(token, prNumber, commitOid, buildReportHtml, opsCheck.detailsUrl);
-            }
-            catch (error) {
-                (0, core_1.warning)(`Unable to annotate changed files: ${error}`);
-            }
-        }
-        if (opsCheck.status !== "success") {
-            (0, core_1.info)(`${OPS_CHECK_NAME} completed with status '${opsCheck.status}'. Skipping preview table update.`);
-            return;
-        }
         const previewLinks = extractPreviewLinksFromBuildReport(buildReportHtml);
         if (previewLinks.size === 0) {
             (0, core_1.info)("No preview links found in OPS build report.");
             return;
         }
-        const markdownTable = buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, pullRequest.checksUrl);
-        // Insert or replace the preview table in the pull request body.
-        let updatedBody = pullRequest.body.includes(PREVIEW_TABLE_START) &&
-            pullRequest.body.includes(PREVIEW_TABLE_END)
-            ? replaceExistingTable(pullRequest.body, markdownTable)
-            : appendTable(pullRequest.body, markdownTable);
-        // Insert a link to the build report.
-        updatedBody += `\n\n[Build report](${opsCheck.detailsUrl})`;
+        const graphQLResponse = await getPullRequest(token);
+        if (!graphQLResponse) {
+            (0, core_1.info)("Unable to get the pull request from GitHub GraphQL");
+            return;
+        }
+        const prDetails = (_b = graphQLResponse.repository) === null || _b === void 0 ? void 0 : _b.pullRequest;
+        if (!prDetails) {
+            (0, core_1.info)("Unable to pull request details from object graph.");
+            return;
+        }
+        const prNumber = (_c = github_1.context.payload.pull_request) === null || _c === void 0 ? void 0 : _c.number;
+        if (prNumber === undefined) {
+            (0, core_1.info)("Unable to resolve the pull request number.");
+            return;
+        }
+        (0, core_1.info)(`Update pull ${prNumber} request body.`);
+        try {
+            (0, core_1.startGroup)("Pull request JSON body");
+            (0, core_1.info)(JSON.stringify(prDetails, undefined, 2));
+            (0, core_1.endGroup)();
+        }
+        catch (_d) {
+            (0, core_1.endGroup)();
+        }
+        const markdownTable = buildMarkdownPreviewTableFromExtractedLinks(previewLinks, commitOid, prDetails.checksUrl);
+        // Generate the updated body text.
+        let updatedBody = prDetails.body.includes(PREVIEW_TABLE_START) &&
+            prDetails.body.includes(PREVIEW_TABLE_END) ?
+            replaceExistingTable(prDetails.body, markdownTable) :
+            appendTable(prDetails.body, markdownTable);
+        // Add or update the build report link.
+        const buildReportLinkPattern = /\[Build report\]\([^)]+\)/;
+        if (buildReportLinkPattern.test(updatedBody)) {
+            updatedBody = updatedBody.replace(buildReportLinkPattern, `[Build report](${opsCheck.detailsUrl})`);
+        }
+        else {
+            updatedBody += `\n\n[Build report](${opsCheck.detailsUrl})`;
+        }
         (0, core_1.startGroup)("Proposed PR body");
         (0, core_1.info)(updatedBody);
         (0, core_1.endGroup)();
+        // Update the pull request body with the new content.
         const octokit = (0, github_1.getOctokit)(token);
         const response = await octokit.rest.pulls.update({
             owner: github_1.context.repo.owner,
@@ -123,12 +118,21 @@ async function tryUpdatePullRequestBody(token) {
         else {
             (0, core_1.info)("Unable to update pull request...");
         }
+        // Add build warning annotations to changed lines in the PR.
+        if (WorkflowInput_1.workflowInput.annotateFiles) {
+            try {
+                await annotateChangedLines(token, prNumber, commitOid, buildReportHtml, opsCheck.detailsUrl);
+            }
+            catch (error) {
+                (0, core_1.warning)(`Unable to annotate changed files: ${error}`);
+            }
+        }
     }
     catch (error) {
-        (0, core_1.warning)(`Unable to process markdown preview: ${error}`);
+        (0, core_1.warning)(`Encountered error: ${error}`);
     }
     finally {
-        (0, core_1.info)("Finished attempting to generate preview.");
+        (0, core_1.info)("Finished work.");
     }
 }
 exports.tryUpdatePullRequestBody = tryUpdatePullRequestBody;
@@ -497,8 +501,8 @@ exports.workflowInput = exports.WorkflowInput = void 0;
 const core_1 = __nccwpck_require__(2186);
 class WorkflowInput {
     get collapsibleAfter() {
-        const val = parseInt((0, core_1.getInput)("collapsible_after", { required: false }) || "10");
-        return val || 10;
+        const val = (0, core_1.getInput)("collapsible_after", { required: false });
+        return parseInt(val);
     }
     get repoToken() {
         const val = (0, core_1.getInput)("repo_token", { required: true });
@@ -506,10 +510,10 @@ class WorkflowInput {
     }
     get maxRowCount() {
         const val = (0, core_1.getInput)("max_row_count");
-        return parseInt(val || "30");
+        return parseInt(val);
     }
     get maxWaitTimeMinutes() {
-        const val = parseInt((0, core_1.getInput)("max_wait_time_minutes") || "20");
+        const val = parseInt((0, core_1.getInput)("max_wait_time_minutes"));
         return val > 0 ? val : 20;
     }
     get annotateFiles() {
