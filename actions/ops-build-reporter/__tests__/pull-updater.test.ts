@@ -135,7 +135,7 @@ ${PREVIEW_TABLE_END}`;
         );
     });
 
-    it("extracts errors and warnings from validated file details", () => {
+    it("extracts errors, warnings, and suggestions from validated file details", () => {
         const html = `
 <table>
     <tr>
@@ -150,7 +150,10 @@ ${PREVIEW_TABLE_END}`;
     </tr>
     <tr>
         <td>articles/overview.md</td><td>Warning</td><td>View</td>
-        <td>Line 92: [Warning] Duplicate heading: 'Next step'.</td>
+        <td>
+            Line 92: [Warning] Duplicate heading: 'Next step'.<br />
+            Line 97: [Suggestion] Consider adding a description.
+        </td>
     </tr>
 </table>`;
 
@@ -174,6 +177,12 @@ ${PREVIEW_TABLE_END}`;
                 line: 92,
                 severity: "Warning",
                 message: "Duplicate heading: 'Next step'.",
+            },
+            {
+                path: "articles/overview.md",
+                line: 97,
+                severity: "Suggestion",
+                message: "Consider adding a description.",
             },
         ]);
     });

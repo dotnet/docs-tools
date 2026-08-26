@@ -292,16 +292,19 @@ function extractDiagnosticsFromBuildReport(html) {
             if (!path || !cells[statusIndex]) {
                 continue;
             }
-            const detailPattern = /Line\s+(\d+)\s*:\s*\[(Error|Warning)\]\s*([\s\S]*?)(?=\s+Line\s+\d+\s*:\s*\[(?:Error|Warning)\]|$)/gi;
+            const detailPattern = /Line\s+(\d+)\s*:\s*\[(Error|Warning|Suggestion)\]\s*([\s\S]*?)(?=\s+Line\s+\d+\s*:\s*\[(?:Error|Warning|Suggestion)\]|$)/gi;
             for (const match of details.matchAll(detailPattern)) {
                 const line = Number(match[1]);
                 if (line > 0) {
+                    const severity = match[2].toLowerCase();
                     diagnostics.push({
                         path,
                         line,
-                        severity: match[2].toLowerCase() === "error"
+                        severity: severity === "error"
                             ? "Error"
-                            : "Warning",
+                            : severity === "warning"
+                                ? "Warning"
+                                : "Suggestion",
                         message: match[3].trim(),
                     });
                 }
@@ -345,7 +348,7 @@ function filterDiagnosticsToChangedLines(diagnostics, changedLinesByPath) {
 async function annotateChangedLines(token, pullNumber, commitOid, buildReportHtml, buildReportUrl) {
     const diagnostics = extractDiagnosticsFromBuildReport(buildReportHtml);
     if (diagnostics.length === 0) {
-        (0, core_1.info)("No errors or warnings with line numbers found in validated files.");
+        (0, core_1.info)("No suggestions, warnings, or errors with line numbers found in validated files.");
         return;
     }
     const octokit = (0, github_1.getOctokit)(token);
@@ -363,7 +366,7 @@ async function annotateChangedLines(token, pullNumber, commitOid, buildReportHtm
     }
     const filteredDiagnostics = filterDiagnosticsToChangedLines(diagnostics, changedLinesByPath);
     if (filteredDiagnostics.length === 0) {
-        (0, core_1.info)("No build errors or warnings occur on changed PR lines.");
+        (0, core_1.info)("No build errors, warnings, or suggestions occur on changed PR lines.");
         return;
     }
     const annotations = filteredDiagnostics.map((diagnostic) => ({
@@ -372,7 +375,9 @@ async function annotateChangedLines(token, pullNumber, commitOid, buildReportHtm
         end_line: diagnostic.line,
         annotation_level: (diagnostic.severity === "Error"
             ? "failure"
-            : "warning"),
+            : diagnostic.severity === "Warning"
+                ? "warning"
+                : "notice"),
         title: `OPS ${diagnostic.severity}`,
         message: diagnostic.message,
     }));
@@ -387,7 +392,7 @@ async function annotateChangedLines(token, pullNumber, commitOid, buildReportHtm
         details_url: buildReportUrl,
         output: {
             title: "OpenPublishing.Build diagnostics",
-            summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+            summary: `${annotations.length} error(s), warning(s), or suggestion(s) found on changed lines.`,
             annotations: firstBatch,
         },
     });
@@ -398,7 +403,7 @@ async function annotateChangedLines(token, pullNumber, commitOid, buildReportHtm
             check_run_id: response.data.id,
             output: {
                 title: "OpenPublishing.Build diagnostics",
-                summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+                summary: `${annotations.length} error(s), warning(s), or suggestion(s) found on changed lines.`,
                 annotations: annotations.slice(index, index + ANNOTATION_BATCH_SIZE),
             },
         });
