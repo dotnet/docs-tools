@@ -1,8 +1,8 @@
 {
-  "name": "preview-link-generator-action",
+  "name": "ops-build-reporter-action",
   "version": "3.0.0",
   "private": true,
-  "description": "Preview link generator for Open Publishing Services (OPS)-enabled docs repos. Waits for OpenPublishing.Build to complete, then extracts preview links from the OPS build report and updates the pull request body.",
+  "description": "Helper for Open Publishing Services (OPS)-enabled docs repos. Waits for the OPS build to complete, then inserts preview links and the build report link into the pull request body. Optionally, annotates the changed files with any build suggestions, warnings, or errors.",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",

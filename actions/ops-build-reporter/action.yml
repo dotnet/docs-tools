@@ -1,10 +1,13 @@
-name: 'Preview link generator'
-description: 'Waits for OpenPublishing.Build to complete, then extracts preview links from the OPS build report and updates the pull request body.'
+name: 'OPS Build Reporter'
+description: 'Inserts preview links and the build report link into the pull request body. Optionally, annotates the changed files with any build suggestions, warnings, or errors.'
 author: 'Genevieve Warren'
 inputs:
   repo_token:
     description: 'The GITHUB_TOKEN secret. Requires pull-requests: write and, when annotate_file_warnings is true, checks: write.'
     required: true
+  annotate_file_warnings:
+    description: 'Whether to annotate changed lines on the Files changed tab with errors and warnings from the build report.'
+    default: 'false'
   collapsible_after:
     description: 'The number at which the automated preview table defaults as collapsed but expandable, using the HTML summary and details elements.'
     default: '12'
@@ -14,9 +17,6 @@ inputs:
   max_wait_time_minutes:
     description: 'The maximum number of minutes to wait for the OpenPublishing.Build status check to complete.'
     default: '20'
-  annotate_file_warnings:
-    description: 'Whether to annotate changed lines on the Files changed tab with errors and warnings from the build report.'
-    default: 'false'
 runs:
   using: 'node16'
   main: 'dist/index.js'

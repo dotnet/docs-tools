@@ -18,7 +18,7 @@ type StatusCheck = {
 type BuildDiagnostic = {
     path: string;
     line: number;
-    severity: "Error" | "Warning";
+    severity: "Error" | "Warning" | "Suggestion";
     message: string;
 };
 
@@ -368,17 +368,20 @@ function extractDiagnosticsFromBuildReport(html: string): BuildDiagnostic[] {
             }
 
             const detailPattern =
-                /Line\s+(\d+)\s*:\s*\[(Error|Warning)\]\s*([\s\S]*?)(?=\s+Line\s+\d+\s*:\s*\[(?:Error|Warning)\]|$)/gi;
+                /Line\s+(\d+)\s*:\s*\[(Error|Warning|Suggestion)\]\s*([\s\S]*?)(?=\s+Line\s+\d+\s*:\s*\[(?:Error|Warning|Suggestion)\]|$)/gi;
             for (const match of details.matchAll(detailPattern)) {
                 const line = Number(match[1]);
                 if (line > 0) {
+                    const severity = match[2].toLowerCase();
                     diagnostics.push({
                         path,
                         line,
                         severity:
-                            match[2].toLowerCase() === "error"
+                            severity === "error"
                                 ? "Error"
-                                : "Warning",
+                                : severity === "warning"
+                                    ? "Warning"
+                                    : "Suggestion",
                         message: match[3].trim(),
                     });
                 }
@@ -443,7 +446,7 @@ async function annotateChangedLines(
     const diagnostics = extractDiagnosticsFromBuildReport(buildReportHtml);
     if (diagnostics.length === 0) {
         info(
-            "No errors or warnings with line numbers found in validated files."
+            "No suggestions, warnings, or errors with line numbers found in validated files."
         );
         return;
     }
@@ -470,7 +473,7 @@ async function annotateChangedLines(
         changedLinesByPath
     );
     if (filteredDiagnostics.length === 0) {
-        info("No build errors or warnings occur on changed PR lines.");
+        info("No build errors, warnings, or suggestions occur on changed PR lines.");
         return;
     }
 
@@ -480,7 +483,9 @@ async function annotateChangedLines(
         end_line: diagnostic.line,
         annotation_level: (diagnostic.severity === "Error"
             ? "failure"
-            : "warning") as "failure" | "warning",
+            : diagnostic.severity === "Warning"
+                ? "warning"
+                : "notice") as "failure" | "warning" | "notice",
         title: `OPS ${diagnostic.severity}`,
         message: diagnostic.message,
     }));
@@ -495,7 +500,7 @@ async function annotateChangedLines(
         details_url: buildReportUrl,
         output: {
             title: "OpenPublishing.Build diagnostics",
-            summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+            summary: `${annotations.length} error(s), warning(s), or suggestion(s) found on changed lines.`,
             annotations: firstBatch,
         },
     });
@@ -511,7 +516,7 @@ async function annotateChangedLines(
             check_run_id: response.data.id,
             output: {
                 title: "OpenPublishing.Build diagnostics",
-                summary: `${annotations.length} error(s) or warning(s) found on changed lines.`,
+                summary: `${annotations.length} error(s), warning(s), or suggestion(s) found on changed lines.`,
                 annotations: annotations.slice(
                     index,
                     index + ANNOTATION_BATCH_SIZE
@@ -624,8 +629,7 @@ export const exportedForTesting = {
     appendTable,
     buildMarkdownPreviewTableFromExtractedLinks,
     calculateMaxPollAttempts,
-    extractChangedLinesFromPatch,
-    extractDiagnosticsFromBuildReport,
+    extractChangedLinesFromPatch,extractDiagnosticsFromBuildReport,
     extractPreviewLinksFromBuildReport,
     filterDiagnosticsToChangedLines,
     PREVIEW_TABLE_END,
