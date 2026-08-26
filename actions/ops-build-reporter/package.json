@@ -2,7 +2,7 @@
   "name": "ops-build-reporter-action",
   "version": "3.0.0",
   "private": true,
-  "description": "Helper for Open Publishing Services (OPS)-enabled docs repos. Waits for the OPS build to complete, then inserts preview links and the build report link into the pull request body. Optionally, annotates the changed files with any build warnings or errors.",
+  "description": "Helper for Open Publishing Services (OPS)-enabled docs repos. Waits for the OPS build to complete, then inserts preview links and the build report link into the pull request body. Optionally, annotates the changed files with any build suggestions, warnings, or errors.",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",

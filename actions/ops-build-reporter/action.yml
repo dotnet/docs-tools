@@ -1,5 +1,5 @@
 name: 'OPS Build Reporter'
-description: 'Inserts preview links and the build report link into the pull request body. Optionally, annotates the changed files with any build warnings or errors.'
+description: 'Inserts preview links and the build report link into the pull request body. Optionally, annotates the changed files with any build suggestions, warnings, or errors.'
 author: 'Genevieve Warren'
 inputs:
   repo_token:

@@ -1,6 +1,6 @@
 # OPS Build Reporter GitHub Action
 
-This action updates a pull request body with preview links extracted from the OpenPublishing.Build report and a link to the build report itself. Optionally, it also annotates changed files with any build errors or warnings.
+This action updates a pull request body with preview links extracted from the OpenPublishing.Build report and a link to the build report itself. Optionally, it also annotates changed files with any build suggestions, warnings, or errors.
 
 ## Usage
 
