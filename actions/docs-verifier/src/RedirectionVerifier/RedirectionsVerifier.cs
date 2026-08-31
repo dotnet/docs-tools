@@ -3,16 +3,17 @@
 public static class RedirectionsVerifier
 {
     /// <summary>
-    /// Verifies a redirection for the given source path, and write logs (using GitHub-specific syntax) to a text writer.
+    /// Verifies a redirection for the given source path, 
+    /// and write logs (using GitHub-specific syntax) to a text writer.
     /// </summary>
-    /// <returns>Returns <see langword="true"/> for a valid redirection; <see langword="false"/> otherwise.</returns>
+    /// <returns><see langword="true"/> for a valid redirection; <see langword="false"/> otherwise.</returns>
     public static async Task<bool> WriteResultsAsync(
         TextWriter writer, string sourcePath, IEnumerable<Redirection> redirections)
     {
         ArgumentNullException.ThrowIfNull(writer, nameof(writer));
 
         List<Redirection> foundRedirections =
-            redirections.Where(redirection => redirection.MatchesSourcePath(sourcePath)).ToList();
+            [.. redirections.Where(redirection => redirection.MatchesSourcePath(sourcePath))];
         if (foundRedirections.Count == 0)
         {
             await writer.WriteLineAsync($"::error::No redirection is found for '{sourcePath}'.");
@@ -32,7 +33,8 @@ public static class RedirectionsVerifier
             return false;
         }
 
-        // TODO: Verify file existence if it starts with "/<our_docset>". Will this require setting the docset as an env variable?.
+        // TODO: Verify file existence if it starts with "/<our_docset>".
+        // Will this require setting the docset as an env variable?.
         return true;
     }
 }

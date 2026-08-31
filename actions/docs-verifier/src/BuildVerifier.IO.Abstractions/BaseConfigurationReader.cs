@@ -20,6 +20,12 @@ public abstract class BaseConfigurationReader<TConfigurationFile>
     public string? ConfigurationFileName { get; set; }
 
     /// <summary>
+    /// The directory containing the configuration file, or null if at root.
+    /// For example, if ConfigurationFileName is "docs/docfx.json", this will be "docs".
+    /// </summary>
+    public string? ConfigurationDirectory { get; private set; }
+
+    /// <summary>
     /// Reads (or returns the cached) <typeparamref name="TConfigurationFile"/> file.
     /// </summary>
     public async ValueTask<TConfigurationFile?> ReadConfigurationAsync()
@@ -36,6 +42,7 @@ public abstract class BaseConfigurationReader<TConfigurationFile>
                 {
                     if (File.Exists($"{dir}/{ConfigurationFileName}"))
                     {
+                        ConfigurationDirectory = dir.TrimStart('.', '/', '\\');
                         ConfigurationFileName = $"{dir}/{ConfigurationFileName}";
                         _fileExists = true;
                         break;
