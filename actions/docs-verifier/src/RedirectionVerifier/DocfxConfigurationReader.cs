@@ -16,11 +16,11 @@ public class DocfxConfigurationReader
     public override async ValueTask<IEnumerable<Matcher>> MapConfigurationAsync()
     {
         DocfxConfiguration? configuration = await ReadConfigurationAsync();
-        return AdjustMatchers(configuration?.GetMatchers());
+        return AdjustMatchers(configuration?.GetMatchers(ConfigurationDirectory));
     }
 
     private static IEnumerable<Matcher> AdjustMatchers(IEnumerable<Matcher>? matchers)
         => (matchers is null || !matchers.Any())
-            ? new[] { s_matchAllMatcher }
+            ? [s_matchAllMatcher]
             : matchers;
 }

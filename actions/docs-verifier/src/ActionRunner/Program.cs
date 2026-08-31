@@ -82,7 +82,7 @@ if (Environment.GetEnvironmentVariable("IS_TRY_FIX") is "true")
 
             if (queryOrHeadingIndex > -1)
             {
-                newLink += linkError.Link.Substring(queryOrHeadingIndex);
+                newLink += linkError.Link[queryOrHeadingIndex..];
             }
 
             file = file.Insert(linkError.UrlSpan.Start, newLink);
@@ -106,14 +106,10 @@ DocfxConfigurationReader docfxConfigurationReader = new();
 IEnumerable<Matcher> matchers = await docfxConfigurationReader.MapConfigurationAsync();
 IEnumerable<PullRequestFile> pullRequestFiles = await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber);
 
-WhatsNewConfigurationReader whatsNewConfigurationReader = new();
-string? whatsNewPath = await whatsNewConfigurationReader.MapConfigurationAsync();
-
 List<PullRequestFile> files =
-    pullRequestFiles.Where(f => IsRedirectableFile(f, matchers, whatsNewPath)).ToList();
+    [.. pullRequestFiles.Where(f => IsRedirectableFile(f, matchers))];
 
 // We should only ever fail on MD and YML files, no other files require redirection.
-// Also, filter out files that are part of the "What's new" directory - as they shouldn't require redirects.
 foreach (PullRequestFile file in files)
 {
     // Changing the extension from .yml to .md or the opposite doesn't require a redirection.
@@ -137,7 +133,7 @@ foreach (PullRequestFile file in files)
 return returnCode;
 
 static bool IsRedirectableFile(
-    PullRequestFile file, IEnumerable<Matcher> matchers, string? whatsNewPath)
+    PullRequestFile file, IEnumerable<Matcher> matchers)
 {
     string? deletedFileName = file.IsRenamed()
         ? file.PreviousFileName
@@ -149,26 +145,11 @@ static bool IsRedirectableFile(
     // A deleted toc.yml doesn't need redirection.
     // Also, don't require a redirection for file patterns specified as "exclude"s in docfx config file.
     return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName)
-        && !IsInWhatsNewDirectory(deletedFileName, whatsNewPath) &&
-        matchers.Any(m => m.Match(deletedFileName).HasMatches);
+        && matchers.Any(m => m.Match(deletedFileName).HasMatches);
 }
 
 static bool IsYmlOrMarkdownFile([NotNullWhen(true)] string? fileName) =>
     Path.GetExtension(fileName) is ".yml" or ".md";
-
-static bool IsInWhatsNewDirectory(string fileName, string? whatsNewPath)
-{
-    if (whatsNewPath is { Length: > 0 })
-    {
-        // Example:
-        // file.FileName:   docs/whats-new/2021-03.md
-        // whatsNewPath:    docs/whats-new
-
-        return fileName.StartsWith(whatsNewPath, StringComparison.OrdinalIgnoreCase);
-    }
-
-    return false;
-}
 
 static bool IsExtensionChangeOnly(string file1, string file2) =>
     RemoveExtension(file1).Equals(RemoveExtension(file2), StringComparison.OrdinalIgnoreCase);

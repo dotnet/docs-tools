@@ -14,7 +14,7 @@ public class OpenPublishingConfigReader
     public override async ValueTask<ImmutableArray<string>?> MapConfigurationAsync()
     {
         OpenPublishingConfig? configuration = await ReadConfigurationAsync();
-        if (configuration is { RedirectionFiles: { Length: > 0 } })
+        if (configuration is { RedirectionFiles.Length: > 0 })
         {
             return configuration.RedirectionFiles;
         }

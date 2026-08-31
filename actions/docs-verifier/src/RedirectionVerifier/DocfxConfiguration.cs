@@ -24,7 +24,7 @@ public sealed record DocfxConfiguration(
         return Build.Contents.Where(content => content.Source is null or "." or "docs");
     }
 
-    public IEnumerable<Matcher> GetMatchers()
+    public IEnumerable<Matcher> GetMatchers(string? configDirectory = null)
     {
         if (_matchers is null)
         {
@@ -33,11 +33,15 @@ public sealed record DocfxConfiguration(
             foreach (DocfxContent content in contents)
             {
                 var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
+
+                // Adjust the source path based on where docfx.json was found
+                string effectiveSource = GetEffectiveSource(content.Source, configDirectory);
+
                 if (content.Files is not null)
                 {
                     foreach (string includePattern in content.Files)
                     {
-                        matcher.AddInclude($"{content.Source}/{includePattern}");
+                        matcher.AddInclude($"{effectiveSource}/{includePattern}");
                     }
                 }
                 else
@@ -60,6 +64,25 @@ public sealed record DocfxConfiguration(
         }
 
         return _matchers;
+    }
+
+    private static string GetEffectiveSource(string? source, string? configDirectory)
+    {
+        // If no config directory (docfx.json at root), use source as-is
+        if (string.IsNullOrEmpty(configDirectory))
+        {
+            return source ?? ".";
+        }
+
+        // If source is "." or null, it means the content is relative to where docfx.json is
+        // So we need to prepend the config directory
+        if (source is null or ".")
+        {
+            return configDirectory;
+        }
+
+        // Otherwise, combine config directory with the specified source
+        return $"{configDirectory}/{source}";
     }
 }
 

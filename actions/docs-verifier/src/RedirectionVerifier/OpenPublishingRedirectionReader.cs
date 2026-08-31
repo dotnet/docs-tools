@@ -14,7 +14,7 @@ public class OpenPublishingRedirectionReader
     public override async ValueTask<ImmutableArray<Redirection>> MapConfigurationAsync()
     {
         OpenPublishingRedirections? configuration = await ReadConfigurationAsync();
-        if (configuration is { Redirections: { Length: > 0 } })
+        if (configuration is { Redirections.Length: > 0 })
         {
             return configuration.Redirections;
         }
