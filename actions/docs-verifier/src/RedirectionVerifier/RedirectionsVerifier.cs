@@ -3,8 +3,8 @@
 public static class RedirectionsVerifier
 {
     /// <summary>
-    /// Verifies a redirection for the given source path, 
-    /// and write logs (using GitHub-specific syntax) to a text writer.
+    /// Verifies a redirection for the given source path 
+    /// and writes logs (using GitHub-specific syntax) to a text writer.
     /// </summary>
     /// <returns><see langword="true"/> for a valid redirection; <see langword="false"/> otherwise.</returns>
     public static async Task<bool> WriteResultsAsync(
@@ -34,7 +34,7 @@ public static class RedirectionsVerifier
         }
 
         // TODO: Verify file existence if it starts with "/<our_docset>".
-        // Will this require setting the docset as an env variable?.
+        // Will this require setting the docset as an env variable?
         return true;
     }
 }

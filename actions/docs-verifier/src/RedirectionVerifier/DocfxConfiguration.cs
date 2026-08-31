@@ -20,7 +20,8 @@ public sealed record DocfxConfiguration(
             throw new InvalidOperationException("An object array 'contents' was expected to exist under 'build' in 'docfx.json'.");
         }
 
-        // TODO: repo name, or do the hard work of reading open publishing build config file, determining **ALL** `docfx.json`, and read them.
+        // TODO: repo name, or do the hard work of reading open publishing build
+        // config file, determining **ALL** `docfx.json` files, and reading them.
         return Build.Contents.Where(content => content.Source is null or "." or "docs");
     }
 
@@ -34,7 +35,7 @@ public sealed record DocfxConfiguration(
             {
                 var matcher = new Matcher(StringComparison.OrdinalIgnoreCase);
 
-                // Adjust the source path based on where docfx.json was found
+                // Adjust the source path based on where docfx.json was found.
                 string effectiveSource = GetEffectiveSource(content.Source, configDirectory);
 
                 if (content.Files is not null)
@@ -53,7 +54,7 @@ public sealed record DocfxConfiguration(
                 {
                     foreach (string excludePattern in content.Excludes)
                     {
-                        matcher.AddExclude(excludePattern);
+                        matcher.AddExclude($"{effectiveSource}/excludePattern");
                     }
                 }
 
@@ -68,20 +69,20 @@ public sealed record DocfxConfiguration(
 
     private static string GetEffectiveSource(string? source, string? configDirectory)
     {
-        // If no config directory (docfx.json at root), use source as-is
+        // If no config directory (docfx.json at root), use source as-is.
         if (string.IsNullOrEmpty(configDirectory))
         {
             return source ?? ".";
         }
 
-        // If source is "." or null, it means the content is relative to where docfx.json is
-        // So we need to prepend the config directory
+        // If source is "." or null, it means the content is relative to where docfx.json is.
+        // So we need to prepend the config directory.
         if (source is null or ".")
         {
             return configDirectory;
         }
 
-        // Otherwise, combine config directory with the specified source
+        // Otherwise, combine config directory with the specified source.
         return $"{configDirectory}/{source}";
     }
 }
