@@ -54,7 +54,7 @@ public sealed record DocfxConfiguration(
                 {
                     foreach (string excludePattern in content.Excludes)
                     {
-                        matcher.AddExclude($"{effectiveSource}/excludePattern");
+                        matcher.AddExclude($"{effectiveSource}/{excludePattern}");
                     }
                 }
 
