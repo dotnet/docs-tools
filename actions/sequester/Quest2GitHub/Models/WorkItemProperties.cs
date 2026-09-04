@@ -186,9 +186,9 @@ public class WorkItemProperties
         foreach (var label in issue.Labels)
         {
             var tag = tags.FirstOrDefault(t => t.Label == label.Name);
-            if (tag.Tag is not null)
+            if ((tag.Tag is not null) && (sprint is not null))
             {
-                yield return (sprint is not null) ? tag.Tag.Replace("$FullMonthText$", sprint) : tag.Tag;
+                yield return tag.Tag.Replace("$FullMonthText$", sprint);
             }
         }
         // Add custom tag if one of the assignees is "Copilot":
