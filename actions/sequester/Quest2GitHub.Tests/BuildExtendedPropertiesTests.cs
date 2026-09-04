@@ -26,6 +26,7 @@ public class BuildExtendedPropertiesTests
     [
         new () { Label = ":checkered_flag: Release: .NET 9", Tag = "new-feature" },
         new () { Label = labelForTag, Tag = "content-curation" },
+        new () { Label = labelWithReplacement, Tag = "Highlight-$FullMonthText$" }
     ];
 
     private static ParentForLabel[] _parentMap =
@@ -40,6 +41,8 @@ public class BuildExtendedPropertiesTests
     private const string labelWithoutTag = "enhancement";
     private const string labelWithParent = "user-feedback";
     private const string labelWithoutParent = "bug";
+
+    private const string labelWithReplacement = ":sparkler: Highlight :sparkler:";
 
 
     private const string PastProject = """
@@ -257,12 +260,12 @@ public class BuildExtendedPropertiesTests
       "labels": {
         "nodes": [
           {
-            "name": "{{labelForTag}}",
-            "id": "MDU6TGFiZWwzMDkwMTEzMzI1"
-          },
-          {
             "name": "{{labelWithoutTag}}",
             "id": "LA_kwDOFn2dfM8AAAABK0cMjA"
+          },
+          {
+            "name": "{{labelWithReplacement}}",
+            "id": "NA"
           }
         ]
       },
@@ -665,7 +668,7 @@ public class BuildExtendedPropertiesTests
         Assert.Equal(2, extendedProperties.Priority);
         Assert.Equal(ExpectedFutureProject, extendedProperties.IterationPath);
         Assert.Equal("New", extendedProperties.WorkItemState);
-        Assert.Equal(["content-curation"], extendedProperties.Tags);
+        Assert.Equal(["Highlight-March"], extendedProperties.Tags);
         Assert.Equal(33, extendedProperties.ParentNodeId);
     }
 
