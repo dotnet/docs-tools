@@ -98,22 +98,18 @@ public record StoryPointSize
     public string Size { get; }
     public int? Priority { get; }
 
-    public string FullMonthText => Month switch
+    public string FullMonthText
     {
-        "Jan" => "January",
-        "Feb" => "February",
-        "Mar" => "March",
-        "Apr" => "April",
-        "May" => "May",
-        "Jun" => "June",
-        "Jul" => "July",
-        "Aug" => "August",
-        "Sep" => "September",
-        "Oct" => "October",
-        "Nov" => "November",
-        "Dec" => "December",
-        _ => Month
-    };
+        get
+        {
+            if (!TryGetMonthOrdinal(Month, out int ordinal))
+            {
+                return Month;
+            }
+
+            return System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(ordinal);
+        }
+    }
 
     public bool IsPastIteration
     {
