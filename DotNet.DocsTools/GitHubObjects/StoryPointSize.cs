@@ -98,6 +98,19 @@ public record StoryPointSize
     public string Size { get; }
     public int? Priority { get; }
 
+    public string FullMonthText
+    {
+        get
+        {
+            if (!TryGetMonthOrdinal(Month, out int ordinal))
+            {
+                return Month;
+            }
+
+            return System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(ordinal);
+        }
+    }
+
     public bool IsPastIteration
     {
         get

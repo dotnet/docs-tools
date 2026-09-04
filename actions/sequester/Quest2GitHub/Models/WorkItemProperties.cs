@@ -182,12 +182,13 @@ public class WorkItemProperties
 
     private static IEnumerable<string> WorkItemTagsForIssue(QuestIssueOrPullRequest issue, IEnumerable<LabelToTagMap> tags, string copilotTag)
     {
+        string? sprint = LatestStoryPointSize(issue)?.FullMonthText?.ToString();
         foreach (var label in issue.Labels)
         {
             var tag = tags.FirstOrDefault(t => t.Label == label.Name);
-            if (tag.Tag is not null)
+            if ((tag.Tag is not null) && (sprint is not null))
             {
-                yield return tag.Tag;
+                yield return tag.Tag.Replace("$FullMonthText$", sprint);
             }
         }
         // Add custom tag if one of the assignees is "Copilot":
