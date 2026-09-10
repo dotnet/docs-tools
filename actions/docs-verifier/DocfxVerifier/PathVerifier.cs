@@ -83,7 +83,27 @@ namespace DocfxVerifier
                     ValidateElement(property.Value, property.Name, childPath, repositoryRoot, configurationDirectory, errors);
                 }
 
-                if (propertyName is not null && s_pathObjectKeyPropertyNames.Contains(propertyName))
+                if (string.Equals(propertyName, "fileMetadata", StringComparison.Ordinal))
+                {
+                    foreach (JsonProperty metadataProperty in element.EnumerateObject())
+                    {
+                        if (metadataProperty.Value.ValueKind != JsonValueKind.Object)
+                        {
+                            continue;
+                        }
+
+                        foreach (JsonProperty pathProperty in metadataProperty.Value.EnumerateObject())
+                        {
+                            ValidatePath(
+                                pathProperty.Name,
+                                $"{jsonPath}.{metadataProperty.Name}.{pathProperty.Name}",
+                                repositoryRoot,
+                                configurationDirectory,
+                                errors);
+                        }
+                    }
+                }
+                else if (propertyName is not null && s_pathObjectKeyPropertyNames.Contains(propertyName))
                 {
                     foreach (JsonProperty property in element.EnumerateObject())
                     {

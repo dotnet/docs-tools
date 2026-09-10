@@ -50,6 +50,53 @@ public class PathVerifierTests
     }
 
     [Fact]
+    public async Task WriteResultsAsyncValidatesFileMetadataPaths()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+            Directory.CreateDirectory(Path.Combine("docs", "valid"));
+
+            await File.WriteAllTextAsync("docfx.json", """
+            {
+              "build": {
+                "content": [
+                  {
+                    "files": ["**/*.md"],
+                    "src": "docs"
+                  }
+                ],
+                "fileMetadata": {
+                  "ms.author": {
+                    "docs/valid/**/**.{md,yml}": "someone",
+                    "missing/path/**/**.{md,yml}": "someone"
+                  }
+                }
+              }
+            }
+            """);
+
+            using var writer = new StringWriter();
+            bool result = await PathVerifier.WriteResultsAsync(writer);
+            string output = writer.ToString();
+
+            Assert.False(result);
+            Assert.Contains("Path 'missing/path/**/**.{md,yml}' is invalid", output, StringComparison.Ordinal);
+            Assert.DoesNotContain("Path 'docs/valid/**/**.{md,yml}' is invalid", output, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
+    [Fact]
     public async Task WriteResultsAsyncReturnsFalseForInvalidPaths()
     {
         await s_currentDirectoryLock.WaitAsync();
