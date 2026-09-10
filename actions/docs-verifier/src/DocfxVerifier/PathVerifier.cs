@@ -3,7 +3,8 @@
 namespace DocfxVerifier
 {
     /// <summary>
-    /// Validates file path entries declared in a docfx.json file.
+    /// Validates file path entries declared 
+    /// under build.fileMetadata in a docfx.json file.
     /// </summary>
     public static class PathVerifier
     {
@@ -46,7 +47,7 @@ namespace DocfxVerifier
             string configurationPathForLog = configurationPath.Replace('\\', '/');
 
             var errors = new List<string>();
-            ValidateConfiguration(json.RootElement, repositoryRoot, configurationDirectory, errors);
+            ValidateFileMetadataPaths(json.RootElement, repositoryRoot, configurationDirectory, errors);
 
             foreach (string error in errors)
             {
@@ -56,11 +57,11 @@ namespace DocfxVerifier
             return errors.Count == 0;
         }
 
-        private static void ValidateConfiguration(
-                JsonElement element,
-                string repositoryRoot,
-                string configurationDirectory,
-                List<string> errors)
+        private static void ValidateFileMetadataPaths(
+            JsonElement element,
+            string repositoryRoot,
+            string configurationDirectory,
+            List<string> errors)
         {
             if (element.ValueKind != JsonValueKind.Object)
             {
@@ -70,32 +71,17 @@ namespace DocfxVerifier
             if (element.TryGetProperty("build", out JsonElement buildSection)
                 && buildSection.ValueKind == JsonValueKind.Object)
             {
-                ValidateBuildSection(buildSection, "$.build", repositoryRoot, configurationDirectory, errors);
-            }
-
-            if (element.TryGetProperty("metadata", out JsonElement metadataSection))
-            {
-                ValidateFileMappingArray(metadataSection, "$.metadata", repositoryRoot, configurationDirectory, configurationDirectory, errors);
+                ValidateBuildFileMetadataSection(buildSection, "$.build", repositoryRoot, configurationDirectory, errors);
             }
         }
 
-        private static void ValidateBuildSection(
+        private static void ValidateBuildFileMetadataSection(
             JsonElement buildSection,
             string jsonPath,
             string repositoryRoot,
             string configurationDirectory,
             List<string> errors)
         {
-            ValidateStringProperty(buildSection, "dest", $"{jsonPath}.dest", repositoryRoot, configurationDirectory, errors);
-            ValidateStringArrayProperty(buildSection, "template", $"{jsonPath}.template", repositoryRoot, configurationDirectory, errors);
-            ValidateStringArrayProperty(buildSection, "xref", $"{jsonPath}.xref", repositoryRoot, configurationDirectory, errors);
-            ValidateStringArrayProperty(buildSection, "globalMetadataFiles", $"{jsonPath}.globalMetadataFiles", repositoryRoot, configurationDirectory, errors);
-            ValidateStringArrayProperty(buildSection, "fileMetadataFiles", $"{jsonPath}.fileMetadataFiles", repositoryRoot, configurationDirectory, errors);
-
-            ValidateFileMappingArrayProperty(buildSection, "content", $"{jsonPath}.content", repositoryRoot, configurationDirectory, errors);
-            ValidateFileMappingArrayProperty(buildSection, "resource", $"{jsonPath}.resource", repositoryRoot, configurationDirectory, errors);
-            ValidateFileMappingArrayProperty(buildSection, "overwrite", $"{jsonPath}.overwrite", repositoryRoot, configurationDirectory, errors);
-
             if (buildSection.TryGetProperty("fileMetadata", out JsonElement fileMetadata)
                 && fileMetadata.ValueKind == JsonValueKind.Object)
             {
@@ -119,143 +105,11 @@ namespace DocfxVerifier
             }
         }
 
-        private static void ValidateStringProperty(
-            JsonElement parent,
-            string propertyName,
-            string jsonPath,
-            string repositoryRoot,
-            string resolutionBaseDirectory,
-            List<string> errors)
-        {
-            if (parent.TryGetProperty(propertyName, out JsonElement property)
-                && property.ValueKind == JsonValueKind.String)
-            {
-                ValidatePath(property.GetString(), jsonPath, repositoryRoot, resolutionBaseDirectory, errors);
-            }
-        }
-
-        private static void ValidateStringArrayProperty(
-            JsonElement parent,
-            string propertyName,
-            string jsonPath,
-            string repositoryRoot,
-            string resolutionBaseDirectory,
-            List<string> errors)
-        {
-            if (parent.TryGetProperty(propertyName, out JsonElement property))
-            {
-                ValidateStringArray(property, jsonPath, repositoryRoot, resolutionBaseDirectory, errors);
-            }
-        }
-
-        private static void ValidateFileMappingArrayProperty(
-            JsonElement parent,
-            string propertyName,
-            string jsonPath,
-            string repositoryRoot,
-            string configurationDirectory,
-            List<string> errors)
-        {
-            if (parent.TryGetProperty(propertyName, out JsonElement property))
-            {
-                ValidateFileMappingArray(property, jsonPath, repositoryRoot, configurationDirectory, configurationDirectory, errors);
-            }
-        }
-
-        private static void ValidateFileMappingArray(
-            JsonElement mappings,
-            string jsonPath,
-            string repositoryRoot,
-            string configurationDirectory,
-            string resolutionBaseDirectory,
-            List<string> errors)
-        {
-            if (mappings.ValueKind != JsonValueKind.Array)
-            {
-                return;
-            }
-
-            int index = 0;
-            foreach (JsonElement mapping in mappings.EnumerateArray())
-            {
-                string mappingPath = $"{jsonPath}[{index}]";
-                if (mapping.ValueKind == JsonValueKind.String)
-                {
-                    ValidatePath(mapping.GetString(), mappingPath, repositoryRoot, resolutionBaseDirectory, errors);
-                }
-                else if (mapping.ValueKind == JsonValueKind.Object)
-                {
-                    ValidateFileMappingObject(mapping, mappingPath, repositoryRoot, configurationDirectory, errors);
-                }
-
-                index++;
-            }
-        }
-
-        private static void ValidateFileMappingObject(
-            JsonElement mapping,
-            string jsonPath,
-            string repositoryRoot,
-            string configurationDirectory,
-            List<string> errors)
-        {
-            string mappingSourceDirectory = configurationDirectory;
-
-            if (mapping.TryGetProperty("src", out JsonElement src)
-                && src.ValueKind == JsonValueKind.String)
-            {
-                string? srcPath = src.GetString();
-                ValidatePath(srcPath, $"{jsonPath}.src", repositoryRoot, configurationDirectory, errors);
-
-                string? effectiveSourceDirectory = TryResolvePathWithinRepository(srcPath, repositoryRoot, configurationDirectory);
-                if (effectiveSourceDirectory is not null)
-                {
-                    mappingSourceDirectory = effectiveSourceDirectory;
-                }
-            }
-
-            ValidateStringProperty(mapping, "dest", $"{jsonPath}.dest", repositoryRoot, configurationDirectory, errors);
-
-            if (mapping.TryGetProperty("files", out JsonElement files))
-            {
-                ValidateStringArray(files, $"{jsonPath}.files", repositoryRoot, mappingSourceDirectory, errors);
-            }
-
-            if (mapping.TryGetProperty("exclude", out JsonElement exclude))
-            {
-                ValidateStringArray(exclude, $"{jsonPath}.exclude", repositoryRoot, mappingSourceDirectory, errors);
-            }
-        }
-
-        private static void ValidateStringArray(
-            JsonElement values,
-            string jsonPath,
-            string repositoryRoot,
-            string resolutionBaseDirectory,
-            List<string> errors)
-        {
-            if (values.ValueKind != JsonValueKind.Array)
-            {
-                return;
-            }
-
-            int index = 0;
-            foreach (JsonElement item in values.EnumerateArray())
-            {
-                if (item.ValueKind == JsonValueKind.String)
-                {
-                    ValidatePath(item.GetString(), $"{jsonPath}[{index}]", repositoryRoot, resolutionBaseDirectory, errors);
-                }
-
-                index++;
-            }
-        }
-
         private static void ValidatePath(
             string? path,
             string jsonPath,
             string repositoryRoot,
-        string resolutionBaseDirectory,
+            string resolutionBaseDirectory,
             List<string> errors)
         {
             if (string.IsNullOrWhiteSpace(path) || path is ".")
