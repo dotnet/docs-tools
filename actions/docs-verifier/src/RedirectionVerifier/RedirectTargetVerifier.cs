@@ -42,7 +42,7 @@ public static class RedirectTargetVerifier
             return true;
         }
 
-        List<int> redirectUrlLineNumbers = await GetRedirectUrlLineNumbersAsync(redirectionFilePath);
+        List<int?> redirectUrlLineNumbers = await GetRedirectUrlLineNumbersAsync(redirectionFilePath);
 
         bool isValid = true;
         for (int i = 0; i < redirections.Length; i++)
@@ -117,7 +117,7 @@ public static class RedirectTargetVerifier
         }
     }
 
-    private static async Task<List<int>> GetRedirectUrlLineNumbersAsync(string redirectionFilePath)
+    private static async Task<List<int?>> GetRedirectUrlLineNumbersAsync(string redirectionFilePath)
     {
         byte[] content = await File.ReadAllBytesAsync(redirectionFilePath);
         var lineStarts = new List<int> { 0 };
@@ -141,21 +141,86 @@ public static class RedirectTargetVerifier
             return lineStartIndex + 1;
         }
 
-        var lineNumbers = new List<int>();
+        var lineNumbers = new List<int?>();
         var reader = new Utf8JsonReader(content, new JsonReaderOptions { AllowTrailingCommas = true });
+        bool inRedirectionsArray = false;
+        int redirectionsArrayDepth = -1;
+        int redirectionObjectDepth = -1;
+        int? currentRedirectUrlLine = null;
+        string? currentPropertyName = null;
+
         while (reader.Read())
         {
-            if (reader.TokenType != JsonTokenType.PropertyName || !reader.ValueTextEquals("redirect_url"))
+            switch (reader.TokenType)
             {
-                continue;
-            }
+                case JsonTokenType.PropertyName:
+                    currentPropertyName = reader.GetString();
+                    break;
 
-            if (!reader.Read())
-            {
-                break;
-            }
+                case JsonTokenType.StartArray:
+                    if (!inRedirectionsArray
+                        && string.Equals(currentPropertyName, "redirections", StringComparison.Ordinal))
+                    {
+                        inRedirectionsArray = true;
+                        redirectionsArrayDepth = reader.CurrentDepth;
+                    }
 
-            lineNumbers.Add(GetLineNumber(reader.TokenStartIndex));
+                    currentPropertyName = null;
+                    break;
+
+                case JsonTokenType.StartObject:
+                    if (inRedirectionsArray && reader.CurrentDepth == redirectionsArrayDepth + 1)
+                    {
+                        redirectionObjectDepth = reader.CurrentDepth;
+                        currentRedirectUrlLine = null;
+                    }
+
+                    if (inRedirectionsArray
+                        && redirectionObjectDepth != -1
+                        && reader.CurrentDepth == redirectionObjectDepth + 1
+                        && string.Equals(currentPropertyName, "redirect_url", StringComparison.Ordinal))
+                    {
+                        currentRedirectUrlLine = GetLineNumber(reader.TokenStartIndex);
+                    }
+
+                    currentPropertyName = null;
+                    break;
+
+                case JsonTokenType.EndObject:
+                    if (inRedirectionsArray && reader.CurrentDepth == redirectionObjectDepth)
+                    {
+                        lineNumbers.Add(currentRedirectUrlLine);
+                        redirectionObjectDepth = -1;
+                        currentRedirectUrlLine = null;
+                    }
+
+                    currentPropertyName = null;
+                    break;
+
+                case JsonTokenType.EndArray:
+                    if (inRedirectionsArray && reader.CurrentDepth == redirectionsArrayDepth)
+                    {
+                        inRedirectionsArray = false;
+                        redirectionsArrayDepth = -1;
+                        redirectionObjectDepth = -1;
+                        currentRedirectUrlLine = null;
+                    }
+
+                    currentPropertyName = null;
+                    break;
+
+                default:
+                    if (inRedirectionsArray
+                        && redirectionObjectDepth != -1
+                        && reader.CurrentDepth == redirectionObjectDepth + 1
+                        && string.Equals(currentPropertyName, "redirect_url", StringComparison.Ordinal))
+                    {
+                        currentRedirectUrlLine = GetLineNumber(reader.TokenStartIndex);
+                    }
+
+                    currentPropertyName = null;
+                    break;
+            }
         }
 
         return lineNumbers;
