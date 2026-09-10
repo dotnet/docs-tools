@@ -182,9 +182,17 @@ static bool IsRedirectableFile(PullRequestFile file, IEnumerable<Matcher> matche
 static bool IsYmlOrMarkdownFile([NotNullWhen(true)] string? fileName) =>
     Path.GetExtension(fileName) is ".yml" or ".md";
 
-static bool IsDocfxJsonPath(string? path) =>
-    path is not null &&
-    path.Replace('\\', '/').EndsWith("docfx.json", StringComparison.OrdinalIgnoreCase);
+static bool IsDocfxJsonPath(string? path)
+{
+    if (path is null)
+    {
+        return false;
+    }
+
+    string normalized = path.Replace('\\', '/');
+    return normalized.Equals("docfx.json", StringComparison.OrdinalIgnoreCase)
+        || normalized.EndsWith("/docfx.json", StringComparison.OrdinalIgnoreCase);
+}
 
 static bool IsRegisteredRedirectionFile(string? path, HashSet<string> redirectionFilesSet) =>
     path is not null && redirectionFilesSet.Contains(NormalizePath(path));

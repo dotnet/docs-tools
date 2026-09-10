@@ -174,7 +174,9 @@ namespace DocfxVerifier
                 return;
             }
 
-            if (Uri.TryCreate(path, UriKind.Absolute, out _))
+            if (Uri.TryCreate(path, UriKind.Absolute, out Uri? uri)
+                && uri is not null
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
             {
                 return;
             }
@@ -197,6 +199,15 @@ namespace DocfxVerifier
         private static bool ExistsInRepository(string baseDirectory, string path)
         {
             string combinedPath = Path.GetFullPath(Path.Combine(baseDirectory, path));
+            string relative = Path.GetRelativePath(baseDirectory, combinedPath);
+
+            if (relative.Equals("..", StringComparison.Ordinal)
+                || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                || relative.StartsWith(".." + Path.AltDirectorySeparatorChar, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
             return File.Exists(combinedPath) || Directory.Exists(combinedPath);
         }
 
