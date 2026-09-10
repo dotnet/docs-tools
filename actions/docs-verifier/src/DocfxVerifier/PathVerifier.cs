@@ -10,7 +10,6 @@ namespace DocfxVerifier
         private static readonly HashSet<string> s_pathStringPropertyNames =
         [
             "src",
-            "dest"
         ];
 
         private static readonly HashSet<string> s_pathArrayPropertyNames =

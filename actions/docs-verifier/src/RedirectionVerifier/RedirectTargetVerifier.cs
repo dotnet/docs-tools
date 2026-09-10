@@ -84,7 +84,7 @@ public static class RedirectTargetVerifier
         {
             using HttpRequestMessage headRequest = new(HttpMethod.Head, uri);
             using HttpResponseMessage headResponse = await s_httpClient.SendAsync(headRequest);
-            if (headResponse.StatusCode is HttpStatusCode.MethodNotAllowed or HttpStatusCode.NotImplemented)
+            if (headResponse.StatusCode is HttpStatusCode.MethodNotAllowed or HttpStatusCode.NotImplemented or HttpStatusCode.NotFound)
             {
                 using HttpRequestMessage getRequest = new(HttpMethod.Get, uri);
                 using HttpResponseMessage getResponse = await s_httpClient.SendAsync(getRequest, HttpCompletionOption.ResponseHeadersRead);
