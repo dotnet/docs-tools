@@ -106,6 +106,37 @@ DocfxConfigurationReader docfxConfigurationReader = new();
 IEnumerable<Matcher> matchers = await docfxConfigurationReader.MapConfigurationAsync();
 IEnumerable<PullRequestFile> pullRequestFiles = await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber);
 
+IEnumerable<string> modifiedDocfxFiles = pullRequestFiles
+    .Where(file => !file.IsRemoved() && IsDocfxJsonPath(file.FileName))
+    .Select(file => file.FileName)
+    .Distinct(StringComparer.OrdinalIgnoreCase);
+
+foreach (string docfxFilePath in modifiedDocfxFiles)
+{
+    if (!await DocfxVerifier.PathVerifier.WriteResultsAsync(Console.Out, docfxFilePath))
+    {
+        returnCode++;
+    }
+}
+
+// Verify that all redirection URLs in modified
+// redirection files are valid and reachable.
+HashSet<string> redirectionFileSet =
+    new(redirectionFiles.Select(NormalizePath), StringComparer.OrdinalIgnoreCase);
+
+IEnumerable<string> modifiedRedirectionFiles = pullRequestFiles
+    .Where(file => !file.IsRemoved() && IsRegisteredRedirectionFile(file.FileName, redirectionFileSet))
+    .Select(file => file.FileName)
+    .Distinct(StringComparer.OrdinalIgnoreCase);
+
+foreach (string redirectionFilePath in modifiedRedirectionFiles)
+{
+    if (!await RedirectTargetVerifier.WriteResultsAsync(Console.Out, redirectionFilePath))
+    {
+        returnCode++;
+    }
+}
+
 List<PullRequestFile> files =
     [.. pullRequestFiles.Where(f => IsRedirectableFile(f, matchers))];
 
@@ -132,8 +163,7 @@ foreach (PullRequestFile file in files)
 
 return returnCode;
 
-static bool IsRedirectableFile(
-    PullRequestFile file, IEnumerable<Matcher> matchers)
+static bool IsRedirectableFile(PullRequestFile file, IEnumerable<Matcher> matchers)
 {
     string? deletedFileName = file.IsRenamed()
         ? file.PreviousFileName
@@ -144,15 +174,32 @@ static bool IsRedirectableFile(
 
     // A deleted toc.yml doesn't need redirection.
     // Also, don't require a redirection for file patterns specified as "exclude"s in docfx config file.
-    return !isDeletedToc && IsYmlOrMarkdownFile(deletedFileName)
+    return !isDeletedToc
+        && IsYmlOrMarkdownFile(deletedFileName)
         && matchers.Any(m => m.Match(deletedFileName).HasMatches);
 }
 
 static bool IsYmlOrMarkdownFile([NotNullWhen(true)] string? fileName) =>
     Path.GetExtension(fileName) is ".yml" or ".md";
 
+static bool IsDocfxJsonPath(string? path)
+{
+    if (path is null)
+    {
+        return false;
+    }
+
+    string normalized = path.Replace('\\', '/');
+    return normalized.Equals("docfx.json", StringComparison.OrdinalIgnoreCase)
+        || normalized.EndsWith("/docfx.json", StringComparison.OrdinalIgnoreCase);
+}
+
+static bool IsRegisteredRedirectionFile(string? path, HashSet<string> redirectionFilesSet) =>
+    path is not null && redirectionFilesSet.Contains(NormalizePath(path));
+
+static string NormalizePath(string path) => path.Replace('\\', '/');
+
 static bool IsExtensionChangeOnly(string file1, string file2) =>
     RemoveExtension(file1).Equals(RemoveExtension(file2), StringComparison.OrdinalIgnoreCase);
 
-static string RemoveExtension(string file) =>
-    file.Substring(0, file.Length - Path.GetExtension(file).Length);
+static string RemoveExtension(string file) => file[..^Path.GetExtension(file).Length];
