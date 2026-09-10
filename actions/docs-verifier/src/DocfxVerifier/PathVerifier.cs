@@ -300,11 +300,14 @@ namespace DocfxVerifier
                     continue;
                 }
 
-                string normalizedSourcePath = NormalizePath(srcPath);
-                string? resolvedPath = TryResolvePathWithinRepository(normalizedSourcePath, repositoryRoot, configurationDirectory);
+string normalizedSourcePath = NormalizePath(srcPath);
+                string sourceScopePath = normalizedSourcePath.StartsWith("./", StringComparison.Ordinal)
+                    ? normalizedSourcePath[2..]
+                    : normalizedSourcePath;
+                string? resolvedPath = TryResolvePathWithinRepository(sourceScopePath, repositoryRoot, configurationDirectory);
                 if (resolvedPath is null || (!Directory.Exists(resolvedPath) && !File.Exists(resolvedPath)))
                 {
-                    result.Add(normalizedSourcePath.TrimEnd('/'));
+                    result.Add(sourceScopePath.TrimEnd('/'));
                 }
             }
 
