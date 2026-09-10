@@ -7,9 +7,9 @@ namespace GitHub.UnitTests;
 public class RedirectTargetVerifierTests
 {
     [Fact]
-    public async Task WriteResultsAsyncReturnsTrueForValidUrl()
+    public async Task WriteResultsAsyncReturnsTrueForValidLearnUrlPath()
     {
-        string redirectionFilePath = await CreateRedirectionFileAsync("https://learn.microsoft.com/dotnet");
+        string redirectionFilePath = await CreateRedirectionFileAsync("/dotnet");
         try
         {
             using var writer = new StringWriter();
@@ -28,16 +28,26 @@ public class RedirectTargetVerifierTests
     }
 
     [Fact]
-    public async Task WriteResultsAsyncReturnsFalseForInvalidUrl()
+    public async Task WriteResultsAsyncSkipsNonLearnUrlTargets()
     {
         string redirectionFilePath = await CreateRedirectionFileAsync("not-a-valid-url");
+        bool statusProviderCalled = false;
+
         try
         {
             using var writer = new StringWriter();
-            bool result = await RedirectTargetVerifier.WriteResultsAsync(writer, redirectionFilePath);
+            bool result = await RedirectTargetVerifier.WriteResultsAsync(
+                writer,
+                redirectionFilePath,
+                _ =>
+                {
+                    statusProviderCalled = true;
+                    return Task.FromResult<HttpStatusCode?>(HttpStatusCode.OK);
+                });
 
-            Assert.False(result);
-            Assert.Contains("Invalid 'redirect_url'", writer.ToString(), StringComparison.Ordinal);
+            Assert.True(result);
+            Assert.Equal(string.Empty, writer.ToString());
+            Assert.False(statusProviderCalled);
         }
         finally
         {
@@ -48,7 +58,7 @@ public class RedirectTargetVerifierTests
     [Fact]
     public async Task WriteResultsAsyncReturnsFalseFor404Url()
     {
-        string redirectionFilePath = await CreateRedirectionFileAsync("https://learn.microsoft.com/missing");
+        string redirectionFilePath = await CreateRedirectionFileAsync("/missing");
         try
         {
             using var writer = new StringWriter();
@@ -67,10 +77,9 @@ public class RedirectTargetVerifierTests
     }
 
     [Fact]
-    public async Task WriteResultsAsyncReturnsFalseForLocalAddressTarget()
+    public async Task WriteResultsAsyncReturnsFalseWhenLearnUrlCannotBeVerified()
     {
-        string redirectionFilePath = await CreateRedirectionFileAsync("http://127.0.0.1/internal");
-        bool statusProviderCalled = false;
+        string redirectionFilePath = await CreateRedirectionFileAsync("/dotnet");
 
         try
         {
@@ -78,15 +87,10 @@ public class RedirectTargetVerifierTests
             bool result = await RedirectTargetVerifier.WriteResultsAsync(
                 writer,
                 redirectionFilePath,
-                _ =>
-                {
-                    statusProviderCalled = true;
-                    return Task.FromResult<HttpStatusCode?>(HttpStatusCode.OK);
-                });
+                _ => Task.FromResult<HttpStatusCode?>(null));
 
             Assert.False(result);
-            Assert.Contains("Disallowed 'redirect_url' target", writer.ToString(), StringComparison.Ordinal);
-            Assert.False(statusProviderCalled);
+            Assert.Contains("Unable to verify 'redirect_url'", writer.ToString(), StringComparison.Ordinal);
         }
         finally
         {
