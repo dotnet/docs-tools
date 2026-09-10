@@ -19,7 +19,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\DocfxVerifier\DocfxVerifier.csproj" />
+    <ProjectReference Include="..\..\src\DocfxVerifier\DocfxVerifier.csproj" />
     <ProjectReference Include="..\..\src\GitHub\GitHub.csproj" />
     <ProjectReference Include="..\..\src\RedirectionVerifier\RedirectionVerifier.csproj" />
   </ItemGroup>

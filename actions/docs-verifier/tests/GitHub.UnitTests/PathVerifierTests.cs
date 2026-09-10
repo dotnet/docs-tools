@@ -174,6 +174,60 @@ public class PathVerifierTests
         }
     }
 
+    [Fact]
+    public async Task WriteResultsAsyncUsesSpecifiedDocfxPath()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+
+            Directory.CreateDirectory("valid-docs");
+
+            await File.WriteAllTextAsync("docfx.json", """
+            {
+              "build": {
+                "content": [
+                  {
+                    "files": ["**/*.md"],
+                    "src": "missing-root-folder"
+                  }
+                ]
+              }
+            }
+            """);
+
+            string modifiedDocfxPath = Path.Combine("valid-docs", "docfx.json");
+            await File.WriteAllTextAsync(modifiedDocfxPath, """
+            {
+              "build": {
+                "content": [
+                  {
+                    "files": ["**/*.md"],
+                    "src": "."
+                  }
+                ]
+              }
+            }
+            """);
+
+            using var writer = new StringWriter();
+            bool result = await PathVerifier.WriteResultsAsync(writer, modifiedDocfxPath);
+
+            Assert.True(result);
+            Assert.Equal(string.Empty, writer.ToString());
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
     private static string CreateTempDirectory()
     {
         string path = Path.Combine(Path.GetTempPath(), $"path-verifier-tests-{Guid.NewGuid():N}");

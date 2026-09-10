@@ -38,14 +38,26 @@ namespace DocfxVerifier
         /// <summary>
         /// Verifies that file paths in the docfx.json file are valid.
         /// </summary>
-        public static async Task<bool> WriteResultsAsync(TextWriter writer)
+        public static Task<bool> WriteResultsAsync(TextWriter writer) =>
+            WriteResultsAsync(writer, configurationPath: null);
+
+        /// <summary>
+        /// Verifies that file paths in a specific docfx.json file are valid.
+        /// </summary>
+        public static async Task<bool> WriteResultsAsync(TextWriter writer, string? configurationPath)
         {
             ArgumentNullException.ThrowIfNull(writer, nameof(writer));
 
-            string? configurationPath = FindDocfxConfigurationPath();
+            configurationPath ??= FindDocfxConfigurationPath();
             if (configurationPath is null)
             {
                 await writer.WriteLineAsync("::error::Unable to find docfx.json in the repository root or its immediate subdirectories.");
+                return false;
+            }
+
+            if (!File.Exists(configurationPath))
+            {
+                await writer.WriteLineAsync($"::error::docfx.json file '{configurationPath}' does not exist.");
                 return false;
             }
 

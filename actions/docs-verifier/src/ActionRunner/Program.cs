@@ -106,11 +106,17 @@ DocfxConfigurationReader docfxConfigurationReader = new();
 IEnumerable<Matcher> matchers = await docfxConfigurationReader.MapConfigurationAsync();
 IEnumerable<PullRequestFile> pullRequestFiles = await GitHubPullRequest.GetPullRequestFilesAsync(pullRequestNumber);
 
-// Check docfx.json for invalid paths.
-if (pullRequestFiles.Any(IsDocfxConfigurationChange)
-    && !await DocfxVerifier.PathVerifier.WriteResultsAsync(Console.Out))
+IEnumerable<string> modifiedDocfxFiles = pullRequestFiles
+    .Where(file => !file.IsRemoved() && IsDocfxJsonPath(file.FileName))
+    .Select(file => file.FileName)
+    .Distinct(StringComparer.OrdinalIgnoreCase);
+
+foreach (string docfxFilePath in modifiedDocfxFiles)
 {
-    returnCode++;
+    if (!await DocfxVerifier.PathVerifier.WriteResultsAsync(Console.Out, docfxFilePath))
+    {
+        returnCode++;
+    }
 }
 
 // Verify that all redirection URLs in modified
@@ -175,9 +181,6 @@ static bool IsRedirectableFile(PullRequestFile file, IEnumerable<Matcher> matche
 
 static bool IsYmlOrMarkdownFile([NotNullWhen(true)] string? fileName) =>
     Path.GetExtension(fileName) is ".yml" or ".md";
-
-static bool IsDocfxConfigurationChange(PullRequestFile file) =>
-    IsDocfxJsonPath(file.FileName) || IsDocfxJsonPath(file.PreviousFileName);
 
 static bool IsDocfxJsonPath(string? path) =>
     path is not null &&
