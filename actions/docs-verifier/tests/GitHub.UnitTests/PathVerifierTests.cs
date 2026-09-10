@@ -114,7 +114,8 @@ public class PathVerifierTests
             string output = writer.ToString();
 
             Assert.False(result);
-            Assert.Contains("Path 'missing/path/**/**.{md,yml}' is invalid", output, StringComparison.Ordinal);
+            Assert.Contains("Invalid path 'missing/path/**/**.{md,yml}'.", output, StringComparison.Ordinal);
+            Assert.Contains(",line=5::Invalid path 'missing/path/**/**.{md,yml}'.", output, StringComparison.Ordinal);
         }
         finally
         {

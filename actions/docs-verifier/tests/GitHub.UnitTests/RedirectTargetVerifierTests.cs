@@ -69,6 +69,7 @@ public class RedirectTargetVerifierTests
 
             Assert.False(result);
             Assert.Contains("returns 404", writer.ToString(), StringComparison.Ordinal);
+            Assert.Contains(",line=5::Redirect target returns 404", writer.ToString(), StringComparison.Ordinal);
         }
         finally
         {
@@ -91,6 +92,7 @@ public class RedirectTargetVerifierTests
 
             Assert.False(result);
             Assert.Contains("Unable to verify 'redirect_url'", writer.ToString(), StringComparison.Ordinal);
+            Assert.Contains(",line=5::Unable to verify 'redirect_url'", writer.ToString(), StringComparison.Ordinal);
         }
         finally
         {

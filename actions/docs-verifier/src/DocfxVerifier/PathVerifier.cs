@@ -50,17 +50,20 @@ namespace DocfxVerifier
                 repositoryRoot,
                 configurationDirectory);
 
-            var errors = new List<string>();
+            List<int> fileMetadataPathLineNumbers = await GetFileMetadataPathLineNumbersAsync(configurationPath);
+
+            var errors = new List<ValidationError>();
             ValidateFileMetadataPaths(
                 json.RootElement,
                 repositoryRoot,
                 configurationDirectory,
                 externalContentSourceDirectories,
+                fileMetadataPathLineNumbers,
                 errors);
 
-            foreach (string error in errors)
+            foreach (ValidationError error in errors)
             {
-                await writer.WriteLineAsync($"::error file={configurationPathForLog}::{error}");
+                await WriteErrorAsync(writer, configurationPathForLog, error.LineNumber, $"Invalid path '{error.Path}'.");
             }
 
             return errors.Count == 0;
@@ -79,7 +82,8 @@ namespace DocfxVerifier
             string repositoryRoot,
             string configurationDirectory,
             HashSet<string> externalContentSourceDirectories,
-            List<string> errors)
+            List<int> fileMetadataPathLineNumbers,
+            List<ValidationError> errors)
         {
             if (element.ValueKind != JsonValueKind.Object)
             {
@@ -95,6 +99,7 @@ namespace DocfxVerifier
                     repositoryRoot,
                     configurationDirectory,
                     externalContentSourceDirectories,
+                    fileMetadataPathLineNumbers,
                     errors);
             }
         }
@@ -105,8 +110,11 @@ namespace DocfxVerifier
             string repositoryRoot,
             string configurationDirectory,
             HashSet<string> externalContentSourceDirectories,
-            List<string> errors)
+            List<int> fileMetadataPathLineNumbers,
+            List<ValidationError> errors)
         {
+            int pathEntryIndex = 0;
+
             if (buildSection.TryGetProperty("fileMetadata", out JsonElement fileMetadata)
                 && fileMetadata.ValueKind == JsonValueKind.Object)
             {
@@ -119,12 +127,17 @@ namespace DocfxVerifier
 
                     foreach (JsonProperty pathProperty in metadataProperty.Value.EnumerateObject())
                     {
+                        int? lineNumber = pathEntryIndex < fileMetadataPathLineNumbers.Count
+                            ? fileMetadataPathLineNumbers[pathEntryIndex]
+                            : null;
+                        pathEntryIndex++;
+
                         ValidatePath(
                             pathProperty.Name,
-                            $"{jsonPath}.fileMetadata.{metadataProperty.Name}.{pathProperty.Name}",
                             repositoryRoot,
                             configurationDirectory,
                             externalContentSourceDirectories,
+                            lineNumber,
                             errors);
                     }
                 }
@@ -135,18 +148,18 @@ namespace DocfxVerifier
         /// Validates a single file path entry in the docfx.json file.
         /// </summary>
         /// <param name="path">The file path to validate.</param>
-        /// <param name="jsonPath">The JSON path of the file path entry.</param>
         /// <param name="repositoryRoot">The root directory of the repository.</param>
         /// <param name="resolutionBaseDirectory">The base directory for resolving relative paths.</param>
         /// <param name="externalContentSourceDirectories">A set of directories containing external content sources.</param>
+        /// <param name="lineNumber">The line number for the path entry in docfx.json, if known.</param>
         /// <param name="errors">The list to which validation errors are added.</param>
         private static void ValidatePath(
             string? path,
-            string jsonPath,
             string repositoryRoot,
             string resolutionBaseDirectory,
             HashSet<string> externalContentSourceDirectories,
-            List<string> errors)
+            int? lineNumber,
+            List<ValidationError> errors)
         {
             if (string.IsNullOrWhiteSpace(path) || path is ".")
             {
@@ -178,9 +191,79 @@ namespace DocfxVerifier
                     return;
                 }
 
-                errors.Add($"{jsonPath}: Path '{path}' is invalid.");
+                errors.Add(new ValidationError(lineNumber, path));
             }
         }
+
+        private static async Task<List<int>> GetFileMetadataPathLineNumbersAsync(string configurationPath)
+        {
+            byte[] content = await File.ReadAllBytesAsync(configurationPath);
+            var lineStarts = new List<int> { 0 };
+            for (int i = 0; i < content.Length; i++)
+            {
+                if (content[i] == (byte)'\n')
+                {
+                    lineStarts.Add(i + 1);
+                }
+            }
+
+            int GetLineNumber(long tokenStartIndex)
+            {
+                int index = (int)tokenStartIndex;
+                int lineStartIndex = lineStarts.BinarySearch(index);
+                if (lineStartIndex < 0)
+                {
+                    lineStartIndex = ~lineStartIndex - 1;
+                }
+
+                return lineStartIndex + 1;
+            }
+
+            var lineNumbers = new List<int>();
+            var reader = new Utf8JsonReader(content, new JsonReaderOptions { AllowTrailingCommas = true });
+            var containerPath = new List<string>();
+            string? currentPropertyName = null;
+
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.PropertyName)
+                {
+                    string propertyName = reader.GetString() ?? string.Empty;
+
+                    if (containerPath.Count >= 3
+                        && containerPath[^2] == "fileMetadata"
+                        && containerPath[^3] == "build")
+                    {
+                        lineNumbers.Add(GetLineNumber(reader.TokenStartIndex));
+                    }
+
+                    currentPropertyName = propertyName;
+                }
+                else if (reader.TokenType is JsonTokenType.StartObject or JsonTokenType.StartArray)
+                {
+                    containerPath.Add(currentPropertyName ?? string.Empty);
+                    currentPropertyName = null;
+                }
+                else if (reader.TokenType is JsonTokenType.EndObject or JsonTokenType.EndArray)
+                {
+                    if (containerPath.Count > 0)
+                    {
+                        containerPath.RemoveAt(containerPath.Count - 1);
+                    }
+
+                    currentPropertyName = null;
+                }
+            }
+
+            return lineNumbers;
+        }
+
+        private static Task WriteErrorAsync(TextWriter writer, string filePath, int? lineNumber, string message)
+            => lineNumber.HasValue
+                ? writer.WriteLineAsync($"::error file={filePath},line={lineNumber.Value}::{message}")
+                : writer.WriteLineAsync($"::error file={filePath}::{message}");
+
+        private readonly record struct ValidationError(int? LineNumber, string Path);
 
         private static HashSet<string> GetExternalContentSourceDirectories(
             JsonElement root,
