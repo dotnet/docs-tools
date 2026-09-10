@@ -120,6 +120,13 @@ public static class RedirectTargetVerifier
     private static async Task<List<int?>> GetRedirectUrlLineNumbersAsync(string redirectionFilePath)
     {
         byte[] content = await File.ReadAllBytesAsync(redirectionFilePath);
+        if (content.Length >= 3
+            && content[0] == 0xEF
+            && content[1] == 0xBB
+            && content[2] == 0xBF)
+        {
+            content = content[3..];
+        }
         var lineStarts = new List<int> { 0 };
         for (int i = 0; i < content.Length; i++)
         {
