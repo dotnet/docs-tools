@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Sockets;
 using RedirectionVerifier;
 using Xunit;
 
@@ -10,16 +9,14 @@ public class RedirectTargetVerifierTests
     [Fact]
     public async Task WriteResultsAsyncReturnsTrueForValidUrl()
     {
-        await using var server = new TestHttpServer(new Dictionary<string, HttpStatusCode>
-        {
-            ["/ok"] = HttpStatusCode.OK
-        });
-
-        string redirectionFilePath = await CreateRedirectionFileAsync($"{server.BaseUrl}/ok");
+        string redirectionFilePath = await CreateRedirectionFileAsync("https://learn.microsoft.com/dotnet");
         try
         {
             using var writer = new StringWriter();
-            bool result = await RedirectTargetVerifier.WriteResultsAsync(writer, redirectionFilePath);
+            bool result = await RedirectTargetVerifier.WriteResultsAsync(
+                writer,
+                redirectionFilePath,
+                _ => Task.FromResult<HttpStatusCode?>(HttpStatusCode.OK));
 
             Assert.True(result);
             Assert.Equal(string.Empty, writer.ToString());
@@ -51,19 +48,45 @@ public class RedirectTargetVerifierTests
     [Fact]
     public async Task WriteResultsAsyncReturnsFalseFor404Url()
     {
-        await using var server = new TestHttpServer(new Dictionary<string, HttpStatusCode>
-        {
-            ["/missing"] = HttpStatusCode.NotFound
-        });
-
-        string redirectionFilePath = await CreateRedirectionFileAsync($"{server.BaseUrl}/missing");
+        string redirectionFilePath = await CreateRedirectionFileAsync("https://learn.microsoft.com/missing");
         try
         {
             using var writer = new StringWriter();
-            bool result = await RedirectTargetVerifier.WriteResultsAsync(writer, redirectionFilePath);
+            bool result = await RedirectTargetVerifier.WriteResultsAsync(
+                writer,
+                redirectionFilePath,
+                _ => Task.FromResult<HttpStatusCode?>(HttpStatusCode.NotFound));
 
             Assert.False(result);
             Assert.Contains("returns 404", writer.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(redirectionFilePath);
+        }
+    }
+
+    [Fact]
+    public async Task WriteResultsAsyncReturnsFalseForLocalAddressTarget()
+    {
+        string redirectionFilePath = await CreateRedirectionFileAsync("http://127.0.0.1/internal");
+        bool statusProviderCalled = false;
+
+        try
+        {
+            using var writer = new StringWriter();
+            bool result = await RedirectTargetVerifier.WriteResultsAsync(
+                writer,
+                redirectionFilePath,
+                _ =>
+                {
+                    statusProviderCalled = true;
+                    return Task.FromResult<HttpStatusCode?>(HttpStatusCode.OK);
+                });
+
+            Assert.False(result);
+            Assert.Contains("Disallowed 'redirect_url' target", writer.ToString(), StringComparison.Ordinal);
+            Assert.False(statusProviderCalled);
         }
         finally
         {
@@ -89,69 +112,4 @@ public class RedirectTargetVerifierTests
         return filePath;
     }
 
-    private sealed class TestHttpServer : IAsyncDisposable
-    {
-        private readonly HttpListener _listener;
-        private readonly Task _listenerTask;
-        private readonly Dictionary<string, HttpStatusCode> _responses;
-
-        public TestHttpServer(Dictionary<string, HttpStatusCode> responses)
-        {
-            _responses = responses;
-            int port = GetFreePort();
-            BaseUrl = $"http://127.0.0.1:{port}";
-
-            _listener = new HttpListener();
-            _listener.Prefixes.Add($"{BaseUrl}/");
-            _listener.Start();
-
-            _listenerTask = Task.Run(HandleRequestsAsync);
-        }
-
-        public string BaseUrl { get; }
-
-        private async Task HandleRequestsAsync()
-        {
-            while (_listener.IsListening)
-            {
-                HttpListenerContext? context;
-                try
-                {
-                    context = await _listener.GetContextAsync();
-                }
-                catch (HttpListenerException)
-                {
-                    break;
-                }
-                catch (ObjectDisposedException)
-                {
-                    break;
-                }
-
-                string path = context.Request.Url?.AbsolutePath ?? "/";
-                HttpStatusCode statusCode = _responses.TryGetValue(path, out HttpStatusCode configured)
-                    ? configured
-                    : HttpStatusCode.OK;
-
-                context.Response.StatusCode = (int)statusCode;
-                context.Response.ContentLength64 = 0;
-                context.Response.Close();
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            _listener.Stop();
-            _listener.Close();
-            await _listenerTask;
-        }
-
-        private static int GetFreePort()
-        {
-            using var tcpListener = new TcpListener(IPAddress.Loopback, 0);
-            tcpListener.Start();
-            int port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
-            return port;
-        }
-    }
 }

@@ -228,6 +228,214 @@ public class PathVerifierTests
         }
     }
 
+    [Fact]
+    public async Task WriteResultsAsyncValidatesFilesRelativeToMappingSrc()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+            Directory.CreateDirectory(Path.Combine("docs", "content", "guides"));
+            await File.WriteAllTextAsync(Path.Combine("docs", "content", "guides", "a.md"), "# title");
+
+            string configurationPath = Path.Combine("docs", "docfx.json");
+            await File.WriteAllTextAsync(configurationPath, """
+            {
+              "build": {
+                "content": [
+                  {
+                    "src": "content",
+                    "files": ["guides/a.md"]
+                  }
+                ]
+              }
+            }
+            """);
+
+            using var writer = new StringWriter();
+            bool result = await PathVerifier.WriteResultsAsync(writer, configurationPath);
+
+            Assert.True(result);
+            Assert.Equal(string.Empty, writer.ToString());
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
+    [Fact]
+    public async Task WriteResultsAsyncAllowsParentRelativePathWhenInsideRepository()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+            Directory.CreateDirectory(Path.Combine("shared", "templates"));
+            Directory.CreateDirectory("docs");
+
+            string configurationPath = Path.Combine("docs", "docfx.json");
+            await File.WriteAllTextAsync(configurationPath, """
+            {
+              "build": {
+                "template": ["../shared/templates"]
+              }
+            }
+            """);
+
+            using var writer = new StringWriter();
+            bool result = await PathVerifier.WriteResultsAsync(writer, configurationPath);
+
+            Assert.True(result);
+            Assert.Equal(string.Empty, writer.ToString());
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
+    [Fact]
+    public async Task WriteResultsAsyncSupportsFileMappingShorthandAndObjectForms()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+            Directory.CreateDirectory(Path.Combine("docs", "articles"));
+            Directory.CreateDirectory(Path.Combine("docs", "assets", "images"));
+            Directory.CreateDirectory(Path.Combine("docs", "content", "overwrite"));
+            await File.WriteAllTextAsync(Path.Combine("docs", "assets", "images", "logo.png"), "binary");
+
+            string configurationPath = Path.Combine("docs", "docfx.json");
+            await File.WriteAllTextAsync(configurationPath, """
+            {
+              "build": {
+                "content": ["articles/**/*.md"],
+                "resource": [
+                  {
+                    "src": "assets",
+                    "files": ["images/logo.png"]
+                  }
+                ],
+                "overwrite": [
+                  {
+                    "src": "content",
+                    "files": ["overwrite/**/*.md"]
+                  }
+                ]
+              }
+            }
+            """);
+
+            using var writer = new StringWriter();
+            bool result = await PathVerifier.WriteResultsAsync(writer, configurationPath);
+
+            Assert.True(result);
+            Assert.Equal(string.Empty, writer.ToString());
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
+    [Fact]
+    public async Task WriteResultsAsyncIgnoresArbitraryMetadataPropertyNames()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+            Directory.CreateDirectory("docs");
+
+            await File.WriteAllTextAsync("docfx.json", """
+            {
+              "build": {
+                "content": [
+                  {
+                    "src": "docs",
+                    "files": ["**/*.md"]
+                  }
+                ]
+              },
+              "globalMetadata": {
+                "src": "not-a-docfx-path"
+              }
+            }
+            """);
+
+            using var writer = new StringWriter();
+            bool result = await PathVerifier.WriteResultsAsync(writer);
+
+            Assert.True(result);
+            Assert.Equal(string.Empty, writer.ToString());
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
+    [Fact]
+    public async Task WriteResultsAsyncAllowsTrailingCommas()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+            Directory.CreateDirectory("docs");
+
+            await File.WriteAllTextAsync("docfx.json", """
+            {
+              "build": {
+                "content": [
+                  {
+                    "src": "docs",
+                    "files": ["**/*.md",],
+                  },
+                ],
+              },
+            }
+            """);
+
+            using var writer = new StringWriter();
+            bool result = await PathVerifier.WriteResultsAsync(writer);
+
+            Assert.True(result);
+            Assert.Equal(string.Empty, writer.ToString());
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
     private static string CreateTempDirectory()
     {
         string path = Path.Combine(Path.GetTempPath(), $"path-verifier-tests-{Guid.NewGuid():N}");
