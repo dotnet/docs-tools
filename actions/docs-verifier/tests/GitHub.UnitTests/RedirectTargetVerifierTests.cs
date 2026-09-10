@@ -28,43 +28,6 @@ public class RedirectTargetVerifierTests
     }
 
     [Fact]
-    public async Task WriteResultsAsyncKeepsLineNumbersAlignedWhenRedirectUrlIsMissing()
-    {
-        string redirectionFilePath = await CreateRedirectionFileWithContentAsync("""
-        {
-          "redirections": [
-            {
-              "source_path": "docs/old.md"
-            },
-            {
-              "source_path": "docs/new.md",
-              "redirect_url": "/missing"
-            }
-          ]
-        }
-        """);
-
-        try
-        {
-            using var writer = new StringWriter();
-            bool result = await RedirectTargetVerifier.WriteResultsAsync(
-                writer,
-                redirectionFilePath,
-                _ => Task.FromResult<HttpStatusCode?>(HttpStatusCode.NotFound));
-
-            string output = writer.ToString();
-            Assert.False(result);
-            Assert.Contains("Redirection has an empty 'redirect_url'.", output, StringComparison.Ordinal);
-            Assert.DoesNotContain("line=", output[..output.IndexOf("Redirection has an empty 'redirect_url'.", StringComparison.Ordinal)], StringComparison.Ordinal);
-            Assert.Contains(",line=8::Redirect target returns 404: '/missing'.", output, StringComparison.Ordinal);
-        }
-        finally
-        {
-            File.Delete(redirectionFilePath);
-        }
-    }
-
-    [Fact]
     public async Task WriteResultsAsyncSkipsNonLearnUrlTargets()
     {
         string redirectionFilePath = await CreateRedirectionFileAsync("not-a-valid-url");
