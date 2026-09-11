@@ -29,13 +29,21 @@ namespace DocfxVerifier
             configurationPath ??= FindDocfxConfigurationPath();
             if (configurationPath is null)
             {
-                await writer.WriteLineAsync("::error::Unable to find docfx.json in the repository root or its immediate subdirectories.");
+                await WriteErrorAsync(
+                    writer,
+                    "docfx.json",
+                    lineNumber: null,
+                    "Unable to find docfx.json in the repository root or its immediate subdirectories.");
                 return false;
             }
 
             if (!File.Exists(configurationPath))
             {
-                await writer.WriteLineAsync($"::error::docfx.json file '{configurationPath}' does not exist.");
+                await WriteErrorAsync(
+                    writer,
+                    configurationPath,
+                    lineNumber: null,
+                    $"docfx.json file '{configurationPath}' does not exist.");
                 return false;
             }
 
@@ -268,9 +276,44 @@ namespace DocfxVerifier
         }
 
         private static Task WriteErrorAsync(TextWriter writer, string filePath, int? lineNumber, string message)
-            => lineNumber.HasValue
-                ? writer.WriteLineAsync($"::error file={filePath},line={lineNumber.Value}::{message}")
-                : writer.WriteLineAsync($"::error file={filePath}::{message}");
+        {
+            string annotationFilePath = GetAnnotationFilePath(filePath);
+            string escapedMessage = EscapeCommandData(message);
+            return lineNumber.HasValue
+                ? writer.WriteLineAsync($"::error file={annotationFilePath},line={lineNumber.Value}::{escapedMessage}")
+                : writer.WriteLineAsync($"::error file={annotationFilePath}::{escapedMessage}");
+        }
+
+        private static string GetAnnotationFilePath(string filePath)
+        {
+            string normalizedPath = NormalizePath(filePath);
+            if (!Path.IsPathRooted(filePath))
+            {
+                return EscapeCommandProperty(normalizedPath);
+            }
+
+            string repositoryRoot = Path.GetFullPath(Directory.GetCurrentDirectory());
+            string fullPath = Path.GetFullPath(filePath);
+            string relativePath = NormalizePath(Path.GetRelativePath(repositoryRoot, fullPath));
+            bool isUnderRepository = !relativePath.Equals("..", StringComparison.Ordinal)
+                && !relativePath.StartsWith("../", StringComparison.Ordinal);
+            string pathForAnnotation = isUnderRepository ? relativePath : normalizedPath;
+            return EscapeCommandProperty(pathForAnnotation);
+        }
+
+        private static string EscapeCommandProperty(string value)
+            => value
+                .Replace("%", "%25", StringComparison.Ordinal)
+                .Replace("\r", "%0D", StringComparison.Ordinal)
+                .Replace("\n", "%0A", StringComparison.Ordinal)
+                .Replace(":", "%3A", StringComparison.Ordinal)
+                .Replace(",", "%2C", StringComparison.Ordinal);
+
+        private static string EscapeCommandData(string value)
+            => value
+                .Replace("%", "%25", StringComparison.Ordinal)
+                .Replace("\r", "%0D", StringComparison.Ordinal)
+                .Replace("\n", "%0A", StringComparison.Ordinal);
 
         private readonly record struct ValidationError(int? LineNumber, string Path);
 
