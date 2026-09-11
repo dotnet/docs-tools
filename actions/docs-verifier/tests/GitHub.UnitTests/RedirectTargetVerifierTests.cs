@@ -69,6 +69,7 @@ public class RedirectTargetVerifierTests
 
             Assert.False(result);
             Assert.Contains("returns 404", writer.ToString(), StringComparison.Ordinal);
+            Assert.Contains(",line=5::Redirect target returns 404", writer.ToString(), StringComparison.Ordinal);
         }
         finally
         {
@@ -91,6 +92,7 @@ public class RedirectTargetVerifierTests
 
             Assert.False(result);
             Assert.Contains("Unable to verify 'redirect_url'", writer.ToString(), StringComparison.Ordinal);
+            Assert.Contains(",line=5::Unable to verify 'redirect_url'", writer.ToString(), StringComparison.Ordinal);
         }
         finally
         {
@@ -100,7 +102,6 @@ public class RedirectTargetVerifierTests
 
     private static async Task<string> CreateRedirectionFileAsync(string redirectUrl)
     {
-        string filePath = Path.Combine(Path.GetTempPath(), $"redirect-{Guid.NewGuid():N}.json");
         string content = $$"""
         {
           "redirections": [
@@ -111,6 +112,13 @@ public class RedirectTargetVerifierTests
           ]
         }
         """;
+
+        return await CreateRedirectionFileWithContentAsync(content);
+    }
+
+    private static async Task<string> CreateRedirectionFileWithContentAsync(string content)
+    {
+        string filePath = Path.Combine(Path.GetTempPath(), $"redirect-{Guid.NewGuid():N}.json");
 
         await File.WriteAllTextAsync(filePath, content);
         return filePath;

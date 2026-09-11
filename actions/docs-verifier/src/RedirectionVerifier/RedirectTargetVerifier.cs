@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Net;
+using System.Text.Json;
 
 namespace RedirectionVerifier;
 
@@ -41,13 +42,16 @@ public static class RedirectTargetVerifier
             return true;
         }
 
+        List<int?> redirectUrlLineNumbers = await GetRedirectUrlLineNumbersAsync(redirectionFilePath);
+
         bool isValid = true;
         for (int i = 0; i < redirections.Length; i++)
         {
+            int? lineNumber = i < redirectUrlLineNumbers.Count ? redirectUrlLineNumbers[i] : null;
             string? redirectUrl = redirections[i].RedirectUrl;
             if (string.IsNullOrWhiteSpace(redirectUrl))
             {
-                await writer.WriteLineAsync($"::error file={redirectionFilePath}::Redirection at index {i} has an empty 'redirect_url'.");
+                await WriteErrorAsync(writer, redirectionFilePath, lineNumber, "Redirection has an empty 'redirect_url'.");
                 isValid = false;
                 continue;
             }
@@ -65,7 +69,7 @@ public static class RedirectTargetVerifier
 
             if (!hasValidUri)
             {
-                await writer.WriteLineAsync($"::error file={redirectionFilePath}::Invalid 'redirect_url' at index {i}: '{redirectUrl}'.");
+                await WriteErrorAsync(writer, redirectionFilePath, lineNumber, $"Invalid 'redirect_url': '{redirectUrl}'.");
                 isValid = false;
                 continue;
             }
@@ -73,14 +77,14 @@ public static class RedirectTargetVerifier
             HttpStatusCode? statusCode = await statusCodeProvider(uri!);
             if (statusCode is null)
             {
-                await writer.WriteLineAsync($"::error file={redirectionFilePath}::Unable to verify 'redirect_url' at index {i}: '{redirectUrl}'.");
+                await WriteErrorAsync(writer, redirectionFilePath, lineNumber, $"Unable to verify 'redirect_url': '{redirectUrl}'.");
                 isValid = false;
                 continue;
             }
 
             if (statusCode == HttpStatusCode.NotFound)
             {
-                await writer.WriteLineAsync($"::error file={redirectionFilePath}::Redirect target returns 404 at index {i}: '{redirectUrl}'.");
+                await WriteErrorAsync(writer, redirectionFilePath, lineNumber, $"Redirect target returns 404: '{redirectUrl}'.");
                 isValid = false;
             }
         }
@@ -112,4 +116,125 @@ public static class RedirectTargetVerifier
             return null;
         }
     }
+
+    private static async Task<List<int?>> GetRedirectUrlLineNumbersAsync(string redirectionFilePath)
+    {
+        byte[] content = await File.ReadAllBytesAsync(redirectionFilePath);
+        if (content.Length >= 3
+            && content[0] == 0xEF
+            && content[1] == 0xBB
+            && content[2] == 0xBF)
+        {
+            content = content[3..];
+        }
+        var lineStarts = new List<int> { 0 };
+        for (int i = 0; i < content.Length; i++)
+        {
+            if (content[i] == (byte)'\n')
+            {
+                lineStarts.Add(i + 1);
+            }
+        }
+
+        int GetLineNumber(long tokenStartIndex)
+        {
+            int index = (int)tokenStartIndex;
+            int lineStartIndex = lineStarts.BinarySearch(index);
+            if (lineStartIndex < 0)
+            {
+                lineStartIndex = ~lineStartIndex - 1;
+            }
+
+            return lineStartIndex + 1;
+        }
+
+        var lineNumbers = new List<int?>();
+        var reader = new Utf8JsonReader(content, new JsonReaderOptions { AllowTrailingCommas = true });
+        bool inRedirectionsArray = false;
+        int redirectionsArrayDepth = -1;
+        int redirectionObjectDepth = -1;
+        int? currentRedirectUrlLine = null;
+        string? currentPropertyName = null;
+
+        while (reader.Read())
+        {
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.PropertyName:
+                    currentPropertyName = reader.GetString();
+                    break;
+
+                case JsonTokenType.StartArray:
+                    if (!inRedirectionsArray
+                        && string.Equals(currentPropertyName, "redirections", StringComparison.Ordinal))
+                    {
+                        inRedirectionsArray = true;
+                        redirectionsArrayDepth = reader.CurrentDepth;
+                    }
+
+                    currentPropertyName = null;
+                    break;
+
+                case JsonTokenType.StartObject:
+                    if (inRedirectionsArray && reader.CurrentDepth == redirectionsArrayDepth + 1)
+                    {
+                        redirectionObjectDepth = reader.CurrentDepth;
+                        currentRedirectUrlLine = null;
+                    }
+
+                    if (inRedirectionsArray
+                        && redirectionObjectDepth != -1
+                        && reader.CurrentDepth == redirectionObjectDepth + 1
+                        && string.Equals(currentPropertyName, "redirect_url", StringComparison.Ordinal))
+                    {
+                        currentRedirectUrlLine = GetLineNumber(reader.TokenStartIndex);
+                    }
+
+                    currentPropertyName = null;
+                    break;
+
+                case JsonTokenType.EndObject:
+                    if (inRedirectionsArray && reader.CurrentDepth == redirectionObjectDepth)
+                    {
+                        lineNumbers.Add(currentRedirectUrlLine);
+                        redirectionObjectDepth = -1;
+                        currentRedirectUrlLine = null;
+                    }
+
+                    currentPropertyName = null;
+                    break;
+
+                case JsonTokenType.EndArray:
+                    if (inRedirectionsArray && reader.CurrentDepth == redirectionsArrayDepth)
+                    {
+                        inRedirectionsArray = false;
+                        redirectionsArrayDepth = -1;
+                        redirectionObjectDepth = -1;
+                        currentRedirectUrlLine = null;
+                    }
+
+                    currentPropertyName = null;
+                    break;
+
+                default:
+                    if (inRedirectionsArray
+                        && redirectionObjectDepth != -1
+                        && reader.CurrentDepth == redirectionObjectDepth + 1
+                        && string.Equals(currentPropertyName, "redirect_url", StringComparison.Ordinal))
+                    {
+                        currentRedirectUrlLine = GetLineNumber(reader.TokenStartIndex);
+                    }
+
+                    currentPropertyName = null;
+                    break;
+            }
+        }
+
+        return lineNumbers;
+    }
+
+    private static Task WriteErrorAsync(TextWriter writer, string filePath, int? lineNumber, string message)
+        => lineNumber.HasValue
+            ? writer.WriteLineAsync($"::error file={filePath},line={lineNumber.Value}::{message}")
+            : writer.WriteLineAsync($"::error file={filePath}::{message}");
 }
