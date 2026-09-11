@@ -29,13 +29,21 @@ namespace DocfxVerifier
             configurationPath ??= FindDocfxConfigurationPath();
             if (configurationPath is null)
             {
-                await writer.WriteLineAsync("::error::Unable to find docfx.json in the repository root or its immediate subdirectories.");
+                await WriteErrorAsync(
+                    writer,
+                    "docfx.json",
+                    lineNumber: null,
+                    "Unable to find docfx.json in the repository root or its immediate subdirectories.");
                 return false;
             }
 
             if (!File.Exists(configurationPath))
             {
-                await writer.WriteLineAsync($"::error::docfx.json file '{configurationPath}' does not exist.");
+                await WriteErrorAsync(
+                    writer,
+                    configurationPath,
+                    lineNumber: null,
+                    $"docfx.json file '{configurationPath}' does not exist.");
                 return false;
             }
 

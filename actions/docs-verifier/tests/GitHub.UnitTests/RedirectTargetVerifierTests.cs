@@ -70,7 +70,7 @@ public class RedirectTargetVerifierTests
             Assert.False(result);
             string output = writer.ToString();
             Assert.Contains("returns 404", output, StringComparison.Ordinal);
-            Assert.Contains("::error file=", output, StringComparison.Ordinal);
+            Assert.Contains(Path.GetFileName(redirectionFilePath), output, StringComparison.Ordinal);
             Assert.Contains(",line=5::Redirect target returns 404", output, StringComparison.Ordinal);
         }
         finally
@@ -100,6 +100,23 @@ public class RedirectTargetVerifierTests
         {
             File.Delete(redirectionFilePath);
         }
+    }
+
+    [Fact]
+    public async Task WriteResultsAsyncReturnsFalseForMissingRedirectionFileWithFileAnnotation()
+    {
+        string redirectionFilePath = Path.Combine(Path.GetTempPath(), $"redirect-missing-{Guid.NewGuid():N}.json");
+        using var writer = new StringWriter();
+
+        bool result = await RedirectTargetVerifier.WriteResultsAsync(
+            writer,
+            redirectionFilePath,
+            _ => Task.FromResult<HttpStatusCode?>(HttpStatusCode.OK));
+
+        string output = writer.ToString();
+        Assert.False(result);
+        Assert.Contains("Redirection file", output, StringComparison.Ordinal);
+        Assert.Contains(Path.GetFileName(redirectionFilePath), output, StringComparison.Ordinal);
     }
 
     private static async Task<string> CreateRedirectionFileAsync(string redirectUrl)

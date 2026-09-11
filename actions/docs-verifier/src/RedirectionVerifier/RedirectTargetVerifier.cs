@@ -31,7 +31,11 @@ public static class RedirectTargetVerifier
 
         if (!File.Exists(redirectionFilePath))
         {
-            await writer.WriteLineAsync($"::error::Redirection file '{redirectionFilePath}' does not exist.");
+            await WriteErrorAsync(
+                writer,
+                redirectionFilePath,
+                lineNumber: null,
+                $"Redirection file '{redirectionFilePath}' does not exist.");
             return false;
         }
 

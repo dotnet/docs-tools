@@ -346,6 +346,61 @@ public class PathVerifierTests
     }
 
     [Fact]
+    public async Task WriteResultsAsyncReturnsFalseForMissingSpecifiedDocfxPathWithFileAnnotation()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+            string missingDocfxPath = Path.Combine("missing-docs", "docfx.json");
+            using var writer = new StringWriter();
+
+            bool result = await PathVerifier.WriteResultsAsync(writer, missingDocfxPath);
+
+            string output = writer.ToString();
+            Assert.False(result);
+            Assert.Contains("docfx.json file", output, StringComparison.Ordinal);
+            Assert.Contains("file=missing-docs/docfx.json", output, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
+    [Fact]
+    public async Task WriteResultsAsyncReturnsFalseWhenDocfxNotFoundWithFileAnnotation()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+            using var writer = new StringWriter();
+
+            bool result = await PathVerifier.WriteResultsAsync(writer);
+
+            string output = writer.ToString();
+            Assert.False(result);
+            Assert.Contains("Unable to find docfx.json", output, StringComparison.Ordinal);
+            Assert.Contains("file=docfx.json", output, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
+    [Fact]
     public async Task WriteResultsAsyncAllowsTrailingCommas()
     {
         await s_currentDirectoryLock.WaitAsync();
