@@ -52,6 +52,7 @@ namespace DocfxVerifier
 
             List<int> fileMetadataPathLineNumbers = await GetFileMetadataPathLineNumbersAsync(configurationPath);
 
+            // Validate file metadata paths and collect errors.
             var errors = new List<ValidationError>();
             ValidateFileMetadataPaths(
                 json.RootElement,
@@ -95,7 +96,6 @@ namespace DocfxVerifier
             {
                 ValidateBuildFileMetadataSection(
                     buildSection,
-                    "$.build",
                     repositoryRoot,
                     configurationDirectory,
                     externalContentSourceDirectories,
@@ -106,7 +106,6 @@ namespace DocfxVerifier
 
         private static void ValidateBuildFileMetadataSection(
             JsonElement buildSection,
-            string jsonPath,
             string repositoryRoot,
             string configurationDirectory,
             HashSet<string> externalContentSourceDirectories,
@@ -326,7 +325,8 @@ string normalizedSourcePath = NormalizePath(srcPath);
             foreach (string sourceDirectory in externalContentSourceDirectories)
             {
                 if (pathPrefix.Equals(sourceDirectory, StringComparison.Ordinal)
-                    || pathPrefix.StartsWith(sourceDirectory + "/", StringComparison.Ordinal))
+                    || pathPrefix.StartsWith(sourceDirectory + "/", StringComparison.Ordinal)
+                    || sourceDirectory.StartsWith(pathPrefix + "/", StringComparison.Ordinal))
                 {
                     return true;
                 }

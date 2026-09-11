@@ -98,7 +98,8 @@ public static class RedirectTargetVerifier
         {
             using HttpRequestMessage headRequest = new(HttpMethod.Head, uri);
             using HttpResponseMessage headResponse = await s_httpClient.SendAsync(headRequest);
-            if (headResponse.StatusCode is HttpStatusCode.MethodNotAllowed or HttpStatusCode.NotImplemented or HttpStatusCode.NotFound)
+            if (headResponse.StatusCode is HttpStatusCode.MethodNotAllowed or HttpStatusCode.NotImplemented or HttpStatusCode.NotFound
+                || IsRedirectStatusCode(headResponse.StatusCode))
             {
                 using HttpRequestMessage getRequest = new(HttpMethod.Get, uri);
                 using HttpResponseMessage getResponse = await s_httpClient.SendAsync(getRequest, HttpCompletionOption.ResponseHeadersRead);
@@ -115,6 +116,12 @@ public static class RedirectTargetVerifier
         {
             return null;
         }
+    }
+
+    private static bool IsRedirectStatusCode(HttpStatusCode statusCode)
+    {
+        int code = (int)statusCode;
+        return code >= 300 && code < 400;
     }
 
     private static async Task<List<int?>> GetRedirectUrlLineNumbersAsync(string redirectionFilePath)
