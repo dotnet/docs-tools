@@ -52,6 +52,7 @@ namespace DocfxVerifier
 
             List<int> fileMetadataPathLineNumbers = await GetFileMetadataPathLineNumbersAsync(configurationPath);
 
+            // Validate file metadata paths and collect errors.
             var errors = new List<ValidationError>();
             ValidateFileMetadataPaths(
                 json.RootElement,
@@ -95,7 +96,6 @@ namespace DocfxVerifier
             {
                 ValidateBuildFileMetadataSection(
                     buildSection,
-                    "$.build",
                     repositoryRoot,
                     configurationDirectory,
                     externalContentSourceDirectories,
@@ -106,7 +106,6 @@ namespace DocfxVerifier
 
         private static void ValidateBuildFileMetadataSection(
             JsonElement buildSection,
-            string jsonPath,
             string repositoryRoot,
             string configurationDirectory,
             HashSet<string> externalContentSourceDirectories,
@@ -178,7 +177,7 @@ namespace DocfxVerifier
                 ? normalizedPath[2..]
                 : normalizedPath;
 
-            string nonWildcardPrefix = GetNonWildcardPrefix(scopePath);
+            string nonWildcardPrefix = GetNonWildcardPrefix(scopePath, out bool hasWildcard);
             if (string.IsNullOrEmpty(nonWildcardPrefix))
             {
                 return;
@@ -186,7 +185,10 @@ namespace DocfxVerifier
 
             if (!ExistsInRepository(nonWildcardPrefix, repositoryRoot, resolutionBaseDirectory))
             {
-                if (IsPathUnderExternalContentSource(nonWildcardPrefix, externalContentSourceDirectories))
+                if (IsPathUnderExternalContentSource(
+                    nonWildcardPrefix,
+                    externalContentSourceDirectories,
+                    hasWildcard))
                 {
                     return;
                 }
@@ -321,12 +323,16 @@ string normalizedSourcePath = NormalizePath(srcPath);
             return result;
         }
 
-        private static bool IsPathUnderExternalContentSource(string pathPrefix, HashSet<string> externalContentSourceDirectories)
+        private static bool IsPathUnderExternalContentSource(
+            string pathPrefix,
+            HashSet<string> externalContentSourceDirectories,
+            bool allowAncestorMatch)
         {
             foreach (string sourceDirectory in externalContentSourceDirectories)
             {
                 if (pathPrefix.Equals(sourceDirectory, StringComparison.Ordinal)
-                    || pathPrefix.StartsWith(sourceDirectory + "/", StringComparison.Ordinal))
+                    || pathPrefix.StartsWith(sourceDirectory + "/", StringComparison.Ordinal)
+                    || (allowAncestorMatch && sourceDirectory.StartsWith(pathPrefix + "/", StringComparison.Ordinal)))
                 {
                     return true;
                 }
@@ -367,16 +373,18 @@ string normalizedSourcePath = NormalizePath(srcPath);
         private static string NormalizePath(string path)
             => path.Replace('\\', '/');
 
-        private static string GetNonWildcardPrefix(string path)
+        private static string GetNonWildcardPrefix(string path, out bool hasWildcard)
         {
             ReadOnlySpan<char> wildcardChars = ['*', '?', '[', ']', '{', '}'];
             string[] segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            hasWildcard = false;
 
             var prefixSegments = new List<string>();
             foreach (string segment in segments)
             {
                 if (segment.AsSpan().IndexOfAny(wildcardChars) >= 0)
                 {
+                    hasWildcard = true;
                     break;
                 }
 

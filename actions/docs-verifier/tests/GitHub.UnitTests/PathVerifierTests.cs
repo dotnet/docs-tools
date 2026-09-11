@@ -88,6 +88,92 @@ public class PathVerifierTests
     }
 
     [Fact]
+    public async Task WriteResultsAsyncIgnoresWildcardParentPathWhenItMatchesExternalContentSrc()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+
+            await File.WriteAllTextAsync("docfx.json", """
+            {
+              "build": {
+                "content": [
+                  {
+                    "src": "_csharplang/proposals",
+                    "files": ["**/*.md"]
+                  }
+                ],
+                "fileMetadata": {
+                  "ms.author": {
+                    "_csharplang/**.*": "someone"
+                  }
+                }
+              }
+            }
+            """);
+
+            using var writer = new StringWriter();
+            bool result = await PathVerifier.WriteResultsAsync(writer);
+
+            Assert.True(result);
+            Assert.Equal(string.Empty, writer.ToString());
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
+    [Fact]
+    public async Task WriteResultsAsyncReturnsFalseForExactFileMetadataAncestorOfExternalContentSrc()
+    {
+        await s_currentDirectoryLock.WaitAsync();
+        string testRoot = CreateTempDirectory();
+        string originalDirectory = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Directory.SetCurrentDirectory(testRoot);
+
+            await File.WriteAllTextAsync("docfx.json", """
+            {
+              "build": {
+                "content": [
+                  {
+                    "src": "_csharplang/proposals",
+                    "files": ["**/*.md"]
+                  }
+                ],
+                "fileMetadata": {
+                  "ms.author": {
+                    "_csharplang": "someone"
+                  }
+                }
+              }
+            }
+            """);
+
+            using var writer = new StringWriter();
+            bool result = await PathVerifier.WriteResultsAsync(writer);
+
+            Assert.False(result);
+            Assert.Contains("Invalid path '_csharplang'.", writer.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+            Directory.Delete(testRoot, recursive: true);
+            s_currentDirectoryLock.Release();
+        }
+    }
+
+    [Fact]
     public async Task WriteResultsAsyncReturnsFalseForInvalidFileMetadataPaths()
     {
         await s_currentDirectoryLock.WaitAsync();
