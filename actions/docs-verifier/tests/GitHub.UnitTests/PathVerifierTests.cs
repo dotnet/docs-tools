@@ -201,7 +201,7 @@ public class PathVerifierTests
 
             Assert.False(result);
             Assert.Contains("Invalid path 'missing/path/**/**.{md,yml}'.", output, StringComparison.Ordinal);
-            Assert.Contains(",line=5::Invalid path 'missing/path/**/**.{md,yml}'.", output, StringComparison.Ordinal);
+            Assert.Contains("::error file=docfx.json,line=5::Invalid path 'missing/path/**/**.{md,yml}'.", output, StringComparison.Ordinal);
         }
         finally
         {

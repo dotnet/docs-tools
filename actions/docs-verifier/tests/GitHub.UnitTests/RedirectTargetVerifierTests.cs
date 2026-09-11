@@ -68,8 +68,10 @@ public class RedirectTargetVerifierTests
                 _ => Task.FromResult<HttpStatusCode?>(HttpStatusCode.NotFound));
 
             Assert.False(result);
-            Assert.Contains("returns 404", writer.ToString(), StringComparison.Ordinal);
-            Assert.Contains(",line=5::Redirect target returns 404", writer.ToString(), StringComparison.Ordinal);
+            string output = writer.ToString();
+            Assert.Contains("returns 404", output, StringComparison.Ordinal);
+            Assert.Contains("::error file=", output, StringComparison.Ordinal);
+            Assert.Contains(",line=5::Redirect target returns 404", output, StringComparison.Ordinal);
         }
         finally
         {
