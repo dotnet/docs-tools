@@ -110,10 +110,7 @@ from an automation/heartbeat run):
 workflow, not separate skills — carry them out yourself using the guidance
 in this file.
 
-If invoked from an automation/heartbeat with no user present to answer the
-end-of-lesson questions, deliver the lesson, post the quiz questions, record
-the lesson as `taught` (not `quizzed`/`mastered`), and grade/update the
-ledger the next time the user responds interactively.
+If invoked from an automation/heartbeat with no user present to answer the end-of-lesson questions, deliver the lesson, post the quiz questions, and record the lesson as `taught` (not `quizzed`/`mastered`). On the next interactive response, grade the pending quiz and update that ledger row before selecting or teaching another topic.
 
 ## Coaching behavior
 
