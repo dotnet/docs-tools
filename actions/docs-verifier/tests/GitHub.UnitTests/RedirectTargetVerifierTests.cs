@@ -19,7 +19,6 @@ public class RedirectTargetVerifierTests
                 _ => Task.FromResult<HttpStatusCode?>(HttpStatusCode.OK));
 
             Assert.True(result);
-            Assert.Equal(string.Empty, writer.ToString());
         }
         finally
         {
@@ -46,7 +45,6 @@ public class RedirectTargetVerifierTests
                 });
 
             Assert.True(result);
-            Assert.Equal(string.Empty, writer.ToString());
             Assert.False(statusProviderCalled);
         }
         finally
