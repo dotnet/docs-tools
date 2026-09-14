@@ -39,6 +39,8 @@ public static class RedirectTargetVerifier
             return false;
         }
 
+        await writer.WriteLineAsync($"Checking redirect targets in '{redirectionFilePath}'...");
+
         OpenPublishingRedirectionReader reader = new(redirectionFilePath);
         ImmutableArray<Redirection> redirections = await reader.MapConfigurationAsync();
         if (redirections.IsDefaultOrEmpty)

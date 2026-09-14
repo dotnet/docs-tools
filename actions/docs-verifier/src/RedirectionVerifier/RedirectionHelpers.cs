@@ -15,11 +15,7 @@ public static class RedirectionHelpers
         // If no redirection files are found in the OPS config, just use the default name.
         ImmutableArray<string> redirectionFileNames = await GetRedirectionFilesAsync() ?? 
             [".openpublishing.redirection.json"];
-        Console.WriteLine($"The following {redirectionFileNames.Length} redirection files are registered:");
-        foreach (string filename in redirectionFileNames)
-        {
-            Console.WriteLine(filename);
-        }
+        Console.WriteLine($"Found {redirectionFileNames.Length} registered redirection files.");
 
         return redirectionFileNames;
     }
