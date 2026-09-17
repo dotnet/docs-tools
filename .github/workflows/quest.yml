@@ -40,7 +40,7 @@ jobs:
 
       - name: Azure OpenID Connect
         id: azure-oidc-auth
-        uses: $/.github/actions/oidc-auth-flow
+        uses: $/.github/actions/azure-oidc-auth
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
@@ -48,7 +48,7 @@ jobs:
 
       - name: Azure DevOps OpenID Connect for manual test runs
         id: azure-devops-oidc-auth
-        uses: $/.github/actions/oidc-auth-flow
+        uses: $/.github/actions/azure-oidc-auth
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
