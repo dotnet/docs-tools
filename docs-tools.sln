@@ -4,11 +4,11 @@ VisualStudioVersion = 18.1.11312.151
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanRepo", "cleanrepo\CleanRepo.csproj", "{2BBD8090-3B66-4B57-807E-3A5BC41CC5A9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quest2GitHub.Tests", "actions\sequester\Quest2GitHub.Tests\Quest2GitHub.Tests.csproj", "{2F1F09D6-8027-4B79-912A-124C94070D9E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quest2GitHub.Tests", ".github\actions\sequester\Quest2GitHub.Tests\Quest2GitHub.Tests.csproj", "{2F1F09D6-8027-4B79-912A-124C94070D9E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quest2GitHub", "actions\sequester\Quest2GitHub\Quest2GitHub.csproj", "{46F37B73-E9CF-46A8-ADA4-2B8D48481CD2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quest2GitHub", ".github\actions\sequester\Quest2GitHub\Quest2GitHub.csproj", "{46F37B73-E9CF-46A8-ADA4-2B8D48481CD2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImportIssues", "actions\sequester\ImportIssues\ImportIssues.csproj", "{5A3905AD-63DC-47CA-9C2B-5661E99C5BA6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImportIssues", ".github\actions\sequester\ImportIssues\ImportIssues.csproj", "{5A3905AD-63DC-47CA-9C2B-5661E99C5BA6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.DocsTools", "DotNet.DocsTools\DotNet.DocsTools.csproj", "{2FAA5126-248D-4B18-ADF0-5D7751028A90}"
 EndProject
