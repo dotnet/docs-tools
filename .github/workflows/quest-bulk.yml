@@ -50,7 +50,7 @@ jobs:
 
       - name: bulk-sequester
         id: bulk-sequester
-        uses: $/.github/actions/sequester
+        uses: ./.github/actions/sequester
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
           ImportOptions__ApiKeys__AzureAccessToken: ${{ steps.azure-oidc-auth.outputs.access-token }}

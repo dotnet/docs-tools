@@ -1,7 +1,7 @@
 
 *  @dotnet/docs
 
-actions/sequester/ @BillWagner
+.github/actions/sequester/ @BillWagner
 cleanrepo/ @gewarren
 DotNet.DocsTools/ @BillWagner
 DotNet.DocsToolsTests/ @BillWagner

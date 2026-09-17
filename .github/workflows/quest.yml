@@ -59,7 +59,7 @@ jobs:
       - name: manual-sequester
         if: ${{ github.event_name == 'workflow_dispatch' }}
         id: manual-sequester
-        uses: $/.github/actions/sequester
+        uses: ./.github/actions/sequester
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
           ImportOptions__ApiKeys__AzureAccessToken:  ${{ steps.azure-oidc-auth.outputs.access-token }}
@@ -75,7 +75,7 @@ jobs:
       - name: auto-sequester
         if: ${{ github.event_name != 'workflow_dispatch' }}
         id: auto-sequester
-        uses: $/.github/actions/sequester
+        uses: ./.github/actions/sequester
         env:
           ImportOptions__ApiKeys__GitHubToken: ${{ secrets.GITHUB_TOKEN }}
           ImportOptions__ApiKeys__AzureAccessToken: ${{ steps.azure-oidc-auth.outputs.access-token }}
