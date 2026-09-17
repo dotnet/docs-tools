@@ -13,14 +13,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		action.yml = action.yml
 		LICENSE = LICENSE
 		README.md = README.md
-		..\..\sequester.Dockerfile = ..\..\sequester.Dockerfile
+		..\..\..\sequester.Dockerfile = ..\..\..\sequester.Dockerfile
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImportIssues", "ImportIssues\ImportIssues.csproj", "{3BB8E621-3F16-4ABC-BADC-D724920A61FD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quest2GitHub.Tests", "Quest2GitHub.Tests\Quest2GitHub.Tests.csproj", "{02A9E79B-0BBD-4E2A-9122-2CD42B74B06B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.DocsTools", "..\..\DotNet.DocsTools\DotNet.DocsTools.csproj", "{1BDD7A74-45B3-47C7-B605-DFC9B82D87AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNet.DocsTools", "..\..\..\DotNet.DocsTools\DotNet.DocsTools.csproj", "{1BDD7A74-45B3-47C7-B605-DFC9B82D87AF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

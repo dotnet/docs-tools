@@ -54,7 +54,6 @@ jobs:
           tenant-id: ${{ secrets.TENANT_ID }}
           audience: ${{ secrets.QUEST_AUDIENCE }}
 
-
       # This step occurs when ran manually, passing the manual issue number input
       - name: manual-sequester
         if: ${{ github.event_name == 'workflow_dispatch' }}
