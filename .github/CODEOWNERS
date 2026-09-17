@@ -1,11 +1,7 @@
 
 *  @dotnet/docs
 
-actions/dependabot-bot/ @dotnet/docs
-actions/docs-verifier/ @BillWagner
-actions/dotnet-version-updater/ @IEvangelist
 actions/sequester/ @BillWagner
-actions/status-checker/ @gewarren
 cleanrepo/ @gewarren
 DotNet.DocsTools/ @BillWagner
 DotNet.DocsToolsTests/ @BillWagner

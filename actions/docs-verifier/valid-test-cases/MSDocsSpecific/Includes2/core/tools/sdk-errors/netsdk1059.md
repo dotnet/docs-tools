@@ -1,1 +1,0 @@
-For more information, see [Project tools now included in SDK](../../compatibility/2.1.md#project-tools-now-included-in-sdk).
