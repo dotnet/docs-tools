@@ -1,5 +1,5 @@
-name: Azure OIDC auth flow
-description: "Azure OpenID Connect authentication flow"
+name: Azure OIDC authentication
+description: "Authenticates to Azure with GitHub OIDC and obtains an access token"
 
 inputs:
   client-id:
