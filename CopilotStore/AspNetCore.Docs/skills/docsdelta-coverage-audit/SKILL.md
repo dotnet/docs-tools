@@ -165,7 +165,7 @@ Write the marker beside the repo so the next run can reuse it:
 ```powershell
 @{
   repo = "{TARGET_REPO}"; sha = "{TARGET_COMMIT_SHA}"
-  cloned_at_epoch = [int][double]::Parse(((Get-Date).ToUniversalTime() - [datetime]'1970-01-01').TotalSeconds)
+  cloned_at_epoch = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   docset_root = "{DOCSET_ROOT}"
   sparse_scope = "{DOCSET_ROOT}"        # full content root, no file-type filter
   samples_repos = @('dotnet/AspNetCore.Docs.Samples')
@@ -369,8 +369,9 @@ feature will produce redundant, conflicting prose — the reframing is what prev
 
 Content that exists in one article but is missing from the article a reader would actually
 be in is a ✏️, not a ✅. Ask: *which article is the reader in when this question occurs to
-them?* Today, hub lifecycle content lived only in the authentication article — complete, but
-invisible to anyone reading the Hubs API reference to learn the lifecycle.
+them?* In the .NET 11 SignalR audit, hub lifecycle content lived only in the authentication
+article — complete, but invisible to anyone reading the Hubs API reference to learn the
+lifecycle.
 
 Three recurring shapes:
 
