@@ -73,7 +73,7 @@ cd {CACHE_ROOT}{repo-name}
 git rev-parse HEAD          # this is TARGET_COMMIT_SHA
 git status --porcelain      # must print nothing
 
-$now = [int][double]::Parse(((Get-Date).ToUniversalTime() - [datetime]'1970-01-01').TotalSeconds)
+$now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $age = ($now - $marker.cloned_at_epoch) / 3600     # must be >= 0 and < CACHE_MAX_AGE_HOURS
 ```
 
