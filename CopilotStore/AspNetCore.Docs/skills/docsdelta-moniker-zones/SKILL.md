@@ -150,16 +150,35 @@ tables document.
 
 ## Step 5: Verify balance
 
-Before delivering, count directives across the whole file — not just the edited region.
+Before delivering, verify directives across the whole file — not just the edited region.
+Counting alone is not enough. Equal counts can still be interleaved, and a plain count also
+matches `:::moniker` directives that appear inside fenced code blocks as examples — the
+split pattern in Step 3 is one. The script below skips fenced blocks, checks ordering in the
+same pass, and reports line numbers.
 
 ```powershell
-$t = Get-Content -Raw {path}
-($t | Select-String ':::moniker range=' -AllMatches).Matches.Count
-($t | Select-String ':::moniker-end' -AllMatches).Matches.Count
+$lines = Get-Content {path}
+$inFence = $false; $open = $null; $errors = @()
+for ($i = 0; $i -lt $lines.Count; $i++) {
+    $l = $lines[$i]
+    if ($l -match '^\s*(```+|~~~+)') { $inFence = -not $inFence; continue }
+    if ($inFence) { continue }
+    if ($l -match '^\s*:::moniker range=') {
+        if ($open) { $errors += "L$($i+1): opener while zone from L$open is still open" }
+        $open = $i + 1
+    }
+    elseif ($l -match '^\s*:::moniker-end') {
+        if (-not $open) { $errors += "L$($i+1): moniker-end with no open zone" }
+        $open = $null
+    }
+}
+if ($open) { $errors += "L${open}: zone never closed" }
+$errors
 ```
 
-The counts must match. Then walk the file top to bottom confirming that every opener closes
-before the next one opens.
+The script must print nothing. Treat it as a backstop rather than a proof — the fence toggle
+doesn't handle fences of differing lengths or indented code blocks — so still confirm by
+reading that every opener closes before the next one opens.
 
 A file that's balanced but interleaved renders as nonsense, so the count alone isn't enough.
 
