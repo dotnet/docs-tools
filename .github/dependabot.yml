@@ -12,7 +12,8 @@ updates:
       default-days: 7
   # NuGet packages
   - package-ecosystem: "nuget"
-    directory: "/"
+    directories:
+      - "**/*"
     schedule:
       interval: "weekly"
       day: "wednesday"
