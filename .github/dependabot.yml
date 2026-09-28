@@ -13,7 +13,7 @@ updates:
   # NuGet packages
   - package-ecosystem: "nuget"
     directories:
-      - "*"
+      - "**/*"
     schedule:
       interval: "weekly"
       day: "wednesday"
