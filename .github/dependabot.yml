@@ -16,12 +16,13 @@ updates:
       - "**/*"
     schedule:
       interval: "weekly"
-      day: "wednesday"
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
     groups:
-      dotnet:
-        patterns:
-          - "*"
+      nuget:
+        patterns: ["*"]
+        group-by: dependency-name
   # NPM packages
   - package-ecosystem: "npm"
     directory: "/"
