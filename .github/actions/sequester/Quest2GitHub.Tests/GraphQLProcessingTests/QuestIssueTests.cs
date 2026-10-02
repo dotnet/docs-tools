@@ -1,4 +1,5 @@
 ﻿using Quest2GitHub.GitHubObjects;
+using DotNet.DocsTools.GitHubObjects;
 using System.Text.Json;
 using Xunit;
 
