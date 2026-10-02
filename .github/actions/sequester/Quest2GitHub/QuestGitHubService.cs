@@ -3,6 +3,7 @@ using System.Xml.XPath;
 using DotNet.DocsTools.GitHubObjects;
 using DotNet.DocsTools.GraphQLQueries;
 using Org.BouncyCastle.Asn1.Ocsp;
+using Quest2GitHub.GitHubObjects;
 
 namespace Quest2GitHub;
 

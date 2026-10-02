@@ -1,6 +1,6 @@
 ﻿using DotNetDocs.Tools.GitHubCommunications;
 
-namespace DotNet.DocsTools.GitHubObjects;
+namespace Quest2GitHub.GitHubObjects;
 
 /// <summary>
 /// The variables for the sequester mutation.
