@@ -1,7 +1,8 @@
 ﻿using Microsoft.DotnetOrg.Ospo;
 using System.Text.Json;
+using DotNet.DocsTools.GitHubObjects;
 
-namespace DotNet.DocsTools.GitHubObjects;
+namespace Quest2GitHub.GitHubObjects;
 
 /// <summary>
 /// This record stores the variables needed to query for a Quest issue
@@ -396,4 +397,3 @@ public abstract record QuestIssueOrPullRequest : Issue
         """;
     }
 }
-

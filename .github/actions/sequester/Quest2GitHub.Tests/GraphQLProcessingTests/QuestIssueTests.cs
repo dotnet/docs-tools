@@ -1,8 +1,8 @@
-﻿using DotNet.DocsTools.GitHubObjects;
+﻿using Quest2GitHub.GitHubObjects;
 using System.Text.Json;
 using Xunit;
 
-namespace DotnetDocsTools.Tests.GraphQLProcessingTests
+namespace Quest2GitHub.Tests.GraphQLProcessingTests
 {
     public class QuestIssueTests
     {

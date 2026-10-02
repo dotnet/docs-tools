@@ -1,5 +1,6 @@
 ﻿using DotNet.DocsTools.GitHubObjects;
-using DotNet.DocsTools.Utility;
+using Quest2GitHub.GitHubObjects;
+using Quest2GitHub.Utility;
 
 namespace Quest2GitHub.Models;
 
