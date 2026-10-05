@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace DotNet.DocsTools.Utility;
+namespace Quest2GitHub.Utility;
 
 public static partial class ContentScrubber
 {

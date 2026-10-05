@@ -1,7 +1,7 @@
 ﻿using DotNet.DocsTools.GraphQLQueries;
 using DotNetDocs.Tools.GitHubCommunications;
 
-namespace DotNet.DocsTools.GitHubObjects;
+namespace Quest2GitHub.GitHubObjects;
 public class SequesteredPullRequestMutation : SequesteredIssueOrPullRequestMutation, IGitHubMutation<SequesteredPullRequestMutation, SequesterVariables>
 {
     /// <summary>

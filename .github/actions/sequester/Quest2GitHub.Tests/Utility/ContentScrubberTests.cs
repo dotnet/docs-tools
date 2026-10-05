@@ -1,7 +1,7 @@
-﻿using DotNet.DocsTools.Utility;
+﻿using Quest2GitHub.Utility;
 using Xunit;
 
-namespace DotnetDocsTools.Tests.Utility;
+namespace Quest2GitHub.Tests.Utility;
 
 public class ContentScrubberTests
 {

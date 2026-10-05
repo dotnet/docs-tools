@@ -1,8 +1,9 @@
 ﻿using System.Text.Json;
 using DotNetDocs.Tools.GitHubCommunications;
+using DotNet.DocsTools.GitHubObjects;
 
-namespace DotNet.DocsTools.GitHubObjects;
-public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryResult<QuestPullRequest, QuestIssueOrPullRequestVariables>
+namespace Quest2GitHub.GitHubObjects;
+public record QuestIssue : QuestIssueOrPullRequest, IGitHubQueryResult<QuestIssue, QuestIssueOrPullRequestVariables>
 {
     /// <summary>
     /// Construct the query packet for the given variables
@@ -13,7 +14,7 @@ public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryRes
     public static GraphQLPacket GetQueryPacket(QuestIssueOrPullRequestVariables variables, bool isScalar) => isScalar
         ? new()
         {
-            query = QuestPullRequestScalarQueryText,
+            query = QuestIssueScalarQueryText,
             variables =
                 {
                     ["organization"] = variables.Organization,
@@ -23,22 +24,24 @@ public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryRes
         }
         : new GraphQLPacket
         {
-            query = EnumerateQuestPullRequestQueryText,
+            query = EnumerateQuestIssuesQueryText,
             variables =
                 {
                     ["organization"] = variables.Organization,
                     ["repository"] = variables.Repository,
-                    ["states"] = variables.states.Any() ? variables.states : ["OPEN", "CLOSED", "MERGED"],
+                    ["states"] = variables.states.Any() ? variables.states : ["OPEN", "CLOSED"],
                     ["questlabels"] = new string[]
                     {
                         variables.importTriggerLabelText ?? throw new ArgumentException("The import trigger label can't be null"),
-                        variables.importedLabelText ?? throw new ArgumentException("The imported label can't be null")
+                        variables.importedLabelText ?? throw new ArgumentException("The imported label can't be null"),
+                        variables.removeLabelText ?? throw new ArgumentException("The remove label can't be null"),
+                        variables.localizationLabelText ?? throw new ArgumentException("The localization label can't be null")
                     }
                 }
         };
 
     public static IEnumerable<string> NavigationToNodes(bool isScalar) =>
-        (isScalar) ? ["repository", "pullRequest"] : ["repository", "pullRequests"];
+        (isScalar) ?["repository", "issue"] : ["repository", "issues"];
 
     /// <summary>
     /// Construct a QuestIssue from a JsonElement
@@ -46,8 +49,11 @@ public sealed record QuestPullRequest : QuestIssueOrPullRequest, IGitHubQueryRes
     /// <param name="issueNode">The JSON issue node</param>
     /// <param name="variables">The variables used in the query.</param>
     /// <returns></returns>
-    public static QuestPullRequest FromJsonElement(JsonElement issueNode, QuestIssueOrPullRequestVariables variables) =>
+    public static QuestIssue FromJsonElement(JsonElement issueNode, QuestIssueOrPullRequestVariables variables) =>
         new(issueNode, variables.Organization, variables.Repository);
 
-    private QuestPullRequest(JsonElement issueNode, string organization, string repository) : base(issueNode, organization, repository, false) { }
+    private QuestIssue(JsonElement issueNode, string organization, string repository) : base(issueNode, organization, repository)
+    {
+    }
+
 }

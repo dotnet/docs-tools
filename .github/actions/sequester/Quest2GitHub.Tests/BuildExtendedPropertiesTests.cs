@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using DotNet.DocsTools.GitHubObjects;
+using Quest2GitHub.GitHubObjects;
 using Quest2GitHub.Models;
 
 namespace Quest2GitHub.Tests;

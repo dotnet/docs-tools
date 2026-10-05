@@ -5,9 +5,9 @@ namespace DotNet.DocsTools.GitHubObjects;
 
 
 // TODO: Make reasonable responses for NULL nodes, etc.
-internal static class ResponseExtractors
+public static class ResponseExtractors
 {
-    internal static JsonElement GetAuthorChildElement(JsonElement element) => ChildElement(element, "author");
+    public static JsonElement GetAuthorChildElement(JsonElement element) => ChildElement(element, "author");
 
     internal static string GetIdValue(JsonElement node) => 
         StringProperty(node, "id");
@@ -21,10 +21,10 @@ internal static class ResponseExtractors
     internal static DateTime GetCreatedAtValue(JsonElement element) => 
         DateProperty(element, "createdAt");
 
-    internal static DateTime GetUpdatedAtValueOrNow(JsonElement element) =>
+    public static DateTime GetUpdatedAtValueOrNow(JsonElement element) =>
         OptionalDateProperty(element, "updatedAt") ?? DateTime.Now;
 
-    internal static T[] GetChildArrayElements<T>(
+    public static T[] GetChildArrayElements<T>(
         JsonElement element,
         string elementName,
         Func<JsonElement, T> selector)
@@ -55,7 +55,7 @@ internal static class ResponseExtractors
         throw new ArgumentException($"Property {propertyName} not found in Json element. Did you possibly access the parent node?", nameof(element));
     }
 
-    internal static string OptionalStringProperty(JsonElement element, string propertyName)
+    public static string OptionalStringProperty(JsonElement element, string propertyName)
     {
         if (element.ValueKind != JsonValueKind.Object) throw new ArgumentException("element is not a Json Object.", nameof(element));
 
@@ -66,7 +66,7 @@ internal static class ResponseExtractors
         return string.Empty;
     }
 
-    internal static string StringProperty(JsonElement element, string propertyName)
+    public static string StringProperty(JsonElement element, string propertyName)
     {
         if (element.ValueKind != JsonValueKind.Object) throw new ArgumentException("element is not a Json Object.", nameof(element));
 
