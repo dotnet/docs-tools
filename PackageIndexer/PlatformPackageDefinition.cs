@@ -4,8 +4,6 @@ namespace PackageIndexer;
 
 internal static class PlatformPackageDefinition
 {
-    private static FrozenSet<string> s_packageIds;
-
     public static readonly List<string> otherPackagesWithoutDocs =
     [
         // See https://github.com/dotnet/dotnet-api-docs/pull/10395#discussion_r1758128787.

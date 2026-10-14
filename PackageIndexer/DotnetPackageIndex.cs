@@ -4,6 +4,7 @@ using Kusto.Data.Net.Client;
 using Kusto.Data;
 using NuGet.Packaging.Core;
 using NuGet.Versioning;
+using Kusto.Data.Common;
 
 namespace PackageIndexer;
 
@@ -74,18 +75,19 @@ public static class DotnetPackageIndex
     {
         Console.WriteLine("Fetching package IDs...");
 
-        var cluster = "ddteldata.kusto.windows.net";
-        var databaseName = "ClientToolsInsights";
-        var predicate = string.Join(" or ", PlatformPackageDefinition.Owners.Select(n => $"set_has_element(Owners, \"{n}\")"));
-        var query = $"""
+        string cluster = "ddteldata.kusto.windows.net";
+        string databaseName = "ClientToolsInsights";
+        string predicate = string.Join(" or ", PlatformPackageDefinition.Owners.Select(n => $"set_has_element(Owners, \"{n}\")"));
+        string query = $"""
             NiPackageOwners
             | where {predicate}
             | project Id
             | order by Id asc
             """;
 
-        var connectionString = new KustoConnectionStringBuilder(cluster).WithAadUserPromptAuthentication();
-        using var queryProvider = KustoClientFactory.CreateCslQueryProvider(connectionString);
+        KustoConnectionStringBuilder connectionString =
+            new KustoConnectionStringBuilder(cluster).WithAadUserPromptAuthentication();
+        using ICslQueryProvider queryProvider = KustoClientFactory.CreateCslQueryProvider(connectionString);
         using System.Data.IDataReader reader = queryProvider.ExecuteQuery(databaseName, query, null);
 
         List<string> packageIds = [];
