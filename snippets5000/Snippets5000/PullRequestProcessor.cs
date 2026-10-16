@@ -105,13 +105,17 @@ internal class PullRequestProcessor
             int matchCounter = 0;
 
             bool isSlnx = Path.GetExtension(project!).Equals(".slnx", StringComparison.OrdinalIgnoreCase);
-            string pattern = isSlnx
-                ? "<Project\\s[^>]*?Path\\s*=\\s*\"([^\"]+)\""
-                : "Project\\(\"{[A-Fa-f0-9\\-]+}\"\\) = \"[^\"]+\", \"([^\"]+)\"";
+            IEnumerable<string> referencedPaths = isSlnx
+                ? System.Xml.Linq.XDocument.Parse(solutionFileContents)
+                    .Descendants("Project")
+                    .SelectMany(element => element.Attributes("Path"))
+                    .Select(attribute => attribute.Value)
+                : Regex.Matches(solutionFileContents, "Project\\(\"{[A-Fa-f0-9\\-]+}\"\\) = \"[^\"]+\", \"([^\"]+)\"")
+                    .Select(match => match.Groups[1].Value);
 
             // Normalize separators so forward-slash paths (common in .slnx) match
-            var referenced = Regex.Matches(solutionFileContents, pattern)
-                .Select(m => Path.GetFullPath(Path.Combine(solutionFolder, m.Groups[1].Value.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar))))
+            var referenced = referencedPaths
+                .Select(path => Path.GetFullPath(Path.Combine(solutionFolder, path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar))))
                 .ToList();
 
             foreach (string proj in projectsFound)
