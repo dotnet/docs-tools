@@ -104,11 +104,21 @@ internal class PullRequestProcessor
             string solutionFileContents = File.ReadAllText(project!);
             int matchCounter = 0;
 
+            bool isSlnx = Path.GetExtension(project!).Equals(".slnx", StringComparison.OrdinalIgnoreCase);
+            string pattern = isSlnx
+                ? "<Project\\s[^>]*?Path\\s*=\\s*\"([^\"]+)\""
+                : "Project\\(\"{[A-Fa-f0-9\\-]+}\"\\) = \"[^\"]+\", \"([^\"]+)\"";
+
+            // Normalize separators so forward-slash paths (common in .slnx) match
+            var referenced = Regex.Matches(solutionFileContents, pattern)
+                .Select(m => Path.GetFullPath(Path.Combine(solutionFolder, m.Groups[1].Value.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar))))
+                .ToList();
+
             foreach (string proj in projectsFound)
             {
-                foreach (Match match in Regex.Matches(solutionFileContents!, "Project\\(\"{[A-Fa-f0-9\\-]+}\"\\) = \"[^\"]+\", \"([^\"]+)\""))
+                foreach (string referencedProj in referenced)
                 {
-                    if (proj.Equals(Path.GetFullPath(Path.Combine(solutionFolder, match.Groups[1].Value)), StringComparison.OrdinalIgnoreCase))
+                    if (proj.Equals(referencedProj, StringComparison.OrdinalIgnoreCase))
                         matchCounter++;
                 }
             }
