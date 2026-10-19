@@ -14,6 +14,7 @@ class Program
 {
     const string OUTPUT_ERROR_1_NOPROJ = "ERROR: Project missing. A project (and optionally a solution file) must be in this directory or one of the parent directories to validate and build this code.";
     const string OUTPUT_ERROR_2_TOOMANY = "ERROR: Too many projects found. A single project or solution must exist in this directory or one of the parent directories.";
+    const string OUTPUT_ERROR_4_SLNPROJMISSING = "ERROR: Solution found, but one or more projects under it aren't referenced by the solution.";
     const string OUTPUT_ERROR_3_SLNNOPROJ = "ERROR: Solution found, but project was found and isn't in the solution.";
     const string OUTPUT_GOOD = "GOOD: Passed structural tests.";
     const string SNIPPETS_FILE_NAME = "snippets.5000.json";
@@ -265,6 +266,15 @@ class Program
             if (!first) { Log.Write(0, OUTPUT_ERROR_3_SLNNOPROJ); first = true; }
             Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_3_SLNNOPROJ}|TriggerFile='{project.InputFile}'");
             transformedProjects.Add(new SnippetsConfigFile() { RunOutput = OUTPUT_ERROR_3_SLNNOPROJ, RunExitCode = project.Code, RunTargetFile = project.InputFile, RunErrorIsStructural = true, RunConsideredGood = false });
+        }
+
+        // ERROR solution doesn't reference all projects
+        first = false;
+        foreach (var project in projects.Where(p => p.Code == DiscoveryResult.RETURN_SLN_PROJ_MISSING))
+        {
+            if (!first) { Log.Write(0, OUTPUT_ERROR_4_SLNPROJMISSING); first = true; }
+            Log.Write(0, $"::error file={project.InputFile},line=0,col=0::{OUTPUT_ERROR_4_SLNPROJMISSING}|TriggerFile='{project.InputFile}'");
+            transformedProjects.Add(new SnippetsConfigFile() { RunOutput = OUTPUT_ERROR_4_SLNPROJMISSING, RunExitCode = project.Code, RunTargetFile = project.InputFile, RunErrorIsStructural = true, RunConsideredGood = false });
         }
 
         // NO ERROR output each item
