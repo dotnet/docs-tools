@@ -1152,7 +1152,8 @@ class Program
 
         foreach (string directory in directoriesToDelete)
         {
-            if (protectedProjectDirectories.Contains(Path.GetFullPath(directory)))
+            if (protectedProjectDirectories.Contains(Path.GetFullPath(directory)) ||
+                excludedSnippetPaths.Any(path => IsPathEqualOrDescendant(path, directory)))
                 continue;
 
             bool isPartOfSolution = false;
