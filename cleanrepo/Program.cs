@@ -132,7 +132,7 @@ class Program
                     Console.WriteLine($"\nSearching the '{options.TargetDirectory}' directory recursively " +
                         $"for orphaned .png/.jpg/.gif/.svg files...\n");
 
-                    docFxRepo.ListOrphanedImages(options.Delete, "snippets");
+                    docFxRepo.ListOrphanedImages(options.Delete, "snippets", "samples");
                     break;
                 }
             case "CatalogImages":
@@ -292,8 +292,14 @@ class Program
                     // Catalog all the solution files and the project (directories) they reference.
                     List<(string, List<string?>)> solutionFiles = GetSolutionFiles(options.TargetDirectory);
 
-                    ListOrphanedSnippets(options.TargetDirectory, snippetFiles, solutionFiles,
-                        options.Delete, options.XmlSource, options.LimitReferencingDirectories);
+                    ListOrphanedSnippets(
+                        options.TargetDirectory,
+                        snippetFiles,
+                        solutionFiles,
+                        options.Delete,
+                        options.XmlSource,
+                        options.ReferencingDirectories,
+                        options.ExcludeSnippetDescendantsOfFolders);
                     break;
                 }
             // Replace links to articles that are redirected in the master redirection files.
@@ -625,7 +631,7 @@ class Program
         // Get all files that could possibly link to the include files
         List<FileInfo>? mdfiles = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
         List<FileInfo>? ymlfiles = HelperMethods.GetAllReferencingFiles("*.yml", inputDirectory, ref rootDirectory);
-        
+
         if ((mdfiles is null && ymlfiles is null) || rootDirectory is null)
             return;
 
@@ -867,8 +873,26 @@ class Program
         List<(string, List<string?>)> solutionFiles,
         bool deleteOrphanedSnippets,
         bool searchEcmaXmlFiles,
-        List<string>? limitReferencingDirectories)
+        List<string>? referencingDirectories,
+        List<string>? excludeSnippetDescendantsOfFolders)
     {
+        if (excludeSnippetDescendantsOfFolders is { Count: > 0 })
+        {
+            HashSet<string> excludedFolderNames = excludeSnippetDescendantsOfFolders
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (excludedFolderNames.Count > 0)
+            {
+                int before = snippetFiles.Count;
+                snippetFiles = snippetFiles
+                    .Where(sf => !IsDescendantOfNamedFolder(sf.Item1, inputDirectory, excludedFolderNames))
+                    .ToList();
+
+                Console.WriteLine($"Excluded {before - snippetFiles.Count} snippet files under: {string.Join(", ", excludedFolderNames)}");
+            }
+        }
         // Get all files that could possibly link to the snippet files.
         List<FileInfo>? files;
         DirectoryInfo? rootDirectory = null;
@@ -876,16 +900,16 @@ class Program
         // XML or Markdown file repo?
         string searchPattern = searchEcmaXmlFiles ? "*.xml" : "*.md";
 
-        if (limitReferencingDirectories is null)
+        if (referencingDirectories is null)
             files = HelperMethods.GetAllReferencingFiles(searchPattern, inputDirectory, ref rootDirectory);
         else
         {
             files = [];
-            foreach (string directory in limitReferencingDirectories)
+            foreach (string directory in referencingDirectories)
             {
-                List<FileInfo>? ecmaXmlFiles = HelperMethods.GetAllReferencingFiles(searchPattern, directory, ref rootDirectory, false);
-                if (ecmaXmlFiles is not null)
-                    files.AddRange(ecmaXmlFiles);
+                List<FileInfo>? filesSubset = HelperMethods.GetAllReferencingFiles(searchPattern, directory, ref rootDirectory, false);
+                if (filesSubset is not null)
+                    files.AddRange(filesSubset);
             }
         }
 
@@ -1162,6 +1186,30 @@ class Program
         // Output info for unreferenced projects and solutions.
         Console.WriteLine(dirSlnOutput.ToString());
     }
+
+    private static bool IsDescendantOfNamedFolder(
+    string filePath,
+    string rootDirectory,
+    HashSet<string> folderNames)
+    {
+        string normalizedRoot = Path.GetFullPath(rootDirectory)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        DirectoryInfo? current = new FileInfo(filePath).Directory;
+        while (current is not null)
+        {
+            if (folderNames.Contains(current.Name))
+                return true;
+
+            string currentPath = current.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.Equals(currentPath, normalizedRoot, StringComparison.OrdinalIgnoreCase))
+                break;
+
+            current = current.Parent;
+        }
+
+        return false;
+    }
     #endregion
 
     #region Orphaned articles
@@ -1179,6 +1227,9 @@ class Program
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}misc{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}mermaidjs{Path.DirectorySeparatorChar}") &&
+            !file.FullName.Contains($"{Path.DirectorySeparatorChar}samples{Path.DirectorySeparatorChar}") &&
+            string.Compare(file.Name, "README.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "LICENSE.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "agents.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "index.yml", StringComparison.InvariantCultureIgnoreCase) != 0 &&
