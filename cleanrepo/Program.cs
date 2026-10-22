@@ -428,7 +428,7 @@ class Program
 
         Console.WriteLine($"PRs Changes Last Commit    ms.date Path");
         Console.Write($"{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
-        foreach (var article in articleFiles)
+        foreach (FileInfo article in articleFiles)
         {
             totalArticles++;
             Console.Write($"{removeProgressMarkers}{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
@@ -697,6 +697,13 @@ class Program
         StringBuilder output = new();
         foreach (KeyValuePair<string, int> includeFile in includeFiles)
         {
+            // Special case - consider license.md and readme.md as "referenced"
+            // even if they aren't explicitly referenced in any other file.
+            if (string.Compare(includeFile.Key, "LICENSE.md", StringComparison.InvariantCultureIgnoreCase) == 0)
+            {
+                includeFiles[includeFile.Key] = 1;
+            }
+
             if (includeFile.Value == 0)
             {
                 count++;
@@ -928,6 +935,7 @@ class Program
                 Console.WriteLine($"Excluded {before - snippetFiles.Count} snippet files under: {string.Join(", ", excludedFolderNames)}");
             }
         }
+
         // Get all files that could possibly link to the snippet files.
         List<FileInfo>? files;
         DirectoryInfo? rootDirectory = null;
@@ -996,8 +1004,9 @@ class Program
                 // [!code-csharp[Violation#1](../code-quality/codesnippet/ca1010.cs#snippet1)]
                 // [!code-csharp[Hi](./code/code.cs?highlight=1,6)]
                 // [!code-csharp[FxCop.Usage#1](./code/code.cs?range=3-6)]
+                // [!code-csharp[](./code/3.x/Startup.cs?name=snippet&highlight=10-15)]
 
-                string regex = @"(\(|"")([^\)""\n]*\/" + regexSnippetFileName + @")(#\w*)?(\?\w*=(\d|,|-)*)?(\)|"")";
+                string regex = @"(\(|"")([^\)""\n]*\/" + regexSnippetFileName + @")([#\?][^\)""\n]*)?(\)|"")";
 
                 // Ignores case.
                 string fileText = File.ReadAllText(mdOrXmlFile.FullName);
