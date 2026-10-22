@@ -693,12 +693,12 @@ class Program
         {
             // Special case - consider license.md and readme.md as "referenced"
             // even if they aren't explicitly referenced in any other file.
-            if (string.Compare(includeFile.Key, "LICENSE.md", StringComparison.InvariantCultureIgnoreCase) == 0)
+            if (string.Equals(Path.GetFileName(includeFile.Key), "LICENSE.md", StringComparison.InvariantCultureIgnoreCase) ||
+                string.Equals(Path.GetFileName(includeFile.Key), "README.md", StringComparison.InvariantCultureIgnoreCase))
             {
                 includeFiles[includeFile.Key] = 1;
             }
-
-            if (includeFile.Value == 0)
+            if (includeFiles[includeFile.Key] == 0)
             {
                 count++;
                 output.AppendLine(Path.GetFullPath(includeFile.Key));
