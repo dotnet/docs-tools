@@ -366,12 +366,6 @@ class Program
             case "RemoveRedirectHops":
                 {
                     List<FileInfo> redirectionFiles = HelperMethods.GetRedirectionFiles(options.TargetDirectory);
-                    if (redirectionFiles.Count == 0)
-                    {
-                        Console.WriteLine("\nNo redirection files found.");
-                        break;
-                    }
-
                     docFxRepo.RemoveAllRedirectHops(redirectionFiles);
 
                     Console.WriteLine("\nFinished removing redirect hops.");
