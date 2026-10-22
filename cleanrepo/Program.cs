@@ -876,6 +876,10 @@ class Program
         List<string>? referencingDirectories,
         List<string>? excludeSnippetDescendantsOfFolders)
     {
+        HashSet<string> protectedProjectDirectories = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> protectedSolutionDirectories = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> excludedSnippetPaths = new(StringComparer.OrdinalIgnoreCase);
+
         if (excludeSnippetDescendantsOfFolders is { Count: > 0 })
         {
             HashSet<string> excludedFolderNames = excludeSnippetDescendantsOfFolders
@@ -886,9 +890,40 @@ class Program
             if (excludedFolderNames.Count > 0)
             {
                 int before = snippetFiles.Count;
-                snippetFiles = snippetFiles
-                    .Where(sf => !IsDescendantOfNamedFolder(sf.Item1, inputDirectory, excludedFolderNames))
+                List<(string, string?)> excludedSnippetFiles = snippetFiles
+                    .Where(sf => IsDescendantOfNamedFolder(sf.Item1, inputDirectory, excludedFolderNames))
                     .ToList();
+
+                snippetFiles = snippetFiles.Except(excludedSnippetFiles).ToList();
+
+                foreach ((string, string?) excludedSnippetFile in excludedSnippetFiles)
+                {
+                    excludedSnippetPaths.Add(Path.GetFullPath(excludedSnippetFile.Item1));
+
+                    if (excludedSnippetFile.Item2 is not null)
+                    {
+                        protectedProjectDirectories.Add(Path.GetFullPath(excludedSnippetFile.Item2));
+                    }
+                }
+
+                foreach ((string, List<string?>) solutionFile in solutionFiles)
+                {
+                    string? solutionDirectory = Path.GetDirectoryName(solutionFile.Item1);
+                    if (solutionDirectory is null)
+                        continue;
+
+                    bool containsProtectedProject = solutionFile.Item2
+                        .Any(projectDirectory => projectDirectory is not null &&
+                            protectedProjectDirectories.Contains(Path.GetFullPath(projectDirectory)));
+
+                    bool containsExcludedSnippet = excludedSnippetPaths
+                        .Any(path => IsPathEqualOrDescendant(path, solutionDirectory));
+
+                    if (containsProtectedProject || containsExcludedSnippet)
+                    {
+                        protectedSolutionDirectories.Add(Path.GetFullPath(solutionDirectory));
+                    }
+                }
 
                 Console.WriteLine($"Excluded {before - snippetFiles.Count} snippet files under: {string.Join(", ", excludedFolderNames)}");
             }
@@ -1108,6 +1143,9 @@ class Program
 
         foreach (string directory in directoriesToDelete)
         {
+            if (protectedProjectDirectories.Contains(Path.GetFullPath(directory)))
+                continue;
+
             bool isPartOfSolution = false;
 
             // Check if the directory is referenced in a solution file.
@@ -1166,6 +1204,9 @@ class Program
                 string? path = Path.GetDirectoryName(solutionFile.Item1);
                 if (path is not null)
                 {
+                    if (protectedSolutionDirectories.Contains(Path.GetFullPath(path)))
+                        continue;
+
                     dirSlnOutput.AppendLine(path);
                     if (deleteOrphanedSnippets)
                     {
@@ -1209,6 +1250,17 @@ class Program
         }
 
         return false;
+    }
+
+    private static bool IsPathEqualOrDescendant(string candidatePath, string directoryPath)
+    {
+        string normalizedCandidate = Path.GetFullPath(candidatePath)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string normalizedDirectory = Path.GetFullPath(directoryPath)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        return normalizedCandidate.Equals(normalizedDirectory, StringComparison.OrdinalIgnoreCase)
+            || normalizedCandidate.StartsWith(normalizedDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
     #endregion
 
