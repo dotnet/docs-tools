@@ -11,5 +11,6 @@ class Options
     public string? Function { get; set; }
     public string? OcrModelDirectory { get; set; }
     public string? FilterTextJsonFile { get; set; }
-    public List<string>? LimitReferencingDirectories { get; set; }
+    public List<string>? ReferencingDirectories { get; set; }
+    public List<string>? ExcludeSnippetDescendantsOfFolders { get; set; }
 }

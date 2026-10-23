@@ -582,11 +582,32 @@ class DocFxRepo(string startDirectory, string urlBasePath)
         // Get all docsets for the OPS config file.
         Dictionary<string, string>? docsets = GetDocsetInfo();
 
+        string opsConfigDirectory = OpsConfigFile.DirectoryName!;
+
+        // Include redirects from the OPS config folder tree so files located
+        // above the docfx.json directory are also processed.
+        List<FileInfo> allRedirectionFiles =
+        [
+            .. redirectionFiles,
+            .. HelperMethods.GetRedirectionFiles(opsConfigDirectory)
+        ];
+
+        allRedirectionFiles = allRedirectionFiles
+            .GroupBy(file => file.FullName, StringComparer.InvariantCultureIgnoreCase)
+            .Select(group => group.First())
+            .ToList();
+
+        if (allRedirectionFiles.Count == 0)
+        {
+            Console.WriteLine("\nNo redirection files found.");
+            return;
+        }
+
         // Remove hops within each file.
-        foreach (FileInfo redirectionFile in redirectionFiles)
+        foreach (FileInfo redirectionFile in allRedirectionFiles)
         {
             Console.WriteLine($"\nRemoving hops from the '{redirectionFile}' redirection file.");
-            RemoveRedirectHopsFromFile(redirectionFile, docsets, OpsConfigFile.DirectoryName!);
+            RemoveRedirectHopsFromFile(redirectionFile, docsets, opsConfigDirectory);
         }
     }
 

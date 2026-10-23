@@ -132,7 +132,7 @@ class Program
                     Console.WriteLine($"\nSearching the '{options.TargetDirectory}' directory recursively " +
                         $"for orphaned .png/.jpg/.gif/.svg files...\n");
 
-                    docFxRepo.ListOrphanedImages(options.Delete, "snippets");
+                    docFxRepo.ListOrphanedImages(options.Delete, "snippets", "samples");
                     break;
                 }
             case "CatalogImages":
@@ -292,8 +292,14 @@ class Program
                     // Catalog all the solution files and the project (directories) they reference.
                     List<(string, List<string?>)> solutionFiles = GetSolutionFiles(options.TargetDirectory);
 
-                    ListOrphanedSnippets(options.TargetDirectory, snippetFiles, solutionFiles,
-                        options.Delete, options.XmlSource, options.LimitReferencingDirectories);
+                    ListOrphanedSnippets(
+                        options.TargetDirectory,
+                        snippetFiles,
+                        solutionFiles,
+                        options.Delete,
+                        options.XmlSource,
+                        options.ReferencingDirectories,
+                        options.ExcludeSnippetDescendantsOfFolders);
                     break;
                 }
             // Replace links to articles that are redirected in the master redirection files.
@@ -360,12 +366,6 @@ class Program
             case "RemoveRedirectHops":
                 {
                     List<FileInfo> redirectionFiles = HelperMethods.GetRedirectionFiles(options.TargetDirectory);
-                    if (redirectionFiles.Count == 0)
-                    {
-                        Console.WriteLine("\nNo redirection files found.");
-                        break;
-                    }
-
                     docFxRepo.RemoveAllRedirectHops(redirectionFiles);
 
                     Console.WriteLine("\nFinished removing redirect hops.");
@@ -422,7 +422,7 @@ class Program
 
         Console.WriteLine($"PRs Changes Last Commit    ms.date Path");
         Console.Write($"{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
-        foreach (var article in articleFiles)
+        foreach (FileInfo article in articleFiles)
         {
             totalArticles++;
             Console.Write($"{removeProgressMarkers}{totalArticles,7} {progressMarkers[totalArticles % progressMarkers.Length]}");
@@ -625,7 +625,7 @@ class Program
         // Get all files that could possibly link to the include files
         List<FileInfo>? mdfiles = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
         List<FileInfo>? ymlfiles = HelperMethods.GetAllReferencingFiles("*.yml", inputDirectory, ref rootDirectory);
-        
+
         if ((mdfiles is null && ymlfiles is null) || rootDirectory is null)
             return;
 
@@ -691,7 +691,14 @@ class Program
         StringBuilder output = new();
         foreach (KeyValuePair<string, int> includeFile in includeFiles)
         {
-            if (includeFile.Value == 0)
+            // Special case - consider license.md and readme.md as "referenced"
+            // even if they aren't explicitly referenced in any other file.
+            if (string.Equals(Path.GetFileName(includeFile.Key), "LICENSE.md", StringComparison.InvariantCultureIgnoreCase) ||
+                string.Equals(Path.GetFileName(includeFile.Key), "README.md", StringComparison.InvariantCultureIgnoreCase))
+            {
+                includeFiles[includeFile.Key] = 1;
+            }
+            if (includeFiles[includeFile.Key] == 0)
             {
                 count++;
                 output.AppendLine(Path.GetFullPath(includeFile.Key));
@@ -867,8 +874,62 @@ class Program
         List<(string, List<string?>)> solutionFiles,
         bool deleteOrphanedSnippets,
         bool searchEcmaXmlFiles,
-        List<string>? limitReferencingDirectories)
+        List<string>? referencingDirectories,
+        List<string>? excludeSnippetDescendantsOfFolders)
     {
+        HashSet<string> protectedProjectDirectories = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> protectedSolutionDirectories = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> excludedSnippetPaths = new(StringComparer.OrdinalIgnoreCase);
+
+        if (excludeSnippetDescendantsOfFolders is { Count: > 0 })
+        {
+            HashSet<string> excludedFolderNames = excludeSnippetDescendantsOfFolders
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (excludedFolderNames.Count > 0)
+            {
+                int before = snippetFiles.Count;
+                List<(string, string?)> excludedSnippetFiles = snippetFiles
+                    .Where(sf => IsDescendantOfNamedFolder(sf.Item1, inputDirectory, excludedFolderNames))
+                    .ToList();
+
+                snippetFiles = snippetFiles.Except(excludedSnippetFiles).ToList();
+
+                foreach ((string, string?) excludedSnippetFile in excludedSnippetFiles)
+                {
+                    excludedSnippetPaths.Add(Path.GetFullPath(excludedSnippetFile.Item1));
+
+                    if (excludedSnippetFile.Item2 is not null)
+                    {
+                        protectedProjectDirectories.Add(Path.GetFullPath(excludedSnippetFile.Item2));
+                    }
+                }
+
+                foreach ((string, List<string?>) solutionFile in solutionFiles)
+                {
+                    string? solutionDirectory = Path.GetDirectoryName(solutionFile.Item1);
+                    if (solutionDirectory is null)
+                        continue;
+
+                    bool containsProtectedProject = solutionFile.Item2
+                        .Any(projectDirectory => projectDirectory is not null &&
+                            protectedProjectDirectories.Contains(Path.GetFullPath(projectDirectory)));
+
+                    bool containsExcludedSnippet = excludedSnippetPaths
+                        .Any(path => IsPathEqualOrDescendant(path, solutionDirectory));
+
+                    if (containsProtectedProject || containsExcludedSnippet)
+                    {
+                        protectedSolutionDirectories.Add(Path.GetFullPath(solutionDirectory));
+                    }
+                }
+
+                Console.WriteLine($"Excluded {before - snippetFiles.Count} snippet files under: {string.Join(", ", excludedFolderNames)}");
+            }
+        }
+
         // Get all files that could possibly link to the snippet files.
         List<FileInfo>? files;
         DirectoryInfo? rootDirectory = null;
@@ -876,16 +937,16 @@ class Program
         // XML or Markdown file repo?
         string searchPattern = searchEcmaXmlFiles ? "*.xml" : "*.md";
 
-        if (limitReferencingDirectories is null)
+        if (referencingDirectories is null)
             files = HelperMethods.GetAllReferencingFiles(searchPattern, inputDirectory, ref rootDirectory);
         else
         {
             files = [];
-            foreach (string directory in limitReferencingDirectories)
+            foreach (string directory in referencingDirectories)
             {
-                List<FileInfo>? ecmaXmlFiles = HelperMethods.GetAllReferencingFiles(searchPattern, directory, ref rootDirectory, false);
-                if (ecmaXmlFiles is not null)
-                    files.AddRange(ecmaXmlFiles);
+                List<FileInfo>? filesSubset = HelperMethods.GetAllReferencingFiles(searchPattern, directory, ref rootDirectory, false);
+                if (filesSubset is not null)
+                    files.AddRange(filesSubset);
             }
         }
 
@@ -937,8 +998,9 @@ class Program
                 // [!code-csharp[Violation#1](../code-quality/codesnippet/ca1010.cs#snippet1)]
                 // [!code-csharp[Hi](./code/code.cs?highlight=1,6)]
                 // [!code-csharp[FxCop.Usage#1](./code/code.cs?range=3-6)]
+                // [!code-csharp[](./code/3.x/Startup.cs?name=snippet&highlight=10-15)]
 
-                string regex = @"(\(|"")([^\)""\n]*\/" + regexSnippetFileName + @")(#\w*)?(\?\w*=(\d|,|-)*)?(\)|"")";
+                string regex = @"(\(|"")([^\)""\n]*\/" + regexSnippetFileName + @")([#\?][^\)""\n]*)?(\)|"")";
 
                 // Ignores case.
                 string fileText = File.ReadAllText(mdOrXmlFile.FullName);
@@ -1084,6 +1146,10 @@ class Program
 
         foreach (string directory in directoriesToDelete)
         {
+            if (protectedProjectDirectories.Contains(Path.GetFullPath(directory)) ||
+                excludedSnippetPaths.Any(path => IsPathEqualOrDescendant(path, directory)))
+                continue;
+
             bool isPartOfSolution = false;
 
             // Check if the directory is referenced in a solution file.
@@ -1142,6 +1208,9 @@ class Program
                 string? path = Path.GetDirectoryName(solutionFile.Item1);
                 if (path is not null)
                 {
+                    if (protectedSolutionDirectories.Contains(Path.GetFullPath(path)))
+                        continue;
+
                     dirSlnOutput.AppendLine(path);
                     if (deleteOrphanedSnippets)
                     {
@@ -1162,6 +1231,41 @@ class Program
         // Output info for unreferenced projects and solutions.
         Console.WriteLine(dirSlnOutput.ToString());
     }
+
+    private static bool IsDescendantOfNamedFolder(
+    string filePath,
+    string rootDirectory,
+    HashSet<string> folderNames)
+    {
+        string normalizedRoot = Path.GetFullPath(rootDirectory)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        DirectoryInfo? current = new FileInfo(filePath).Directory;
+        while (current is not null)
+        {
+            if (folderNames.Contains(current.Name))
+                return true;
+
+            string currentPath = current.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.Equals(currentPath, normalizedRoot, StringComparison.OrdinalIgnoreCase))
+                break;
+
+            current = current.Parent;
+        }
+
+        return false;
+    }
+
+    private static bool IsPathEqualOrDescendant(string candidatePath, string directoryPath)
+    {
+        string normalizedCandidate = Path.GetFullPath(candidatePath)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string normalizedDirectory = Path.GetFullPath(directoryPath)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        return normalizedCandidate.Equals(normalizedDirectory, StringComparison.OrdinalIgnoreCase)
+            || normalizedCandidate.StartsWith(normalizedDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+    }
     #endregion
 
     #region Orphaned articles
@@ -1179,6 +1283,9 @@ class Program
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}includes{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}misc{Path.DirectorySeparatorChar}") &&
             !file.FullName.Contains($"{Path.DirectorySeparatorChar}mermaidjs{Path.DirectorySeparatorChar}") &&
+            !file.FullName.Contains($"{Path.DirectorySeparatorChar}samples{Path.DirectorySeparatorChar}") &&
+            string.Compare(file.Name, "README.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
+            string.Compare(file.Name, "LICENSE.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "agents.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "index.md", StringComparison.InvariantCultureIgnoreCase) != 0 &&
             string.Compare(file.Name, "index.yml", StringComparison.InvariantCultureIgnoreCase) != 0 &&
