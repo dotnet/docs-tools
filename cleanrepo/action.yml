@@ -20,7 +20,7 @@ inputs:
     required: true
   exclude_include_files:
     description: 'A list of file names or paths that should never be considered orphaned.'
-    default: ''
+    default: []
 runs:
   using: docker
   image: ../cleanrepo.Dockerfile
