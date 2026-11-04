@@ -58,27 +58,53 @@ class Program
     }
 
     private static List<string>? ParseStringListOption(
-        ConfigurationManager configuration,
+        IConfigurationRoot configuration,
         string optionName,
         List<string>? currentValue)
     {
-        if (currentValue is { Count: > 0 })
-            return currentValue;
-
         string key = $"{nameof(Options)}:{optionName}";
-        string? rawValue = configuration[key];
 
+        foreach (IConfigurationProvider provider in configuration.Providers.Reverse())
+        {
+            if (provider.TryGet(key, out string? rawValue))
+            {
+                return ParseStringListValue(rawValue);
+            }
+
+            List<string> children = [.. provider.GetChildKeys([], key)];
+            if (children.Count == 0)
+                continue;
+
+            List<string> values = [.. children
+                .OrderBy(child => int.TryParse(child, out int index) ? index : int.MaxValue)
+                .ThenBy(child => child, StringComparer.InvariantCultureIgnoreCase)
+                .Select(child =>
+                {
+                    provider.TryGet($"{key}:{child}", out string? value);
+                    return value?.Trim();
+                })
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => value!.Trim('"'))
+                .Distinct(StringComparer.InvariantCultureIgnoreCase)];
+
+            return values;
+        }
+
+        return currentValue;
+    }
+
+    private static List<string> ParseStringListValue(string? rawValue)
+    {
         if (string.IsNullOrWhiteSpace(rawValue))
-            return currentValue;
+            return [];
 
         rawValue = rawValue.Trim();
 
-        // Reusable workflow inputs can pass this as a JSON array string.
         if (rawValue.StartsWith('[') && rawValue.EndsWith(']'))
         {
             try
             {
-                return JsonSerializer.Deserialize<List<string>>(rawValue) ?? currentValue;
+                return JsonSerializer.Deserialize<List<string>>(rawValue) ?? [];
             }
             catch (JsonException)
             {
@@ -86,13 +112,11 @@ class Program
             }
         }
 
-        List<string> values = [.. rawValue
+        return [.. rawValue
             .Split([',', ';', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(value => value.Trim('"'))
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.InvariantCultureIgnoreCase)];
-
-        return values.Count > 0 ? values : currentValue;
     }
 
     static async Task RunOptions(Options options)
