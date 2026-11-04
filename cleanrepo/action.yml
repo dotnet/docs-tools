@@ -34,4 +34,4 @@ runs:
     - '/Options:UrlBasePath'
     - ${{ inputs.url_base_path }}
     - '/Options:ExcludeOrphanedIncludeFiles'
-    - ${{ inputs.exclude_include_files }}
+    - ${{ fromJSON(inputs.exclude_include_files) }}
