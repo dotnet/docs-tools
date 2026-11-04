@@ -7,7 +7,7 @@ branding:
   color: 'purple'
 inputs:
   function:
-    description: 'The function you want to run: FindOrphanedArticles, FindOrphanedImages, FindOrphanedIncludes, FindOrphanedSnippets, CatalogImages, CatalogImagesWithText, FilterImagesForText, ReplaceRedirectTargets, ReplaceWithRelativeLinks, or RemoveRedirectHops.'
+    description: 'The function you want to run: FindOrphanedArticles, FindOrphanedImages, FindOrphanedIncludes, FindOrphanedSnippets, ReplaceRedirectTargets, ReplaceWithRelativeLinks, or RemoveRedirectHops.'
     required: true
   docfx_directory:
     description: 'The directory that contains the docfx.json file for the docset.'
@@ -18,6 +18,9 @@ inputs:
   url_base_path:
     description: 'The URL base path for your docset, for example, /dotnet or /windows/uwp.'
     required: true
+  exclude_include_files:
+    description: 'A list of file names or paths that should never be considered orphaned.'
+    default: "[]"
 runs:
   using: docker
   image: ../cleanrepo.Dockerfile
@@ -30,3 +33,5 @@ runs:
     - ${{ inputs.target_directory }}
     - '/Options:UrlBasePath'
     - ${{ inputs.url_base_path }}
+    - '/Options:ExcludeOrphanedIncludeFiles'
+    - ${{ fromJSON(inputs.exclude_include_files) }}

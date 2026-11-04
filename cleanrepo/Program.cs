@@ -49,7 +49,50 @@ class Program
         builder.Configuration.GetSection(nameof(Options))
             .Bind(options);
 
+        options.ExcludeOrphanedIncludeFiles = ParseStringListOption(
+            builder.Configuration,
+            nameof(Options.ExcludeOrphanedIncludeFiles),
+            options.ExcludeOrphanedIncludeFiles);
+
         await RunOptions(options);
+    }
+
+    private static List<string>? ParseStringListOption(
+        ConfigurationManager configuration,
+        string optionName,
+        List<string>? currentValue)
+    {
+        if (currentValue is { Count: > 0 })
+            return currentValue;
+
+        string key = $"{nameof(Options)}:{optionName}";
+        string? rawValue = configuration[key];
+
+        if (string.IsNullOrWhiteSpace(rawValue))
+            return currentValue;
+
+        rawValue = rawValue.Trim();
+
+        // Reusable workflow inputs can pass this as a JSON array string.
+        if (rawValue.StartsWith('[') && rawValue.EndsWith(']'))
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<List<string>>(rawValue) ?? currentValue;
+            }
+            catch (JsonException)
+            {
+                // Fall through and try simple delimited parsing.
+            }
+        }
+
+        List<string> values = [.. rawValue
+            .Split([',', ';', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(value => value.Trim('"'))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.InvariantCultureIgnoreCase)];
+
+        return values.Count > 0 ? values : currentValue;
     }
 
     static async Task RunOptions(Options options)
@@ -237,7 +280,7 @@ class Program
                         $"in the '{options.TargetDirectory}' directory...\n");
 
                     // Extract hash keys from the dictionary.
-                    List<string> mediaFilesList = docFxRepo._imageRefs.Keys.ToList();
+                    List<string> mediaFilesList = [.. docFxRepo._imageRefs.Keys];
 
                     if (mediaFilesList.Count == 0)
                     {
