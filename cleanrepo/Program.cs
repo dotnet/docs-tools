@@ -269,7 +269,7 @@ class Program
                     else
                         Console.WriteLine($"\nChecking {includeFiles.Count} include files.");
 
-                    ListOrphanedIncludes(options.TargetDirectory, includeFiles, options.Delete);
+                    ListOrphanedIncludes(options.TargetDirectory, includeFiles, options.Delete, options.ExcludeOrphanedIncludeFiles);
                     break;
                 }
             case "FindOrphanedSnippets":
@@ -618,9 +618,37 @@ class Program
     ///    For each markdown file
     ///       Do a RegEx search for the include file
     ///          If found, BREAK to the next include file
-    private static void ListOrphanedIncludes(string inputDirectory, Dictionary<string, int> includeFiles, bool deleteOrphanedIncludes)
+    private static void ListOrphanedIncludes(string inputDirectory, Dictionary<string, int> includeFiles, bool deleteOrphanedIncludes, List<string>? excludedIncludeFiles)
     {
         DirectoryInfo? rootDirectory = null;
+
+        HashSet<string> excludedFileNames = new(StringComparer.InvariantCultureIgnoreCase);
+        HashSet<string> excludedFullPaths = new(StringComparer.InvariantCultureIgnoreCase);
+
+        if (excludedIncludeFiles is { Count: > 0 })
+        {
+            foreach (string excludedIncludeFile in excludedIncludeFiles)
+            {
+                if (string.IsNullOrWhiteSpace(excludedIncludeFile))
+                    continue;
+
+                string candidate = excludedIncludeFile.Trim();
+
+                if (candidate.IndexOfAny([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]) >= 0 ||
+                    Path.IsPathRooted(candidate))
+                {
+                    string fullPath = Path.IsPathRooted(candidate)
+                        ? Path.GetFullPath(candidate)
+                        : Path.GetFullPath(Path.Combine(inputDirectory, candidate));
+
+                    excludedFullPaths.Add(fullPath);
+                }
+                else
+                {
+                    excludedFileNames.Add(candidate);
+                }
+            }
+        }
 
         // Get all files that could possibly link to the include files
         List<FileInfo>? mdfiles = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
@@ -691,6 +719,12 @@ class Program
         StringBuilder output = new();
         foreach (KeyValuePair<string, int> includeFile in includeFiles)
         {
+            if (excludedFullPaths.Contains(Path.GetFullPath(includeFile.Key)) ||
+                excludedFileNames.Contains(Path.GetFileName(includeFile.Key)))
+            {
+                includeFiles[includeFile.Key] = 1;
+            }
+
             // Special case - consider license.md and readme.md as "referenced"
             // even if they aren't explicitly referenced in any other file.
             if (string.Equals(Path.GetFileName(includeFile.Key), "LICENSE.md", StringComparison.InvariantCultureIgnoreCase) ||
