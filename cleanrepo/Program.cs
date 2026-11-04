@@ -80,9 +80,9 @@ class Program
             {
                 return JsonSerializer.Deserialize<List<string>>(rawValue) ?? currentValue;
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                // Fall through and try simple delimited parsing.
+                throw new ArgumentException($"Option '{optionName}' must be a valid JSON array of strings.", nameof(optionName), ex);
             }
         }
 
