@@ -13,4 +13,5 @@ class Options
     public string? FilterTextJsonFile { get; set; }
     public List<string>? ReferencingDirectories { get; set; }
     public List<string>? ExcludeSnippetDescendantsOfFolders { get; set; }
+    public List<string>? ExcludeOrphanedIncludeFiles { get; set; }
 }
