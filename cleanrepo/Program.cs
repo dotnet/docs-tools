@@ -108,7 +108,7 @@ class Program
             }
             catch (JsonException ex)
             {
-                throw new ArgumentException($"Option '{optionName}' must be a valid JSON array of strings.", nameof(optionName), ex);
+                throw new ArgumentException($"Option must be a valid JSON array of strings.", ex);
             }
         }
 
