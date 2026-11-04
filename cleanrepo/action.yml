@@ -20,7 +20,7 @@ inputs:
     required: true
   exclude_include_files:
     description: 'A list of file names or paths that should never be considered orphaned.'
-    default: "[]"
+    default: '[]'
 runs:
   using: docker
   image: ../cleanrepo.Dockerfile
@@ -34,4 +34,4 @@ runs:
     - '/Options:UrlBasePath'
     - ${{ inputs.url_base_path }}
     - '/Options:ExcludeOrphanedIncludeFiles'
-    - ${{ fromJSON(inputs.exclude_include_files) }}
+    - ${{ inputs.exclude_include_files }}
