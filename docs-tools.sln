@@ -44,6 +44,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlDocConflictResolver", "X
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepoManCheckerCLI", "RepoManChecker\RepoManCheckerCLI.csproj", "{1C59182B-9266-43FB-8398-86AE0F5012D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeSnippetImporter", "CodeSnippetImporter\CodeSnippetImporter.csproj", "{92E63A8C-B0BA-4180-A34A-3E4B8B832E1A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -94,6 +96,10 @@ Global
 		{1C59182B-9266-43FB-8398-86AE0F5012D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C59182B-9266-43FB-8398-86AE0F5012D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C59182B-9266-43FB-8398-86AE0F5012D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92E63A8C-B0BA-4180-A34A-3E4B8B832E1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92E63A8C-B0BA-4180-A34A-3E4B8B832E1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92E63A8C-B0BA-4180-A34A-3E4B8B832E1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92E63A8C-B0BA-4180-A34A-3E4B8B832E1A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
