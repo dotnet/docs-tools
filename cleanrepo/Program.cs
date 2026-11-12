@@ -49,7 +49,74 @@ class Program
         builder.Configuration.GetSection(nameof(Options))
             .Bind(options);
 
+        options.ExcludeOrphanedIncludeFiles = ParseStringListOption(
+            builder.Configuration,
+            nameof(Options.ExcludeOrphanedIncludeFiles),
+            options.ExcludeOrphanedIncludeFiles);
+
         await RunOptions(options);
+    }
+
+    private static List<string>? ParseStringListOption(
+        IConfigurationRoot configuration,
+        string optionName,
+        List<string>? currentValue)
+    {
+        string key = $"{nameof(Options)}:{optionName}";
+
+        foreach (IConfigurationProvider provider in configuration.Providers.Reverse())
+        {
+            if (provider.TryGet(key, out string? rawValue))
+            {
+                return ParseStringListValue(rawValue);
+            }
+
+            List<string> children = [.. provider.GetChildKeys([], key)];
+            if (children.Count == 0)
+                continue;
+
+            List<string> values = [.. children
+                .OrderBy(child => int.TryParse(child, out int index) ? index : int.MaxValue)
+                .ThenBy(child => child, StringComparer.InvariantCultureIgnoreCase)
+                .Select(child =>
+                {
+                    provider.TryGet($"{key}:{child}", out string? value);
+                    return value?.Trim();
+                })
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => value!.Trim('"'))
+                .Distinct(StringComparer.InvariantCultureIgnoreCase)];
+
+            return values;
+        }
+
+        return currentValue;
+    }
+
+    private static List<string> ParseStringListValue(string? rawValue)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+            return [];
+
+        rawValue = rawValue.Trim();
+
+        if (rawValue.StartsWith('[') && rawValue.EndsWith(']'))
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<List<string>>(rawValue) ?? [];
+            }
+            catch (JsonException ex)
+            {
+                throw new ArgumentException($"Option must be a valid JSON array of strings.", ex);
+            }
+        }
+
+        return [.. rawValue
+            .Split([',', ';', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(value => value.Trim('"'))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.InvariantCultureIgnoreCase)];
     }
 
     static async Task RunOptions(Options options)
@@ -237,7 +304,7 @@ class Program
                         $"in the '{options.TargetDirectory}' directory...\n");
 
                     // Extract hash keys from the dictionary.
-                    List<string> mediaFilesList = docFxRepo._imageRefs.Keys.ToList();
+                    List<string> mediaFilesList = [.. docFxRepo._imageRefs.Keys];
 
                     if (mediaFilesList.Count == 0)
                     {
@@ -269,7 +336,7 @@ class Program
                     else
                         Console.WriteLine($"\nChecking {includeFiles.Count} include files.");
 
-                    ListOrphanedIncludes(options.TargetDirectory, includeFiles, options.Delete);
+                    ListOrphanedIncludes(options.TargetDirectory, includeFiles, options.Delete, options.ExcludeOrphanedIncludeFiles);
                     break;
                 }
             case "FindOrphanedSnippets":
@@ -618,9 +685,37 @@ class Program
     ///    For each markdown file
     ///       Do a RegEx search for the include file
     ///          If found, BREAK to the next include file
-    private static void ListOrphanedIncludes(string inputDirectory, Dictionary<string, int> includeFiles, bool deleteOrphanedIncludes)
+    private static void ListOrphanedIncludes(string inputDirectory, Dictionary<string, int> includeFiles, bool deleteOrphanedIncludes, List<string>? excludedIncludeFiles)
     {
         DirectoryInfo? rootDirectory = null;
+
+        HashSet<string> excludedFileNames = new(StringComparer.InvariantCultureIgnoreCase);
+        HashSet<string> excludedFullPaths = new(StringComparer.InvariantCultureIgnoreCase);
+
+        if (excludedIncludeFiles is { Count: > 0 })
+        {
+            foreach (string excludedIncludeFile in excludedIncludeFiles)
+            {
+                if (string.IsNullOrWhiteSpace(excludedIncludeFile))
+                    continue;
+
+                string candidate = excludedIncludeFile.Trim();
+
+                if (candidate.IndexOfAny([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]) >= 0 ||
+                    Path.IsPathRooted(candidate))
+                {
+                    string fullPath = Path.IsPathRooted(candidate)
+                        ? Path.GetFullPath(candidate)
+                        : Path.GetFullPath(Path.Combine(inputDirectory, candidate));
+
+                    excludedFullPaths.Add(fullPath);
+                }
+                else
+                {
+                    excludedFileNames.Add(candidate);
+                }
+            }
+        }
 
         // Get all files that could possibly link to the include files
         List<FileInfo>? mdfiles = HelperMethods.GetAllReferencingFiles("*.md", inputDirectory, ref rootDirectory);
@@ -691,6 +786,12 @@ class Program
         StringBuilder output = new();
         foreach (KeyValuePair<string, int> includeFile in includeFiles)
         {
+            if (excludedFullPaths.Contains(Path.GetFullPath(includeFile.Key)) ||
+                excludedFileNames.Contains(Path.GetFileName(includeFile.Key)))
+            {
+                includeFiles[includeFile.Key] = 1;
+            }
+
             // Special case - consider license.md and readme.md as "referenced"
             // even if they aren't explicitly referenced in any other file.
             if (string.Equals(Path.GetFileName(includeFile.Key), "LICENSE.md", StringComparison.InvariantCultureIgnoreCase) ||
