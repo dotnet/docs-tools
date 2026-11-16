@@ -20,7 +20,7 @@ Run the following examples from the root of this repository. Use an absolute pat
 The default command queries GitHub for changed files, then validates and builds the affected targets in your local checkout.
 
 ```shell
-dotnet run --project snippets5000/Snippets5000 -- --sourcepath /absolute/path/to/docs --owner dotnet --repo docs --pullrequest 12345
+dotnet run --no-launch-profile --project snippets5000/Snippets5000 -- --sourcepath /absolute/path/to/docs --owner dotnet --repo docs --pullrequest 12345
 ```
 
 | Option | Description |
