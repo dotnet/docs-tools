@@ -20,5 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNet.DocsTools\DotNet.DocsTools.csproj" />
+    <ProjectReference Include="..\CodeSnippetImporter\CodeSnippetImporter.csproj" />
   </ItemGroup>
 </Project>
