@@ -15,11 +15,17 @@ on:
         description: The reason for running the workflow
         required: true
         default: Manual run
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     name: build
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.repository.fork }}    
     steps:
     - uses: actions/checkout@v7
 
